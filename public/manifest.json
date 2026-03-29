@@ -1,0 +1,9 @@
+{
+  "name": "Noodle Jump",
+  "short_name": "Noodle Jump",
+  "start_url": "/",
+  "display": "fullscreen",
+  "orientation": "portrait",
+  "background_color": "#fff8e7",
+  "theme_color": "#fff8e7"
+}

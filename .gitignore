@@ -1,0 +1,22 @@
+node_modules/
+dist/
+build/
+.next/
+out/
+coverage/
+*.local
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
+Thumbs.db
+
+# Node.js (auto-detected)
+node_modules/
+dist/
+build/
+.next/
+out/
+coverage/
+*.log
