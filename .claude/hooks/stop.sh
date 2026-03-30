@@ -25,12 +25,29 @@ if [ -n "$last_started_sid" ]; then
   fi
 fi
 
+# ── Gather actual changes from git ───────────────────────────────────────────
+changed_files=$(git diff --name-only HEAD 2>/dev/null; git diff --name-only --cached HEAD 2>/dev/null; git ls-files --others --exclude-standard 2>/dev/null)
+changed_files=$(echo "$changed_files" | sort -u | grep -v '^$' || echo "")
+diff_stat=$(git diff --stat HEAD 2>/dev/null || echo "")
+
+git_context=""
+if [ -n "$changed_files" ]; then
+  git_context="
+Files changed this session (from git):
+$changed_files
+"
+  [ -n "$diff_stat" ] && git_context+="
+Diff summary:
+$diff_stat
+"
+fi
+
 # No completed entry for the current/last session
 if [ "$mode" = "full" ]; then
   MSG="--- CHANGES.md: session not completed ---
 You have a started session without a completed entry.
 In full mode, you MUST append a completed entry to CHANGES.md before finishing.
-
+${git_context}
 Format:
 ## [$(date +%Y-%m-%dT%H:%M)] session-${last_started_sid:-xxxx} | status: completed | mode: full | type: add|fix|refactor|chore
 files_touched: <files you changed>
@@ -51,7 +68,7 @@ fi
 # Lean mode — just a gentle reminder
 MSG="--- Session end reminder (lean mode) ---
 Consider logging this session in CHANGES.md if you removed or renamed any symbols.
----"
+${git_context}---"
 
 escaped=$(printf '%s' "$MSG" | python3 -c "import sys,json; sys.stdout.write(json.dumps(sys.stdin.read()))" 2>/dev/null || printf '"%s"' "$MSG")
 printf '{"additionalContext": %s}\n' "$escaped"

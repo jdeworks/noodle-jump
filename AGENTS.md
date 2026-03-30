@@ -1,7 +1,9 @@
 # AGENTS.md
 
 ## Session mode
+
 Declare your mode at the start of every session:
+
 - **full** — all three test tiers active, all hooks enforced, CHANGES.md required. Use for features being merged.
 - **lean** — feature tests only, reduced hooks, CHANGES.md optional. Use for spikes and prototypes.
 
@@ -10,12 +12,15 @@ Default: **full**. To switch, state "mode: lean" at session start or read `.kit/
 ---
 
 ## Project overview
+
 <!-- FILL IN: one paragraph describing what this project does -->
 
 ## Tech stack
+
 <!-- FILL IN: language, framework, database, hosting -->
 
 ## Key commands
+
 ```
 make dev        # start dev server
 make check      # full quality pipeline (format + lint + types + deadcode + tests + health)
@@ -26,6 +31,7 @@ make help       # list all targets
 ```
 
 ## Important paths
+
 <!-- FILL IN: src/, tests/, key config files -->
 
 ---
@@ -95,13 +101,14 @@ The rules above apply to all agents whether hooks exist or not.
 ---
 
 <!-- kit:managed:end -->
+
 ## Tool-specific entry points
+
 - Cursor: `.cursor/rules/main.mdc`
 - Windsurf: `.windsurf/rules/main.md`
 - GitHub Copilot: `.github/copilot-instructions.md`
 - Online AI (ChatGPT, Gemini): `bundle.xml` via repomix (`npx repomix`)
 - All of these redirect here.
-
 
 ## Quick start
 
@@ -120,13 +127,13 @@ See `.kit/stack-choice.md` for a full comparison.
 
 ## Variant-specific docs — read on demand
 
-| Doc | Read when |
-|-----|-----------|
-| `.kit/game-architecture.md` | Structuring game code — scenes, entities, systems |
-| `.kit/asset-management.md` | Loading, organizing, and optimizing game assets |
-| `.kit/game-loop.md` | Understanding and implementing the update/render cycle |
-| `.kit/testing-games.md` | Testing game logic (not rendering) |
-| `.kit/stack-choice.md` | Choosing between Phaser, PixiJS, Three.js, or other engines |
+| Doc                         | Read when                                                   |
+| --------------------------- | ----------------------------------------------------------- |
+| `.kit/game-architecture.md` | Structuring game code — scenes, entities, systems           |
+| `.kit/asset-management.md`  | Loading, organizing, and optimizing game assets             |
+| `.kit/game-loop.md`         | Understanding and implementing the update/render cycle      |
+| `.kit/testing-games.md`     | Testing game logic (not rendering)                          |
+| `.kit/stack-choice.md`      | Choosing between Phaser, PixiJS, Three.js, or other engines |
 
 ---
 
@@ -141,6 +148,7 @@ See `.kit/stack-choice.md` for a full comparison.
 ## LOC budget override
 
 Game code tends to grow. Budget accordingly:
+
 ```
 SOFT_FILE_LOC=300
 HARD_FILE_LOC=400
@@ -152,6 +160,7 @@ LOC_BUDGET=15000
 ## Why Phaser as the example
 
 We need a concrete example to show patterns. We chose Phaser because:
+
 - Most popular browser game framework with the largest community
 - Built-in physics, input, audio, animations, tilemaps
 - Excellent documentation and tutorials
