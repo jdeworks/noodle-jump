@@ -15,18 +15,20 @@ export interface CollisionResult {
 }
 
 /**
- * Check if the player's feet land on a platform.
- * Only collides when the player is falling (vy >= 0) and
- * the player's bottom edge crosses into the platform's top zone.
+ * Swept collision detection — checks the full trajectory between frames.
  *
- * Breaking platforms: player bounces once, then the platform is marked broken.
- * Broken platforms are skipped.
+ * Instead of only testing the end-of-frame position, we find the exact
+ * fraction `t` at which the player's feet cross each platform top and
+ * verify that the player overlaps horizontally at that moment.
+ *
+ * This eliminates tunnelling regardless of fall speed.
  */
 export function checkPlatformCollisions(
   player: PlayerState,
   platforms: PlatformState[],
   previousY: number,
   allBreaking = false,
+  previousX?: number,
 ): CollisionResult {
   const noHit: CollisionResult = {
     player,
@@ -40,67 +42,88 @@ export function checkPlatformCollisions(
 
   const playerBottom = player.y + player.height;
   const previousBottom = previousY + player.height;
+  const prevX = previousX ?? player.x;
+
+  // Sort candidate platforms by crossing time so we land on the FIRST one
+  let bestT = Infinity;
+  let bestIdx = -1;
 
   for (let i = 0; i < platforms.length; i++) {
     const platform = platforms[i];
-
     if (platform.broken) continue;
-
-    const playerRight = player.x + player.width;
-    const platformRight = platform.x + platform.width;
-
-    if (playerRight < platform.x || player.x > platformRight) continue;
 
     const platformTop = platform.y;
 
-    if (previousBottom <= platformTop && playerBottom >= platformTop) {
-      // Check edge landing before any bounce
-      const leftMargin = player.x - platform.x;
-      const rightMargin = platformRight - playerRight;
-      const edgeLanding =
-        leftMargin < CLOSE_CALL_THRESHOLD || rightMargin < CLOSE_CALL_THRESHOLD;
+    // Vertical sweep: did the bottom edge cross this platform top?
+    if (previousBottom > platformTop || playerBottom < platformTop) continue;
 
-      // Brittle: mark broken on contact, no bounce
-      if (platform.type === "brittle") {
-        const updatedPlatforms = [...platforms];
-        updatedPlatforms[i] = breakPlatform(platform);
-        return {
-          player,
-          platforms: updatedPlatforms,
-          landed: false,
-          edgeLanding: false,
-          platformBroke: true,
-        };
-      }
+    // Compute t ∈ [0,1] at which bottom edge == platformTop
+    const dy = playerBottom - previousBottom;
+    const t = dy === 0 ? 0 : (platformTop - previousBottom) / dy;
 
-      const landed = { ...player, y: platformTop - player.height };
-      const jumped = playerJump(landed);
+    // Interpolate horizontal position at crossing time
+    const xAtT = prevX + (player.x - prevX) * t;
+    const playerRightAtT = xAtT + player.width;
+    const platformRight = platform.x + platform.width;
 
-      // Breaking platform (or soggy noodle effect)
-      if (
-        platform.type === "breaking" ||
-        (allBreaking && platform.type === "static")
-      ) {
-        const updatedPlatforms = [...platforms];
-        updatedPlatforms[i] = breakPlatform(platform);
-        return {
-          player: jumped,
-          platforms: updatedPlatforms,
-          landed: true,
-          edgeLanding,
-          platformBroke: true,
-        };
-      }
+    if (playerRightAtT < platform.x || xAtT > platformRight) continue;
 
-      return {
-        player: jumped,
-        platforms,
-        landed: true,
-        edgeLanding,
-        platformBroke: false,
-      };
+    if (t < bestT) {
+      bestT = t;
+      bestIdx = i;
     }
   }
 
-  return noHit;
+  if (bestIdx < 0) return noHit;
+
+  const platform = platforms[bestIdx];
+  const platformRight = platform.x + platform.width;
+
+  // Use player's current X for edge-landing (visual position)
+  const playerRight = player.x + player.width;
+  const leftMargin = player.x - platform.x;
+  const rightMargin = platformRight - playerRight;
+  const edgeLanding =
+    leftMargin < CLOSE_CALL_THRESHOLD || rightMargin < CLOSE_CALL_THRESHOLD;
+
+  // Brittle: mark broken on contact, no bounce
+  if (platform.type === "brittle") {
+    const updatedPlatforms = [...platforms];
+    updatedPlatforms[bestIdx] = breakPlatform(platform);
+    return {
+      player,
+      platforms: updatedPlatforms,
+      landed: false,
+      edgeLanding: false,
+      platformBroke: true,
+    };
+  }
+
+  const landed = { ...player, y: platform.y - player.height };
+  const jumped = playerJump(landed);
+
+  // Breaking platform, lasagna stepping stone, or soggy noodle effect
+  if (
+    platform.type === "breaking" ||
+    platform.type === "lasagna" ||
+    (allBreaking && (platform.type === "static" || platform.type === "moving"))
+  ) {
+    const updatedPlatforms = [...platforms];
+    updatedPlatforms[bestIdx] = breakPlatform(platform);
+    return {
+      player: jumped,
+      platforms: updatedPlatforms,
+      landed: true,
+      edgeLanding,
+      platformBroke: true,
+    };
+  }
+
+  return {
+    player: jumped,
+    platforms,
+    landed: true,
+    edgeLanding,
+    platformBroke: false,
+  };
 }

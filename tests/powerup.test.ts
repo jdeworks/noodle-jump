@@ -87,23 +87,22 @@ describe("PowerUp", () => {
     expect(result.player.vy).toBeLessThan(0); // bounce on pickup
   });
 
-  test("lasagna float mode pulls velocity toward gentle upward drift", () => {
+  test("lasagna stepping stones preserves player velocity", () => {
     const player = { ...createPlayer(100, 300), vy: 5 }; // falling
     const effect = { type: "lasagna_layers" as const, ticksRemaining: 100 };
 
     const result = tickEffect(player, effect);
-    // Should slow the fall significantly — pulled toward -1.5
-    expect(result.player.vy).toBeLessThan(5);
-    expect(result.player.vy).toBeGreaterThan(-4); // clamped
+    // Stepping stones: no velocity override, player physics stay normal
+    expect(result.player.vy).toBe(5);
   });
 
-  test("lasagna float mode clamps fast upward velocity", () => {
-    const player = { ...createPlayer(100, 300), vy: -10 }; // fast upward
-    const effect = { type: "lasagna_layers" as const, ticksRemaining: 100 };
+  test("lasagna stepping stones spawns platforms periodically", () => {
+    const player = createPlayer(100, 300);
+    const effect = { type: "lasagna_layers" as const, ticksRemaining: 21 };
 
+    // At remaining=20, should spawn (20 % 20 === 0)
     const result = tickEffect(player, effect);
-    // Should be clamped to -5 max
-    expect(result.player.vy).toBeGreaterThanOrEqual(-5);
+    expect(result.spawnPlatform).toBe(true);
   });
 
   test("tickEffect counts down and expires", () => {

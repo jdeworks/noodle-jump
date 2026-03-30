@@ -8,8 +8,6 @@ const FIREWORK_COLORS = [
   0xf0c050, 0xff6688, 0x88ff66, 0x6688ff, 0xffaa44,
 ];
 
-const MAX_DURATION = 300; // hard stop after 5 seconds
-
 interface Particle {
   gfx: Graphics;
   vx: number;
@@ -92,12 +90,6 @@ export class FireworkDisplay {
     if (!this.active) return false;
 
     this.tick++;
-
-    // Hard stop
-    if (this.tick > MAX_DURATION) {
-      this.active = false;
-      return false;
-    }
 
     let anyAlive = false;
 

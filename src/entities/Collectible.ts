@@ -46,21 +46,37 @@ export function spawnMeatballs(
   return meatballs;
 }
 
-/** Check if the player overlaps any uncollected meatball. Returns updated list + count collected. */
+/**
+ * Swept AABB collection — checks the full trajectory between frames.
+ * Uses the bounding box that covers both the previous and current
+ * player position so fast movement can't skip past a meatball.
+ */
 export function collectMeatballs(
   playerX: number,
   playerY: number,
   playerWidth: number,
   playerHeight: number,
   meatballs: CollectibleState[],
+  prevX?: number,
+  prevY?: number,
 ): { meatballs: CollectibleState[]; collected: number } {
+  const pad = 6;
+  const px = prevX ?? playerX;
+  const py = prevY ?? playerY;
+
+  // Swept bounding box covering both previous and current positions
+  const sweepLeft = Math.min(px, playerX) - pad;
+  const sweepRight = Math.max(px + playerWidth, playerX + playerWidth) + pad;
+  const sweepTop = Math.min(py, playerY) - pad;
+  const sweepBottom =
+    Math.max(py + playerHeight, playerY + playerHeight) + pad;
+
   let collected = 0;
   const updated = meatballs.map((m) => {
     if (m.collected) return m;
 
-    // Simple AABB overlap
-    const overlapX = playerX < m.x + m.size && playerX + playerWidth > m.x;
-    const overlapY = playerY < m.y + m.size && playerY + playerHeight > m.y;
+    const overlapX = sweepLeft < m.x + m.size && sweepRight > m.x;
+    const overlapY = sweepTop < m.y + m.size && sweepBottom > m.y;
 
     if (overlapX && overlapY) {
       collected++;
@@ -112,7 +128,9 @@ export function attractMeatballs(
     const dy = cy - (m.y + m.size / 2);
     const dist = Math.sqrt(dx * dx + dy * dy);
     if (dist > MEATBALL_MAGNET_RADIUS || dist < 1) return m;
-    const strength = 3 * (1 - dist / MEATBALL_MAGNET_RADIUS);
+    // Inverse-square-ish: very strong up close, weaker at distance (like a real magnet)
+    const t = 1 - dist / MEATBALL_MAGNET_RADIUS;
+    const strength = 3 + 18 * t * t; // 3 at edge, 21 at point-blank
     return {
       ...m,
       x: m.x + (dx / dist) * strength,

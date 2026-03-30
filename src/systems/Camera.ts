@@ -43,12 +43,13 @@ export function updateCamera(
 }
 
 /**
- * Check if the player has fallen below the grace area.
- * Returns true if the player is dead.
+ * Check if the player has fallen too far below the camera's highest point.
+ * Uses the camera's highest-ever position (not current) so the camera
+ * can't prevent death by following the player downward.
  */
 export function isPlayerDead(camera: CameraState, playerY: number): boolean {
   const graceDistance = CAMERA_GRACE_PLATFORMS * PLATFORM_GAP_MAX;
-  const deathLine = camera.y + GAME_HEIGHT + graceDistance;
+  const deathLine = camera.highestY + GAME_HEIGHT + graceDistance;
   return playerY > deathLine;
 }
 

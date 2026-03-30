@@ -84,15 +84,32 @@ describe("Platform", () => {
     expect(moving.length).toBeGreaterThan(0);
   });
 
-  test("never two consecutive unlandable platforms (possibility check)", () => {
+  test("never two consecutive brittle platforms (possibility check)", () => {
     // Run multiple times to account for randomness
     for (let run = 0; run < 10; run++) {
       const platforms = generatePlatforms(10000, 100);
       for (let i = 1; i < platforms.length; i++) {
-        const prevSolid = platforms[i - 1].type !== "brittle";
-        const currSolid = platforms[i].type !== "brittle";
-        // At least one of any two consecutive platforms must be solid
-        expect(prevSolid || currSolid).toBe(true);
+        const prevOk = platforms[i - 1].type !== "brittle";
+        const currOk = platforms[i].type !== "brittle";
+        // At least one of any two consecutive platforms must not be brittle
+        expect(prevOk || currOk).toBe(true);
+      }
+    }
+  });
+
+  test("never two consecutive brittle across batch boundaries", () => {
+    for (let run = 0; run < 20; run++) {
+      // Generate batch 1, check if last is brittle, pass to batch 2
+      const batch1 = generatePlatforms(10000, 20);
+      const lastBrittle = batch1[batch1.length - 1].type === "brittle";
+      const batch2 = generatePlatforms(
+        batch1[batch1.length - 1].y,
+        20,
+        undefined,
+        lastBrittle,
+      );
+      if (lastBrittle) {
+        expect(batch2[0].type).not.toBe("brittle");
       }
     }
   });

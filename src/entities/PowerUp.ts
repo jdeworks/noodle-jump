@@ -127,19 +127,34 @@ export function spawnPowerUps(
   return powerUps;
 }
 
-/** Check if the player overlaps any uncollected power-up. */
+/**
+ * Swept AABB power-up collection — checks the full trajectory between
+ * frames so fast movement can't skip past a power-up.
+ */
 export function collectPowerUps(
   player: PlayerState,
   powerUps: PowerUpState[],
+  prevX?: number,
+  prevY?: number,
 ): { powerUps: PowerUpState[]; collected: PowerUpType | null } {
+  const pad = 6;
+  const px = prevX ?? player.x;
+  const py = prevY ?? player.y;
+
+  // Swept bounding box
+  const sweepLeft = Math.min(px, player.x) - pad;
+  const sweepRight =
+    Math.max(px + player.width, player.x + player.width) + pad;
+  const sweepTop = Math.min(py, player.y) - pad;
+  const sweepBottom =
+    Math.max(py + player.height, player.y + player.height) + pad;
+
   for (let i = 0; i < powerUps.length; i++) {
     const pu = powerUps[i];
     if (pu.collected) continue;
 
-    const overlapX =
-      player.x < pu.x + pu.size && player.x + player.width > pu.x;
-    const overlapY =
-      player.y < pu.y + pu.size && player.y + player.height > pu.y;
+    const overlapX = sweepLeft < pu.x + pu.size && sweepRight > pu.x;
+    const overlapY = sweepTop < pu.y + pu.size && sweepBottom > pu.y;
 
     if (overlapX && overlapY) {
       const updated = [...powerUps];
@@ -184,11 +199,11 @@ export function applyPowerUp(
       };
 
     case "lasagna_layers":
-      // Float mode — gentle upward drift with near-zero gravity
+      // Stepping stones — small boost + spawns platforms above to jump on
       return {
         player: {
           ...player,
-          vy: -8,
+          vy: -12,
           isJumping: true,
         },
         effect: {
@@ -300,15 +315,11 @@ export function tickEffect(
   }
 
   if (effect.type === "lasagna_layers") {
-    // Float mode — gentle upward drift, spawns lasagna platforms periodically
-    let vy = player.vy;
-    const targetVy = -3;
-    vy = vy * 0.85 + targetVy * 0.15;
-    vy = Math.max(-5, Math.min(2, vy));
-    // Spawn a platform every 30 ticks
-    const shouldSpawn = remaining % 30 === 0;
+    // Stepping stones — spawn platforms above the player to jump on
+    // Normal physics apply, player jumps between spawned platforms
+    const shouldSpawn = remaining % 20 === 0;
     return {
-      player: { ...player, vy },
+      player,
       effect: updatedEffect,
       spawnPlatform: shouldSpawn,
     };

@@ -22,6 +22,44 @@ const orient = screen.orientation as
   | undefined;
 orient?.lock?.("portrait").catch(() => {});
 
+// Keep screen awake during gameplay (motion-controlled, no touch interaction)
+let wakeLock: WakeLockSentinel | null = null;
+async function requestWakeLock(): Promise<void> {
+  try {
+    if ("wakeLock" in navigator) {
+      wakeLock = await navigator.wakeLock.request("screen");
+      wakeLock.addEventListener("release", () => {
+        wakeLock = null;
+      });
+    }
+  } catch {
+    // Wake lock request failed (e.g. tab not visible)
+  }
+}
+function releaseWakeLock(): void {
+  wakeLock?.release();
+  wakeLock = null;
+}
+// Re-acquire after tab becomes visible again (auto-released on hide)
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible" && !wakeLock) {
+    requestWakeLock();
+  }
+});
+
+function requestFullscreen(): void {
+  const doc = document.documentElement as HTMLElement & {
+    webkitRequestFullscreen?: () => Promise<void>;
+    msRequestFullscreen?: () => Promise<void>;
+  };
+  (
+    doc.requestFullscreen?.() ??
+    doc.webkitRequestFullscreen?.() ??
+    doc.msRequestFullscreen?.() ??
+    Promise.resolve()
+  ).catch(() => {});
+}
+
 function formatTime(seconds: number): string {
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
@@ -227,6 +265,7 @@ function showTitleScreen(app: Application): void {
 // ── Game Launch ───────────────────────────────────────────────────────────
 
 async function launchGame(app: Application): Promise<void> {
+  requestWakeLock();
   const scene = new GameScene();
   scene.initInput(app.canvas);
   app.stage.addChild(scene.container);
@@ -303,18 +342,6 @@ async function launchGame(app: Application): Promise<void> {
   );
 
   // ── Fullscreen on first tap ──────────────────────────────────────────────
-  const requestFullscreen = () => {
-    const doc = document.documentElement as HTMLElement & {
-      webkitRequestFullscreen?: () => Promise<void>;
-      msRequestFullscreen?: () => Promise<void>;
-    };
-    (
-      doc.requestFullscreen?.() ??
-      doc.webkitRequestFullscreen?.() ??
-      doc.msRequestFullscreen?.() ??
-      Promise.resolve()
-    ).catch(() => {});
-  };
   app.canvas.addEventListener("touchstart", requestFullscreen, { once: true });
   app.canvas.addEventListener("click", requestFullscreen, { once: true });
 
@@ -648,6 +675,11 @@ interface GameOverStats {
 }
 
 function showGameOver(app: Application, stats: GameOverStats): void {
+  // Remove fullscreen listeners so game-over taps don't trigger fullscreen
+  app.canvas.removeEventListener("touchstart", requestFullscreen);
+  app.canvas.removeEventListener("click", requestFullscreen);
+  releaseWakeLock();
+
   const isNewRecord = stats.score >= stats.highScore && stats.score > 0;
 
   const dim = new Graphics();
@@ -696,7 +728,7 @@ function showGameOver(app: Application, stats: GameOverStats): void {
     "",
     `Meatballs ${stats.meatballs}`,
     `Power-ups ${stats.powerUps}`,
-    `Best combo ${stats.bestCombo}x`,
+    `Combo     ${stats.bestCombo}x`,
     `Streak    ${stats.bestStreak}`,
   ];
 
@@ -713,6 +745,9 @@ function showGameOver(app: Application, stats: GameOverStats): void {
   breakdown.y = GAME_HEIGHT * 0.42;
   breakdown.anchor.set(0.5, 0.5);
   app.stage.addChild(breakdown);
+
+  // Suppress restart briefly when a button is tapped
+  let buttonTapped = false;
 
   // Share button
   const shareText = new Text({
@@ -731,6 +766,8 @@ function showGameOver(app: Application, stats: GameOverStats): void {
   shareText.cursor = "pointer";
   shareText.on("pointertap", (e: Event) => {
     e.stopPropagation();
+    buttonTapped = true;
+    setTimeout(() => { buttonTapped = false; }, 200);
     const shareMsg =
       `I scored ${stats.score} on Noodle Jump!\n` +
       `Height: ${stats.height} | Meatballs: ${stats.meatballs} | ` +
@@ -778,15 +815,16 @@ function showGameOver(app: Application, stats: GameOverStats): void {
   clearText.cursor = "pointer";
   clearText.on("pointertap", (e: Event) => {
     e.stopPropagation();
+    buttonTapped = true;
+    setTimeout(() => { buttonTapped = false; }, 200);
     localStorage.clear();
     clearText.text = "Data cleared!";
     clearText.style.fill = "#66cc66";
   });
   app.stage.addChild(clearText);
 
-  const restart = (e: Event) => {
-    const target = e.target as unknown;
-    if (target === clearText || target === shareText) return;
+  const restart = () => {
+    if (buttonTapped) return;
     app.canvas.removeEventListener("click", restart);
     app.canvas.removeEventListener("touchstart", restart);
     window.removeEventListener("keydown", restart);

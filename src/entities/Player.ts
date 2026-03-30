@@ -41,6 +41,11 @@ export function updatePlayer(player: PlayerState, inputX: number): PlayerState {
   // Gravity
   vy += GRAVITY;
 
+  // Cap fall speed to prevent tunneling through platforms
+  if (vy > PLAYER_HEIGHT * 0.9) {
+    vy = PLAYER_HEIGHT * 0.9;
+  }
+
   // Apply velocity
   x += vx;
   y += vy;

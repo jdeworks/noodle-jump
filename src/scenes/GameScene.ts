@@ -85,6 +85,14 @@ import {
   drawPlatform,
   drawMeatball,
   drawPowerUp,
+  drawMagnetSprite,
+  drawTornadoSprite,
+  drawLasagnaSprite,
+  drawPepperSprite,
+  drawChiliSprite,
+  drawSoggySprite,
+  drawGarlicSprite,
+  drawBurntToastSprite,
   type PlatformStyle,
 } from "../rendering/sprites";
 import {
@@ -93,7 +101,30 @@ import {
   PLATFORM_COUNT_BUFFER,
   COLORS,
   DEATH_ANIMATION_TICKS,
+  GARLIC_BREATH_JUMP_MULTIPLIER,
+  PLAYER_HEIGHT,
 } from "../config/constants";
+
+// Squash-stretch keyframes: [scaleY, scaleX factor]
+// Phase 1 (indices 0-4): squash hold on platform, 5 frames (~83ms)
+// Phase 2 (indices 5-12): stretch while launching, 8 frames (~133ms)
+const SQUASH_KEYFRAMES: [number, number][] = [
+  [0.75, 1.20], // impact compression
+  [0.58, 1.30], // max squash
+  [0.55, 1.32], // hold
+  [0.60, 1.28], // slight release
+  [0.72, 1.18], // preparing to launch
+  [1.12, 0.90], // launch pop
+  [1.28, 0.84], // stretching
+  [1.30, 0.82], // max stretch
+  [1.22, 0.86], // easing back
+  [1.12, 0.92], // settling
+  [1.05, 0.96], // almost normal
+  [1.02, 0.98], // nearly there
+  [1.00, 1.00], // done
+];
+const SQUASH_HOLD_FRAMES = 5; // first 5 keyframes = on platform
+const SQUASH_TOTAL = SQUASH_KEYFRAMES.length;
 
 export class GameScene {
   readonly container = new Container();
@@ -154,8 +185,10 @@ export class GameScene {
   }[] = [];
   private dustContainer = new Container();
 
-  // Squash/stretch
-  private squashTicks = 0; // >0 = squash (landing), <0 = stretch (launch)
+  // Squash/stretch — phased landing animation
+  private squashTicks = 0; // countdown: squash phase then stretch phase
+  private squashHoldY = 0; // world Y to hold player at during squash
+  private pendingJumpVy = 0; // jump velocity to apply after squash
   private lastFacing = 1; // 1 = right, -1 = left
 
   // Power-up pickup flash
@@ -170,6 +203,7 @@ export class GameScene {
 
   // State
   private highestPlatformY: number;
+  private lastPlatformWasBrittle = false;
   private platformCount = 0;
   private platformsPassed = 0;
   private highestPlayerY = Infinity;
@@ -203,9 +237,13 @@ export class GameScene {
     const generated = generatePlatforms(
       this.highestPlatformY,
       PLATFORM_COUNT_BUFFER,
+      undefined,
+      this.lastPlatformWasBrittle,
     );
     this.platforms.push(...generated);
     this.highestPlatformY = generated[generated.length - 1].y;
+    this.lastPlatformWasBrittle =
+      generated[generated.length - 1].type === "brittle";
     this.platformCount = generated.length;
 
     // Spawn power-ups first, then meatballs (excluding power-up platforms)
@@ -355,10 +393,20 @@ export class GameScene {
     if (this.gameOver) return;
     if (this.paused) return;
 
-    // Countdown before game starts — render the world but don't move
+    // Countdown before game starts — render the world but don't move player
     if (this.countdownTicks > 0) {
       this.countdownTicks--;
       this.animTick++;
+      // Update moving platforms so player can see which ones move
+      const countdownDifficulty = getDifficulty(this.platformsPassed);
+      this.platforms = updatePlatforms(
+        this.platforms,
+        countdownDifficulty.movingSpeedMultiplier,
+      );
+      this.powerUps = updatePowerUpPositions(this.powerUps, this.platforms);
+      this.meatballs = updateMeatballPositions(this.meatballs, this.platforms);
+      // Settle camera toward player so there's no jump when gameplay starts
+      this.camera = updateCamera(this.camera, this.player.y);
       const theme = getInterpolatedTheme(this.platformsPassed);
       this.parallax.update(this.camera.y);
       this.render(theme);
@@ -388,6 +436,7 @@ export class GameScene {
     }
 
     this.elapsedMs = Date.now() - this.startTime;
+    const previousX = this.player.x;
     const previousY = this.player.y;
 
     // Input
@@ -395,10 +444,13 @@ export class GameScene {
 
     // Active power-up effect
     if (this.activeEffect) {
+      const prevEffectType = this.activeEffect.type;
       const effectResult = tickEffect(this.player, this.activeEffect);
       this.player = effectResult.player;
       this.activeEffect = effectResult.effect;
-      if (!this.activeEffect) this.clearEffectLabel();
+      if (!this.activeEffect) {
+        this.clearEffectLabel();
+      }
       if (effectResult.spawnPlatform) this.spawnLasagnaPlatform();
     }
 
@@ -408,23 +460,52 @@ export class GameScene {
       this.platforms,
       difficulty.movingSpeedMultiplier,
     );
-    this.meatballs = updateMeatballPositions(this.meatballs, this.platforms);
+    // Skip meatball platform sync when magnet is active (they fly free)
+    if (this.activeEffect?.type !== "meatball_magnet") {
+      this.meatballs = updateMeatballPositions(this.meatballs, this.platforms);
+    }
     this.powerUps = updatePowerUpPositions(this.powerUps, this.platforms);
 
-    // Update player — chili pepper inverts controls
-    const inputX =
-      this.activeEffect?.type === "chili_pepper"
-        ? -this.input.inputX
-        : this.input.inputX;
-    this.player = updatePlayer(this.player, inputX);
+    // Squash hold — freeze player on platform, no physics
+    const inSquashHold = this.squashTicks > SQUASH_TOTAL - SQUASH_HOLD_FRAMES;
+    const isSquashTransition = !inSquashHold && this.pendingJumpVy !== 0;
 
-    // Platform collisions (skip during flight effects)
+    if (inSquashHold) {
+      // Fully frozen on platform during compression
+      this.player = { ...this.player, vy: 0, y: this.squashHoldY };
+    } else if (isSquashTransition) {
+      // Jump fires — apply stored velocity cleanly without gravity frame
+      let jumpVy = this.pendingJumpVy;
+      if (this.activeEffect?.type === "garlic_breath") {
+        jumpVy *= GARLIC_BREATH_JUMP_MULTIPLIER;
+      }
+      this.player = {
+        ...this.player,
+        vy: jumpVy,
+        y: this.squashHoldY,
+        isJumping: true,
+      };
+      this.pendingJumpVy = 0;
+    } else {
+      // Normal physics — chili pepper inverts controls
+      const inputX =
+        this.activeEffect?.type === "chili_pepper"
+          ? -this.input.inputX
+          : this.input.inputX;
+      this.player = updatePlayer(this.player, inputX);
+    }
+
+    // Platform collisions (skip during flight effects and squash hold)
     const isFlying =
       this.activeEffect?.type === "fusilli_tornado" ||
       this.activeEffect?.type === "ravioli_rocket" ||
       this.activeEffect?.type === "pepper_sneeze";
-    if (!isFlying) {
+    if (!isFlying && !inSquashHold && !isSquashTransition) {
       const allBreaking = this.activeEffect?.type === "soggy_noodle";
+      // Track already-broken platforms so we only spawn particles for NEW breaks
+      const alreadyBroken = new Set(
+        this.platforms.filter((p) => p.broken).map((p) => p.id),
+      );
       // Burnt toast shrinks collision hitboxes
       let collisionPlatforms = this.platforms;
       if (this.activeEffect?.type === "burnt_toast") {
@@ -439,6 +520,7 @@ export class GameScene {
         collisionPlatforms,
         previousY,
         allBreaking,
+        previousX,
       );
       this.player = collision.player;
       // If burnt toast, map platform updates back to original array
@@ -453,10 +535,14 @@ export class GameScene {
         this.platforms = collision.platforms;
       }
 
-      // Landing events: SFX, dust, squash, combos, close call, streak
+      // Landing — delay jump for squash animation
       if (collision.landed) {
+        this.pendingJumpVy = this.player.vy; // store the jump vy
+        this.squashHoldY = this.player.y; // hold at platform
+        this.player = { ...this.player, vy: 0 }; // freeze until squash ends
+        this.squashTicks = SQUASH_TOTAL; // start squash-stretch sequence
+
         playSfxJump();
-        this.squashTicks = 8; // squash on land
         this.spawnDustPuff(
           this.player.x + this.player.width / 2,
           this.player.y + this.player.height,
@@ -471,21 +557,25 @@ export class GameScene {
       }
       if (collision.platformBroke) {
         playSfxPlatformCrumble();
-        // Find the broken platform and spawn crumble particles
-        for (const p of collision.platforms) {
-          if (p.broken) this.spawnCrumbleParticles(p);
+        // Only spawn particles for platforms that JUST broke this frame
+        for (const p of this.platforms) {
+          if (p.broken && !alreadyBroken.has(p.id)) {
+            this.spawnCrumbleParticles(p);
+          }
         }
       }
     }
 
-    // Meatball magnet attraction
+    // Meatball magnet attraction — skip platform sync for attracted meatballs
     if (this.activeEffect?.type === "meatball_magnet") {
-      this.meatballs = attractMeatballs(
+      // Attract first, then only sync non-attracted meatballs to platforms
+      const attracted = attractMeatballs(
         this.player.x,
         this.player.y,
         this.player.width,
         this.meatballs,
       );
+      this.meatballs = attracted;
     }
 
     // Collect meatballs
@@ -495,6 +585,8 @@ export class GameScene {
       this.player.width,
       this.player.height,
       this.meatballs,
+      previousX,
+      previousY,
     );
     this.meatballs = meatballResult.meatballs;
     if (meatballResult.collected > 0) {
@@ -516,7 +608,12 @@ export class GameScene {
     this.scoreState = tickCombo(this.scoreState);
 
     // Collect power-ups
-    const puResult = collectPowerUps(this.player, this.powerUps);
+    const puResult = collectPowerUps(
+      this.player,
+      this.powerUps,
+      previousX,
+      previousY,
+    );
     this.powerUps = puResult.powerUps;
     if (puResult.collected) {
       this.scoreState = addPowerUpScore(this.scoreState);
@@ -605,12 +702,15 @@ export class GameScene {
     // Death check — start dying animation
     if (isPlayerDead(this.camera, this.player.y)) {
       this.isDying = true;
+      this.squashTicks = 0;
+      this.pendingJumpVy = 0;
       playSfxDeath();
       return;
     }
 
-    // Generate + prune
+    // Generate + prune + expire timed platforms
     this.maybeGeneratePlatforms();
+    this.expireLasagnaPlatforms();
     this.prune();
 
     // Render
@@ -627,9 +727,12 @@ export class GameScene {
         this.highestPlatformY,
         PLATFORM_COUNT_BUFFER,
         difficulty,
+        this.lastPlatformWasBrittle,
       );
       this.platforms.push(...generated);
       this.highestPlatformY = generated[generated.length - 1].y;
+      this.lastPlatformWasBrittle =
+        generated[generated.length - 1].type === "brittle";
       this.platformCount += generated.length;
 
       const hasUncollected = this.powerUps.some((pu) => !pu.collected);
@@ -653,18 +756,36 @@ export class GameScene {
   }
 
   private spawnLasagnaPlatform(): void {
-    // Spawn a lasagna-type platform just below the player for safe landing
+    // Spawn a lasagna platform ABOVE the player as a stepping stone
     const x = Math.max(
       20,
       Math.min(
         GAME_WIDTH - 120,
-        this.player.x - 40 + (Math.random() - 0.5) * 60,
+        this.player.x - 30 + (Math.random() - 0.5) * 80,
       ),
     );
-    const y = this.player.y + 80 + Math.random() * 40;
+    const y = this.player.y - 60 - Math.random() * 50;
     const platform = createPlatform(x, y, "lasagna");
+    platform.spawnTick = this.animTick;
     this.platforms.push(platform);
     this.syncPlatformGraphics();
+  }
+
+  /** Expire lasagna platforms 5 seconds after spawn. */
+  private expireLasagnaPlatforms(): void {
+    const ttl = 300; // 5 seconds at 60fps
+    for (let i = 0; i < this.platforms.length; i++) {
+      const p = this.platforms[i];
+      if (
+        p.type === "lasagna" &&
+        !p.broken &&
+        p.spawnTick != null &&
+        this.animTick - p.spawnTick > ttl
+      ) {
+        this.platforms[i] = { ...p, broken: true };
+        this.spawnCrumbleParticles(p);
+      }
+    }
   }
 
   private prune(): void {
@@ -708,132 +829,94 @@ export class GameScene {
         this.player.height,
         this.animTick,
       );
-      this.playerGfx.pivot.set(0, 0);
+      this.playerGfx.pivot.set(this.player.width / 2, 0);
       this.playerGfx.rotation = 0;
-      this.playerGfx.x = this.player.x;
+      this.playerGfx.x = this.player.x + this.player.width / 2;
       this.playerGfx.y = worldToScreen(this.player.y, camY);
 
       // Fire trail particles
       this.updateRocketParticles(camY);
       this.clearTornadoParticles();
     } else if (activeType === "fusilli_tornado") {
-      // Tornado mode — spin + dust
-      const effectColor = COLORS.powerups[activeType];
-      drawChef(
-        this.playerGfx,
-        this.player.width,
-        this.player.height,
-        effectColor,
-      );
+      drawTornadoSprite(this.playerGfx, this.player.width, this.player.height, this.animTick);
       this.playerGfx.pivot.set(this.player.width / 2, this.player.height / 2);
       this.playerGfx.x = this.player.x + this.player.width / 2;
-      this.playerGfx.y =
-        worldToScreen(this.player.y, camY) + this.player.height / 2;
+      this.playerGfx.y = worldToScreen(this.player.y, camY) + this.player.height / 2;
       this.playerGfx.rotation = this.animTick * 0.15;
       this.updateTornadoParticles(camY);
       this.clearRocketParticles();
     } else if (activeType === "pepper_sneeze") {
-      // Sneeze mode — screen shake + spice cloud
-      drawChef(
-        this.playerGfx,
-        this.player.width,
-        this.player.height,
-        COLORS.powerups["pepper_sneeze"],
-      );
-      this.playerGfx.pivot.set(0, 0);
+      drawPepperSprite(this.playerGfx, this.player.width, this.player.height, this.animTick);
+      this.playerGfx.pivot.set(this.player.width / 2, 0);
       this.playerGfx.rotation = 0;
-      // Screen shake
       const shakeX = (Math.random() - 0.5) * 6;
       const shakeY = (Math.random() - 0.5) * 4;
-      this.playerGfx.x = this.player.x + shakeX;
+      this.playerGfx.x = this.player.x + this.player.width / 2 + shakeX;
       this.playerGfx.y = worldToScreen(this.player.y, camY) + shakeY;
       this.updateSneezeParticles(camY);
       this.clearTornadoParticles();
       this.clearRocketParticles();
       this.clearLasagnaParticles();
-      this.clearSneezeParticles();
     } else if (activeType === "lasagna_layers") {
-      // Float mode — gentle bob + golden glow + floating cheese
-      drawChef(
-        this.playerGfx,
-        this.player.width,
-        this.player.height,
-        COLORS.powerups["lasagna_layers"],
-      );
+      drawLasagnaSprite(this.playerGfx, this.player.width, this.player.height, this.animTick);
       this.playerGfx.pivot.set(this.player.width / 2, this.player.height / 2);
       this.playerGfx.x = this.player.x + this.player.width / 2;
-      this.playerGfx.y =
-        worldToScreen(this.player.y, camY) + this.player.height / 2;
-      // Gentle wobble rotation
+      this.playerGfx.y = worldToScreen(this.player.y, camY) + this.player.height / 2;
       this.playerGfx.rotation = Math.sin(this.animTick * 0.06) * 0.15;
-      // Pulsing glow scale
       const floatPulse = 1.0 + Math.sin(this.animTick * 0.08) * 0.08;
       this.playerGfx.scale.set(floatPulse);
       this.updateLasagnaParticles(camY);
       this.clearTornadoParticles();
       this.clearRocketParticles();
     } else if (activeType === "chili_pepper") {
-      // Chili — red pulsing, angry wobble
-      const chiliPulse = Math.sin(this.animTick * 0.2) * 0.1;
-      drawChef(this.playerGfx, this.player.width, this.player.height, 0xff2200);
-      this.playerGfx.pivot.set(this.player.width / 2, this.player.height / 2);
-      this.playerGfx.x =
-        this.player.x +
-        this.player.width / 2 +
-        Math.sin(this.animTick * 0.4) * 2;
-      this.playerGfx.y =
-        worldToScreen(this.player.y, camY) + this.player.height / 2;
-      this.playerGfx.rotation = Math.sin(this.animTick * 0.3) * 0.1;
-      this.playerGfx.scale.set(1 + chiliPulse);
+      drawChiliSprite(this.playerGfx, this.player.width, this.player.height, this.animTick);
+      this.playerGfx.pivot.set(this.player.width / 2, 0);
+      this.playerGfx.x = this.player.x + this.player.width / 2 + Math.sin(this.animTick * 0.5) * 3;
+      this.playerGfx.y = worldToScreen(this.player.y, camY) + Math.cos(this.animTick * 0.7) * 2;
+      this.playerGfx.rotation = Math.sin(this.animTick * 0.4) * 0.1;
+      this.playerGfx.scale.set(1);
       this.clearAllPowerUpParticles();
     } else if (activeType === "soggy_noodle") {
-      // Soggy — blue tint, droopy/wobbly
-      drawChef(this.playerGfx, this.player.width, this.player.height, 0x5588cc);
-      this.playerGfx.pivot.set(this.player.width / 2, this.player.height / 2);
+      drawSoggySprite(this.playerGfx, this.player.width, this.player.height, this.animTick);
+      this.playerGfx.pivot.set(this.player.width / 2, 0);
       this.playerGfx.x = this.player.x + this.player.width / 2;
-      this.playerGfx.y =
-        worldToScreen(this.player.y, camY) + this.player.height / 2;
-      // Wobbly noodle squish
+      this.playerGfx.y = worldToScreen(this.player.y, camY);
       const squishX = 1.0 + Math.sin(this.animTick * 0.12) * 0.15;
-      const squishY = 1.0 - Math.sin(this.animTick * 0.12) * 0.1;
+      const squishY = 1.0 - Math.sin(this.animTick * 0.12) * 0.12;
       this.playerGfx.scale.set(squishX, squishY);
       this.playerGfx.rotation = Math.sin(this.animTick * 0.08) * 0.08;
       this.clearAllPowerUpParticles();
     } else if (activeType === "garlic_breath") {
-      // Garlic — green tint, swaying, stink cloud
-      drawChef(this.playerGfx, this.player.width, this.player.height, 0x88bb44);
-      this.playerGfx.pivot.set(0, 0);
-      this.playerGfx.rotation = 0;
-      this.playerGfx.x = this.player.x + Math.sin(this.animTick * 0.06) * 3;
-      this.playerGfx.y = worldToScreen(this.player.y, camY);
+      drawGarlicSprite(this.playerGfx, this.player.width, this.player.height, this.animTick);
+      this.playerGfx.pivot.set(this.player.width / 2, 0);
+      this.playerGfx.x = this.player.x + this.player.width / 2 + Math.sin(this.animTick * 0.08) * 4;
+      this.playerGfx.y = worldToScreen(this.player.y, camY) + Math.cos(this.animTick * 0.06) * 2;
+      this.playerGfx.rotation = Math.sin(this.animTick * 0.05) * 0.08;
       this.playerGfx.scale.set(1);
       this.clearAllPowerUpParticles();
     } else if (activeType === "burnt_toast") {
-      // Burnt toast — dark char tint, shrinking/flickering
-      const flicker = 0.85 + Math.random() * 0.15;
-      drawChef(this.playerGfx, this.player.width, this.player.height, 0x3d2b1f);
-      this.playerGfx.pivot.set(0, 0);
-      this.playerGfx.rotation = 0;
-      this.playerGfx.x = this.player.x;
-      this.playerGfx.y = worldToScreen(this.player.y, camY);
-      this.playerGfx.scale.set(flicker);
+      drawBurntToastSprite(this.playerGfx, this.player.width, this.player.height, this.animTick);
+      this.playerGfx.pivot.set(this.player.width / 2, 0);
+      this.playerGfx.x = this.player.x + this.player.width / 2 + (Math.random() - 0.5) * 2;
+      this.playerGfx.y = worldToScreen(this.player.y, camY) + (Math.random() - 0.5) * 1.5;
+      this.playerGfx.rotation = (Math.random() - 0.5) * 0.05;
+      this.playerGfx.scale.set(0.9 + Math.random() * 0.1);
       this.clearAllPowerUpParticles();
     } else if (activeType === "meatball_magnet") {
-      // Magnet — pink glow + pulsing aura
-      drawChef(this.playerGfx, this.player.width, this.player.height, 0xcc6699);
-      this.playerGfx.pivot.set(0, 0);
+      drawMagnetSprite(this.playerGfx, this.player.width, this.player.height, this.animTick);
+      this.playerGfx.pivot.set(this.player.width / 2, 0);
       this.playerGfx.rotation = 0;
-      this.playerGfx.x = this.player.x;
+      this.playerGfx.x = this.player.x + this.player.width / 2;
       this.playerGfx.y = worldToScreen(this.player.y, camY);
-      const magnetPulse = 1.0 + Math.sin(this.animTick * 0.1) * 0.06;
+      const magnetPulse = 1.0 + Math.sin(this.animTick * 0.12) * 0.08;
       this.playerGfx.scale.set(magnetPulse);
       this.clearAllPowerUpParticles();
     } else {
       // Normal or spaghetti spring flash
       drawChef(this.playerGfx, this.player.width, this.player.height);
-      this.playerGfx.pivot.set(0, 0);
+      this.playerGfx.pivot.set(this.player.width / 2, 0);
       this.playerGfx.rotation = 0;
-      this.playerGfx.x = this.player.x;
+      this.playerGfx.x = this.player.x + this.player.width / 2;
       this.playerGfx.y = worldToScreen(this.player.y, camY);
       this.playerGfx.scale.set(1);
 
@@ -859,34 +942,24 @@ export class GameScene {
       this.clearSneezeParticles();
     }
 
-    // Chef faces movement direction
+    // Sprite faces movement direction (skip for spinning tornado/lasagna)
     if (this.input.inputX > 0.1) this.lastFacing = 1;
     else if (this.input.inputX < -0.1) this.lastFacing = -1;
-    // Only flip when no special pivot is set (normal/negative effects)
     const activeT = this.activeEffect?.type;
-    if (
-      !activeT ||
-      activeT === "chili_pepper" ||
-      activeT === "soggy_noodle" ||
-      activeT === "garlic_breath" ||
-      activeT === "burnt_toast" ||
-      activeT === "meatball_magnet"
-    ) {
+    if (activeT !== "fusilli_tornado" && activeT !== "lasagna_layers") {
       this.playerGfx.scale.x =
         this.lastFacing * Math.abs(this.playerGfx.scale.x);
     }
 
-    // Squash/stretch on landing/launch
+    // Squash/stretch keyframe animation
     if (this.squashTicks > 0) {
-      const t = this.squashTicks / 8;
-      this.playerGfx.scale.y = 1 - t * 0.25; // squash: shorter
-      this.playerGfx.scale.x = this.lastFacing * (1 + t * 0.15); // wider
+      const frameIdx = SQUASH_TOTAL - this.squashTicks;
+      const [scaleY, scaleXFactor] = SQUASH_KEYFRAMES[frameIdx];
+      this.playerGfx.scale.y = scaleY;
+      this.playerGfx.scale.x = this.lastFacing * scaleXFactor;
+      // Pin feet to platform: offset Y so bottom edge stays fixed
+      this.playerGfx.y += PLAYER_HEIGHT * (1 - scaleY);
       this.squashTicks--;
-    } else if (this.squashTicks < 0) {
-      const t = -this.squashTicks / 6;
-      this.playerGfx.scale.y = 1 + t * 0.2; // stretch: taller
-      this.playerGfx.scale.x = this.lastFacing * (1 - t * 0.1); // narrower
-      this.squashTicks++;
     }
 
     // Pickup flash overlay

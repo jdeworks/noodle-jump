@@ -41,8 +41,8 @@ export const MEATBALL_FLOAT_HEIGHT = 40; // pixels above the platform
 // ── Power-ups ───────────────────────────────────────────────────────────────
 export const POWERUP_SIZE = 20;
 export const POWERUP_FLOAT_HEIGHT = 35;
-export const POWERUP_SPAWN_CHANCE = DEBUG_MODE ? 0.4 : 0.08; // 40% in debug, 8% in prod
-export const POWERUP_COOLDOWN = 5; // skip N platforms after a spawn before allowing another
+export const POWERUP_SPAWN_CHANCE = DEBUG_MODE ? 0.4 : 0.15; // 40% in debug, 15% in prod
+export const POWERUP_COOLDOWN = 3; // skip N platforms after a spawn before allowing another
 export const POWERUP_POINTS = 100;
 
 // Power-up effect values
@@ -69,10 +69,12 @@ export const PEPPER_SNEEZE_DURATION = 30; // ~0.5 seconds of upward force
 export const NEGATIVE_EFFECT_DURATION = 300;
 // Burnt Toast: platform width multiplier during effect
 export const BURNT_TOAST_SHRINK = 0.5;
+// Garlic Breath: jump velocity multiplier (weaker bounces)
+export const GARLIC_BREATH_JUMP_MULTIPLIER = 0.6;
 
-// Meatball Magnet: attracts nearby meatballs
+// Meatball Magnet: attracts all visible meatballs on screen
 export const MEATBALL_MAGNET_DURATION = 300;
-export const MEATBALL_MAGNET_RADIUS = 120;
+export const MEATBALL_MAGNET_RADIUS = 800;
 
 // ── Combo / Close Call ─────────────────────────────────────────────────────
 export const COMBO_TIMEOUT_TICKS = 120; // 2 seconds at 60fps
@@ -83,13 +85,13 @@ export const LANDING_STREAK_INTERVAL = 5; // every N consecutive landings
 export const LANDING_STREAK_BONUS = 500;
 
 // ── Difficulty scaling ─────────────────────────────────────────────────────
-export const DIFFICULTY_RAMP_PLATFORMS = 500; // platforms to reach max difficulty
-export const DIFFICULTY_PLATFORM_WIDTH_MIN_HARD = 55;
-export const DIFFICULTY_PLATFORM_WIDTH_MAX_HARD = 100;
-export const DIFFICULTY_GAP_MAX_HARD = 160;
-export const DIFFICULTY_NEGATIVE_CHANCE_HARD = 0.55;
-export const DIFFICULTY_BREAK_CHANCE_HARD = 0.18;
-export const DIFFICULTY_BRITTLE_CHANCE_HARD = 0.14;
+export const DIFFICULTY_RAMP_PLATFORMS = 800; // platforms to reach max difficulty
+export const DIFFICULTY_PLATFORM_WIDTH_MIN_HARD = 50;
+export const DIFFICULTY_PLATFORM_WIDTH_MAX_HARD = 85;
+export const DIFFICULTY_GAP_MAX_HARD = 170;
+export const DIFFICULTY_NEGATIVE_CHANCE_HARD = 0.6;
+export const DIFFICULTY_BREAK_CHANCE_HARD = 0.75; // late scene 3: nearly all one-time platforms
+export const DIFFICULTY_BRITTLE_CHANCE_HARD = 0.12;
 
 // ── Death animation ────────────────────────────────────────────────────────
 export const DEATH_ANIMATION_TICKS = 60;

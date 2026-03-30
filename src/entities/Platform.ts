@@ -43,6 +43,8 @@ export interface PlatformState {
   id: number;
   originX: number;
   moveDirection: number;
+  /** Tick when this platform was spawned (used for timed self-destruct). */
+  spawnTick?: number;
 }
 
 let nextPlatformId = 0;
@@ -137,10 +139,11 @@ export function generatePlatforms(
   highestY: number,
   count: number,
   difficulty?: DifficultyParams,
+  lastWasBrittle = false,
 ): PlatformState[] {
   const platforms: PlatformState[] = [];
   let y = highestY;
-  let lastWasUnlandable = false;
+  let lastWasUnlandable = lastWasBrittle;
 
   const widthMin = difficulty?.platformWidthMin ?? PLATFORM_WIDTH_MIN;
   const widthMax = difficulty?.platformWidthMax ?? PLATFORM_WIDTH_MAX;
@@ -158,11 +161,12 @@ export function generatePlatforms(
 
     let type = rollType(difficulty);
 
-    if (lastWasUnlandable && !isSolid(type)) {
+    // Never two consecutive fall-through (brittle) platforms
+    if (lastWasUnlandable && type === "brittle") {
       type = "static";
     }
 
-    lastWasUnlandable = !isSolid(type);
+    lastWasUnlandable = type === "brittle";
 
     platforms.push({
       x,
