@@ -7,7 +7,7 @@ All three test tiers are active. All hooks enforced. Use for features being merg
 **Tests:**
 - Tier 1: Feature tests — required for all exported symbols
 - Tier 2: Architecture tests — file size, complexity, dead code, LOC budget
-- Tier 3: LLM integration tests — if project makes LLM calls (see `docs/llm-testing.md`)
+- Tier 3: LLM integration tests — if project makes LLM calls (see `.kit/llm-testing.md`)
 
 **Hooks:**
 - PostToolUse: health warning + auto-format after every file edit
@@ -36,7 +36,7 @@ time spent re-deriving context in future sessions.
 
 ## Switching to lean mid-session
 
-State "switching to lean mode" and read `docs/modules/lean.md`.
+State "switching to lean mode" and read `.kit/modules/lean.md`.
 Lean mode is appropriate for: exploring a new approach, writing a spike, quick fixes
 where you're certain the change is correct and small.
 

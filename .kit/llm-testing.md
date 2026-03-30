@@ -143,7 +143,7 @@ Cost tiers:
 
 ## Rule 5: LLM usage documentation
 
-Maintain a `docs/llm-usage.md` file that describes every LLM call in plain English.
+Maintain a `.kit/llm-usage.md` file that describes every LLM call in plain English.
 This is the file another AI tool (ChatGPT, Gemini, a future agent) reads to understand
 your LLM integration without reading source code.
 

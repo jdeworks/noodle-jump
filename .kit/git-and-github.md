@@ -198,7 +198,7 @@ coverage/         # Test coverage reports
 
 ## GitHub Actions
 
-See the variant-specific `docs/cicd.md` for CI/CD setup. General rules:
+See the variant-specific `.kit/cicd.md` for CI/CD setup. General rules:
 - CI should run on every PR and push to main
 - Keep CI under 5 minutes for PRs
 - Use caching (`actions/cache` or `setup-node/cache: npm`) to speed up installs

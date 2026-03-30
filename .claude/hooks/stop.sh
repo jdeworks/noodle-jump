@@ -40,7 +40,7 @@ tests_added: <test files>
 reason: <one sentence>
 health_snapshot: LOC=<n>, tests=<n>, complexity=ok|warn|fail
 
-See docs/changelog-protocol.md for details.
+See .kit/changelog-protocol.md for details.
 ---"
 
   escaped=$(printf '%s' "$MSG" | python3 -c "import sys,json; sys.stdout.write(json.dumps(sys.stdin.read()))" 2>/dev/null || printf '"%s"' "$MSG")

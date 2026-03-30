@@ -19,7 +19,7 @@ how to manage context deliberately so that doesn't happen.
 
 The PreCompact hook runs this automatically, but you can trigger it manually:
 
-1. **Write the CHANGES.md entry** for everything done this session (see `docs/changelog-protocol.md`)
+1. **Write the CHANGES.md entry** for everything done this session (see `.kit/changelog-protocol.md`)
 2. **Note any open questions or decisions** that the next context window needs to know
 3. **Run `make health`** and note the result in the CHANGES.md health_snapshot
 4. **Write next steps** — what should the agent do first when it picks up again?
@@ -56,9 +56,9 @@ If you need to compress mid-session without triggering the hook:
 
 For features that will take many sessions:
 
-1. Write a spec before starting (see `docs/research-planning.md`)
-2. The spec lives in `docs/features/<feature-name>.md` — not in context
-3. At the start of each session, tell the agent: *"Read docs/features/<feature-name>.md
+1. Write a spec before starting (see `.kit/research-planning.md`)
+2. The spec lives in `.kit/features/<feature-name>.md` — not in context
+3. At the start of each session, tell the agent: *"Read .kit/features/<feature-name>.md
    and SESSION_SUMMARY.md before we continue."*
 4. The agent doesn't need to re-derive the full context — it just needs the delta
 
@@ -74,4 +74,4 @@ AGENTS.md loads into every session. If it's too long, the agent's instruction ad
 - Code snippets or examples
 - Anything that only applies to one kind of task
 
-Put those in `docs/` or `docs/features/` and reference them from AGENTS.md's doc table.
+Put those in `.kit/` or `.kit/features/` and reference them from AGENTS.md's doc table.

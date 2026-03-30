@@ -5,7 +5,7 @@ Declare your mode at the start of every session:
 - **full** — all three test tiers active, all hooks enforced, CHANGES.md required. Use for features being merged.
 - **lean** — feature tests only, reduced hooks, CHANGES.md optional. Use for spikes and prototypes.
 
-Default: **full**. To switch, state "mode: lean" at session start or read `docs/modules/lean.md`.
+Default: **full**. To switch, state "mode: lean" at session start or read `.kit/modules/lean.md`.
 
 ---
 
@@ -30,21 +30,23 @@ make help       # list all targets
 
 ---
 
+<!-- kit:managed:start — do not edit this section, it is updated by cli/update.sh -->
+
 ## Reference docs — read on demand
 
 Read these when the situation calls for it. Do not load all of them upfront.
 
 | Doc | Read when |
 |-----|-----------|
-| `docs/code-health.md` | A file is getting large, complex, or you're unsure about structure |
-| `docs/testing.md` | Writing or reviewing tests; starting a new feature |
-| `docs/llm-testing.md` | Adding or modifying any code that calls an LLM |
-| `docs/changelog-protocol.md` | End of session, before compressing context, or after removing symbols |
-| `docs/context-management.md` | Context is filling up or you're about to compact |
-| `docs/research-planning.md` | Starting a non-trivial feature; unsure about architecture |
-| `docs/modules/full.md` | Switching to full mode mid-session |
-| `docs/modules/lean.md` | Switching to lean mode mid-session |
-| `docs/git-and-github.md` | Commit hygiene, branching, pre-commit hooks, PR best practices |
+| `.kit/code-health.md` | A file is getting large, complex, or you're unsure about structure |
+| `.kit/testing.md` | Writing or reviewing tests; starting a new feature |
+| `.kit/llm-testing.md` | Adding or modifying any code that calls an LLM |
+| `.kit/changelog-protocol.md` | End of session, before compressing context, or after removing symbols |
+| `.kit/context-management.md` | Context is filling up or you're about to compact |
+| `.kit/research-planning.md` | Starting a non-trivial feature; unsure about architecture |
+| `.kit/modules/full.md` | Switching to full mode mid-session |
+| `.kit/modules/lean.md` | Switching to lean mode mid-session |
+| `.kit/git-and-github.md` | Commit hygiene, branching, pre-commit hooks, PR best practices |
 
 ---
 
@@ -73,11 +75,12 @@ Read these when the situation calls for it. Do not load all of them upfront.
    ```
 
    **Mandatory fields:** `symbols_removed` when you delete code. `tests_added` for `type: fix`.
-   **Never edit past entries.** Append only. See `docs/changelog-protocol.md` for edge cases.
+   **Never edit past entries.** Append only. See `.kit/changelog-protocol.md` for edge cases.
+
 4. **Never leave `console.log` in production files.** Use a logger or remove before committing.
 5. **Read the relevant doc before starting unfamiliar work** — don't guess at conventions.
 6. **Every fix gets a regression test.** When you fix a bug, add a test that would have caught it. Log it in CHANGES.md with `tests_added`.
-7. **Learn from CHANGES.md.** At session start, check recent entries for patterns — areas with repeated fixes need better test coverage. See `docs/testing.md` § Regression tests.
+7. **Learn from CHANGES.md.** At session start, check recent entries for patterns — areas with repeated fixes need better test coverage. See `.kit/testing.md` § Regression tests.
 
 ---
 
@@ -91,6 +94,7 @@ The rules above apply to all agents whether hooks exist or not.
 
 ---
 
+<!-- kit:managed:end -->
 ## Tool-specific entry points
 - Cursor: `.cursor/rules/main.mdc`
 - Windsurf: `.windsurf/rules/main.md`
@@ -110,7 +114,7 @@ Pick a starter when composing your project — each gives you a working hello-wo
 
 Then: `npm install && npm run dev`
 
-See `docs/stack-choice.md` for a full comparison.
+See `.kit/stack-choice.md` for a full comparison.
 
 ---
 
@@ -118,11 +122,11 @@ See `docs/stack-choice.md` for a full comparison.
 
 | Doc | Read when |
 |-----|-----------|
-| `docs/game-architecture.md` | Structuring game code — scenes, entities, systems |
-| `docs/asset-management.md` | Loading, organizing, and optimizing game assets |
-| `docs/game-loop.md` | Understanding and implementing the update/render cycle |
-| `docs/testing-games.md` | Testing game logic (not rendering) |
-| `docs/stack-choice.md` | Choosing between Phaser, PixiJS, Three.js, or other engines |
+| `.kit/game-architecture.md` | Structuring game code — scenes, entities, systems |
+| `.kit/asset-management.md` | Loading, organizing, and optimizing game assets |
+| `.kit/game-loop.md` | Understanding and implementing the update/render cycle |
+| `.kit/testing-games.md` | Testing game logic (not rendering) |
+| `.kit/stack-choice.md` | Choosing between Phaser, PixiJS, Three.js, or other engines |
 
 ---
 
@@ -155,4 +159,4 @@ We need a concrete example to show patterns. We chose Phaser because:
 
 **This is a recommendation, not a requirement.** PixiJS is better for pure rendering without
 game framework overhead. Three.js/Babylon.js are better for 3D.
-See `docs/stack-choice.md` for guidance.
+See `.kit/stack-choice.md` for guidance.

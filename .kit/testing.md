@@ -30,7 +30,7 @@ Test what the code does. Every exported function, route, schema, and utility nee
 ## Tier 2 — Architecture tests (full mode)
 
 Test how the code is shaped. These run as part of `make health` and enforce the rules in
-`docs/code-health.md` automatically.
+`.kit/code-health.md` automatically.
 
 **What's checked:**
 - File size within limits (warn at soft, fail at hard)
@@ -72,7 +72,7 @@ Keep architecture tests fast — they should run in under 2 seconds total.
 
 ## Tier 3 — LLM integration tests (full mode, when project uses LLMs)
 
-See `docs/llm-testing.md` for the full guide. Summary:
+See `.kit/llm-testing.md` for the full guide. Summary:
 
 - **Mock all LLM calls in unit/integration tests** — never hit a real API in the test suite
 - **Prompt shape tests** — assert your prompt template contains required elements

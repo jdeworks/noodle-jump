@@ -23,7 +23,7 @@ Skip the spec for:
 
 ## Spec format
 
-Create `docs/features/<feature-name>.md`:
+Create `.kit/features/<feature-name>.md`:
 
 ```md
 # Feature: <name>
@@ -61,7 +61,7 @@ Create `docs/features/<feature-name>.md`:
 
 1. **Read** related existing files before writing anything
 2. **Check CHANGES.md** — has this area been touched recently? Any pending dead code?
-3. **Write the spec** in `docs/features/<name>.md`
+3. **Write the spec** in `.kit/features/<name>.md`
 4. **Review open questions** — resolve them before starting implementation
 5. **Implement** with the spec open, updating it as decisions are made
 6. **Update CHANGES.md** at session end
@@ -80,7 +80,7 @@ Run it on the feature before writing the spec:
 1. Describe the feature in think-tank
 2. Answer its questions about architecture, constraints, and trade-offs
 3. Export the resulting plan as Markdown
-4. Use that as the basis for your `docs/features/<name>.md` spec
+4. Use that as the basis for your `.kit/features/<name>.md` spec
 
 This is a soft recommendation, not a hard dependency. Small features don't need it.
 
