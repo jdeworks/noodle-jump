@@ -18,7 +18,8 @@ echo "==> Analyzing $CHANGES_FILE for dead code signals..."
 
 # ── Extract all symbols_removed entries ──────────────────────────────────────
 mapfile -t removed_symbols < <(
-  grep '^symbols_removed:' "$CHANGES_FILE" \
+  sed -n '/<!-- Entries below/,$p' "$CHANGES_FILE" \
+    | grep '^symbols_removed:' \
     | sed 's/^symbols_removed: //' \
     | tr ',' '\n' \
     | sed 's/^[[:space:]]*//' \
@@ -58,10 +59,10 @@ fi
 echo ""
 echo "==> Extracting last $MAX_SESSIONS sessions for SESSION_SUMMARY..."
 
-recent_sessions=$(grep -A6 '^## \[' "$CHANGES_FILE" | tail -n "$((MAX_SESSIONS * 8))" || echo "(none)")
+recent_sessions=$(sed -n '/<!-- Entries below/,$p' "$CHANGES_FILE" | grep -A6 '^## \[' | tail -n "$((MAX_SESSIONS * 8))" || echo "(none)")
 
 # ── Write SESSION_SUMMARY.md ─────────────────────────────────────────────────
-health_snapshot=$(grep 'health_snapshot:' "$CHANGES_FILE" | tail -1 | sed 's/health_snapshot: //' || echo "unknown")
+health_snapshot=$(sed -n '/<!-- Entries below/,$p' "$CHANGES_FILE" | grep 'health_snapshot:' | tail -1 | sed 's/health_snapshot: //' || echo "unknown")
 
 cat > "$SUMMARY_FILE" << EOF
 # SESSION_SUMMARY.md

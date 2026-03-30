@@ -45,8 +45,6 @@ Read these when the situation calls for it. Do not load all of them upfront.
 | `docs/modules/full.md` | Switching to full mode mid-session |
 | `docs/modules/lean.md` | Switching to lean mode mid-session |
 | `docs/git-and-github.md` | Commit hygiene, branching, pre-commit hooks, PR best practices |
-| `docs/architecture.md` | Understanding the base + variant + CLI layering (for contributors) |
-| `docs/bring-your-own-stack.md` | Using a framework the kit doesn't have examples for |
 
 ---
 
@@ -54,7 +52,28 @@ Read these when the situation calls for it. Do not load all of them upfront.
 
 1. **No feature is done without tests.** At minimum: one passing test per exported function.
 2. **Run `make check` before declaring work complete.** Fix all failures before stopping.
-3. **CHANGES.md start/end tracking.** Write a "started" entry when you begin work. Write a "completed" entry when done. In full mode, the stop hook blocks until you complete it. See `docs/changelog-protocol.md`.
+3. **CHANGES.md session lifecycle.** Every session MUST have both a started and completed entry.
+
+   **a) FIRST, before writing any code,** append a started entry to CHANGES.md:
+   ```
+   ## [YYYY-MM-DDTHH:MM] session-<id> | status: started | mode: full|lean | type: add|fix|refactor|chore
+   intent: One line describing what this session will do
+   ```
+   Generate a 4-character alphanumeric session ID (e.g. `a1b2`). Do this before any other work.
+
+   **b) LAST, when work is complete,** append a completed entry with the same session ID:
+   ```
+   ## [YYYY-MM-DDTHH:MM] session-<id> | status: completed | mode: full|lean | type: add|fix|refactor|chore
+   files_touched: <files you changed>
+   symbols_added: <new exports, or (none)>
+   symbols_removed: <deleted exports, or (none)>
+   tests_added: <test files, or (none)>
+   reason: One sentence summary
+   health_snapshot: LOC=<n>, tests=<n>, complexity=ok|warn|fail
+   ```
+
+   **Mandatory fields:** `symbols_removed` when you delete code. `tests_added` for `type: fix`.
+   **Never edit past entries.** Append only. See `docs/changelog-protocol.md` for edge cases.
 4. **Never leave `console.log` in production files.** Use a logger or remove before committing.
 5. **Read the relevant doc before starting unfamiliar work** — don't guess at conventions.
 6. **Every fix gets a regression test.** When you fix a bug, add a test that would have caught it. Log it in CHANGES.md with `tests_added`.
@@ -62,12 +81,13 @@ Read these when the situation calls for it. Do not load all of them upfront.
 
 ---
 
-## Hooks (Claude Code)
-Hooks run automatically via `.claude/settings.json`:
+## Hooks (Claude Code — supplementary)
+Hooks run automatically via `.claude/settings.json` but are **helpers, not the enforcement**.
+The rules above apply to all agents whether hooks exist or not.
 - After every file edit: health check warning + auto-format
 - Before context compact: changelog analysis + session summary written
-- On session start: session summary + abandoned session detection + CHANGES.md prompt
-- On stop: prompt to write CHANGES.md entry
+- On session start: session summary + abandoned session detection
+- On stop: CHANGES.md completion reminder
 
 ---
 
