@@ -1,357 +1,806 @@
-import { Application, Container, Graphics, Text, TextStyle } from 'pixi.js'
-import { GameScene } from './scenes/GameScene'
-import { GAME_WIDTH, GAME_HEIGHT, COLORS, DEBUG_MODE } from './config/constants'
-import { FireworkDisplay } from './rendering/fireworks'
+import { Application, Container, Graphics, Text, TextStyle } from "pixi.js";
+import { GameScene } from "./scenes/GameScene";
+import { GAME_WIDTH, GAME_HEIGHT, COLORS } from "./config/constants";
+import { FireworkDisplay } from "./rendering/fireworks";
+import { loadHighScore } from "./systems/Score";
+import { ParallaxBackground } from "./systems/Parallax";
+import { createZoneState, getInterpolatedTheme } from "./systems/Zone";
+import {
+  initAudio,
+  playMusic,
+  stopMusic,
+  playSfxHighScore,
+  isSfxEnabled,
+  isMusicEnabled,
+  setSfxEnabled,
+  setMusicEnabled,
+} from "./systems/Audio";
 
-// Lock to portrait via Screen Orientation API (Android Chrome; Safari ignores this)
-// Lock to portrait via Screen Orientation API (Android Chrome; Safari ignores this)
-const orient = screen.orientation as { lock?: (o: string) => Promise<void> } | undefined
-orient?.lock?.('portrait').catch(() => {
-  // Silently fail — CSS fallback handles it
-})
+// Lock to portrait via Screen Orientation API
+const orient = screen.orientation as
+  | { lock?: (o: string) => Promise<void> }
+  | undefined;
+orient?.lock?.("portrait").catch(() => {});
 
 function formatTime(seconds: number): string {
-  const m = Math.floor(seconds / 60)
-  const s = seconds % 60
-  return `${m}:${s.toString().padStart(2, '0')}`
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
 async function main() {
-  const app = new Application()
+  const app = new Application();
   await app.init({
     width: GAME_WIDTH,
     height: GAME_HEIGHT,
-    background: '#fff8e7',
+    background: "#fff8e7",
     antialias: false,
     resolution: window.devicePixelRatio || 1,
     autoDensity: true,
-  })
+  });
 
-  const container = document.getElementById('game')
-  if (!container) throw new Error('Missing #game element')
-  container.appendChild(app.canvas)
+  const container = document.getElementById("game");
+  if (!container) throw new Error("Missing #game element");
+  container.appendChild(app.canvas);
 
-  const scene = new GameScene()
-  scene.initInput(app.canvas)
-  app.stage.addChild(scene.container)
+  showTitleScreen(app);
+}
+
+// ── Title Screen ──────────────────────────────────────────────────────────
+
+function showTitleScreen(app: Application): void {
+  const titleContainer = new Container();
+  app.stage.addChild(titleContainer);
+
+  // Scrolling parallax background (zone 1 theme)
+  const parallax = new ParallaxBackground();
+  titleContainer.addChild(parallax.container);
+  const zoneState = createZoneState();
+  const theme = getInterpolatedTheme(0);
+  parallax.applyTheme(theme, zoneState.currentZone);
+
+  // Set background color
+  const bgHex = "#" + theme.background.toString(16).padStart(6, "0");
+  document.body.style.backgroundColor = bgHex;
+
+  // Dim overlay so text is readable
+  const dimOverlay = new Graphics();
+  dimOverlay.rect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+  dimOverlay.fill({ color: 0x000000, alpha: 0.25 });
+  titleContainer.addChild(dimOverlay);
+
+  // Title text
+  const titleText = new Text({
+    text: "NOODLE\nJUMP",
+    style: new TextStyle({
+      fontFamily: "monospace",
+      fontSize: 48,
+      fill: "#e94560",
+      fontWeight: "bold",
+      align: "center",
+      lineHeight: 52,
+      stroke: { color: "#000000", width: 4 },
+    }),
+  });
+  titleText.x = GAME_WIDTH / 2;
+  titleText.y = GAME_HEIGHT * 0.2;
+  titleText.anchor.set(0.5, 0);
+  titleContainer.addChild(titleText);
+
+  // Subtitle
+  const subtitleText = new Text({
+    text: "A pasta-themed endless jumper",
+    style: new TextStyle({
+      fontFamily: "monospace",
+      fontSize: 12,
+      fill: "#d4a574",
+      align: "center",
+    }),
+  });
+  subtitleText.x = GAME_WIDTH / 2;
+  subtitleText.y = GAME_HEIGHT * 0.2 + 115;
+  subtitleText.anchor.set(0.5, 0);
+  titleContainer.addChild(subtitleText);
+
+  // High score
+  const highScore = loadHighScore();
+  if (highScore > 0) {
+    const hsText = new Text({
+      text: `Best: ${highScore}`,
+      style: new TextStyle({
+        fontFamily: "monospace",
+        fontSize: 18,
+        fill: "#ffdd44",
+        fontWeight: "bold",
+        stroke: { color: "#000000", width: 2 },
+      }),
+    });
+    hsText.x = GAME_WIDTH / 2;
+    hsText.y = GAME_HEIGHT * 0.52;
+    hsText.anchor.set(0.5, 0.5);
+    titleContainer.addChild(hsText);
+  }
+
+  // "Tap to play" prompt
+  const promptText = new Text({
+    text: "Tap to play",
+    style: new TextStyle({
+      fontFamily: "monospace",
+      fontSize: 20,
+      fill: "#ffffff",
+      fontWeight: "bold",
+      stroke: { color: "#000000", width: 2 },
+    }),
+  });
+  promptText.x = GAME_WIDTH / 2;
+  promptText.y = GAME_HEIGHT * 0.65;
+  promptText.anchor.set(0.5, 0.5);
+  titleContainer.addChild(promptText);
+
+  // Keyboard hint for desktop
+  const kbHint = new Text({
+    text: "Arrow keys / WASD to move",
+    style: new TextStyle({
+      fontFamily: "monospace",
+      fontSize: 11,
+      fill: "#999999",
+    }),
+  });
+  kbHint.x = GAME_WIDTH / 2;
+  kbHint.y = GAME_HEIGHT * 0.72;
+  kbHint.anchor.set(0.5, 0);
+  titleContainer.addChild(kbHint);
+
+  // Settings toggles — prominent panel
+  const settingsContainer = createSettingsToggles();
+  settingsContainer.y = GAME_HEIGHT * 0.78;
+  titleContainer.addChild(settingsContainer);
+
+  // Animate parallax + pulse prompt
+  let scrollY = 0;
+  const titleTicker = () => {
+    scrollY -= 4;
+    parallax.update(scrollY);
+    const pulse = 0.85 + Math.sin(Date.now() * 0.004) * 0.15;
+    promptText.alpha = pulse;
+  };
+  app.ticker.add(titleTicker);
+
+  // Start game on input — ignore taps on the settings area
+  let settingsClicked = false;
+  const settingsBounds = {
+    left: GAME_WIDTH / 2 - 110,
+    right: GAME_WIDTH / 2 + 110,
+    top: GAME_HEIGHT * 0.78 - 8,
+    bottom: GAME_HEIGHT * 0.78 + 57,
+  };
+
+  const isInSettings = (e: MouseEvent | TouchEvent): boolean => {
+    const rect = app.canvas.getBoundingClientRect();
+    const scaleX = GAME_WIDTH / rect.width;
+    const scaleY = GAME_HEIGHT / rect.height;
+    let clientX: number, clientY: number;
+    if ("touches" in e && e.touches.length > 0) {
+      clientX = e.touches[0].clientX;
+      clientY = e.touches[0].clientY;
+    } else if ("clientX" in e) {
+      clientX = e.clientX;
+      clientY = e.clientY;
+    } else {
+      return false;
+    }
+    const x = (clientX - rect.left) * scaleX;
+    const y = (clientY - rect.top) * scaleY;
+    return (
+      x >= settingsBounds.left &&
+      x <= settingsBounds.right &&
+      y >= settingsBounds.top &&
+      y <= settingsBounds.bottom
+    );
+  };
+
+  const startGame = async (e: Event) => {
+    if (e instanceof MouseEvent || e instanceof TouchEvent) {
+      if (isInSettings(e)) return;
+    }
+
+    app.canvas.removeEventListener("click", startGame);
+    app.canvas.removeEventListener("touchstart", startGame);
+    window.removeEventListener("keydown", startGame);
+
+    initAudio();
+    playMusic(0);
+
+    app.ticker.remove(titleTicker);
+    parallax.destroy();
+    app.stage.removeChild(titleContainer);
+    titleContainer.destroy({ children: true });
+
+    await launchGame(app);
+  };
+
+  app.canvas.addEventListener("click", startGame);
+  app.canvas.addEventListener("touchstart", startGame);
+  window.addEventListener("keydown", startGame);
+}
+
+// ── Game Launch ───────────────────────────────────────────────────────────
+
+async function launchGame(app: Application): Promise<void> {
+  const scene = new GameScene();
+  scene.initInput(app.canvas);
+  app.stage.addChild(scene.container);
 
   // ── HUD ──────────────────────────────────────────────────────────────────
-  const hudContainer = new Container()
-  app.stage.addChild(hudContainer)
+  const hudContainer = new Container();
+  app.stage.addChild(hudContainer);
 
-  // Semi-transparent background bar
-  const hudBg = new Graphics()
-  hudBg.rect(0, 0, GAME_WIDTH, DEBUG_MODE ? 80 : 36)
-  hudBg.fill({ color: 0x000000, alpha: DEBUG_MODE ? 0.5 : 0.3 })
-  hudContainer.addChild(hudBg)
+  const hudBg = new Graphics();
+  hudBg.rect(0, 0, GAME_WIDTH, 36);
+  hudBg.fill({ color: 0x000000, alpha: 0.3 });
+  hudContainer.addChild(hudBg);
 
   const hudStyle = new TextStyle({
-    fontFamily: 'monospace',
+    fontFamily: "monospace",
     fontSize: 14,
-    fill: '#ffffff',
-    fontWeight: 'bold',
-  })
+    fill: "#ffffff",
+    fontWeight: "bold",
+  });
 
-  const timerText = new Text({ text: '0:00', style: hudStyle })
-  timerText.x = 10
-  timerText.y = 9
+  const timerText = new Text({ text: "0:00", style: hudStyle });
+  timerText.x = 10;
+  timerText.y = 9;
 
-  const heightText = new Text({ text: 'H: 0', style: hudStyle })
-  heightText.x = GAME_WIDTH / 2
-  heightText.anchor.set(0.5, 0)
-  heightText.y = 9
+  const heightText = new Text({ text: "H: 0", style: hudStyle });
+  heightText.x = GAME_WIDTH / 2;
+  heightText.anchor.set(0.5, 0);
+  heightText.y = 9;
 
-  const scoreText = new Text({ text: '0', style: hudStyle })
-  scoreText.x = GAME_WIDTH - 10
-  scoreText.anchor.set(1, 0)
-  scoreText.y = 9
+  const scoreText = new Text({ text: "0", style: hudStyle });
+  scoreText.x = GAME_WIDTH - 10;
+  scoreText.anchor.set(1, 0);
+  scoreText.y = 9;
 
-  // Debug: sensor readout (only in debug mode)
-  const debugText = new Text({ text: '', style: new TextStyle({
-    fontFamily: 'monospace',
-    fontSize: 13,
-    fill: '#ffff00',
-    lineHeight: 18,
-  }) })
-  debugText.x = 10
-  debugText.y = 30
-  debugText.visible = DEBUG_MODE
+  // Pause button
+  const pauseBtn = new Text({
+    text: "II",
+    style: new TextStyle({
+      fontFamily: "monospace",
+      fontSize: 16,
+      fill: "#ffffff",
+      fontWeight: "bold",
+    }),
+  });
+  pauseBtn.x = GAME_WIDTH - 10;
+  pauseBtn.y = 26;
+  pauseBtn.anchor.set(1, 0);
+  pauseBtn.eventMode = "static";
+  pauseBtn.cursor = "pointer";
+  pauseBtn.visible = true;
 
-  const debugBar = new Graphics()
-  debugBar.visible = DEBUG_MODE
-  hudContainer.addChild(timerText, heightText, scoreText, debugText, debugBar)
+  // Zone progress bar
+  const zoneBar = new Graphics();
+  const zoneLabel = new Text({
+    text: "",
+    style: new TextStyle({
+      fontFamily: "monospace",
+      fontSize: 11,
+      fill: "#ffffff",
+      fontWeight: "bold",
+    }),
+  });
+  zoneLabel.x = GAME_WIDTH / 2;
+  zoneLabel.y = 36;
+  zoneLabel.anchor.set(0.5, 0);
 
-  // ── Fullscreen on first tap (hides browser URL bar) ───────────────────────
-  // Note: iOS Safari does NOT support Fullscreen API — only works when
-  // added to home screen via apple-mobile-web-app-capable meta tag.
-  // Android Chrome: works via user gesture.
+  hudContainer.addChild(
+    timerText,
+    heightText,
+    scoreText,
+    pauseBtn,
+    zoneBar,
+    zoneLabel,
+  );
+
+  // ── Fullscreen on first tap ──────────────────────────────────────────────
   const requestFullscreen = () => {
     const doc = document.documentElement as HTMLElement & {
-      webkitRequestFullscreen?: () => Promise<void>
-      msRequestFullscreen?: () => Promise<void>
-    }
-    ;(doc.requestFullscreen?.() ??
+      webkitRequestFullscreen?: () => Promise<void>;
+      msRequestFullscreen?: () => Promise<void>;
+    };
+    (
+      doc.requestFullscreen?.() ??
       doc.webkitRequestFullscreen?.() ??
       doc.msRequestFullscreen?.() ??
       Promise.resolve()
-    ).catch(() => {})
-  }
-  app.canvas.addEventListener('touchstart', requestFullscreen, { once: true })
-  app.canvas.addEventListener('click', requestFullscreen, { once: true })
+    ).catch(() => {});
+  };
+  app.canvas.addEventListener("touchstart", requestFullscreen, { once: true });
+  app.canvas.addEventListener("click", requestFullscreen, { once: true });
 
-  // ── Tilt permission prompt ───────────────────────────────────────────────
+  // ── Tilt permission ──────────────────────────────────────────────────────
   if (scene.input.needsTiltPermission) {
-    const promptStyle = new TextStyle({
-      fontFamily: 'monospace',
-      fontSize: 14,
-      fill: '#666',
-      align: 'center',
-    })
-    const promptText = new Text({
-      text: 'Tap to enable tilt controls!',
-      style: promptStyle,
-    })
-    promptText.x = GAME_WIDTH / 2
-    promptText.y = 50
-    promptText.anchor.set(0.5, 0)
-    app.stage.addChild(promptText)
-
-    const requestTilt = async () => {
-      await scene.input.requestTiltPermission()
-      app.canvas.removeEventListener('touchstart', requestTilt)
-      app.stage.removeChild(promptText)
-      promptText.destroy()
-    }
-    app.canvas.addEventListener('touchstart', requestTilt, { once: true })
+    await scene.input.requestTiltPermission();
   }
 
   // ── Orientation pause ─────────────────────────────────────────────────────
-  const orientationQuery = window.matchMedia('(orientation: landscape) and (max-height: 500px)')
-  let pausedByOrientation = false
+  const orientationQuery = window.matchMedia(
+    "(orientation: landscape) and (max-height: 500px)",
+  );
+  let pausedByOrientation = false;
 
   const checkOrientation = () => {
     if (orientationQuery.matches && !pausedByOrientation) {
-      pausedByOrientation = true
-      app.ticker.stop()
+      pausedByOrientation = true;
+      app.ticker.stop();
     } else if (!orientationQuery.matches && pausedByOrientation) {
-      pausedByOrientation = false
-      if (!scene.isGameOver()) app.ticker.start()
+      pausedByOrientation = false;
+      if (!scene.isGameOver()) app.ticker.start();
     }
-  }
-  orientationQuery.addEventListener('change', checkOrientation)
-  checkOrientation()
+  };
+  orientationQuery.addEventListener("change", checkOrientation);
+  checkOrientation();
 
-  // ── Effect timer bar (bottom of screen) ──────────────────────────────────
-  const effectTimerBar = new Graphics()
+  // ── Effect timer bar ──────────────────────────────────────────────────────
+  const effectTimerBar = new Graphics();
   const effectTimerLabel = new Text({
-    text: '',
+    text: "",
     style: new TextStyle({
-      fontFamily: 'monospace',
+      fontFamily: "monospace",
       fontSize: 13,
-      fill: '#ffffff',
-      fontWeight: 'bold',
+      fill: "#ffffff",
+      fontWeight: "bold",
     }),
-  })
-  effectTimerLabel.anchor.set(0.5, 1)
-  effectTimerLabel.x = GAME_WIDTH / 2
-  effectTimerLabel.y = GAME_HEIGHT - 8
-  app.stage.addChild(effectTimerBar, effectTimerLabel)
+  });
+  effectTimerLabel.anchor.set(0.5, 1);
+  effectTimerLabel.x = GAME_WIDTH / 2;
+  effectTimerLabel.y = GAME_HEIGHT - 8;
+  app.stage.addChild(effectTimerBar, effectTimerLabel);
+
+  // ── Pause overlay ──────────────────────────────────────────────────────
+  const pauseOverlay = new Container();
+  pauseOverlay.visible = false;
+  const pauseDim = new Graphics();
+  pauseDim.rect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+  pauseDim.fill({ color: 0x000000, alpha: 0.5 });
+  pauseOverlay.addChild(pauseDim);
+  const pauseText = new Text({
+    text: "PAUSED\n\nTap to resume",
+    style: new TextStyle({
+      fontFamily: "monospace",
+      fontSize: 24,
+      fill: "#ffffff",
+      fontWeight: "bold",
+      align: "center",
+      lineHeight: 32,
+    }),
+  });
+  pauseText.x = GAME_WIDTH / 2;
+  pauseText.y = GAME_HEIGHT * 0.4;
+  pauseText.anchor.set(0.5, 0.5);
+  pauseOverlay.addChild(pauseText);
+  app.stage.addChild(pauseOverlay);
+
+  pauseBtn.on("pointertap", () => {
+    scene.togglePause();
+    pauseOverlay.visible = scene.isPaused();
+  });
+  pauseDim.eventMode = "static";
+  pauseDim.on("pointertap", () => {
+    if (scene.isPaused()) {
+      scene.togglePause();
+      pauseOverlay.visible = false;
+    }
+  });
+
+  // ── Countdown ──────────────────────────────────────────────────────────
+  const countdownText = new Text({
+    text: "",
+    style: new TextStyle({
+      fontFamily: "monospace",
+      fontSize: 48,
+      fill: "#ffffff",
+      fontWeight: "bold",
+      stroke: { color: "#000000", width: 4 },
+    }),
+  });
+  countdownText.x = GAME_WIDTH / 2;
+  countdownText.y = GAME_HEIGHT * 0.4;
+  countdownText.anchor.set(0.5, 0.5);
+  app.stage.addChild(countdownText);
+  scene.startCountdown();
 
   // ── In-game fireworks for beating high score ─────────────────────────────
-  let inGameFireworks: FireworkDisplay | null = null
-  let inGameHighScoreLabel: Text | null = null
+  let inGameFireworks: FireworkDisplay | null = null;
+  let inGameHighScoreLabel: Text | null = null;
 
   // ── Game loop ────────────────────────────────────────────────────────────
+  let goTextTicks = 0;
   app.ticker.add(() => {
-    scene.update()
+    scene.update();
 
-    timerText.text = formatTime(scene.getElapsedSeconds())
-    heightText.text = `H: ${scene.getHeight()}`
-    scoreText.text = `${scene.getScore()}`
+    // Countdown display
+    const cd = scene.getCountdownSeconds();
+    if (cd !== undefined && cd > 0) {
+      countdownText.text = `${cd}`;
+      countdownText.visible = true;
+      const pulse = 1 + Math.sin(Date.now() * 0.01) * 0.1;
+      countdownText.scale.set(pulse);
+      goTextTicks = 40; // queue "GO!" for when countdown ends
+    } else if (goTextTicks > 0) {
+      countdownText.text = "GO!";
+      countdownText.visible = true;
+      countdownText.scale.set(1 + (40 - goTextTicks) * 0.02);
+      countdownText.alpha = goTextTicks / 40;
+      goTextTicks--;
+    } else if (countdownText.visible) {
+      countdownText.visible = false;
+      countdownText.alpha = 1;
+    }
+
+    timerText.text = formatTime(scene.getElapsedSeconds());
+    heightText.text = `H: ${scene.getHeight()}`;
+    scoreText.text = `${scene.getScore()}`;
 
     // Check for new high score during gameplay
     if (scene.checkNewHighScore() && !inGameFireworks) {
-      inGameFireworks = new FireworkDisplay(10)
-      app.stage.addChild(inGameFireworks.container)
+      playSfxHighScore();
+      inGameFireworks = new FireworkDisplay(10);
+      app.stage.addChild(inGameFireworks.container);
 
       inGameHighScoreLabel = new Text({
-        text: 'NEW HIGH SCORE!',
+        text: "NEW HIGH SCORE!",
         style: new TextStyle({
-          fontFamily: 'monospace',
+          fontFamily: "monospace",
           fontSize: 18,
-          fill: '#ffdd44',
-          fontWeight: 'bold',
-          stroke: { color: '#000000', width: 3 },
-          align: 'center',
+          fill: "#ffdd44",
+          fontWeight: "bold",
+          stroke: { color: "#000000", width: 3 },
+          align: "center",
         }),
-      })
-      inGameHighScoreLabel.x = GAME_WIDTH / 2
-      inGameHighScoreLabel.y = GAME_HEIGHT * 0.15
-      inGameHighScoreLabel.anchor.set(0.5, 0.5)
-      app.stage.addChild(inGameHighScoreLabel)
+      });
+      inGameHighScoreLabel.x = GAME_WIDTH / 2;
+      inGameHighScoreLabel.y = GAME_HEIGHT * 0.15;
+      inGameHighScoreLabel.anchor.set(0.5, 0.5);
+      app.stage.addChild(inGameHighScoreLabel);
     }
 
     // Animate in-game fireworks
     if (inGameFireworks) {
       if (!inGameFireworks.update()) {
-        inGameFireworks.destroy()
-        inGameFireworks = null
+        inGameFireworks.destroy();
+        inGameFireworks = null;
         if (inGameHighScoreLabel) {
-          app.stage.removeChild(inGameHighScoreLabel)
-          inGameHighScoreLabel.destroy()
-          inGameHighScoreLabel = null
+          app.stage.removeChild(inGameHighScoreLabel);
+          inGameHighScoreLabel.destroy();
+          inGameHighScoreLabel = null;
         }
       } else if (inGameHighScoreLabel) {
-        // Pulse the label
-        const pulse = 0.9 + Math.sin(Date.now() * 0.008) * 0.1
-        inGameHighScoreLabel.scale.set(pulse)
+        const pulse = 0.9 + Math.sin(Date.now() * 0.008) * 0.1;
+        inGameHighScoreLabel.scale.set(pulse);
       }
-    }
-
-    // Debug sensor readout
-    if (DEBUG_MODE) {
-      const ix = scene.input.inputX
-      const cal = scene.input.tiltCalibrationOffset
-      const ax = scene.input.accelX
-      const rawTilt = scene.input.rawTilt
-      debugText.text = [
-        `accel.x: ${ax.toFixed(2)}  adjusted: ${rawTilt.toFixed(2)}`,
-        `cal: ${cal.toFixed(1)}  input: ${ix >= 0 ? '+' : ''}${ix.toFixed(2)}`,
-      ].join('\n')
-
-      debugBar.clear()
-      const barY = 73
-      const barCenter = GAME_WIDTH / 2
-      const maxBarW = GAME_WIDTH / 2 - 20
-      debugBar.rect(barCenter - 1, barY, 2, 4)
-      debugBar.fill(0x888888)
-      const barWidth = Math.abs(ix) * maxBarW
-      const barX = ix >= 0 ? barCenter : barCenter - barWidth
-      debugBar.rect(barX, barY, barWidth, 4)
-      debugBar.fill(0xffff00)
     }
 
     // Effect timer bar
-    effectTimerBar.clear()
-    const effectName = scene.getActiveEffectName()
-    const effectProgress = scene.getActiveEffectProgress()
+    effectTimerBar.clear();
+    const effectName = scene.getActiveEffectName();
+    const effectProgress = scene.getActiveEffectProgress();
     if (effectName && effectProgress > 0) {
-      const barW = (GAME_WIDTH - 40) * effectProgress
-      const color = COLORS.powerups[effectName] ?? 0xffffff
-      effectTimerBar.rect(20, GAME_HEIGHT - 6, GAME_WIDTH - 40, 4)
-      effectTimerBar.fill({ color: 0x333333, alpha: 0.5 })
-      effectTimerBar.rect(20, GAME_HEIGHT - 6, barW, 4)
-      effectTimerBar.fill(color)
-      effectTimerLabel.text = effectName.replace('_', ' ').toUpperCase()
-      effectTimerLabel.visible = true
+      const barW = (GAME_WIDTH - 40) * effectProgress;
+      const color = COLORS.powerups[effectName] ?? 0xffffff;
+      effectTimerBar.rect(20, GAME_HEIGHT - 6, GAME_WIDTH - 40, 4);
+      effectTimerBar.fill({ color: 0x333333, alpha: 0.5 });
+      effectTimerBar.rect(20, GAME_HEIGHT - 6, barW, 4);
+      effectTimerBar.fill(color);
+      effectTimerLabel.text = effectName.replace("_", " ").toUpperCase();
+      effectTimerLabel.visible = true;
     } else {
-      effectTimerLabel.visible = false
+      effectTimerLabel.visible = false;
+    }
+
+    // Zone progress bar
+    zoneBar.clear();
+    const zoneNames = ["Kitchen", "Ocean", "Space"];
+    const zone = scene.getZone();
+    const zp = scene.getZoneProgress();
+    const barTop = 36;
+    if (zp < 1) {
+      zoneBar.rect(0, barTop, GAME_WIDTH, 3);
+      zoneBar.fill({ color: 0x333333, alpha: 0.3 });
+      zoneBar.rect(0, barTop, GAME_WIDTH * zp, 3);
+      zoneBar.fill({ color: 0xffdd44, alpha: 0.6 });
+      zoneLabel.text = `${zoneNames[zone] ?? "Zone " + (zone + 1)}`;
+      zoneLabel.visible = true;
+    } else {
+      zoneLabel.text = zoneNames[zone] ?? "Zone " + (zone + 1);
+      zoneLabel.visible = true;
     }
 
     if (scene.isGameOver()) {
-      app.ticker.stop()
-      showGameOver(app, scene.getScore(), scene.getHeight(), scene.getElapsedSeconds(), scene.getHighScore())
+      stopMusic();
+      app.ticker.stop();
+      showGameOver(app, {
+        score: scene.getScore(),
+        height: scene.getHeight(),
+        seconds: scene.getElapsedSeconds(),
+        highScore: scene.getHighScore(),
+        meatballs: scene.getMeatballsCollected(),
+        powerUps: scene.getPowerUpsCollected(),
+        bestCombo: scene.getBestCombo(),
+        bestStreak: scene.getBestStreak(),
+        platforms: scene.getPlatformsPassed(),
+      });
     }
-  })
+  });
 }
 
-function showGameOver(
-  app: Application,
-  score: number,
-  height: number,
-  seconds: number,
-  highScore: number,
-): void {
-  const isNewRecord = score >= highScore && score > 0
+// ── Settings Toggles ──────────────────────────────────────────────────────
 
-  // Dim overlay
-  const dim = new Graphics()
-  dim.rect(0, 0, GAME_WIDTH, GAME_HEIGHT)
-  dim.fill({ color: 0x000000, alpha: 0.5 })
-  app.stage.addChild(dim)
+function createSettingsToggles(): Container {
+  const container = new Container();
 
-  // ── Fireworks for new high score ──
+  // Background panel
+  const bg = new Graphics();
+  bg.roundRect(GAME_WIDTH / 2 - 110, -8, 220, 65, 8);
+  bg.fill({ color: 0x000000, alpha: 0.4 });
+  container.addChild(bg);
+
+  const headerStyle = new TextStyle({
+    fontFamily: "monospace",
+    fontSize: 12,
+    fill: "#888888",
+    align: "center",
+  });
+  const header = new Text({ text: "SETTINGS", style: headerStyle });
+  header.x = GAME_WIDTH / 2;
+  header.y = -2;
+  header.anchor.set(0.5, 0);
+  container.addChild(header);
+
+  const labelStyle = new TextStyle({
+    fontFamily: "monospace",
+    fontSize: 15,
+    fill: "#ffffff",
+    fontWeight: "bold",
+  });
+  const valueOn = "#44ff44";
+  const valueOff = "#666666";
+  const valueStyle = (on: boolean) =>
+    new TextStyle({
+      fontFamily: "monospace",
+      fontSize: 15,
+      fill: on ? valueOn : valueOff,
+      fontWeight: "bold",
+    });
+
+  // SFX toggle
+  const sfxLabel = new Text({ text: "SFX: ", style: labelStyle });
+  sfxLabel.x = GAME_WIDTH / 2 - 80;
+  sfxLabel.y = 22;
+  container.addChild(sfxLabel);
+
+  const sfxValue = new Text({
+    text: isSfxEnabled() ? "ON" : "OFF",
+    style: valueStyle(isSfxEnabled()),
+  });
+  sfxValue.x = sfxLabel.x + 42;
+  sfxValue.y = 22;
+  container.addChild(sfxValue);
+
+  // Hit area covers both label + value
+  const sfxHit = new Graphics();
+  sfxHit.rect(GAME_WIDTH / 2 - 110, 18, 110, 28);
+  sfxHit.fill({ color: 0x000000, alpha: 0.001 });
+  sfxHit.eventMode = "static";
+  sfxHit.cursor = "pointer";
+  sfxHit.on("pointertap", (e: Event) => {
+    e.stopPropagation();
+    setSfxEnabled(!isSfxEnabled());
+    sfxValue.text = isSfxEnabled() ? "ON" : "OFF";
+    sfxValue.style = valueStyle(isSfxEnabled());
+  });
+  container.addChild(sfxHit);
+
+  // Music toggle
+  const musicLabel = new Text({ text: "Music: ", style: labelStyle });
+  musicLabel.x = GAME_WIDTH / 2 + 10;
+  musicLabel.y = 22;
+  container.addChild(musicLabel);
+
+  const musicValue = new Text({
+    text: isMusicEnabled() ? "ON" : "OFF",
+    style: valueStyle(isMusicEnabled()),
+  });
+  musicValue.x = musicLabel.x + 62;
+  musicValue.y = 22;
+  container.addChild(musicValue);
+
+  const musicHit = new Graphics();
+  musicHit.rect(GAME_WIDTH / 2, 18, 110, 28);
+  musicHit.fill({ color: 0x000000, alpha: 0.001 });
+  musicHit.eventMode = "static";
+  musicHit.cursor = "pointer";
+  musicHit.on("pointertap", (e: Event) => {
+    e.stopPropagation();
+    setMusicEnabled(!isMusicEnabled());
+    musicValue.text = isMusicEnabled() ? "ON" : "OFF";
+    musicValue.style = valueStyle(isMusicEnabled());
+  });
+  container.addChild(musicHit);
+
+  // Make the container interactive so taps on it don't start the game
+  bg.eventMode = "static";
+  bg.on("pointertap", (e: Event) => e.stopPropagation());
+
+  return container;
+}
+
+interface GameOverStats {
+  score: number;
+  height: number;
+  seconds: number;
+  highScore: number;
+  meatballs: number;
+  powerUps: number;
+  bestCombo: number;
+  bestStreak: number;
+  platforms: number;
+}
+
+function showGameOver(app: Application, stats: GameOverStats): void {
+  const isNewRecord = stats.score >= stats.highScore && stats.score > 0;
+
+  const dim = new Graphics();
+  dim.rect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+  dim.fill({ color: 0x000000, alpha: 0.5 });
+  app.stage.addChild(dim);
+
   if (isNewRecord) {
-    const fireworks = new FireworkDisplay(16) // 16 bursts staggered across the screen
-    app.stage.addChild(fireworks.container)
-
+    const fireworks = new FireworkDisplay(10);
+    app.stage.addChild(fireworks.container);
     const fireworkTicker = () => {
       if (!fireworks.update()) {
-        app.ticker.remove(fireworkTicker)
-        fireworks.destroy()
-        app.ticker.stop()
+        app.ticker.remove(fireworkTicker);
+        fireworks.destroy();
+        app.ticker.stop();
       }
-    }
-    app.ticker.add(fireworkTicker)
-    app.ticker.start()
+    };
+    app.ticker.add(fireworkTicker);
+    app.ticker.start();
   }
 
-  // ── Text overlay ──
-  const lines = [
-    isNewRecord ? 'NEW HIGH SCORE!' : 'Game Over!',
-    '',
-    `Score: ${score}`,
-    `Best: ${highScore}`,
-    `Height: ${height}`,
-    `Time: ${formatTime(seconds)}`,
-    '',
-    'Tap to restart',
-  ]
-
-  const overlay = new Text({
-    text: lines.join('\n'),
+  // Title
+  const title = new Text({
+    text: isNewRecord ? "NEW HIGH SCORE!" : "Game Over!",
     style: new TextStyle({
-      fontFamily: 'monospace',
-      fontSize: isNewRecord ? 20 : 22,
-      fill: isNewRecord ? '#ffdd44' : '#ffffff',
-      align: 'center',
-      fontWeight: 'bold',
-      lineHeight: 28,
+      fontFamily: "monospace",
+      fontSize: isNewRecord ? 22 : 24,
+      fill: isNewRecord ? "#ffdd44" : "#ffffff",
+      fontWeight: "bold",
+      stroke: { color: "#000000", width: 3 },
     }),
-  })
-  overlay.x = GAME_WIDTH / 2
-  overlay.y = GAME_HEIGHT * 0.4
-  overlay.anchor.set(0.5, 0.5)
-  app.stage.addChild(overlay)
+  });
+  title.x = GAME_WIDTH / 2;
+  title.y = GAME_HEIGHT * 0.18;
+  title.anchor.set(0.5, 0.5);
+  app.stage.addChild(title);
 
-  // ── Clear data button ──
+  // Score breakdown
+  const breakdownLines = [
+    `Score     ${stats.score}`,
+    `Best      ${stats.highScore}`,
+    "",
+    `Height    ${stats.height}`,
+    `Time      ${formatTime(stats.seconds)}`,
+    `Platforms ${stats.platforms}`,
+    "",
+    `Meatballs ${stats.meatballs}`,
+    `Power-ups ${stats.powerUps}`,
+    `Best combo ${stats.bestCombo}x`,
+    `Streak    ${stats.bestStreak}`,
+  ];
+
+  const breakdown = new Text({
+    text: breakdownLines.join("\n"),
+    style: new TextStyle({
+      fontFamily: "monospace",
+      fontSize: 13,
+      fill: "#cccccc",
+      lineHeight: 20,
+    }),
+  });
+  breakdown.x = GAME_WIDTH / 2;
+  breakdown.y = GAME_HEIGHT * 0.42;
+  breakdown.anchor.set(0.5, 0.5);
+  app.stage.addChild(breakdown);
+
+  // Share button
+  const shareText = new Text({
+    text: "[Share Score]",
+    style: new TextStyle({
+      fontFamily: "monospace",
+      fontSize: 14,
+      fill: "#44aaff",
+      fontWeight: "bold",
+    }),
+  });
+  shareText.x = GAME_WIDTH / 2;
+  shareText.y = GAME_HEIGHT * 0.68;
+  shareText.anchor.set(0.5, 0.5);
+  shareText.eventMode = "static";
+  shareText.cursor = "pointer";
+  shareText.on("pointertap", (e: Event) => {
+    e.stopPropagation();
+    const shareMsg =
+      `I scored ${stats.score} on Noodle Jump!\n` +
+      `Height: ${stats.height} | Meatballs: ${stats.meatballs} | ` +
+      `Best combo: ${stats.bestCombo}x`;
+    navigator.clipboard.writeText(shareMsg).then(
+      () => {
+        shareText.text = "Copied!";
+        shareText.style.fill = "#66cc66";
+      },
+      () => {
+        shareText.text = "Copy failed";
+      },
+    );
+  });
+  app.stage.addChild(shareText);
+
+  // Tap to restart
+  const restartText = new Text({
+    text: "Tap to restart",
+    style: new TextStyle({
+      fontFamily: "monospace",
+      fontSize: 16,
+      fill: "#ffffff",
+      fontWeight: "bold",
+    }),
+  });
+  restartText.x = GAME_WIDTH / 2;
+  restartText.y = GAME_HEIGHT * 0.78;
+  restartText.anchor.set(0.5, 0.5);
+  app.stage.addChild(restartText);
+
+  // Clear data
   const clearText = new Text({
-    text: '[Clear saved data]',
+    text: "[Clear saved data]",
     style: new TextStyle({
-      fontFamily: 'monospace',
-      fontSize: 12,
-      fill: '#999999',
-      align: 'center',
+      fontFamily: "monospace",
+      fontSize: 11,
+      fill: "#666666",
     }),
-  })
-  clearText.x = GAME_WIDTH / 2
-  clearText.y = GAME_HEIGHT * 0.75
-  clearText.anchor.set(0.5, 0.5)
-  clearText.eventMode = 'static'
-  clearText.cursor = 'pointer'
-  clearText.on('pointertap', () => {
-    localStorage.clear()
-    clearText.text = 'Data cleared!'
-    clearText.style.fill = '#66cc66'
-  })
-  app.stage.addChild(clearText)
+  });
+  clearText.x = GAME_WIDTH / 2;
+  clearText.y = GAME_HEIGHT * 0.88;
+  clearText.anchor.set(0.5, 0.5);
+  clearText.eventMode = "static";
+  clearText.cursor = "pointer";
+  clearText.on("pointertap", (e: Event) => {
+    e.stopPropagation();
+    localStorage.clear();
+    clearText.text = "Data cleared!";
+    clearText.style.fill = "#66cc66";
+  });
+  app.stage.addChild(clearText);
 
-  // ── Restart handler ──
   const restart = (e: Event) => {
-    // Don't restart if they tapped the clear button
-    if (e.target === clearText) return
-    app.canvas.removeEventListener('click', restart)
-    app.canvas.removeEventListener('touchstart', restart)
-    window.removeEventListener('keydown', restart)
-    window.location.reload()
-  }
+    const target = e.target as unknown;
+    if (target === clearText || target === shareText) return;
+    app.canvas.removeEventListener("click", restart);
+    app.canvas.removeEventListener("touchstart", restart);
+    window.removeEventListener("keydown", restart);
+    window.location.reload();
+  };
 
-  // Delay restart listener slightly so confetti can play
-  setTimeout(() => {
-    app.canvas.addEventListener('click', restart)
-    app.canvas.addEventListener('touchstart', restart)
-    window.addEventListener('keydown', restart)
-  }, isNewRecord ? 1500 : 300)
+  setTimeout(
+    () => {
+      app.canvas.addEventListener("click", restart);
+      app.canvas.addEventListener("touchstart", restart);
+      window.addEventListener("keydown", restart);
+    },
+    isNewRecord ? 1500 : 300,
+  );
 }
 
-main()
+main();

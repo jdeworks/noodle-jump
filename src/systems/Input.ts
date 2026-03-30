@@ -3,248 +3,273 @@
  * Outputs a normalized horizontal value from -1 (left) to +1 (right).
  */
 
-export type InputMethod = 'tilt' | 'touch' | 'keyboard'
+export type InputMethod = "tilt" | "touch" | "keyboard";
 
-const TILT_SENSITIVITY = 5 // m/s² from rest for full input (~30° tilt)
-const TILT_DEADZONE = 0.5 // m/s² — ignore tiny wobbles
-const TILT_SMOOTHING = 0.25 // low-pass filter (0 = no smoothing, 1 = frozen)
-const CALIBRATION_SAMPLES = 20
+const TILT_SENSITIVITY = 5; // m/s² from rest for full input (~30° tilt)
+const TILT_DEADZONE = 0.5; // m/s² — ignore tiny wobbles
+const TILT_SMOOTHING = 0.25; // low-pass filter (0 = no smoothing, 1 = frozen)
+const CALIBRATION_SAMPLES = 20;
 
 export class InputManager {
-  private _inputX = 0
-  private _rawTilt = 0 // unsmoothed tilt value for debug display
-  private _activeMethod: InputMethod = 'keyboard'
-  private tiltAvailable = false
-  private tiltPermissionDenied = false
+  private _inputX = 0;
+  private _rawTilt = 0; // unsmoothed tilt value for debug display
+  private _activeMethod: InputMethod = "keyboard";
+  private tiltAvailable = false;
+  private tiltPermissionDenied = false;
 
   // Touch state
-  private touchActive = false
-  private canvasWidth = 0
+  private touchActive = false;
+  private canvasWidth = 0;
 
   // Keyboard state
-  private keysDown = new Set<string>()
+  private keysDown = new Set<string>();
 
   // Tilt calibration
-  private tiltOffset = 0
-  private calibrationReadings: number[] = []
-  private calibrated = false
-  private lastTiltAngle: number | null = null
-  private _rawGamma = 0
-  private _rawBeta = 0
-  private _rawAlpha = 0
-  private _accelX = 0 // accelerometer left/right
+  private tiltOffset = 0;
+  private calibrationReadings: number[] = [];
+  private calibrated = false;
+  private lastTiltAngle: number | null = null;
+  private _rawGamma = 0;
+  private _rawBeta = 0;
+  private _rawAlpha = 0;
+  private _accelX = 0; // accelerometer left/right
 
   get inputX(): number {
-    return this._inputX
+    return this._inputX;
   }
 
   /** Raw tilt angle relative to calibration (for debug display). */
   get rawTilt(): number {
-    return this._rawTilt
+    return this._rawTilt;
   }
 
   /** The calibration offset that was computed. */
   get tiltCalibrationOffset(): number {
-    return this.tiltOffset
+    return this.tiltOffset;
   }
 
   /** Raw sensor values for debugging. */
-  get rawGamma(): number { return this._rawGamma }
-  get rawBeta(): number { return this._rawBeta }
-  get rawAlpha(): number { return this._rawAlpha }
-  get accelX(): number { return this._accelX }
+  get rawGamma(): number {
+    return this._rawGamma;
+  }
+  get rawBeta(): number {
+    return this._rawBeta;
+  }
+  get rawAlpha(): number {
+    return this._rawAlpha;
+  }
+  get accelX(): number {
+    return this._accelX;
+  }
 
   get activeMethod(): InputMethod {
-    return this._activeMethod
+    return this._activeMethod;
   }
 
   get needsTiltPermission(): boolean {
-    return !this.tiltAvailable && !this.tiltPermissionDenied && typeof DeviceMotionEvent !== 'undefined'
+    // Only iOS/Safari requires explicit permission via requestPermission()
+    const DME = DeviceMotionEvent as unknown as { requestPermission?: unknown };
+    return (
+      !this.tiltAvailable &&
+      !this.tiltPermissionDenied &&
+      typeof DeviceMotionEvent !== "undefined" &&
+      typeof DME.requestPermission === "function"
+    );
   }
 
   init(canvas: HTMLCanvasElement): void {
-    this.setupKeyboard()
-    this.setupTouch(canvas)
-    this.tryTilt()
+    this.setupKeyboard();
+    this.setupTouch(canvas);
+    this.tryTilt();
   }
 
   recalibrate(): void {
-    this.calibrated = false
-    this.calibrationReadings = []
+    this.calibrated = false;
+    this.calibrationReadings = [];
   }
 
   async requestTiltPermission(): Promise<boolean> {
     const DME = DeviceMotionEvent as unknown as {
-      requestPermission?: () => Promise<'granted' | 'denied'>
-    }
+      requestPermission?: () => Promise<"granted" | "denied">;
+    };
 
-    if (typeof DME.requestPermission === 'function') {
+    if (typeof DME.requestPermission === "function") {
       try {
-        const result = await DME.requestPermission()
-        if (result === 'granted') {
-          this.setupTilt()
-          return true
+        const result = await DME.requestPermission();
+        if (result === "granted") {
+          this.setupTilt();
+          return true;
         }
-        this.tiltPermissionDenied = true
-        return false
+        this.tiltPermissionDenied = true;
+        return false;
       } catch {
-        this.tiltPermissionDenied = true
-        return false
+        this.tiltPermissionDenied = true;
+        return false;
       }
     }
 
-    this.setupTilt()
-    return true
+    this.setupTilt();
+    return true;
   }
 
   update(): void {
-    if (this.tiltAvailable) return
+    if (this.tiltAvailable) return;
 
     if (this.touchActive) {
-      this._activeMethod = 'touch'
-      return
+      this._activeMethod = "touch";
+      return;
     }
 
-    this._activeMethod = 'keyboard'
-    let x = 0
-    if (this.keysDown.has('ArrowLeft') || this.keysDown.has('a')) x -= 1
-    if (this.keysDown.has('ArrowRight') || this.keysDown.has('d')) x += 1
-    this._inputX = x
+    this._activeMethod = "keyboard";
+    let x = 0;
+    if (this.keysDown.has("ArrowLeft") || this.keysDown.has("a")) x -= 1;
+    if (this.keysDown.has("ArrowRight") || this.keysDown.has("d")) x += 1;
+    this._inputX = x;
   }
 
   destroy(): void {
-    window.removeEventListener('deviceorientation', this.onTilt)
-    window.removeEventListener('devicemotion', this.onMotion)
-    window.removeEventListener('keydown', this.onKeyDown)
-    window.removeEventListener('keyup', this.onKeyUp)
+    window.removeEventListener("deviceorientation", this.onTilt);
+    window.removeEventListener("devicemotion", this.onMotion);
+    window.removeEventListener("keydown", this.onKeyDown);
+    window.removeEventListener("keyup", this.onKeyUp);
   }
 
   // ── Tilt ───────────────────────────────────────────────────────────────────
 
   private tryTilt(): void {
-    if (typeof DeviceMotionEvent === 'undefined') return
+    if (typeof DeviceMotionEvent === "undefined") return;
 
     const DME = DeviceMotionEvent as unknown as {
-      requestPermission?: () => Promise<string>
-    }
+      requestPermission?: () => Promise<string>;
+    };
 
-    if (typeof DME.requestPermission !== 'function') {
-      this.setupTilt()
+    if (typeof DME.requestPermission !== "function") {
+      this.setupTilt();
     }
   }
 
   private setupTilt(): void {
-    window.addEventListener('deviceorientation', this.onTilt)
-    window.addEventListener('devicemotion', this.onMotion)
-    this.tiltAvailable = true
-    this._activeMethod = 'tilt'
+    window.addEventListener("deviceorientation", this.onTilt);
+    window.addEventListener("devicemotion", this.onMotion);
+    // Don't mark tilt as available until we actually receive motion data.
+    // Desktop browsers define DeviceMotionEvent but never fire it,
+    // so tiltAvailable stays false and keyboard input works.
   }
 
   private onMotion = (e: DeviceMotionEvent): void => {
-    const accel = e.accelerationIncludingGravity
-    if (accel?.x == null) return
+    const accel = e.accelerationIncludingGravity;
+    if (accel?.x == null) return;
 
-    this._accelX = accel.x
+    // First real motion data — now we know tilt hardware is present
+    if (!this.tiltAvailable) {
+      this.tiltAvailable = true;
+    }
+
+    this._accelX = accel.x;
 
     // ── Use accelerometer for input ────────────────────────────────────
     // accel.x sign varies by device. On most Android phones in portrait,
     // tilting right gives negative x. We negate to match expectations:
     // positive = right, negative = left.
-    const tiltValue = -accel.x
+    const tiltValue = -accel.x;
 
     if (!this.calibrated) {
-      this.calibrationReadings.push(tiltValue)
+      this.calibrationReadings.push(tiltValue);
       if (this.calibrationReadings.length >= CALIBRATION_SAMPLES) {
         this.tiltOffset =
-          this.calibrationReadings.reduce((a, b) => a + b, 0) / this.calibrationReadings.length
-        this.calibrated = true
+          this.calibrationReadings.reduce((a, b) => a + b, 0) /
+          this.calibrationReadings.length;
+        this.calibrated = true;
       }
-      this._inputX = 0
-      this._activeMethod = 'tilt'
-      return
+      this._inputX = 0;
+      this._activeMethod = "tilt";
+      return;
     }
 
-    const adjusted = tiltValue - this.tiltOffset
-    this._rawTilt = adjusted
+    const adjusted = tiltValue - this.tiltOffset;
+    this._rawTilt = adjusted;
 
     // Reject spikes
-    if (this.lastTiltAngle !== null && Math.abs(tiltValue - this.lastTiltAngle) > 8) {
-      this._activeMethod = 'tilt'
-      return
+    if (
+      this.lastTiltAngle !== null &&
+      Math.abs(tiltValue - this.lastTiltAngle) > 8
+    ) {
+      this._activeMethod = "tilt";
+      return;
     }
-    this.lastTiltAngle = tiltValue
+    this.lastTiltAngle = tiltValue;
 
     // Dead zone
     if (Math.abs(adjusted) < TILT_DEADZONE) {
-      this._inputX = this._inputX * TILT_SMOOTHING
-      this._activeMethod = 'tilt'
-      return
+      this._inputX = this._inputX * TILT_SMOOTHING;
+      this._activeMethod = "tilt";
+      return;
     }
 
     // Normalize: TILT_SENSITIVITY = full tilt in m/s² (gravity component)
-    const sign = adjusted > 0 ? 1 : -1
-    const magnitude = Math.abs(adjusted) - TILT_DEADZONE
-    const linear = Math.min(1, magnitude / (TILT_SENSITIVITY - TILT_DEADZONE))
-    const eased = linear * linear // quadratic ease
-    const raw = sign * eased
+    const sign = adjusted > 0 ? 1 : -1;
+    const magnitude = Math.abs(adjusted) - TILT_DEADZONE;
+    const linear = Math.min(1, magnitude / (TILT_SENSITIVITY - TILT_DEADZONE));
+    const eased = linear * linear; // quadratic ease
+    const raw = sign * eased;
 
-    this._inputX = this._inputX * TILT_SMOOTHING + raw * (1 - TILT_SMOOTHING)
-    this._activeMethod = 'tilt'
-  }
+    this._inputX = this._inputX * TILT_SMOOTHING + raw * (1 - TILT_SMOOTHING);
+    this._activeMethod = "tilt";
+  };
 
   /** Orientation listener — debug display only, input comes from accelerometer. */
   private onTilt = (e: DeviceOrientationEvent): void => {
-    this._rawGamma = e.gamma ?? 0
-    this._rawBeta = e.beta ?? 0
-    this._rawAlpha = e.alpha ?? 0
-  }
+    this._rawGamma = e.gamma ?? 0;
+    this._rawBeta = e.beta ?? 0;
+    this._rawAlpha = e.alpha ?? 0;
+  };
 
   // ── Touch ──────────────────────────────────────────────────────────────────
 
   private setupTouch(canvas: HTMLCanvasElement): void {
-    this.canvasWidth = canvas.getBoundingClientRect().width
-    canvas.addEventListener('touchstart', this.onTouchStart, { passive: true })
-    canvas.addEventListener('touchmove', this.onTouchMove, { passive: true })
-    canvas.addEventListener('touchend', this.onTouchEnd, { passive: true })
+    this.canvasWidth = canvas.getBoundingClientRect().width;
+    canvas.addEventListener("touchstart", this.onTouchStart, { passive: true });
+    canvas.addEventListener("touchmove", this.onTouchMove, { passive: true });
+    canvas.addEventListener("touchend", this.onTouchEnd, { passive: true });
   }
 
   private touchXFromEvent(touch: Touch): number {
-    const rect = this.canvasWidth || window.innerWidth
-    const center = rect / 2
-    const dx = touch.clientX - center
-    return Math.max(-1, Math.min(1, dx / center))
+    const rect = this.canvasWidth || window.innerWidth;
+    const center = rect / 2;
+    const dx = touch.clientX - center;
+    return Math.max(-1, Math.min(1, dx / center));
   }
 
   private onTouchStart = (e: TouchEvent): void => {
-    if (this.tiltAvailable) return
-    this.touchActive = true
-    this._inputX = this.touchXFromEvent(e.touches[0])
-  }
+    if (this.tiltAvailable) return;
+    this.touchActive = true;
+    this._inputX = this.touchXFromEvent(e.touches[0]);
+  };
 
   private onTouchMove = (e: TouchEvent): void => {
-    if (!this.touchActive || this.tiltAvailable) return
-    this._inputX = this.touchXFromEvent(e.touches[0])
-  }
+    if (!this.touchActive || this.tiltAvailable) return;
+    this._inputX = this.touchXFromEvent(e.touches[0]);
+  };
 
   private onTouchEnd = (): void => {
-    this.touchActive = false
+    this.touchActive = false;
     if (!this.tiltAvailable) {
-      this._inputX = 0
+      this._inputX = 0;
     }
-  }
+  };
 
   // ── Keyboard ───────────────────────────────────────────────────────────────
 
   private setupKeyboard(): void {
-    window.addEventListener('keydown', this.onKeyDown)
-    window.addEventListener('keyup', this.onKeyUp)
+    window.addEventListener("keydown", this.onKeyDown);
+    window.addEventListener("keyup", this.onKeyUp);
   }
 
   private onKeyDown = (e: KeyboardEvent): void => {
-    this.keysDown.add(e.key)
-  }
+    this.keysDown.add(e.key);
+  };
 
   private onKeyUp = (e: KeyboardEvent): void => {
-    this.keysDown.delete(e.key)
-  }
+    this.keysDown.delete(e.key);
+  };
 }

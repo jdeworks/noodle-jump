@@ -1,13 +1,17 @@
 /** Collision detection — pure logic, no PixiJS. */
 
-import type { PlayerState } from '../entities/Player'
-import type { PlatformState } from '../entities/Platform'
-import { playerJump } from '../entities/Player'
-import { breakPlatform } from '../entities/Platform'
+import type { PlayerState } from "../entities/Player";
+import type { PlatformState } from "../entities/Platform";
+import { playerJump } from "../entities/Player";
+import { breakPlatform } from "../entities/Platform";
+import { CLOSE_CALL_THRESHOLD } from "../config/constants";
 
 export interface CollisionResult {
-  player: PlayerState
-  platforms: PlatformState[]
+  player: PlayerState;
+  platforms: PlatformState[];
+  landed: boolean;
+  edgeLanding: boolean;
+  platformBroke: boolean;
 }
 
 /**
@@ -22,48 +26,81 @@ export function checkPlatformCollisions(
   player: PlayerState,
   platforms: PlatformState[],
   previousY: number,
+  allBreaking = false,
 ): CollisionResult {
-  // Only check when falling
-  if (player.vy < 0) return { player, platforms }
+  const noHit: CollisionResult = {
+    player,
+    platforms,
+    landed: false,
+    edgeLanding: false,
+    platformBroke: false,
+  };
 
-  const playerBottom = player.y + player.height
-  const previousBottom = previousY + player.height
+  if (player.vy < 0) return noHit;
+
+  const playerBottom = player.y + player.height;
+  const previousBottom = previousY + player.height;
 
   for (let i = 0; i < platforms.length; i++) {
-    const platform = platforms[i]
+    const platform = platforms[i];
 
-    if (platform.broken) continue
+    if (platform.broken) continue;
 
-    // Horizontal overlap check
-    const playerRight = player.x + player.width
-    const platformRight = platform.x + platform.width
+    const playerRight = player.x + player.width;
+    const platformRight = platform.x + platform.width;
 
-    if (playerRight < platform.x || player.x > platformRight) continue
+    if (playerRight < platform.x || player.x > platformRight) continue;
 
-    // Vertical: player's feet crossed into platform's top surface this frame
-    const platformTop = platform.y
+    const platformTop = platform.y;
 
     if (previousBottom <= platformTop && playerBottom >= platformTop) {
-      // Brittle: mark broken on contact, no bounce — fall straight through
-      if (platform.type === 'brittle') {
-        const updatedPlatforms = [...platforms]
-        updatedPlatforms[i] = breakPlatform(platform)
-        return { player, platforms: updatedPlatforms }
-      }
-      // Land on the platform — snap and jump
-      const landed = { ...player, y: platformTop - player.height }
-      const jumped = playerJump(landed)
+      // Check edge landing before any bounce
+      const leftMargin = player.x - platform.x;
+      const rightMargin = platformRight - playerRight;
+      const edgeLanding =
+        leftMargin < CLOSE_CALL_THRESHOLD || rightMargin < CLOSE_CALL_THRESHOLD;
 
-      // If breaking platform, mark it broken after the bounce
-      if (platform.type === 'breaking') {
-        const updatedPlatforms = [...platforms]
-        updatedPlatforms[i] = breakPlatform(platform)
-        return { player: jumped, platforms: updatedPlatforms }
+      // Brittle: mark broken on contact, no bounce
+      if (platform.type === "brittle") {
+        const updatedPlatforms = [...platforms];
+        updatedPlatforms[i] = breakPlatform(platform);
+        return {
+          player,
+          platforms: updatedPlatforms,
+          landed: false,
+          edgeLanding: false,
+          platformBroke: true,
+        };
       }
 
-      return { player: jumped, platforms }
+      const landed = { ...player, y: platformTop - player.height };
+      const jumped = playerJump(landed);
+
+      // Breaking platform (or soggy noodle effect)
+      if (
+        platform.type === "breaking" ||
+        (allBreaking && platform.type === "static")
+      ) {
+        const updatedPlatforms = [...platforms];
+        updatedPlatforms[i] = breakPlatform(platform);
+        return {
+          player: jumped,
+          platforms: updatedPlatforms,
+          landed: true,
+          edgeLanding,
+          platformBroke: true,
+        };
+      }
+
+      return {
+        player: jumped,
+        platforms,
+        landed: true,
+        edgeLanding,
+        platformBroke: false,
+      };
     }
   }
 
-  return { player, platforms }
+  return noHit;
 }
