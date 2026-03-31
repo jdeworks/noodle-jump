@@ -186,7 +186,11 @@ export async function launchGame(app: Application, runConfig?: RunConfig): Promi
   if (tutorial.shouldShow()) {
     tutorial.show();
     scene.togglePause(); // pause game during tutorial
+    let lastAdvance = 0;
     const advanceTutorial = () => {
+      const now = Date.now();
+      if (now - lastAdvance < 300) return; // debounce — prevent double-fire
+      lastAdvance = now;
       if (tutorial.isActive()) {
         if (!tutorial.advance()) {
           app.canvas.removeEventListener("click", advanceTutorial);

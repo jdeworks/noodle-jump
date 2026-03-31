@@ -5,6 +5,7 @@ import { GAME_WIDTH, GAME_HEIGHT, COLORS } from "../config/constants";
 import { POWER_UP_INFO } from "./PowerUpDescriptions";
 import { drawPlatform, type PlatformStyle } from "../rendering/PlatformSprites";
 import { drawPowerUp } from "../rendering/ItemSprites";
+import { InertiaScroll } from "./InertiaScroll";
 
 interface Section {
   title: string;
@@ -106,7 +107,7 @@ interface AnimatedSprite {
 export class ExplanationScreen {
   readonly container = new Container();
   private active = false;
-  private scrollY = 0;
+  private scroller = new InertiaScroll();
   private contentHeight = 0;
   private animTick = 0;
   private animSprites: AnimatedSprite[] = [];
@@ -117,7 +118,7 @@ export class ExplanationScreen {
 
   show(): void {
     this.active = true;
-    this.scrollY = 0;
+    this.scroller.reset();
     this.animTick = 0;
     this.container.visible = true;
     this.render();
@@ -137,17 +138,14 @@ export class ExplanationScreen {
     return this.active;
   }
 
-  scroll(deltaY: number): void {
-    this.scrollY = Math.max(
-      0,
-      Math.min(this.contentHeight - GAME_HEIGHT + 80, this.scrollY + deltaY),
-    );
-    this.updateScroll();
-  }
 
   update(): void {
     if (!this.active) return;
     this.animTick++;
+
+    // Inertia scrolling
+    this.scroller.tick();
+    this.updateScroll();
     const t = this.animTick;
     for (const sprite of this.animSprites) {
       if (sprite.type === "platform") {
@@ -352,20 +350,9 @@ export class ExplanationScreen {
     closeBtn.on("pointertap", () => this.hide());
     this.container.addChild(closeBtn);
 
-    // Wire scroll events
-    bg.on("wheel", (e: WheelEvent) => {
-      this.scroll(e.deltaY * 0.5);
-    });
-
-    // Touch drag scrolling
-    let touchStartY = 0;
-    bg.on("pointerdown", (e) => { touchStartY = e.globalY; });
-    bg.on("pointermove", (e) => {
-      if (e.pressure > 0) {
-        this.scroll(touchStartY - e.globalY);
-        touchStartY = e.globalY;
-      }
-    });
+    // Wire scroll events (wheel + touch drag with inertia)
+    this.scroller.setMaxScroll(this.contentHeight - GAME_HEIGHT + 80);
+    this.scroller.attach(bg);
 
     this.updateScroll();
   }
@@ -375,7 +362,7 @@ export class ExplanationScreen {
       (c) => c.label === "scroll-content",
     );
     if (content) {
-      content.y = -this.scrollY;
+      content.y = -this.scroller.scrollY;
     }
   }
 
