@@ -18,12 +18,12 @@ export function createSettingsToggles(): Container {
   const panelW = Math.min(280, GAME_WIDTH - 20);
   const panelX = (GAME_WIDTH - panelW) / 2;
 
-  // Background panel
+  // Background panel — opaque enough for text contrast
   const bg = new Graphics();
   bg.roundRect(panelX, -8, panelW, 140, 10);
-  bg.fill({ color: 0x1a1410, alpha: 0.7 });
+  bg.fill({ color: 0x1a1008, alpha: 0.85 });
   bg.roundRect(panelX, -8, panelW, 140, 10);
-  bg.stroke({ width: 1, color: 0x554433, alpha: 0.5 });
+  bg.stroke({ width: 1, color: 0x665544, alpha: 0.6 });
   container.addChild(bg);
 
   const headerStyle = new TextStyle({
@@ -157,8 +157,8 @@ export function createSettingsToggles(): Container {
     text: "Tap enemies row to toggle",
     style: new TextStyle({
       fontFamily: "monospace",
-      fontSize: 10,
-      fill: "#887766",
+      fontSize: 11,
+      fill: "#ccbbaa",
     }),
   });
   hint.x = GAME_WIDTH / 2;

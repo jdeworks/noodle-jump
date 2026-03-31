@@ -30,7 +30,6 @@ import { tickShake } from "../systems/ScreenShake";
 import { updateZone } from "../systems/Zone";
 import {
   GARLIC_BREATH_JUMP_MULTIPLIER,
-  GAME_HEIGHT,
   DEATH_ANIMATION_TICKS,
   COUNTDOWN_TICKS,
   SQUASH_HOLD_FRAMES,
@@ -309,10 +308,10 @@ export function tickGameWorld(
   // Death check
   if (isPlayerDead(s.camera, s.player.y)) {
     if (s.practiceMode || s.debugConfig.invincible) {
-      // Rescue: teleport to highest visible platform
+      // Rescue: teleport to the highest non-broken platform
       const rescue = s.platforms
-        .filter((p) => !p.broken && p.y > s.camera.y && p.y < s.camera.y + GAME_HEIGHT)
-        .sort((a, b) => a.y - b.y)[0];
+        .filter((p) => !p.broken)
+        .sort((a, b) => a.y - b.y)[0]; // highest = smallest y
       if (rescue) {
         s = {
           ...s,
@@ -323,6 +322,7 @@ export function tickGameWorld(
             vy: -12,
             isJumping: true,
           },
+          stagnantTicks: 0,
         };
       }
     } else {

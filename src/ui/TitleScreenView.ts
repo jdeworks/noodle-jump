@@ -32,10 +32,10 @@ export function showTitleScreen(
   const bgHex = "#" + theme.background.toString(16).padStart(6, "0");
   document.body.style.backgroundColor = bgHex;
 
-  // Dim overlay so text is readable
+  // Dim overlay — dark enough for white/colored text to read (4.5:1+)
   const dimOverlay = new Graphics();
   dimOverlay.rect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-  dimOverlay.fill({ color: 0x000000, alpha: 0.25 });
+  dimOverlay.fill({ color: 0x1a1008, alpha: 0.55 });
   titleContainer.addChild(dimOverlay);
 
   // Title text
@@ -61,9 +61,11 @@ export function showTitleScreen(
     text: "A pasta-themed endless jumper",
     style: new TextStyle({
       fontFamily: "monospace",
-      fontSize: 12,
-      fill: "#d4a574",
+      fontSize: 13,
+      fill: "#ffddbb",
+      fontWeight: "bold",
       align: "center",
+      stroke: { color: "#000000", width: 2 },
     }),
   });
   subtitleText.x = GAME_WIDTH / 2;
@@ -88,7 +90,7 @@ export function showTitleScreen(
         fontSize: 18,
         fill: "#ffdd44",
         fontWeight: "bold",
-        stroke: { color: "#000000", width: 2 },
+        stroke: { color: "#000000", width: 3 },
       }),
     });
     hsText.x = GAME_WIDTH / 2;
@@ -118,8 +120,9 @@ export function showTitleScreen(
     text: "Arrow keys / WASD to move",
     style: new TextStyle({
       fontFamily: "monospace",
-      fontSize: 11,
-      fill: "#999999",
+      fontSize: 12,
+      fill: "#ddccbb",
+      stroke: { color: "#000000", width: 2 },
     }),
   });
   kbHint.x = GAME_WIDTH / 2;
@@ -145,8 +148,9 @@ export function showTitleScreen(
     style: new TextStyle({
       fontFamily: "monospace",
       fontSize: 15,
-      fill: "#88aaff",
+      fill: "#aaccff",
       fontWeight: "bold",
+      stroke: { color: "#000000", width: 2 },
     }),
   });
   howBtn.x = GAME_WIDTH * 0.25;
@@ -167,8 +171,9 @@ export function showTitleScreen(
     style: new TextStyle({
       fontFamily: "monospace",
       fontSize: 15,
-      fill: "#88aaff",
+      fill: "#aaccff",
       fontWeight: "bold",
+      stroke: { color: "#000000", width: 2 },
     }),
   });
   customBtn.x = GAME_WIDTH * 0.75;
@@ -218,8 +223,9 @@ export function showTitleScreen(
       text: `Games: ${stats.totalGames} | Meatballs: ${stats.totalMeatballs} | Zone: ${stats.maxZone + 1}`,
       style: new TextStyle({
         fontFamily: "monospace",
-        fontSize: 10,
-        fill: "#888888",
+        fontSize: 12,
+        fill: "#eeddcc",
+        stroke: { color: "#000000", width: 2 },
       }),
     });
     statsText.x = GAME_WIDTH / 2;
@@ -233,8 +239,10 @@ export function showTitleScreen(
     text: "Power-up Encyclopedia",
     style: new TextStyle({
       fontFamily: "monospace",
-      fontSize: 12,
-      fill: "#ccbbaa",
+      fontSize: 13,
+      fill: "#ffddbb",
+      fontWeight: "bold",
+      stroke: { color: "#000000", width: 2 },
     }),
   });
   encBtn.x = GAME_WIDTH / 2;

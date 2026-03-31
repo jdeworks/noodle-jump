@@ -85,14 +85,15 @@ export class HUD {
     // Zone progress bar
     this.container.addChild(this.zoneBar);
 
-    // Zone label
+    // Zone label — needs stroke for light zone backgrounds
     this.zoneLabel = new Text({
       text: "",
       style: new TextStyle({
         fontFamily: "monospace",
-        fontSize: 11,
+        fontSize: 12,
         fill: "#ffffff",
         fontWeight: "bold",
+        stroke: { color: "#000000", width: 2 },
       }),
     });
     this.zoneLabel.x = GAME_WIDTH / 2;
@@ -105,10 +106,10 @@ export class HUD {
       text: "",
       style: new TextStyle({
         fontFamily: "monospace",
-        fontSize: 11,
+        fontSize: 13,
         fill: "#ffdd44",
         fontWeight: "bold",
-        stroke: { color: "#000000", width: 2 },
+        stroke: { color: "#000000", width: 3 },
       }),
     });
     this.effectDescText.x = GAME_WIDTH / 2;
