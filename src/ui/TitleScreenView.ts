@@ -99,7 +99,61 @@ export function showTitleScreen(
     titleContainer.addChild(hsText);
   }
 
-  // "Tap to play" prompt
+  // How to Play + Custom Run buttons — above tap to play
+  const btnY = GAME_HEIGHT * 0.58;
+  const btnH = 36;
+  const btnGap = 8;
+  const btnW = (GAME_WIDTH - btnGap * 3) / 2;
+
+  const howBtnBg = new Graphics();
+  howBtnBg.roundRect(btnGap, btnY, btnW, btnH, 8);
+  howBtnBg.fill({ color: 0x222244, alpha: 0.7 });
+  howBtnBg.roundRect(btnGap, btnY, btnW, btnH, 8);
+  howBtnBg.stroke({ width: 1, color: 0x4466aa, alpha: 0.5 });
+  howBtnBg.eventMode = "static";
+  howBtnBg.cursor = "pointer";
+  titleContainer.addChild(howBtnBg);
+
+  const howBtn = new Text({
+    text: "How to Play",
+    style: new TextStyle({
+      fontFamily: "monospace",
+      fontSize: 15,
+      fill: "#aaccff",
+      fontWeight: "bold",
+      stroke: { color: "#000000", width: 2 },
+    }),
+  });
+  howBtn.x = btnGap + btnW / 2;
+  howBtn.y = btnY + btnH / 2;
+  howBtn.anchor.set(0.5, 0.5);
+  titleContainer.addChild(howBtn);
+
+  const customBtnBg = new Graphics();
+  customBtnBg.roundRect(btnGap * 2 + btnW, btnY, btnW, btnH, 8);
+  customBtnBg.fill({ color: 0x222244, alpha: 0.7 });
+  customBtnBg.roundRect(btnGap * 2 + btnW, btnY, btnW, btnH, 8);
+  customBtnBg.stroke({ width: 1, color: 0x4466aa, alpha: 0.5 });
+  customBtnBg.eventMode = "static";
+  customBtnBg.cursor = "pointer";
+  titleContainer.addChild(customBtnBg);
+
+  const customBtn = new Text({
+    text: "Custom Run",
+    style: new TextStyle({
+      fontFamily: "monospace",
+      fontSize: 15,
+      fill: "#aaccff",
+      fontWeight: "bold",
+      stroke: { color: "#000000", width: 2 },
+    }),
+  });
+  customBtn.x = btnGap * 2 + btnW + btnW / 2;
+  customBtn.y = btnY + btnH / 2;
+  customBtn.anchor.set(0.5, 0.5);
+  titleContainer.addChild(customBtn);
+
+  // "Tap to play" prompt — below buttons
   const promptText = new Text({
     text: "Tap to play",
     style: new TextStyle({
@@ -111,7 +165,7 @@ export function showTitleScreen(
     }),
   });
   promptText.x = GAME_WIDTH / 2;
-  promptText.y = GAME_HEIGHT * 0.65;
+  promptText.y = GAME_HEIGHT * 0.67;
   promptText.anchor.set(0.5, 0.5);
   titleContainer.addChild(promptText);
 
@@ -132,54 +186,8 @@ export function showTitleScreen(
 
   // Settings toggles — prominent panel
   const settingsContainer = createSettingsToggles();
-  settingsContainer.y = GAME_HEIGHT * 0.78;
+  settingsContainer.y = GAME_HEIGHT * 0.80;
   titleContainer.addChild(settingsContainer);
-
-  // How to Play button — large touch target
-  const howBtnBg = new Graphics();
-  howBtnBg.roundRect(10, GAME_HEIGHT * 0.75 - 18, GAME_WIDTH / 2 - 15, 36, 8);
-  howBtnBg.fill({ color: 0x222244, alpha: 0.6 });
-  howBtnBg.eventMode = "static";
-  howBtnBg.cursor = "pointer";
-  titleContainer.addChild(howBtnBg);
-
-  const howBtn = new Text({
-    text: "How to Play",
-    style: new TextStyle({
-      fontFamily: "monospace",
-      fontSize: 15,
-      fill: "#aaccff",
-      fontWeight: "bold",
-      stroke: { color: "#000000", width: 2 },
-    }),
-  });
-  howBtn.x = GAME_WIDTH * 0.25;
-  howBtn.y = GAME_HEIGHT * 0.75;
-  howBtn.anchor.set(0.5, 0.5);
-  titleContainer.addChild(howBtn);
-
-  // Custom Run button — large touch target
-  const customBtnBg = new Graphics();
-  customBtnBg.roundRect(GAME_WIDTH / 2 + 5, GAME_HEIGHT * 0.75 - 18, GAME_WIDTH / 2 - 15, 36, 8);
-  customBtnBg.fill({ color: 0x222244, alpha: 0.6 });
-  customBtnBg.eventMode = "static";
-  customBtnBg.cursor = "pointer";
-  titleContainer.addChild(customBtnBg);
-
-  const customBtn = new Text({
-    text: "Custom Run",
-    style: new TextStyle({
-      fontFamily: "monospace",
-      fontSize: 15,
-      fill: "#aaccff",
-      fontWeight: "bold",
-      stroke: { color: "#000000", width: 2 },
-    }),
-  });
-  customBtn.x = GAME_WIDTH * 0.75;
-  customBtn.y = GAME_HEIGHT * 0.75;
-  customBtn.anchor.set(0.5, 0.5);
-  titleContainer.addChild(customBtn);
 
   // Explanation screen
   const explanationScreen = new ExplanationScreen();
@@ -275,7 +283,7 @@ export function showTitleScreen(
   const settingsBounds = {
     left: 0,
     right: GAME_WIDTH,
-    top: GAME_HEIGHT * 0.73,
+    top: GAME_HEIGHT * 0.77,
     bottom: GAME_HEIGHT,
   };
 
