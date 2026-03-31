@@ -10,7 +10,7 @@ import { resetPowerUpIds } from "../entities/PowerUp";
 import { resetCollectibleIds } from "../entities/Collectible";
 import { resetEnemyIds } from "../entities/Enemy";
 import { resetProjectileIds } from "../entities/Projectile";
-import { requestWakeLock, requestFullscreen } from "../utils/wakeLock";
+import { requestWakeLock } from "../utils/wakeLock";
 import { Tutorial } from "../ui/Tutorial";
 import { HUD } from "../ui/HUD";
 import type { RunConfig } from "../systems/CustomRunConfig";
@@ -66,9 +66,7 @@ export async function launchGame(app: Application, runConfig?: RunConfig): Promi
 
   // Pause — handled by HUD's built-in button
 
-  // ── Fullscreen on first tap ──────────────────────────────────────────────
-  app.canvas.addEventListener("touchstart", requestFullscreen, { once: true });
-  app.canvas.addEventListener("click", requestFullscreen, { once: true });
+  // Fullscreen handled by HUD button — no auto-fullscreen on tap
 
   // ── Tilt permission ──────────────────────────────────────────────────────
   if (scene.input.needsTiltPermission) {

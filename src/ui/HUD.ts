@@ -2,6 +2,7 @@
 
 import { Container, Graphics, Text, TextStyle } from "pixi.js";
 import { GAME_WIDTH, GAME_HEIGHT } from "../config/constants";
+import { requestFullscreen } from "../utils/wakeLock";
 import { POWER_UP_INFO } from "./PowerUpDescriptions";
 import type { GameWorldState } from "../scenes/GameState";
 
@@ -55,15 +56,36 @@ export class HUD {
     this.heightText.y = 9;
     this.container.addChild(this.heightText);
 
-    // Score — left of pause button
+    // Score — left of buttons
     this.scoreText = new Text({ text: "0", style: hudStyle });
-    this.scoreText.x = GAME_WIDTH - 50;
+    this.scoreText.x = GAME_WIDTH - 80;
     this.scoreText.anchor.set(1, 0);
     this.scoreText.y = 9;
     this.container.addChild(this.scoreText);
 
-    // Pause button — inside HUD bar, large touch target
-    this.pauseHitArea.rect(GAME_WIDTH - 44, 0, 44, 36);
+    // Fullscreen button
+    const fsHitArea = new Graphics();
+    fsHitArea.rect(GAME_WIDTH - 78, 0, 36, 36);
+    fsHitArea.fill({ color: 0x000000, alpha: 0.001 });
+    fsHitArea.eventMode = "static";
+    fsHitArea.cursor = "pointer";
+    fsHitArea.on("pointertap", () => requestFullscreen());
+    this.container.addChild(fsHitArea);
+
+    const fsBtn = new Text({
+      text: "[ ]",
+      style: new TextStyle({
+        fontFamily: "monospace", fontSize: 14,
+        fill: "#aaaaaa", fontWeight: "bold",
+      }),
+    });
+    fsBtn.x = GAME_WIDTH - 60;
+    fsBtn.y = 10;
+    fsBtn.anchor.set(0.5, 0);
+    this.container.addChild(fsBtn);
+
+    // Pause button
+    this.pauseHitArea.rect(GAME_WIDTH - 40, 0, 40, 36);
     this.pauseHitArea.fill({ color: 0x000000, alpha: 0.001 });
     this.pauseHitArea.eventMode = "static";
     this.pauseHitArea.cursor = "pointer";
@@ -77,7 +99,7 @@ export class HUD {
         fill: "#ffaa33", fontWeight: "bold",
       }),
     });
-    this.pauseBtn.x = GAME_WIDTH - 22;
+    this.pauseBtn.x = GAME_WIDTH - 20;
     this.pauseBtn.y = 9;
     this.pauseBtn.anchor.set(0.5, 0);
     this.container.addChild(this.pauseBtn);

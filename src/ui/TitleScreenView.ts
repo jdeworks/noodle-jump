@@ -263,56 +263,15 @@ export function showTitleScreen(
   };
   app.ticker.add(titleTicker);
 
-  // Start game on input — ignore taps on the settings/buttons area
-  const settingsBounds = {
-    left: 0,
-    right: GAME_WIDTH,
-    top: GAME_HEIGHT * 0.77,
-    bottom: GAME_HEIGHT,
-  };
+  // Game only starts via the play button — no accidental starts from other taps
 
-  const isInSettings = (e: MouseEvent | TouchEvent): boolean => {
-    const rect = app.canvas.getBoundingClientRect();
-    const scaleX = GAME_WIDTH / rect.width;
-    const scaleY = GAME_HEIGHT / rect.height;
-    let clientX: number, clientY: number;
-    if ("touches" in e && e.touches.length > 0) {
-      clientX = e.touches[0].clientX;
-      clientY = e.touches[0].clientY;
-    } else if ("clientX" in e) {
-      clientX = e.clientX;
-      clientY = e.clientY;
-    } else {
-      return false;
-    }
-    const x = (clientX - rect.left) * scaleX;
-    const y = (clientY - rect.top) * scaleY;
-    return (
-      x >= settingsBounds.left &&
-      x <= settingsBounds.right &&
-      y >= settingsBounds.top &&
-      y <= settingsBounds.bottom
-    );
-  };
-
-  // Cooldown after closing overlays — prevent accidental game start
-  let overlayCooldown = 0;
-  const originalHideExpl = explanationScreen.hide.bind(explanationScreen);
-  explanationScreen.hide = () => { originalHideExpl(); overlayCooldown = Date.now() + 300; };
-  const originalHideEnc = encyclopedia.hide.bind(encyclopedia);
-  encyclopedia.hide = () => { originalHideEnc(); overlayCooldown = Date.now() + 300; };
-
-  const startGame = async (e: Event) => {
-    // Don't start if an overlay is open or just closed
+  let started = false;
+  const startGame = async () => {
+    if (started) return;
     if (explanationScreen.isActive() || customRunScreen.isActive() || encyclopedia.isActive()) return;
-    if (Date.now() < overlayCooldown) return;
-    if (e instanceof MouseEvent || e instanceof TouchEvent) {
-      if (isInSettings(e)) return;
-    }
+    started = true;
 
-    app.canvas.removeEventListener("click", startGame);
-    app.canvas.removeEventListener("touchstart", startGame);
-    window.removeEventListener("keydown", startGame);
+    window.removeEventListener("keydown", handleKey);
 
     initAudio();
     stopMusic();
@@ -337,12 +296,15 @@ export function showTitleScreen(
   app.canvas.addEventListener("click", startTitleMusic, { once: true });
   app.canvas.addEventListener("touchstart", startTitleMusic, { once: true });
 
-  // Wire play button pixi tap
-  playButton.bg.on("pointertap", () => startGame(new Event("tap")));
+  // Only the play button starts the game (no canvas-wide click)
+  playButton.bg.on("pointertap", () => startGame());
   promptText.eventMode = "static";
-  promptText.on("pointertap", () => startGame(new Event("tap")));
+  promptText.on("pointertap", () => startGame());
 
-  app.canvas.addEventListener("click", startGame);
-  app.canvas.addEventListener("touchstart", startGame);
-  window.addEventListener("keydown", startGame);
+  // Keyboard still works
+  const handleKey = (e: KeyboardEvent) => {
+    if (explanationScreen.isActive() || customRunScreen.isActive() || encyclopedia.isActive()) return;
+    if (e.key === "Enter" || e.key === " ") startGame();
+  };
+  window.addEventListener("keydown", handleKey);
 }
