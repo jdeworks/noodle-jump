@@ -26,18 +26,21 @@ async function main() {
   if (!container) throw new Error("Missing #game element");
   container.appendChild(app.canvas);
 
-  // Resize canvas to fill container while maintaining aspect ratio
+  // Resize canvas to cover the full screen (no letterboxing)
   function resizeCanvas() {
     const w = container!.clientWidth;
     const h = container!.clientHeight;
     const aspect = GAME_WIDTH / GAME_HEIGHT;
     let canvasW: number, canvasH: number;
+    // Cover: use the larger dimension so canvas fills the viewport
     if (w / h > aspect) {
-      canvasH = h;
-      canvasW = h * aspect;
-    } else {
+      // Screen is wider than game — match width, overflow height
       canvasW = w;
       canvasH = w / aspect;
+    } else {
+      // Screen is taller than game — match height, overflow width
+      canvasH = h;
+      canvasW = h * aspect;
     }
     app.canvas.style.width = `${canvasW}px`;
     app.canvas.style.height = `${canvasH}px`;
