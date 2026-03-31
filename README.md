@@ -6,13 +6,43 @@ A pasta-themed endless jumper built with PixiJS and TypeScript.
 
 ## Features
 
+### Gameplay
+- **15 power-ups** — 7 positive (spring, tornado, rocket, lasagna layers, magnet, pasta shield, rigatoni drill, penne cannon, gnocchi bounce, minestrone soup) and 4 negative (chili pepper, soggy noodle, garlic breath, burnt toast)
+- **11 platform types** — static, breaking, brittle, moving, conveyor, spring, ice, crumbling, teleport, weighted, lasagna
+- **3 boss types** — Chef Rival (jumps on platforms), Kraken (steals platform chunks), UFO (shoots projectiles)
+- **Enemies** (opt-in) — rats, fish, aliens per zone. Throw knives to defeat them (3 ammo, regenerating)
+- **7 themed zones** — Kitchen, Ocean, Space, Freezer, Volcano, Candy World, Final Kitchen
+- Combo system, close-call bonuses, landing streaks
+- Wind gusts, day/night cycle, weather effects per zone
+- Progressive difficulty scaling with zone-specific mechanics
+
+### Audio
+- Unique music track per zone with smooth crossfade transitions
+- Boss battle music
+- Per-power-up SFX (15 unique sounds)
+- Per-platform landing SFX
+- Procedural ambient audio per zone (Web Audio API)
+- Volume sliders for SFX and music
+
+### UI & Meta
+- Tutorial overlay for first play
+- How to Play encyclopedia with all mechanics explained
+- Power-up encyclopedia tracking collected types
+- Custom runs — configurable seed, enemies, power-ups, difficulty, starting zone, practice mode
+- 22 achievements with persistent cross-session stats
+- 18 unlockable cosmetics (outfits, trails, platform skins)
+- Local leaderboard with tamper detection
+- Share score via clipboard/Web Share API
+- Debug mode with presets for testing specific features
+
+### Technical
 - Tilt controls on mobile, keyboard (arrow keys / WASD) on desktop
-- 10 power-ups — 5 positive (spring boots, tornado, rocket, lasagna layers, meatball magnet) and 4 negative (chili pepper, soggy noodle, garlic breath, burnt toast)
-- 3 themed zones (Kitchen, Ocean, Space) with parallax backgrounds
-- Progressive difficulty scaling
-- Combo system, close-call bonuses, and landing streaks
-- Procedural SFX via Web Audio API
-- High score tracking with share button
+- Virtual joystick as tilt fallback
+- PWA — installable, works offline via service worker
+- Haptic feedback on mobile (impacts, power-ups, death)
+- Seeded RNG for deterministic/reproducible runs
+- 343 tests across 42 test files
+- Modular architecture — pure logic separated from PixiJS rendering
 
 ## Development
 
@@ -24,27 +54,33 @@ npx vite --host 0.0.0.0
 ### Build
 
 ```bash
-npx vite build   # outputs to docs/
+npx vite build   # outputs to docs/ for GitHub Pages
 ```
 
-### Tests
+### Tests & Quality
 
 ```bash
-npx vitest run    # 92 tests
+npx vitest run    # 343 tests
 npx tsc --noEmit  # type check
+npx eslint src    # lint
+make health       # LOC budget + file size checks
 ```
+
+### Pre-commit Hooks
+
+Commits are gated by: LOC limit (400/file), typecheck, lint, and test suite.
 
 ## Credits
 
+See [CREDITS.md](./CREDITS.md) for full music attribution.
+
 ### Music
 
-Background music used under the [Pixabay Content License](https://pixabay.com/service/license-summary/).
-
-- **"September"** by Lexin_Music — [Pixabay](https://pixabay.com/music/beats-september-219737/)
-- **"Background Music"** by DayFox — [Pixabay](https://pixabay.com/music/electronic-background-music-507928/)
+All Pixabay tracks used under the [Pixabay Content License](https://pixabay.com/service/license-summary/). Boss battle music by nene (CC0) from [OpenGameArt](https://opengameart.org/content/boss-battle-5-8-bit).
 
 ### Built with
 
 - [PixiJS](https://pixijs.com/) — 2D WebGL renderer
 - [Vite](https://vitejs.dev/) — Build tool
 - [TypeScript](https://www.typescriptlang.org/)
+- [Vitest](https://vitest.dev/) — Test runner
