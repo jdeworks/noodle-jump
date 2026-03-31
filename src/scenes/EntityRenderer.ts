@@ -41,39 +41,22 @@ export function renderPlatforms(
     if (gfx.alpha < 1) gfx.alpha = 1;
     if (gfx.scale.y < 1) gfx.scale.y = 1;
 
+    // Fixed distinctive colors per type — same across all zones so
+    // players learn to recognise them. Only "normal" adapts to zone.
+    const style: PlatformStyle = platform.type === "lasagna" ? "lasagna"
+      : (platform.type as PlatformStyle) ?? "normal";
     let color = theme.platform;
-    let style: PlatformStyle = "normal";
-
-    if (platform.type === "breaking") {
-      color = theme.platformBreaking;
-      style = "breaking";
-    } else if (platform.type === "brittle") {
-      color = theme.platformBrittle;
-      style = "brittle";
-    } else if (platform.type === "moving") {
-      color = theme.platformMoving;
-      style = "moving";
-    } else if (platform.type === "lasagna") {
-      color = theme.platformLasagna;
-      style = "lasagna";
-    } else if (platform.type === "conveyor") {
-      color = theme.platformConveyor;
-      style = "conveyor";
-    } else if (platform.type === "spring") {
-      color = theme.platformSpring;
-      style = "spring";
-    } else if (platform.type === "ice") {
-      color = theme.platformIce;
-      style = "ice";
-    } else if (platform.type === "crumbling") {
-      color = theme.platformCrumbling;
-      style = "crumbling";
-    } else if (platform.type === "teleport") {
-      color = theme.platformTeleport;
-      style = "teleport";
-    } else if (platform.type === "weighted") {
-      color = theme.platformWeighted;
-      style = "weighted";
+    switch (platform.type) {
+      case "breaking":  color = 0x886622; break; // dark gold — danger
+      case "brittle":   color = 0xcc8866; break; // pale tan — fragile
+      case "moving":    color = 0x6699cc; break; // blue — moving
+      case "lasagna":   color = 0xff8c00; break; // bright orange
+      case "conveyor":  color = 0x888888; break; // steel gray
+      case "spring":    color = 0x33bb33; break; // bright green
+      case "ice":       color = 0x88ccff; break; // light blue
+      case "crumbling": color = 0xcc6633; break; // orange-red — urgent
+      case "teleport":  color = 0x9955ff; break; // vivid purple
+      case "weighted":  color = 0x997744; break; // olive brown
     }
 
     // Always redraw visible platforms (only ~10-15 on screen, fast enough)
