@@ -76,7 +76,7 @@ export function showTitleScreen(
   // Animated chef character
   const chefGfx = new Graphics();
   chefGfx.x = GAME_WIDTH / 2 - 16;
-  chefGfx.y = GAME_HEIGHT * 0.42;
+  chefGfx.y = GAME_HEIGHT * 0.38;
   drawChef(chefGfx, 32, 40);
   titleContainer.addChild(chefGfx);
 
@@ -94,82 +94,65 @@ export function showTitleScreen(
       }),
     });
     hsText.x = GAME_WIDTH / 2;
-    hsText.y = GAME_HEIGHT * 0.52;
+    hsText.y = GAME_HEIGHT * 0.2 + 135;
     hsText.anchor.set(0.5, 0.5);
     titleContainer.addChild(hsText);
   }
 
-  // How to Play + Custom Run buttons — above tap to play
-  const btnY = GAME_HEIGHT * 0.58;
-  const btnH = 36;
-  const btnGap = 8;
-  const btnW = (GAME_WIDTH - btnGap * 3) / 2;
+  // ── Vertical button stack under chef ─────────────────────────────────
+  const btnMargin = 12;
+  const btnW = GAME_WIDTH - btnMargin * 2;
+  const btnH = 38;
+  const btnSpacing = 6;
+  let btnTop = GAME_HEIGHT * 0.47;
 
-  const howBtnBg = new Graphics();
-  howBtnBg.roundRect(btnGap, btnY, btnW, btnH, 8);
-  howBtnBg.fill({ color: 0x222244, alpha: 0.7 });
-  howBtnBg.roundRect(btnGap, btnY, btnW, btnH, 8);
-  howBtnBg.stroke({ width: 1, color: 0x4466aa, alpha: 0.5 });
-  howBtnBg.eventMode = "static";
-  howBtnBg.cursor = "pointer";
-  titleContainer.addChild(howBtnBg);
+  // Helper: create a styled button
+  function makeButton(
+    label: string, y: number,
+    fillColor: number, textColor: string, fontSize: number,
+  ): { bg: Graphics; text: Text } {
+    const bg = new Graphics();
+    bg.roundRect(btnMargin, y, btnW, btnH, 10);
+    bg.fill({ color: fillColor, alpha: 0.7 });
+    bg.roundRect(btnMargin, y, btnW, btnH, 10);
+    bg.stroke({ width: 1.5, color: 0x6688bb, alpha: 0.5 });
+    bg.eventMode = "static";
+    bg.cursor = "pointer";
+    titleContainer.addChild(bg);
 
-  const howBtn = new Text({
-    text: "How to Play",
-    style: new TextStyle({
-      fontFamily: "monospace",
-      fontSize: 15,
-      fill: "#aaccff",
-      fontWeight: "bold",
-      stroke: { color: "#000000", width: 2 },
-    }),
-  });
-  howBtn.x = btnGap + btnW / 2;
-  howBtn.y = btnY + btnH / 2;
-  howBtn.anchor.set(0.5, 0.5);
-  titleContainer.addChild(howBtn);
+    const text = new Text({
+      text: label,
+      style: new TextStyle({
+        fontFamily: "monospace", fontSize,
+        fill: textColor, fontWeight: "bold",
+        stroke: { color: "#000000", width: 2 },
+      }),
+    });
+    text.x = GAME_WIDTH / 2;
+    text.y = y + btnH / 2;
+    text.anchor.set(0.5, 0.5);
+    titleContainer.addChild(text);
+    return { bg, text };
+  }
 
-  const customBtnBg = new Graphics();
-  customBtnBg.roundRect(btnGap * 2 + btnW, btnY, btnW, btnH, 8);
-  customBtnBg.fill({ color: 0x222244, alpha: 0.7 });
-  customBtnBg.roundRect(btnGap * 2 + btnW, btnY, btnW, btnH, 8);
-  customBtnBg.stroke({ width: 1, color: 0x4466aa, alpha: 0.5 });
-  customBtnBg.eventMode = "static";
-  customBtnBg.cursor = "pointer";
-  titleContainer.addChild(customBtnBg);
+  // 1. Tap to Play (primary — brighter)
+  const playButton = makeButton("Tap to Play", btnTop, 0x1a3355, "#ffffff", 20);
+  const promptText = playButton.text;
+  btnTop += btnH + btnSpacing;
 
-  const customBtn = new Text({
-    text: "Custom Run",
-    style: new TextStyle({
-      fontFamily: "monospace",
-      fontSize: 15,
-      fill: "#aaccff",
-      fontWeight: "bold",
-      stroke: { color: "#000000", width: 2 },
-    }),
-  });
-  customBtn.x = btnGap * 2 + btnW + btnW / 2;
-  customBtn.y = btnY + btnH / 2;
-  customBtn.anchor.set(0.5, 0.5);
-  titleContainer.addChild(customBtn);
+  // 2. How to Play
+  const howButton = makeButton("How to Play", btnTop, 0x222244, "#aaccff", 15);
+  const howBtnBg = howButton.bg;
+  const howBtn = howButton.text;
+  btnTop += btnH + btnSpacing;
 
-  // "Tap to play" prompt — below buttons
-  const promptText = new Text({
-    text: "Tap to play",
-    style: new TextStyle({
-      fontFamily: "monospace",
-      fontSize: 20,
-      fill: "#ffffff",
-      fontWeight: "bold",
-      stroke: { color: "#000000", width: 2 },
-    }),
-  });
-  promptText.x = GAME_WIDTH / 2;
-  promptText.y = GAME_HEIGHT * 0.67;
-  promptText.anchor.set(0.5, 0.5);
-  titleContainer.addChild(promptText);
+  // 3. Custom Run
+  const customButton = makeButton("Custom Run", btnTop, 0x222244, "#aaccff", 15);
+  const customBtnBg = customButton.bg;
+  const customBtn = customButton.text;
+  btnTop += btnH + btnSpacing + 4;
 
-  // Keyboard hint for desktop
+  // Keyboard hint
   const kbHint = new Text({
     text: "Arrow keys / WASD to move",
     style: new TextStyle({
@@ -180,13 +163,13 @@ export function showTitleScreen(
     }),
   });
   kbHint.x = GAME_WIDTH / 2;
-  kbHint.y = GAME_HEIGHT * 0.72;
+  kbHint.y = btnTop;
   kbHint.anchor.set(0.5, 0);
   titleContainer.addChild(kbHint);
 
-  // Settings toggles — prominent panel
+  // Settings toggles
   const settingsContainer = createSettingsToggles();
-  settingsContainer.y = GAME_HEIGHT * 0.80;
+  settingsContainer.y = btnTop + 22;
   titleContainer.addChild(settingsContainer);
 
   // Explanation screen
@@ -254,7 +237,7 @@ export function showTitleScreen(
     }),
   });
   encBtn.x = GAME_WIDTH / 2;
-  encBtn.y = GAME_HEIGHT * 0.70;
+  encBtn.y = kbHint.y + 18;
   encBtn.anchor.set(0.5, 0);
   encBtn.eventMode = "static";
   encBtn.cursor = "pointer";
@@ -275,7 +258,7 @@ export function showTitleScreen(
     animTick++;
     chefGfx.clear();
     drawChef(chefGfx, 32, 40);
-    chefGfx.y = GAME_HEIGHT * 0.42 + Math.sin(animTick * 0.05) * 4;
+    chefGfx.y = GAME_HEIGHT * 0.38 + Math.sin(animTick * 0.05) * 4;
   };
   app.ticker.add(titleTicker);
 
@@ -344,6 +327,11 @@ export function showTitleScreen(
   };
   app.canvas.addEventListener("click", startTitleMusic, { once: true });
   app.canvas.addEventListener("touchstart", startTitleMusic, { once: true });
+
+  // Wire play button pixi tap
+  playButton.bg.on("pointertap", () => startGame(new Event("tap")));
+  promptText.eventMode = "static";
+  promptText.on("pointertap", () => startGame(new Event("tap")));
 
   app.canvas.addEventListener("click", startGame);
   app.canvas.addEventListener("touchstart", startGame);
