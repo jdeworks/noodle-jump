@@ -317,11 +317,14 @@ export class GameScene {
       camY,
     );
 
-    // Knife ammo display
+    // Knife ammo display — filled/empty knife icons
     if (this.state.enemiesEnabled || this.state.inBossFight) {
       const knives = this.state.knifeAmmo;
       const max = this.state.knifeAmmoMax;
-      this.knifeAmmoText.text = `KNIVES ${"I".repeat(knives)}${"·".repeat(max - knives)}`;
+      const filled = "\u25AE".repeat(knives);   // ▮
+      const empty = "\u25AF".repeat(max - knives); // ▯
+      this.knifeAmmoText.text = `KNIVES ${filled}${empty}`;
+      this.knifeAmmoText.style.fill = knives > 0 ? "#ffffff" : "#ff6644";
       this.knifeAmmoText.visible = true;
     } else {
       this.knifeAmmoText.visible = false;

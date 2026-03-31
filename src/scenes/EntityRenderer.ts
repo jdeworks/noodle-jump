@@ -199,12 +199,13 @@ export function renderEnemies(
   }
 }
 
-/** Render projectiles with rotation based on velocity angle. */
+/** Render projectiles — knife points in travel direction + slight spin. */
 export function renderProjectiles(
   state: GameWorldState,
   gfxSync: GraphicsSync,
   camY: number,
 ): void {
+  const t = state.animTick;
   for (const proj of state.projectiles) {
     const gfx = gfxSync.projectileGfxMap.get(proj.id);
     if (!gfx) continue;
@@ -216,7 +217,9 @@ export function renderProjectiles(
 
     gfx.x = proj.x;
     gfx.y = worldToScreen(proj.y, camY);
-    gfx.rotation = Math.atan2(proj.vy, proj.vx) + Math.PI / 2;
-    gfx.visible = gfx.y > -20 && gfx.y < GAME_HEIGHT + 20;
+    // Point blade in travel direction + slight tumble spin
+    gfx.rotation = Math.atan2(proj.vy, proj.vx) + Math.PI / 2
+      + Math.sin(t * 0.3 + proj.id * 5) * 0.15;
+    gfx.visible = gfx.y > -30 && gfx.y < GAME_HEIGHT + 30;
   }
 }
