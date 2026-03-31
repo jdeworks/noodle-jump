@@ -159,9 +159,10 @@ export function renderPowerUps(
     const bobAmp = 2 + (pu.id % 3);
     const bob = Math.sin(t * bobSpeed + phase) * bobAmp;
 
+    // Pivot at center so bob/scale/rotation all happen around the middle
+    gfx.pivot.set(pu.size / 2, pu.size / 2);
     gfx.x = pu.x + pu.size / 2;
-    gfx.y = worldToScreen(pu.y, camY) + bob;
-    gfx.pivot.x = pu.size / 2;
+    gfx.y = worldToScreen(pu.y + pu.size / 2, camY) + bob;
 
     if (isNegativePowerUp(pu.type)) {
       // Negative: threatening pulse + slight wobble
@@ -169,9 +170,8 @@ export function renderPowerUps(
       gfx.scale.set(pulse);
       gfx.rotation = Math.sin(t * 0.1 + phase) * 0.08;
     } else {
-      // Positive: spin with per-item speed variation
-      const spinSpeed = 0.06 + (pu.id % 4) * 0.015;
-      gfx.scale.x = 0.4 + Math.abs(Math.cos(t * spinSpeed + phase)) * 0.6;
+      // Positive: gentle up/down bob is the main animation
+      gfx.scale.set(1);
       gfx.rotation = 0;
     }
 
