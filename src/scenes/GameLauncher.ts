@@ -15,6 +15,8 @@ import { Tutorial } from "../ui/Tutorial";
 import { HUD } from "../ui/HUD";
 import type { RunConfig } from "../systems/CustomRunConfig";
 import { resetRNG } from "../systems/RNG";
+import { stopMusic } from "../systems/Audio";
+import { showTitleScreen } from "../ui/TitleScreenView";
 import { createGameLoopTicker } from "./GameLoopTicker";
 
 // ── Active session tracking ──────────────────────────────────────────────
@@ -47,8 +49,38 @@ export function cleanupAndRestart(app: Application): void {
   resetEnemyIds();
   resetProjectileIds();
   resetRNG();
+  app.ticker.start();
   playMusic(0);
   launchGame(app);
+}
+
+export function cleanupAndGoHome(app: Application): void {
+  if (activeGameTicker) {
+    app.ticker.remove(activeGameTicker);
+    activeGameTicker = null;
+  }
+  if (activeOrientationCleanup) {
+    activeOrientationCleanup();
+    activeOrientationCleanup = null;
+  }
+  if (activeScene) {
+    activeScene.destroy();
+    activeScene = null;
+  }
+  while (app.stage.children.length > 0) {
+    const child = app.stage.children[0];
+    app.stage.removeChild(child);
+    child.destroy({ children: true });
+  }
+  resetPlatformIds();
+  resetPowerUpIds();
+  resetCollectibleIds();
+  resetEnemyIds();
+  resetProjectileIds();
+  resetRNG();
+  stopMusic();
+  app.ticker.start();
+  showTitleScreen(app, (runConfig) => launchGame(app, runConfig));
 }
 
 // ── Game Launch ──────────────────────────────────────────────────────────
@@ -216,6 +248,7 @@ export async function launchGame(app: Application, runConfig?: RunConfig): Promi
     hud,
     { effectTimerBar, effectTimerLabel, countdownText },
     () => cleanupAndRestart(app),
+    () => cleanupAndGoHome(app),
   );
   activeGameTicker = gameLoopTicker;
   app.ticker.add(gameLoopTicker);

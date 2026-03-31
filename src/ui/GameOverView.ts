@@ -3,7 +3,7 @@
 import { Application, Graphics, Text, TextStyle } from "pixi.js";
 import { GAME_WIDTH, GAME_HEIGHT } from "../config/constants";
 import { FireworkDisplay } from "../rendering/fireworks";
-import { releaseWakeLock, requestFullscreen } from "../utils/wakeLock";
+import { releaseWakeLock } from "../utils/wakeLock";
 import { formatTime } from "../utils/format";
 
 export interface GameOverStats {
@@ -16,20 +16,20 @@ export interface GameOverStats {
   bestCombo: number;
   bestStreak: number;
   platforms: number;
+  isCustomRun?: boolean;
 }
 
 export function showGameOver(
   app: Application,
   stats: GameOverStats,
   onRestart: () => void,
+  onHome: () => void,
   achievements?: string[],
 ): void {
-  // Remove fullscreen listeners so game-over taps don't trigger fullscreen
-  app.canvas.removeEventListener("touchstart", requestFullscreen);
-  app.canvas.removeEventListener("click", requestFullscreen);
   releaseWakeLock();
 
-  const isNewRecord = stats.score >= stats.highScore && stats.score > 0;
+  const isCustom = stats.isCustomRun ?? false;
+  const isNewRecord = !isCustom && stats.score >= stats.highScore && stats.score > 0;
 
   const dim = new Graphics();
   dim.rect(0, 0, GAME_WIDTH, GAME_HEIGHT);
@@ -37,14 +37,18 @@ export function showGameOver(
   dim.eventMode = "static";
   app.stage.addChild(dim);
 
+  // Fireworks — don't stop ticker when done, just clean up
+  let fireworks: FireworkDisplay | null = null;
+  let fireworkTicker: (() => void) | null = null;
   if (isNewRecord) {
-    const fireworks = new FireworkDisplay(10);
+    fireworks = new FireworkDisplay(10);
     app.stage.addChild(fireworks.container);
-    const fireworkTicker = () => {
-      if (!fireworks.update()) {
-        app.ticker.remove(fireworkTicker);
+    fireworkTicker = () => {
+      if (fireworks && !fireworks.update()) {
+        if (fireworkTicker) app.ticker.remove(fireworkTicker);
         fireworks.destroy();
-        app.ticker.stop();
+        fireworks = null;
+        fireworkTicker = null;
       }
     };
     app.ticker.add(fireworkTicker);
@@ -52,8 +56,12 @@ export function showGameOver(
   }
 
   // Title
+  let titleStr = "Game Over!";
+  if (isNewRecord) titleStr = "NEW HIGH SCORE!";
+  else if (isCustom) titleStr = "Custom Run Complete!";
+
   const title = new Text({
-    text: isNewRecord ? "NEW HIGH SCORE!" : "Game Over!",
+    text: titleStr,
     style: new TextStyle({
       fontFamily: "monospace",
       fontSize: isNewRecord ? 22 : 24,
@@ -63,14 +71,29 @@ export function showGameOver(
     }),
   });
   title.x = GAME_WIDTH / 2;
-  title.y = GAME_HEIGHT * 0.18;
+  title.y = GAME_HEIGHT * 0.14;
   title.anchor.set(0.5, 0.5);
   app.stage.addChild(title);
+
+  // Custom run notice
+  if (isCustom) {
+    const notice = new Text({
+      text: "(scores not saved to leaderboard)",
+      style: new TextStyle({
+        fontFamily: "monospace", fontSize: 11,
+        fill: "#aa9988",
+      }),
+    });
+    notice.x = GAME_WIDTH / 2;
+    notice.y = GAME_HEIGHT * 0.19;
+    notice.anchor.set(0.5, 0.5);
+    app.stage.addChild(notice);
+  }
 
   // Score breakdown
   const breakdownLines = [
     `Score     ${stats.score}`,
-    `Best      ${stats.highScore}`,
+    ...(isCustom ? [] : [`Best      ${stats.highScore}`]),
     "",
     `Height    ${stats.height}`,
     `Time      ${formatTime(stats.seconds)}`,
@@ -85,14 +108,12 @@ export function showGameOver(
   const breakdown = new Text({
     text: breakdownLines.join("\n"),
     style: new TextStyle({
-      fontFamily: "monospace",
-      fontSize: 13,
-      fill: "#cccccc",
-      lineHeight: 20,
+      fontFamily: "monospace", fontSize: 13,
+      fill: "#cccccc", lineHeight: 20,
     }),
   });
   breakdown.x = GAME_WIDTH / 2;
-  breakdown.y = GAME_HEIGHT * 0.42;
+  breakdown.y = GAME_HEIGHT * 0.40;
   breakdown.anchor.set(0.5, 0.5);
   app.stage.addChild(breakdown);
 
@@ -101,28 +122,29 @@ export function showGameOver(
     const achText = new Text({
       text: "UNLOCKED: " + achievements.join(", "),
       style: new TextStyle({
-        fontFamily: "monospace",
-        fontSize: 13,
-        fill: "#ffdd44",
-        fontWeight: "bold",
+        fontFamily: "monospace", fontSize: 13,
+        fill: "#ffdd44", fontWeight: "bold",
         stroke: { color: "#000000", width: 2 },
-        wordWrap: true,
-        wordWrapWidth: GAME_WIDTH - 40,
+        wordWrap: true, wordWrapWidth: GAME_WIDTH - 40,
         align: "center",
       }),
     });
     achText.x = GAME_WIDTH / 2;
-    achText.y = GAME_HEIGHT * 0.62;
+    achText.y = GAME_HEIGHT * 0.60;
     achText.anchor.set(0.5, 0.5);
     app.stage.addChild(achText);
   }
 
   // Suppress restart briefly when a button is tapped
   let buttonTapped = false;
+  const suppressRestart = () => {
+    buttonTapped = true;
+    setTimeout(() => { buttonTapped = false; }, 300);
+  };
 
-  // Share button — bigger touch target
+  // Share button
   const shareBg = new Graphics();
-  shareBg.roundRect(GAME_WIDTH / 2 - 80, GAME_HEIGHT * 0.68 - 16, 160, 32, 8);
+  shareBg.roundRect(GAME_WIDTH / 2 - 80, GAME_HEIGHT * 0.66 - 16, 160, 32, 8);
   shareBg.fill({ color: 0x224466, alpha: 0.6 });
   shareBg.eventMode = "static";
   app.stage.addChild(shareBg);
@@ -130,98 +152,109 @@ export function showGameOver(
   const shareText = new Text({
     text: "Share Score",
     style: new TextStyle({
-      fontFamily: "monospace",
-      fontSize: 16,
-      fill: "#44aaff",
-      fontWeight: "bold",
+      fontFamily: "monospace", fontSize: 16,
+      fill: "#44aaff", fontWeight: "bold",
     }),
   });
   shareText.x = GAME_WIDTH / 2;
-  shareText.y = GAME_HEIGHT * 0.68;
+  shareText.y = GAME_HEIGHT * 0.66;
   shareText.anchor.set(0.5, 0.5);
   shareText.eventMode = "static";
   shareText.cursor = "pointer";
   const handleShare = (e: Event) => {
     e.stopPropagation();
-    buttonTapped = true;
-    setTimeout(() => { buttonTapped = false; }, 200);
-    const shareMsg =
-      `I scored ${stats.score} on Noodle Jump!\n` +
-      `Height: ${stats.height} | Meatballs: ${stats.meatballs} | ` +
-      `Best combo: ${stats.bestCombo}x`;
-    navigator.clipboard.writeText(shareMsg).then(
-      () => {
-        shareText.text = "Copied!";
-        shareText.style.fill = "#66cc66";
-      },
-      () => {
-        shareText.text = "Copy failed";
-      },
+    suppressRestart();
+    const msg = `I scored ${stats.score} on Noodle Jump!\nHeight: ${stats.height} | Meatballs: ${stats.meatballs} | Combo: ${stats.bestCombo}x`;
+    navigator.clipboard.writeText(msg).then(
+      () => { shareText.text = "Copied!"; shareText.style.fill = "#66cc66"; },
+      () => { shareText.text = "Copy failed"; },
     );
   };
   shareText.on("pointertap", handleShare);
   shareBg.on("pointertap", handleShare);
   app.stage.addChild(shareText);
 
-  // Tap to restart — prominent
+  // Play Again button
+  const restartBg = new Graphics();
+  restartBg.roundRect(GAME_WIDTH / 2 - 100, GAME_HEIGHT * 0.74 - 18, 200, 36, 8);
+  restartBg.fill({ color: 0x1a3355, alpha: 0.7 });
+  restartBg.roundRect(GAME_WIDTH / 2 - 100, GAME_HEIGHT * 0.74 - 18, 200, 36, 8);
+  restartBg.stroke({ width: 1.5, color: 0x6688bb, alpha: 0.5 });
+  restartBg.eventMode = "static";
+  restartBg.cursor = "pointer";
+  app.stage.addChild(restartBg);
+
   const restartText = new Text({
-    text: "Tap to restart",
+    text: "Play Again",
     style: new TextStyle({
-      fontFamily: "monospace",
-      fontSize: 20,
-      fill: "#ffffff",
-      fontWeight: "bold",
+      fontFamily: "monospace", fontSize: 20,
+      fill: "#ffffff", fontWeight: "bold",
       stroke: { color: "#000000", width: 2 },
     }),
   });
   restartText.x = GAME_WIDTH / 2;
-  restartText.y = GAME_HEIGHT * 0.78;
+  restartText.y = GAME_HEIGHT * 0.74;
   restartText.anchor.set(0.5, 0.5);
+  restartText.eventMode = "static";
+  restartText.cursor = "pointer";
   app.stage.addChild(restartText);
 
-  // Clear data
-  const clearText = new Text({
-    text: "[Clear saved data]",
+  // Home button
+  const homeBg = new Graphics();
+  homeBg.roundRect(GAME_WIDTH / 2 - 100, GAME_HEIGHT * 0.82 - 16, 200, 32, 8);
+  homeBg.fill({ color: 0x222244, alpha: 0.7 });
+  homeBg.eventMode = "static";
+  homeBg.cursor = "pointer";
+  app.stage.addChild(homeBg);
+
+  const homeText = new Text({
+    text: "Home",
     style: new TextStyle({
-      fontFamily: "monospace",
-      fontSize: 13,
-      fill: "#aa9988",
+      fontFamily: "monospace", fontSize: 16,
+      fill: "#aaccff", fontWeight: "bold",
+      stroke: { color: "#000000", width: 2 },
     }),
   });
-  clearText.x = GAME_WIDTH / 2;
-  clearText.y = GAME_HEIGHT * 0.88;
-  clearText.anchor.set(0.5, 0.5);
-  clearText.eventMode = "static";
-  clearText.cursor = "pointer";
-  clearText.on("pointertap", (e: Event) => {
-    e.stopPropagation();
-    buttonTapped = true;
-    setTimeout(() => { buttonTapped = false; }, 200);
-    localStorage.clear();
-    clearText.text = "Data cleared!";
-    clearText.style.fill = "#66cc66";
-  });
-  app.stage.addChild(clearText);
+  homeText.x = GAME_WIDTH / 2;
+  homeText.y = GAME_HEIGHT * 0.82;
+  homeText.anchor.set(0.5, 0.5);
+  homeText.eventMode = "static";
+  homeText.cursor = "pointer";
+  app.stage.addChild(homeText);
 
-  const restart = () => {
-    if (buttonTapped) return;
-    app.canvas.removeEventListener("click", restart);
-    app.canvas.removeEventListener("touchstart", restart);
-    window.removeEventListener("keydown", restart);
+  // Cleanup helper
+  const cleanup = () => {
+    if (fireworkTicker) app.ticker.remove(fireworkTicker);
+    if (fireworks) { fireworks.destroy(); fireworks = null; }
+    app.canvas.removeEventListener("click", handleRestart);
+    app.canvas.removeEventListener("touchstart", handleRestart);
+    window.removeEventListener("keydown", handleRestart);
+  };
 
+  let acted = false;
+  const handleRestart = () => {
+    if (buttonTapped || acted) return;
+    acted = true;
+    cleanup();
     onRestart();
+  };
+
+  const handleHome = () => {
+    if (acted) return;
+    acted = true;
+    cleanup();
+    onHome();
   };
 
   setTimeout(
     () => {
-      app.canvas.addEventListener("click", restart);
-      app.canvas.addEventListener("touchstart", restart);
-      window.addEventListener("keydown", restart);
-      // Also handle pixi tap on the dim overlay
-      dim.on("pointertap", () => restart());
-      restartText.eventMode = "static";
-      restartText.cursor = "pointer";
-      restartText.on("pointertap", () => restart());
+      app.canvas.addEventListener("click", handleRestart);
+      app.canvas.addEventListener("touchstart", handleRestart);
+      window.addEventListener("keydown", handleRestart);
+      restartBg.on("pointertap", handleRestart);
+      restartText.on("pointertap", handleRestart);
+      homeBg.on("pointertap", (e: Event) => { e.stopPropagation(); suppressRestart(); handleHome(); });
+      homeText.on("pointertap", (e: Event) => { e.stopPropagation(); suppressRestart(); handleHome(); });
     },
     isNewRecord ? 1500 : 300,
   );

@@ -136,7 +136,9 @@ export function tickGameWorld(
       y: state.player.y + state.player.vy,
     };
     if (dyingTicks >= DEATH_ANIMATION_TICKS) {
-      const isNewRecord = saveHighScore(state.scoreState.points);
+      // Don't save high score for custom/practice runs
+      const isCustom = state.runConfig.seed !== 0 || state.practiceMode;
+      const isNewRecord = isCustom ? false : saveHighScore(state.scoreState.points);
       events.push({ type: "gameOver", isNewRecord });
       return {
         state: {

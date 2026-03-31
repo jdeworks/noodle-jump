@@ -33,6 +33,7 @@ export function createGameLoopTicker(
   hud: HUD,
   overlays: OverlayElements,
   onRestart: () => void,
+  onHome: () => void,
 ): () => void {
   let inGameFireworks: FireworkDisplay | null = null;
   let inGameHighScoreLabel: Text | null = null;
@@ -128,8 +129,10 @@ export function createGameLoopTicker(
         zone: scene.getZone(),
         seconds: scene.getElapsedSeconds(),
       };
-      const stats = updateStatsAfterGame(loadStats(), gameResult);
-      saveStats(stats);
+      // Only save stats for normal runs (not custom/practice)
+      const isCustom = scene.isCustomRun();
+      const stats = isCustom ? loadStats() : updateStatsAfterGame(loadStats(), gameResult);
+      if (!isCustom) saveStats(stats);
 
       const gameStats: GameStats = {
         ...gameResult,
@@ -163,8 +166,10 @@ export function createGameLoopTicker(
           bestCombo: scene.getBestCombo(),
           bestStreak: scene.getBestStreak(),
           platforms: scene.getPlatformsPassed(),
+          isCustomRun: scene.isCustomRun(),
         },
         onRestart,
+        onHome,
         achResult.newlyUnlocked.map((id) => getAchievement(id)?.name ?? id),
       );
     }

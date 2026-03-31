@@ -162,6 +162,7 @@ export class GameScene {
   getKnifeAmmo(): number { return this.state.knifeAmmo; }
   getKnifeAmmoMax(): number { return this.state.knifeAmmoMax; }
   isInBossFight(): boolean { return this.state.inBossFight; }
+  isCustomRun(): boolean { return this.state.runConfig.seed !== 0 || this.state.practiceMode; }
   getEnemiesKilled(): number { return this.state.enemiesKilled; }
   togglePause(): void { this.state = togglePause(this.state); }
   startCountdown(): void { this.state = startCountdown(this.state); }
