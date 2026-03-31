@@ -113,7 +113,7 @@ export class GameScene {
       }),
     });
     this.knifeAmmoText.x = 10;
-    this.knifeAmmoText.y = GAME_HEIGHT - 20;
+    this.knifeAmmoText.y = GAME_HEIGHT - 30;
     this.knifeAmmoText.visible = false;
     this.container.addChild(this.knifeAmmoText);
 
@@ -318,7 +318,9 @@ export class GameScene {
 
     // Knife ammo display
     if (this.state.enemiesEnabled || this.state.inBossFight) {
-      this.knifeAmmoText.text = "\u{1F52A}".repeat(this.state.knifeAmmo);
+      const knives = this.state.knifeAmmo;
+      const max = this.state.knifeAmmoMax;
+      this.knifeAmmoText.text = `KNIVES ${"I".repeat(knives)}${"·".repeat(max - knives)}`;
       this.knifeAmmoText.visible = true;
     } else {
       this.knifeAmmoText.visible = false;

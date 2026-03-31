@@ -151,9 +151,7 @@ export class ExplanationScreen {
     const t = this.animTick;
     for (const sprite of this.animSprites) {
       if (sprite.type === "platform") {
-        // Redraw with slight animation based on style
-        sprite.gfx.clear();
-        drawPlatform(sprite.gfx, 56, 10, sprite.color, sprite.style ?? "normal");
+        // Animate via transform only — no redraw
         if (sprite.style === "spring") {
           sprite.gfx.scale.y = 1 + Math.sin(t * 0.1) * 0.15;
         } else if (sprite.style === "teleport") {

@@ -26,10 +26,7 @@ async function main() {
   if (!container) throw new Error("Missing #game element");
   container.appendChild(app.canvas);
 
-  // Fill the entire screen — stretch to fit, no gaps
-  app.canvas.style.width = "100%";
-  app.canvas.style.height = "100%";
-  app.canvas.style.objectFit = "fill";
+  // Canvas fills via CSS (width/height: 100% !important)
 
   showTitleScreen(app, (runConfig) => launchGame(app, runConfig));
 }

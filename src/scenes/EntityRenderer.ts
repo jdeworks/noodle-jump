@@ -8,6 +8,10 @@ import type { GameWorldState } from "./GameState";
 import type { GraphicsSync } from "./GraphicsSync";
 import type { ZoneTheme } from "../systems/Zone";
 
+// Track last drawn state to avoid redundant redraws
+let lastZone = -1;
+let lastBurnt = false;
+
 /** Render all platforms with zone-appropriate colors. */
 export function renderPlatforms(
   state: GameWorldState,
@@ -71,7 +75,11 @@ export function renderPlatforms(
       style = "weighted";
     }
 
-    drawPlatform(gfx, platform.width * shrink, platform.height, color, style);
+    // Only redraw when zone changes (new colors) or burnt state toggles
+    const needsRedraw = state.zoneState.currentZone !== lastZone || isBurnt !== lastBurnt;
+    if (needsRedraw) {
+      drawPlatform(gfx, platform.width * shrink, platform.height, color, style);
+    }
     gfx.x = platform.x + (platform.width * (1 - shrink)) / 2;
     gfx.y = worldToScreen(platform.y, camY);
     gfx.visible = gfx.y > -20 && gfx.y < GAME_HEIGHT + 20;
@@ -95,6 +103,8 @@ export function renderPlatforms(
       gfx.alpha = 0.8 + Math.sin(t * 0.06) * 0.2;
     }
   }
+  lastZone = state.zoneState.currentZone;
+  lastBurnt = isBurnt;
 }
 
 /** Render meatballs with wobble and bob animations. */
