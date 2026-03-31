@@ -19,6 +19,16 @@ export function drawMeatball(gfx: Graphics, size: number): void {
   gfx.circle(r, r, r);
   gfx.fill(0x8b4513);
 
+  // Bumpy texture — small darker circles for rough meatball surface
+  const bumps = [
+    [0.3, -0.2, 0.12], [-0.25, 0.15, 0.1], [0.15, 0.3, 0.09],
+    [-0.1, -0.3, 0.08], [0.35, 0.1, 0.07], [-0.3, -0.05, 0.1],
+  ];
+  for (const [bx, by, bs] of bumps) {
+    gfx.circle(r + bx * r, r + by * r, bs * r);
+    gfx.fill({ color: 0x6b3310, alpha: 0.3 });
+  }
+
   // Dark rim (3D depth)
   gfx.circle(r, r, r);
   gfx.stroke({ width: 1.5, color: 0x5a2d0c, alpha: 0.4 });
@@ -57,6 +67,17 @@ export function drawMeatballVariant(
   gfx.fill({ color: 0x000000, alpha: 0.15 });
   gfx.circle(r, r, r);
   gfx.fill(colors.main);
+
+  // Bumpy texture
+  const bumps = [
+    [0.3, -0.2, 0.12], [-0.25, 0.15, 0.1], [0.15, 0.3, 0.09],
+    [-0.1, -0.3, 0.08], [0.35, 0.1, 0.07], [-0.3, -0.05, 0.1],
+  ];
+  for (const [bx, by, bs] of bumps) {
+    gfx.circle(r + bx * r, r + by * r, bs * r);
+    gfx.fill({ color: colors.rim, alpha: 0.3 });
+  }
+
   gfx.circle(r, r, r);
   gfx.stroke({ width: 1.5, color: colors.rim, alpha: 0.4 });
   gfx.circle(r - r * 0.25, r - r * 0.25, r * 0.35);

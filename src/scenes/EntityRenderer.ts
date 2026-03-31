@@ -103,14 +103,13 @@ export function renderPlatforms(
   }
 }
 
-/** Render meatballs with wobble and bob animations. */
+/** Render meatballs — each has unique rotation + bob. */
 export function renderMeatballs(
   state: GameWorldState,
   gfxSync: GraphicsSync,
   camY: number,
 ): void {
-  const wobble = Math.cos(state.animTick * 0.04);
-  const bob = Math.sin(state.animTick * 0.05) * 2;
+  const t = state.animTick;
 
   for (const meatball of state.meatballs) {
     const gfx = gfxSync.meatballGfxMap.get(meatball.id);
@@ -121,12 +120,23 @@ export function renderMeatballs(
       continue;
     }
 
-    gfx.x = meatball.x + meatball.size / 2;
-    gfx.y = worldToScreen(meatball.y, camY) + bob;
+    // Per-meatball phase so they don't all look the same
+    const phase = meatball.id * 1.7;
+    const bobSpeed = 0.04 + (meatball.id % 4) * 0.006;
+    const bob = Math.sin(t * bobSpeed + phase) * 2.5;
+
     gfx.pivot.set(meatball.size / 2, meatball.size / 2);
-    // Faux-3D spin: oscillate scaleX to simulate rotation
-    gfx.scale.x = 0.4 + Math.abs(wobble) * 0.6;
-    gfx.rotation = Math.sin(state.animTick * 0.02 + meatball.id) * 0.15;
+    gfx.x = meatball.x + meatball.size / 2;
+    gfx.y = worldToScreen(meatball.y + meatball.size / 2, camY) + bob;
+
+    // Each meatball has a fixed base rotation (from ID) + slow wobble
+    const baseRotation = (meatball.id * 137.5 % 360) * Math.PI / 180;
+    gfx.rotation = baseRotation + Math.sin(t * 0.015 + phase) * 0.3;
+
+    // Slight scale variation so they feel organic
+    const scalePulse = 0.95 + Math.sin(t * 0.03 + phase) * 0.05;
+    gfx.scale.set(scalePulse);
+
     gfx.visible = gfx.y > -20 && gfx.y < GAME_HEIGHT + 20;
   }
 }
@@ -160,14 +170,17 @@ export function renderPowerUps(
     gfx.x = pu.x + pu.size / 2;
     gfx.y = worldToScreen(pu.y + pu.size / 2, camY) + bob;
 
+    // Coin rotation — scaleX oscillates to simulate 3D spin
+    const spinSpeed = 0.07 + (pu.id % 4) * 0.012;
+    gfx.scale.x = 0.35 + Math.abs(Math.cos(t * spinSpeed + phase)) * 0.65;
+
     if (isNegativePowerUp(pu.type)) {
-      // Negative: threatening pulse + slight wobble
-      const pulse = 0.85 + Math.sin(t * 0.12 + phase) * 0.15;
-      gfx.scale.set(pulse);
+      // Negative: pulse scale + wobble rotation
+      const pulse = 0.9 + Math.sin(t * 0.12 + phase) * 0.1;
+      gfx.scale.y = pulse;
       gfx.rotation = Math.sin(t * 0.1 + phase) * 0.08;
     } else {
-      // Positive: gentle up/down bob is the main animation
-      gfx.scale.set(1);
+      gfx.scale.y = 1;
       gfx.rotation = 0;
     }
 
