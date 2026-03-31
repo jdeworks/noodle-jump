@@ -180,7 +180,7 @@ export function showTitleScreen(
   kbHint.y = cursorY;
   kbHint.anchor.set(0.5, 0);
   titleContainer.addChild(kbHint);
-  cursorY += 33;
+  cursorY += 38;
 
   // Settings toggles
   const settingsContainer = createSettingsToggles();
