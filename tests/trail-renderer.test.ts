@@ -1,4 +1,27 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
+
+// Mock pixi.js to avoid navigator dependency in CI
+vi.mock("pixi.js", () => {
+  class MockGraphics {
+    x = 0;
+    y = 0;
+    children: unknown[] = [];
+    circle = vi.fn().mockReturnThis();
+    fill = vi.fn().mockReturnThis();
+    destroy = vi.fn();
+  }
+  class MockContainer {
+    children: unknown[] = [];
+    addChild(child: unknown) { this.children.push(child); }
+    removeChild(child: unknown) {
+      const idx = this.children.indexOf(child);
+      if (idx >= 0) this.children.splice(idx, 1);
+    }
+    destroy = vi.fn();
+  }
+  return { Container: MockContainer, Graphics: MockGraphics };
+});
+
 import { TrailRenderer } from "../src/rendering/TrailRenderer";
 
 describe("TrailRenderer", () => {

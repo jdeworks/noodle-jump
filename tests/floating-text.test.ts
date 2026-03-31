@@ -1,4 +1,36 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+
+// Mock pixi.js to avoid navigator dependency in CI
+vi.mock("pixi.js", () => {
+  class MockText {
+    text = "";
+    x = 0;
+    y = 0;
+    alpha = 1;
+    anchor = { set: vi.fn() };
+    style = {};
+    parent: MockContainer | null = null;
+    destroy = vi.fn();
+    constructor(opts?: { text?: string; style?: unknown }) {
+      if (opts?.text) this.text = opts.text;
+      if (opts?.style) this.style = opts.style;
+    }
+  }
+  class MockContainer {
+    children: unknown[] = [];
+    addChild(child: unknown) { this.children.push(child); (child as MockText).parent = this; }
+    removeChild(child: unknown) {
+      const idx = this.children.indexOf(child);
+      if (idx >= 0) this.children.splice(idx, 1);
+      (child as MockText).parent = null;
+    }
+  }
+  class MockTextStyle {
+    constructor(_opts?: unknown) {}
+  }
+  return { Container: MockContainer, Text: MockText, TextStyle: MockTextStyle };
+});
+
 import { FloatingTextManager } from "../src/scenes/FloatingText";
 import { Container } from "pixi.js";
 
