@@ -13,6 +13,16 @@ export function resetRendererState(): void {
   // Currently no cached state — platforms redrawn each frame
 }
 
+/** Blend two colors: result = a * (1-t) + b * t */
+function blendColor(a: number, b: number, t: number): number {
+  const rA = (a >> 16) & 0xff, gA = (a >> 8) & 0xff, bA = a & 0xff;
+  const rB = (b >> 16) & 0xff, gB = (b >> 8) & 0xff, bB = b & 0xff;
+  const r = Math.round(rA * (1 - t) + rB * t);
+  const g = Math.round(gA * (1 - t) + gB * t);
+  const bl = Math.round(bA * (1 - t) + bB * t);
+  return (r << 16) | (g << 8) | bl;
+}
+
 /** Render all platforms with zone-appropriate colors. */
 export function renderPlatforms(
   state: GameWorldState,
@@ -41,29 +51,37 @@ export function renderPlatforms(
     if (gfx.alpha < 1) gfx.alpha = 1;
     if (gfx.scale.y < 1) gfx.scale.y = 1;
 
-    // Fixed distinctive colors per type — same across all zones so
-    // players learn to recognise them. Only "normal" adapts to zone.
+    // Distinctive base color per type, blended 30% with zone theme
+    // so specials are recognizable but don't look totally alien
     const style: PlatformStyle = platform.type === "lasagna" ? "lasagna"
       : (platform.type as PlatformStyle) ?? "normal";
     let color = theme.platform;
+    const zoneBase = theme.platform;
     switch (platform.type) {
-      case "breaking":  color = 0x886622; break; // dark gold — danger
-      case "brittle":   color = 0xcc8866; break; // pale tan — fragile
-      case "moving":    color = 0x6699cc; break; // blue — moving
-      case "lasagna":   color = 0xff8c00; break; // bright orange
-      case "conveyor":  color = 0x888888; break; // steel gray
-      case "spring":    color = 0x33bb33; break; // bright green
-      case "ice":       color = 0x88ccff; break; // light blue
-      case "crumbling": color = 0xcc6633; break; // orange-red — urgent
-      case "teleport":  color = 0x9955ff; break; // vivid purple
-      case "weighted":  color = 0x997744; break; // olive brown
+      case "breaking":  color = blendColor(0x886622, zoneBase, 0.3); break;
+      case "brittle":   color = blendColor(0xcc8866, zoneBase, 0.3); break;
+      case "moving":    color = blendColor(0x6699cc, zoneBase, 0.3); break;
+      case "lasagna":   color = blendColor(0xff8c00, zoneBase, 0.2); break;
+      case "conveyor":  color = blendColor(0x888888, zoneBase, 0.3); break;
+      case "spring":    color = blendColor(0x33bb33, zoneBase, 0.25); break;
+      case "ice":       color = blendColor(0x88ccff, zoneBase, 0.25); break;
+      case "crumbling": color = blendColor(0xcc6633, zoneBase, 0.3); break;
+      case "teleport":  color = blendColor(0x9955ff, zoneBase, 0.2); break;
+      case "weighted":  color = blendColor(0x997744, zoneBase, 0.3); break;
     }
 
-    // Always redraw visible platforms (only ~10-15 on screen, fast enough)
     drawPlatform(gfx, platform.width * shrink, platform.height, color, style);
     gfx.x = platform.x + (platform.width * (1 - shrink)) / 2;
     gfx.y = worldToScreen(platform.y, camY);
     gfx.visible = gfx.y > -20 && gfx.y < GAME_HEIGHT + 20;
+
+    // Flip conveyor arrow to match direction
+    if (platform.type === "conveyor" && platform.conveyorDir === -1) {
+      gfx.scale.x = -1;
+      gfx.x += platform.width * shrink; // compensate for flip
+    } else if (gfx.scale.x < 0) {
+      gfx.scale.x = 1;
+    }
 
     // Per-type animations
     const t = state.animTick;
