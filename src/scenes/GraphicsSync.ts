@@ -1,7 +1,7 @@
 /** Graphics lifecycle — sync entity arrays with PixiJS Graphics maps. */
 
 import { Container, Graphics } from "pixi.js";
-import { drawPlatform, drawMeatball, drawPowerUp, drawEnemy, drawProjectile } from "../rendering/sprites";
+import { drawPlatform, drawMeatball, drawMeatballVariant, drawPowerUp, drawEnemy, drawProjectile } from "../rendering/sprites";
 import { COLORS } from "../config/constants";
 import type { PlatformState } from "../entities/Platform";
 import type { CollectibleState } from "../entities/Collectible";
@@ -30,7 +30,11 @@ export class GraphicsSync {
     for (const meatball of meatballs) {
       if (this.meatballGfxMap.has(meatball.id)) continue;
       const gfx = new Graphics();
-      drawMeatball(gfx, meatball.size);
+      if (meatball.variant && meatball.variant !== "meatball") {
+        drawMeatballVariant(gfx, meatball.size, meatball.variant);
+      } else {
+        drawMeatball(gfx, meatball.size);
+      }
       parent.addChild(gfx);
       this.meatballGfxMap.set(meatball.id, gfx);
     }

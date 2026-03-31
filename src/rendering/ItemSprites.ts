@@ -31,6 +31,39 @@ export function drawMeatball(gfx: Graphics, size: number): void {
   gfx.fill({ color: 0xffffff, alpha: 0.15 });
 }
 
+/** Variant colors for zone-specific meatballs. */
+const VARIANT_COLORS: Record<string, { main: number; rim: number }> = {
+  meatball: { main: 0x8b4513, rim: 0x5a2d0c },
+  fishball: { main: 0x4488cc, rim: 0x2266aa },
+  meteor: { main: 0x666666, rim: 0x444444 },
+  snowball: { main: 0xeeeeff, rim: 0xaabbcc },
+  fireball: { main: 0xff4400, rim: 0xcc2200 },
+  gummy: { main: 0xff66aa, rim: 0xdd4488 },
+  golden_meatball: { main: 0xffcc00, rim: 0xddaa00 },
+};
+
+/** Draw a meatball with zone-specific variant styling. */
+export function drawMeatballVariant(
+  gfx: Graphics,
+  size: number,
+  variant: string,
+): void {
+  gfx.clear();
+  const r = size / 2;
+  const colors = VARIANT_COLORS[variant] ?? VARIANT_COLORS.meatball;
+
+  gfx.ellipse(r, r + 2, r * 0.8, r * 0.3);
+  gfx.fill({ color: 0x000000, alpha: 0.15 });
+  gfx.circle(r, r, r);
+  gfx.fill(colors.main);
+  gfx.circle(r, r, r);
+  gfx.stroke({ width: 1.5, color: colors.rim, alpha: 0.4 });
+  gfx.circle(r - r * 0.25, r - r * 0.25, r * 0.35);
+  gfx.fill({ color: 0xffffff, alpha: 0.3 });
+  gfx.circle(r + r * 0.2, r - r * 0.15, r * 0.15);
+  gfx.fill({ color: 0xffffff, alpha: 0.15 });
+}
+
 /** Draw a power-up diamond with type-specific inner icon and glow. */
 const NEGATIVE_TYPES = [
   "chili_pepper",

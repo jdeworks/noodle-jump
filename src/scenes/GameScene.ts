@@ -34,6 +34,15 @@ import {
   type GameEvent,
 } from "./GameLoop";
 import { isEnemiesEnabled } from "../systems/EnemySettings";
+import {
+  vibrateImpact,
+  vibratePowerUp,
+  vibrateNegative,
+  vibrateDeath,
+  vibrateMeatball,
+  vibrateEnemyKill,
+} from "../systems/Haptics";
+import { markPowerUpCollected } from "../ui/PowerUpDescriptions";
 import { ZoneTransition } from "./ZoneTransition";
 import { drawBoss, drawBossHealthBar } from "../rendering/sprites";
 import { ParticleManager } from "./ParticleManager";
@@ -373,6 +382,7 @@ export class GameScene {
       switch (event.type) {
         case "landed":
           playSfxLanding();
+          vibrateImpact();
           this.particles.spawnDustPuff(
             event.x,
             event.y,
@@ -390,6 +400,7 @@ export class GameScene {
 
         case "meatballCollected":
           playSfxMeatball();
+          vibrateMeatball();
           break;
 
         case "comboActive":
@@ -402,6 +413,9 @@ export class GameScene {
 
         case "powerUpCollected":
           playSfxPowerUp(event.powerUpType);
+          markPowerUpCollected(event.powerUpType);
+          if (event.isNegative) vibrateNegative();
+          else vibratePowerUp();
           this.effectRenderer.showEffectLabel(
             event.powerUpType,
             this.container,
@@ -414,6 +428,7 @@ export class GameScene {
 
         case "died":
           playSfxDeath();
+          vibrateDeath();
           break;
 
         case "zoneChanged":
@@ -424,6 +439,7 @@ export class GameScene {
 
         case "enemyKilled":
           playSfxEnemyKill();
+          vibrateEnemyKill();
           this.spawnFloatingText("+MEATBALL!", 0xff8800);
           break;
 

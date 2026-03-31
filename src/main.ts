@@ -1,4 +1,6 @@
 import { Application, Container, Graphics, Text, TextStyle } from "pixi.js";
+import { registerServiceWorker, listenForInstallPrompt } from "./services/PWA";
+import { initErrorTracking } from "./services/ErrorTracking";
 import { GameScene } from "./scenes/GameScene";
 import { GAME_WIDTH, GAME_HEIGHT, COLORS } from "./config/constants";
 import { FireworkDisplay } from "./rendering/fireworks";
@@ -90,6 +92,11 @@ async function main() {
   const container = document.getElementById("game");
   if (!container) throw new Error("Missing #game element");
   container.appendChild(app.canvas);
+
+  // Initialize services
+  registerServiceWorker();
+  listenForInstallPrompt();
+  initErrorTracking();
 
   showTitleScreen(app);
 }
