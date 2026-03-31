@@ -26,6 +26,26 @@ async function main() {
   if (!container) throw new Error("Missing #game element");
   container.appendChild(app.canvas);
 
+  // Resize canvas to fill container while maintaining aspect ratio
+  function resizeCanvas() {
+    const w = container!.clientWidth;
+    const h = container!.clientHeight;
+    const aspect = GAME_WIDTH / GAME_HEIGHT;
+    let canvasW: number, canvasH: number;
+    if (w / h > aspect) {
+      canvasH = h;
+      canvasW = h * aspect;
+    } else {
+      canvasW = w;
+      canvasH = w / aspect;
+    }
+    app.canvas.style.width = `${canvasW}px`;
+    app.canvas.style.height = `${canvasH}px`;
+  }
+  resizeCanvas();
+  window.addEventListener("resize", resizeCanvas);
+  document.addEventListener("fullscreenchange", resizeCanvas);
+
   showTitleScreen(app, (runConfig) => launchGame(app, runConfig));
 }
 
