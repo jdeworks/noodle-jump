@@ -77,43 +77,50 @@ export function drawEnemy(
   }
 }
 
-/** Draw a thrown knife — large, bright, clearly visible. */
+/** Draw a thrown knife — pixel-art kitchen knife style. */
 export function drawProjectile(gfx: Graphics, _size: number): void {
   gfx.clear();
+  // Pixel-art kitchen knife — blade points up (negative Y)
+  // Total height ~28px, wide enough to see clearly
 
-  // Blade — elongated triangle, bright white/silver
-  const bladeLen = 18;
-  const bladeW = 5;
-  gfx.moveTo(0, -bladeLen);
-  gfx.lineTo(bladeW, 0);
-  gfx.lineTo(0, -2); // notch for depth
-  gfx.lineTo(-bladeW, 0);
+  // Blade — wide chef knife shape (wider at base, narrows to tip)
+  gfx.moveTo(0, -16);          // tip
+  gfx.lineTo(4, -12);          // right edge upper
+  gfx.lineTo(5, -4);           // right edge — widest point
+  gfx.lineTo(5, 0);            // right base
+  gfx.lineTo(-2, 0);           // left base (cutting edge is straighter)
+  gfx.lineTo(-2, -14);         // left edge — cutting edge
   gfx.closePath();
-  gfx.fill(0xeeeeff);
+  gfx.fill(0xccccdd);
 
-  // Blade center line (sharp edge)
-  gfx.moveTo(0, -bladeLen);
-  gfx.lineTo(0, 0);
-  gfx.stroke({ width: 1.5, color: 0xffffff, alpha: 0.8 });
-
-  // Blade outline
-  gfx.moveTo(0, -bladeLen);
-  gfx.lineTo(bladeW, 0);
-  gfx.lineTo(-bladeW, 0);
+  // Blade highlight — lighter strip along the spine
+  gfx.moveTo(2, -12);
+  gfx.lineTo(4, -6);
+  gfx.lineTo(4, 0);
+  gfx.lineTo(3, 0);
+  gfx.lineTo(3, -6);
+  gfx.lineTo(1, -12);
   gfx.closePath();
-  gfx.stroke({ width: 1, color: 0xaaaacc, alpha: 0.5 });
+  gfx.fill({ color: 0xffffff, alpha: 0.4 });
 
-  // Guard
-  gfx.roundRect(-6, 0, 12, 3, 1);
-  gfx.fill(0xaa8844);
+  // Cutting edge — dark line along the sharp side
+  gfx.moveTo(-2, -14);
+  gfx.lineTo(-2, 0);
+  gfx.stroke({ width: 1, color: 0x888899 });
 
-  // Handle
-  gfx.roundRect(-2.5, 3, 5, 10, 2);
-  gfx.fill(0x774422);
-  gfx.roundRect(-2.5, 3, 5, 10, 2);
-  gfx.stroke({ width: 0.5, color: 0x553311, alpha: 0.4 });
+  // Bolster (guard between blade and handle)
+  gfx.rect(-3, 0, 9, 3);
+  gfx.fill(0x999999);
 
-  // Pommel
-  gfx.circle(0, 14, 2.5);
-  gfx.fill(0xaa8844);
+  // Handle — dark wood
+  gfx.roundRect(-2, 3, 6, 12, 2);
+  gfx.fill(0x553322);
+  // Handle highlight
+  gfx.roundRect(-1, 4, 2, 10, 1);
+  gfx.fill({ color: 0x774433, alpha: 0.6 });
+  // Rivets
+  gfx.circle(1, 6, 1);
+  gfx.fill(0xbbbbbb);
+  gfx.circle(1, 11, 1);
+  gfx.fill(0xbbbbbb);
 }

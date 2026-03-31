@@ -81,15 +81,33 @@ export const chefRivalBehavior: BossBehavior = {
         });
 
       if (targets.length > 0) {
-        const target = targets[0];
+        // Only target nearby platforms (not far above/below)
+        const nearby = targets.filter((p) => Math.abs(p.y - y) < 200);
+        const target = nearby.length > 0 ? nearby[0] : targets[0];
         const dx = (target.x + target.width / 2) - (x + boss.width / 2);
-        vy = Math.min(-8, (target.y - y) * 0.15 - 6);
-        x += Math.sign(dx) * Math.min(Math.abs(dx) * 0.3, 4);
+        const dy = target.y - y;
+        // Clamp jump strength — never launch off-screen
+        vy = Math.max(-14, Math.min(-6, dy * 0.12 - 6));
+        x += Math.sign(dx) * Math.min(Math.abs(dx) * 0.3, 5);
         jumpCooldown = Math.max(MIN_JUMP_COOLDOWN, BASE_JUMP_COOLDOWN - boss.phase * 10);
       }
     }
 
     x = Math.max(0, Math.min(GAME_WIDTH - boss.width, x));
+
+    // Safety: if boss fell way off screen, teleport to a visible platform
+    if (y > player.y + 400) {
+      const rescue = platforms
+        .filter((p) => !p.broken && Math.abs(p.y - player.y) < 200)
+        .sort((a, b) => a.y - b.y);
+      if (rescue.length > 0) {
+        const p = rescue[Math.floor(rescue.length / 2)];
+        x = p.x + p.width / 2 - boss.width / 2;
+        y = p.y - boss.height;
+        vy = 0;
+        currentPlatformId = p.id;
+      }
+    }
 
     return {
       boss: { ...boss, x, y, vy, jumpCooldown, currentPlatformId, patternTick },
