@@ -30,6 +30,7 @@ import { tickShake } from "../systems/ScreenShake";
 import { updateZone } from "../systems/Zone";
 import {
   GARLIC_BREATH_JUMP_MULTIPLIER,
+  GAME_HEIGHT,
   DEATH_ANIMATION_TICKS,
   COUNTDOWN_TICKS,
   SQUASH_HOLD_FRAMES,
@@ -305,15 +306,34 @@ export function tickGameWorld(
   // Enemies & hazards
   s = tickEnemies(s, events);
 
-  // Death check (skip in practice mode or debug invincible)
-  if (!s.practiceMode && !s.debugConfig.invincible && isPlayerDead(s.camera, s.player.y)) {
-    s = {
-      ...s,
-      isDying: true,
-      squashTicks: 0,
-      pendingJumpVy: 0,
-    };
-    events.push({ type: "died" });
+  // Death check
+  if (isPlayerDead(s.camera, s.player.y)) {
+    if (s.practiceMode || s.debugConfig.invincible) {
+      // Rescue: teleport to highest visible platform
+      const rescue = s.platforms
+        .filter((p) => !p.broken && p.y > s.camera.y && p.y < s.camera.y + GAME_HEIGHT)
+        .sort((a, b) => a.y - b.y)[0];
+      if (rescue) {
+        s = {
+          ...s,
+          player: {
+            ...s.player,
+            x: rescue.x + rescue.width / 2 - s.player.width / 2,
+            y: rescue.y - s.player.height,
+            vy: -12,
+            isJumping: true,
+          },
+        };
+      }
+    } else {
+      s = {
+        ...s,
+        isDying: true,
+        squashTicks: 0,
+        pendingJumpVy: 0,
+      };
+      events.push({ type: "died" });
+    }
   }
 
   // Generate new platforms + prune old
