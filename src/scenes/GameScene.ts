@@ -2,24 +2,6 @@
 
 import { Container, Graphics, Text, TextStyle } from "pixi.js";
 import { worldToScreen } from "../systems/Camera";
-import {
-  playSfxMeatball,
-  playSfxDeath,
-  playSfxPlatformCrumble,
-  playSfxCloseCall,
-  playSfxLandingStreak,
-  playSfxPowerUp,
-  playSfxLanding,
-  playSfxComboEscalation,
-  playSfxEnemyKill,
-  playSfxShieldAbsorb,
-  playSfxThrow,
-  playSfxWindGust,
-  crossfadeToZone,
-  playBossMusic,
-  stopBossMusic,
-} from "../systems/Audio";
-import { setAmbientZone } from "../systems/AmbientAudio";
 import { getInterpolatedTheme } from "../systems/Zone";
 import { ParallaxBackground } from "../systems/Parallax";
 import { InputManager } from "../systems/Input";
@@ -31,11 +13,9 @@ import {
   startCountdown,
   togglePause,
   throwProjectile,
-  type GameEvent,
 } from "./GameLoop";
 import { isEnemiesEnabled } from "../systems/EnemySettings";
 import { ZoneTransition } from "./ZoneTransition";
-import { drawBoss, drawBossHealthBar } from "../rendering/sprites";
 import { ParticleManager } from "./ParticleManager";
 import { EffectRenderer } from "./EffectRenderer";
 import { GraphicsSync } from "./GraphicsSync";
@@ -46,6 +26,9 @@ import {
   renderEnemies,
   renderProjectiles,
 } from "./EntityRenderer";
+import { handleEvents } from "./GameSceneEvents";
+import { renderBoss, renderWeather } from "./GameSceneRender";
+import { getMaxDuration } from "./effectDuration";
 
 export class GameScene {
   readonly container = new Container();
@@ -142,109 +125,49 @@ export class GameScene {
 
   // ── State accessors ────────────────────────────────────────────────────
 
-  isGameOver(): boolean {
-    return this.state.gameOver;
-  }
-  getScore(): number {
-    return this.state.scoreState.points;
-  }
-  getHeight(): number {
-    return this.state.scoreState.height;
-  }
-  getHighScore(): number {
-    return this.state.highScore;
-  }
-  getElapsedSeconds(): number {
-    return Math.floor(this.state.elapsedMs / 1000);
-  }
+  isGameOver(): boolean { return this.state.gameOver; }
+  getScore(): number { return this.state.scoreState.points; }
+  getHeight(): number { return this.state.scoreState.height; }
+  getHighScore(): number { return this.state.highScore; }
+  getElapsedSeconds(): number { return Math.floor(this.state.elapsedMs / 1000); }
+  getActiveEffectName(): string | null { return this.state.activeEffect?.type ?? null; }
+  getMeatballsCollected(): number { return this.state.scoreState.meatballsCollected; }
+  getPowerUpsCollected(): number { return this.state.scoreState.powerUpsCollected; }
+  getBestCombo(): number { return this.state.scoreState.comboMultiplier; }
+  getBestStreak(): number { return this.state.scoreState.landingStreak; }
+  getPlatformsPassed(): number { return this.state.platformsPassed; }
+  isPaused(): boolean { return this.state.paused; }
+  getZone(): number { return this.state.zoneState.currentZone; }
+  getComboMultiplier(): number { return this.state.scoreState.comboMultiplier; }
+  getLandingStreak(): number { return this.state.scoreState.landingStreak; }
+  getKnifeAmmo(): number { return this.state.knifeAmmo; }
+  getKnifeAmmoMax(): number { return this.state.knifeAmmoMax; }
+  isInBossFight(): boolean { return this.state.inBossFight; }
+  togglePause(): void { this.state = togglePause(this.state); }
+  startCountdown(): void { this.state = startCountdown(this.state); }
+
   getActiveEffectProgress(): number {
     if (!this.state.activeEffect) return 0;
-    const maxDuration = getMaxDuration(this.state.activeEffect.type);
-    return this.state.activeEffect.ticksRemaining / maxDuration;
-  }
-  getActiveEffectName(): string | null {
-    return this.state.activeEffect?.type ?? null;
-  }
-  getMeatballsCollected(): number {
-    return this.state.scoreState.meatballsCollected;
-  }
-  getPowerUpsCollected(): number {
-    return this.state.scoreState.powerUpsCollected;
-  }
-  getBestCombo(): number {
-    return this.state.scoreState.comboMultiplier;
-  }
-  getBestStreak(): number {
-    return this.state.scoreState.landingStreak;
-  }
-  getPlatformsPassed(): number {
-    return this.state.platformsPassed;
-  }
-  isPaused(): boolean {
-    return this.state.paused;
+    return this.state.activeEffect.ticksRemaining / getMaxDuration(this.state.activeEffect.type);
   }
   getCountdownSeconds(): number | undefined {
     if (this.state.countdownTicks < 0) return undefined;
     return Math.ceil(this.state.countdownTicks / 60);
-  }
-  getZone(): number {
-    return this.state.zoneState.currentZone;
   }
   getZoneProgress(): number {
     const thresholds = [0, 80, 280, 500, 750, 1000, 1300];
     const zone = this.state.zoneState.currentZone;
     if (zone >= thresholds.length - 1) return 1;
     const current = this.state.platformsPassed;
-    const start = thresholds[zone];
-    const end = thresholds[zone + 1];
-    return Math.min(1, (current - start) / (end - start));
+    return Math.min(1, (current - thresholds[zone]) / (thresholds[zone + 1] - thresholds[zone]));
   }
-  getComboMultiplier(): number {
-    return this.state.scoreState.comboMultiplier;
-  }
-  getLandingStreak(): number {
-    return this.state.scoreState.landingStreak;
-  }
-
-  /** Returns true exactly once — when the player first beats the high score. */
   checkNewHighScore(): boolean {
-    // Handled via events now, but keep for main.ts compatibility
     if (this.state.highScoreBeatShown) return false;
-    if (
-      this.state.highScore > 0 &&
-      this.state.scoreState.points > this.state.highScore
-    ) {
-      return true; // The event will set highScoreBeatShown
-    }
-    return false;
+    return this.state.highScore > 0 && this.state.scoreState.points > this.state.highScore;
   }
-
-  togglePause(): void {
-    this.state = togglePause(this.state);
-  }
-
-  startCountdown(): void {
-    this.state = startCountdown(this.state);
-  }
-
-  /** Get current knife ammo (for HUD). */
-  getKnifeAmmo(): number {
-    return this.state.knifeAmmo;
-  }
-  getKnifeAmmoMax(): number {
-    return this.state.knifeAmmoMax;
-  }
-  isInBossFight(): boolean {
-    return this.state.inBossFight;
-  }
-
-  /** Throw a projectile toward a world position (from click/tap). */
   handleThrow(screenX: number, screenY: number): void {
     if (!this.state.enemiesEnabled && !this.state.inBossFight) return;
-    // Convert screen coords to world coords
-    const worldX = screenX;
-    const worldY = screenY + this.state.camera.y;
-    this.state = throwProjectile(this.state, worldX, worldY);
+    this.state = throwProjectile(this.state, screenX, screenY + this.state.camera.y);
   }
 
   // ── Main update ────────────────────────────────────────────────────────
@@ -253,7 +176,6 @@ export class GameScene {
     if (this.state.gameOver) return;
     if (this.state.paused) return;
 
-    // Update input
     this.input.update();
 
     const inputX = this.input.inputX;
@@ -261,12 +183,20 @@ export class GameScene {
     const prevMeatballCount = this.state.meatballs.length;
     const prevPowerUpCount = this.state.powerUps.length;
 
-    // Tick pure game logic
     const result = tickGameWorld(this.state, inputX);
     this.state = result.state;
 
     // Dispatch events to audio/visual side effects
-    this.handleEvents(result.events);
+    handleEvents(result.events, {
+      state: this.state,
+      particles: this.particles,
+      effectRenderer: this.effectRenderer,
+      zoneTransition: this.zoneTransition,
+      gfxSync: this.gfxSync,
+      container: this.container,
+      gameContainer: this.gameContainer,
+      spawnFloatingText: this.spawnFloatingText.bind(this),
+    });
 
     // Sync graphics if entity counts changed
     if (
@@ -346,7 +276,14 @@ export class GameScene {
     this.updateFloatingTexts();
 
     // Boss rendering
-    this.renderBoss(camY);
+    this.bossAttackGfx = renderBoss(
+      this.state,
+      this.bossGfx,
+      this.bossHealthGfx,
+      this.bossAttackGfx,
+      this.gameContainer,
+      camY,
+    );
 
     // Knife ammo display
     if (this.state.enemiesEnabled || this.state.inBossFight) {
@@ -357,152 +294,17 @@ export class GameScene {
     }
 
     // Weather particles
-    this.renderWeather();
+    this.weatherGfx = renderWeather(
+      this.state,
+      this.weatherGfx,
+      this.weatherContainer,
+    );
 
     // Zone transition
     this.zoneTransition.update();
 
     // Effect overlays
     this.effectRenderer.renderEffectOverlay(this.state);
-  }
-
-  // ── Event handling ─────────────────────────────────────────────────────
-
-  private handleEvents(events: GameEvent[]): void {
-    for (const event of events) {
-      switch (event.type) {
-        case "landed":
-          playSfxLanding();
-          this.particles.spawnDustPuff(
-            event.x,
-            event.y,
-            this.state.camera.y,
-          );
-          if (event.edgeLanding) {
-            playSfxCloseCall();
-            this.spawnFloatingText("CLOSE CALL!", 0xffdd44);
-          }
-          break;
-
-        case "landingStreak":
-          playSfxLandingStreak();
-          break;
-
-        case "meatballCollected":
-          playSfxMeatball();
-          break;
-
-        case "comboActive":
-          playSfxComboEscalation(event.multiplier);
-          this.spawnFloatingText(
-            `${event.multiplier}x COMBO!`,
-            0xff8800,
-          );
-          break;
-
-        case "powerUpCollected":
-          playSfxPowerUp(event.powerUpType);
-          this.effectRenderer.showEffectLabel(
-            event.powerUpType,
-            this.container,
-          );
-          break;
-
-        case "effectEnded":
-          this.effectRenderer.clearEffectLabel(this.container);
-          break;
-
-        case "died":
-          playSfxDeath();
-          break;
-
-        case "zoneChanged":
-          crossfadeToZone(event.to);
-          setAmbientZone(event.to);
-          this.zoneTransition.play(event.to);
-          break;
-
-        case "enemyKilled":
-          playSfxEnemyKill();
-          this.spawnFloatingText("+MEATBALL!", 0xff8800);
-          break;
-
-        case "enemyHitPlayer":
-          playSfxShieldAbsorb();
-          break;
-
-        case "projectileThrown":
-          playSfxThrow();
-          break;
-
-        case "windGust":
-          playSfxWindGust();
-          this.spawnFloatingText(
-            event.direction > 0 ? "WIND >>>" : "<<< WIND",
-            0xaaddff,
-            16,
-            60,
-            true,
-          );
-          break;
-
-        case "bossSpawned":
-          playBossMusic();
-          this.spawnFloatingText("BOSS!", 0xff4444, 32, 90, true);
-          break;
-
-        case "bossDamaged":
-          this.spawnFloatingText("HIT!", 0xffdd44);
-          break;
-
-        case "bossKilled":
-          stopBossMusic();
-          this.spawnFloatingText("BOSS DEFEATED!", 0x44ff44, 24, 120, true);
-          break;
-
-        case "bossAttack":
-        case "tentacleGrab":
-          break;
-
-        case "springBounce":
-        case "teleported":
-          break;
-
-        case "platformCrumbled":
-          playSfxPlatformCrumble();
-          this.particles.spawnCrumbleParticles(
-            event.platform,
-            this.state.camera.y,
-          );
-          break;
-
-        case "stagnantWarning":
-          if (event.level === 1) {
-            this.spawnFloatingText(
-              "KEEP CLIMBING!",
-              0xff4444,
-              28,
-              120,
-              true,
-            );
-          }
-          break;
-
-        case "highScoreBeat":
-          // Handled by main.ts via checkNewHighScore()
-          break;
-
-        case "lasagnaSpawned":
-          this.gfxSync.syncPlatforms(
-            this.state.platforms,
-            this.gameContainer,
-          );
-          break;
-
-        case "gameOver":
-          break;
-      }
-    }
   }
 
   // ── Floating text ──────────────────────────────────────────────────────
@@ -553,102 +355,6 @@ export class GameScene {
     }
   }
 
-  // ── Boss rendering ──────────────────────────────────────────────────────
-
-  private renderBoss(camY: number): void {
-    const boss = this.state.activeBoss;
-    if (!boss || !boss.alive) {
-      this.bossGfx.visible = false;
-      this.bossHealthGfx.visible = false;
-      // Clean boss attack gfx
-      for (const g of this.bossAttackGfx) {
-        this.gameContainer.removeChild(g);
-        g.destroy();
-      }
-      this.bossAttackGfx = [];
-      return;
-    }
-
-    // Draw boss
-    drawBoss(
-      this.bossGfx,
-      boss.width,
-      boss.height,
-      boss.type,
-      boss.phase,
-      this.state.animTick,
-    );
-    this.bossGfx.x = boss.x;
-    this.bossGfx.y = worldToScreen(boss.y, camY);
-    this.bossGfx.visible = true;
-
-    // Health bar at top of screen
-    drawBossHealthBar(
-      this.bossHealthGfx,
-      GAME_WIDTH * 0.15,
-      45,
-      GAME_WIDTH * 0.7,
-      boss.health,
-      boss.maxHealth,
-    );
-    this.bossHealthGfx.visible = true;
-
-    // Boss attack projectiles
-    // Remove excess
-    while (this.bossAttackGfx.length > this.state.bossAttacks.length) {
-      const g = this.bossAttackGfx.pop()!;
-      this.gameContainer.removeChild(g);
-      g.destroy();
-    }
-    // Add new
-    while (this.bossAttackGfx.length < this.state.bossAttacks.length) {
-      const g = new Graphics();
-      g.circle(0, 0, 4);
-      g.fill(0xff4444);
-      this.gameContainer.addChild(g);
-      this.bossAttackGfx.push(g);
-    }
-    // Update positions
-    for (let i = 0; i < this.state.bossAttacks.length; i++) {
-      const atk = this.state.bossAttacks[i];
-      const g = this.bossAttackGfx[i];
-      g.x = atk.x;
-      g.y = worldToScreen(atk.y, camY);
-      g.visible = atk.alive;
-    }
-  }
-
-  // ── Weather rendering ───────────────────────────────────────────────────
-
-  private renderWeather(): void {
-    const { particles } = this.state.weather;
-
-    // Remove excess
-    while (this.weatherGfx.length > particles.length) {
-      const gfx = this.weatherGfx.pop()!;
-      this.weatherContainer.removeChild(gfx);
-      gfx.destroy();
-    }
-
-    // Add new
-    while (this.weatherGfx.length < particles.length) {
-      const gfx = new Graphics();
-      this.weatherContainer.addChild(gfx);
-      this.weatherGfx.push(gfx);
-    }
-
-    // Update
-    for (let i = 0; i < particles.length; i++) {
-      const p = particles[i];
-      const gfx = this.weatherGfx[i];
-      gfx.clear();
-      gfx.circle(0, 0, p.size);
-      gfx.fill({ color: 0xffffff, alpha: p.alpha });
-      gfx.x = p.x;
-      gfx.y = p.y;
-    }
-  }
-
   // ── Cleanup ────────────────────────────────────────────────────────────
 
   destroy(): void {
@@ -672,34 +378,3 @@ export class GameScene {
   }
 }
 
-function getMaxDuration(type: string): number {
-  switch (type) {
-    case "fusilli_tornado":
-      return 300;
-    case "ravioli_rocket":
-      return 180;
-    case "lasagna_layers":
-      return 360;
-    case "pepper_sneeze":
-      return 30;
-    case "meatball_magnet":
-      return 300;
-    case "pasta_shield":
-      return 600;
-    case "rigatoni_drill":
-      return 180;
-    case "penne_cannon":
-      return 360;
-    case "gnocchi_bounce":
-      return 360;
-    case "minestrone_soup":
-      return 480;
-    case "chili_pepper":
-    case "soggy_noodle":
-    case "garlic_breath":
-    case "burnt_toast":
-      return 300;
-    default:
-      return 1;
-  }
-}

@@ -1,19 +1,6 @@
-/** Power-up effect rendering — player sprite selection, overlays, squash/stretch. */
+/** Power-up effect rendering — overlays, labels, squash/stretch, delegation. */
 
 import { Graphics, Text, TextStyle } from "pixi.js";
-import { worldToScreen } from "../systems/Camera";
-import {
-  drawChef,
-  drawChefOnRocket,
-  drawMagnetSprite,
-  drawTornadoSprite,
-  drawLasagnaSprite,
-  drawPepperSprite,
-  drawChiliSprite,
-  drawSoggySprite,
-  drawGarlicSprite,
-  drawBurntToastSprite,
-} from "../rendering/sprites";
 import {
   GAME_WIDTH,
   GAME_HEIGHT,
@@ -21,6 +8,8 @@ import {
 } from "../config/constants";
 import type { GameWorldState } from "./GameState";
 import type { ParticleManager } from "./ParticleManager";
+import { renderPlayerForEffect } from "./EffectPlayerRender";
+import { getMaxDuration } from "./effectDuration";
 
 // Squash-stretch keyframes: [scaleY, scaleX factor]
 const SQUASH_KEYFRAMES: [number, number][] = [
@@ -61,245 +50,17 @@ export class EffectRenderer {
     particles: ParticleManager,
     inputX: number,
   ): void {
-    const { player, activeEffect, animTick, springFlashTicks } = state;
+    const { activeEffect } = state;
     const activeType = activeEffect?.type;
 
-    if (activeType === "ravioli_rocket") {
-      drawChefOnRocket(playerGfx, player.width, player.height, animTick);
-      playerGfx.pivot.set(player.width / 2, 0);
-      playerGfx.rotation = 0;
-      playerGfx.x = player.x + player.width / 2;
-      playerGfx.y = worldToScreen(player.y, camY);
-      particles.updateRocketParticles(
-        player.x, player.y, player.width, player.height, camY,
-      );
-      particles.clearTornadoParticles();
-    } else if (activeType === "fusilli_tornado") {
-      drawTornadoSprite(playerGfx, player.width, player.height, animTick);
-      playerGfx.pivot.set(player.width / 2, player.height / 2);
-      playerGfx.x = player.x + player.width / 2;
-      playerGfx.y = worldToScreen(player.y, camY) + player.height / 2;
-      playerGfx.rotation = animTick * 0.15;
-      particles.updateTornadoParticles(
-        player.x, player.y, player.width, player.height, camY, animTick,
-      );
-      particles.clearRocketParticles();
-    } else if (activeType === "pepper_sneeze") {
-      drawPepperSprite(playerGfx, player.width, player.height, animTick);
-      playerGfx.pivot.set(player.width / 2, 0);
-      playerGfx.rotation = 0;
-      const shakeX = (Math.random() - 0.5) * 6;
-      const shakeY = (Math.random() - 0.5) * 4;
-      playerGfx.x = player.x + player.width / 2 + shakeX;
-      playerGfx.y = worldToScreen(player.y, camY) + shakeY;
-      particles.updateSneezeParticles(
-        player.x, player.y, player.width, player.height, camY,
-      );
-      particles.clearTornadoParticles();
-      particles.clearRocketParticles();
-      particles.clearLasagnaParticles();
-    } else if (activeType === "lasagna_layers") {
-      drawLasagnaSprite(playerGfx, player.width, player.height, animTick);
-      playerGfx.pivot.set(player.width / 2, player.height / 2);
-      playerGfx.x = player.x + player.width / 2;
-      playerGfx.y = worldToScreen(player.y, camY) + player.height / 2;
-      playerGfx.rotation = Math.sin(animTick * 0.06) * 0.15;
-      const floatPulse = 1.0 + Math.sin(animTick * 0.08) * 0.08;
-      playerGfx.scale.set(floatPulse);
-      particles.updateLasagnaParticles(
-        player.x, player.y, player.width, player.height, camY, animTick,
-      );
-      particles.clearTornadoParticles();
-      particles.clearRocketParticles();
-    } else if (activeType === "chili_pepper") {
-      drawChiliSprite(playerGfx, player.width, player.height, animTick);
-      playerGfx.pivot.set(player.width / 2, 0);
-      playerGfx.x =
-        player.x + player.width / 2 + Math.sin(animTick * 0.5) * 3;
-      playerGfx.y =
-        worldToScreen(player.y, camY) + Math.cos(animTick * 0.7) * 2;
-      playerGfx.rotation = Math.sin(animTick * 0.4) * 0.1;
-      playerGfx.scale.set(1);
-      this.ensureEffectEmitter(particles, "chili_pepper", player.x, player.y, player.width, player.height);
-      particles.updateEffectEmitter(player.x, player.y, player.width, player.height, camY);
-      particles.clearTornadoParticles();
-      particles.clearRocketParticles();
-      particles.clearLasagnaParticles();
-      particles.clearSpringParticles();
-      particles.clearSneezeParticles();
-    } else if (activeType === "soggy_noodle") {
-      drawSoggySprite(playerGfx, player.width, player.height, animTick);
-      playerGfx.pivot.set(player.width / 2, 0);
-      playerGfx.x = player.x + player.width / 2;
-      playerGfx.y = worldToScreen(player.y, camY);
-      const squishX = 1.0 + Math.sin(animTick * 0.12) * 0.15;
-      const squishY = 1.0 - Math.sin(animTick * 0.12) * 0.12;
-      playerGfx.scale.set(squishX, squishY);
-      playerGfx.rotation = Math.sin(animTick * 0.08) * 0.08;
-      this.ensureEffectEmitter(particles, "soggy_noodle", player.x, player.y, player.width, player.height);
-      particles.updateEffectEmitter(player.x, player.y, player.width, player.height, camY);
-      particles.clearTornadoParticles();
-      particles.clearRocketParticles();
-      particles.clearLasagnaParticles();
-      particles.clearSpringParticles();
-      particles.clearSneezeParticles();
-    } else if (activeType === "garlic_breath") {
-      drawGarlicSprite(playerGfx, player.width, player.height, animTick);
-      playerGfx.pivot.set(player.width / 2, 0);
-      playerGfx.x =
-        player.x + player.width / 2 + Math.sin(animTick * 0.08) * 4;
-      playerGfx.y =
-        worldToScreen(player.y, camY) + Math.cos(animTick * 0.06) * 2;
-      playerGfx.rotation = Math.sin(animTick * 0.05) * 0.08;
-      playerGfx.scale.set(1);
-      this.ensureEffectEmitter(particles, "garlic_breath", player.x, player.y, player.width, player.height);
-      particles.updateEffectEmitter(player.x, player.y, player.width, player.height, camY);
-      particles.clearTornadoParticles();
-      particles.clearRocketParticles();
-      particles.clearLasagnaParticles();
-      particles.clearSpringParticles();
-      particles.clearSneezeParticles();
-    } else if (activeType === "burnt_toast") {
-      drawBurntToastSprite(playerGfx, player.width, player.height, animTick);
-      playerGfx.pivot.set(player.width / 2, 0);
-      playerGfx.x =
-        player.x + player.width / 2 + (Math.random() - 0.5) * 2;
-      playerGfx.y =
-        worldToScreen(player.y, camY) + (Math.random() - 0.5) * 1.5;
-      playerGfx.rotation = (Math.random() - 0.5) * 0.05;
-      playerGfx.scale.set(0.9 + Math.random() * 0.1);
-      this.ensureEffectEmitter(particles, "burnt_toast", player.x, player.y, player.width, player.height);
-      particles.updateEffectEmitter(player.x, player.y, player.width, player.height, camY);
-      particles.clearTornadoParticles();
-      particles.clearRocketParticles();
-      particles.clearLasagnaParticles();
-      particles.clearSpringParticles();
-      particles.clearSneezeParticles();
-    } else if (activeType === "meatball_magnet") {
-      drawMagnetSprite(playerGfx, player.width, player.height, animTick);
-      playerGfx.pivot.set(player.width / 2, 0);
-      playerGfx.rotation = 0;
-      playerGfx.x = player.x + player.width / 2;
-      playerGfx.y = worldToScreen(player.y, camY);
-      const magnetPulse = 1.0 + Math.sin(animTick * 0.12) * 0.08;
-      playerGfx.scale.set(magnetPulse);
-      this.ensureEffectEmitter(particles, "meatball_magnet", player.x, player.y, player.width, player.height);
-      particles.updateEffectEmitter(player.x, player.y, player.width, player.height, camY);
-      particles.clearTornadoParticles();
-      particles.clearRocketParticles();
-      particles.clearLasagnaParticles();
-      particles.clearSpringParticles();
-      particles.clearSneezeParticles();
-    } else if (activeType === "pasta_shield") {
-      drawChef(playerGfx, player.width, player.height);
-      playerGfx.pivot.set(player.width / 2, 0);
-      playerGfx.rotation = 0;
-      playerGfx.x = player.x + player.width / 2;
-      playerGfx.y = worldToScreen(player.y, camY);
-      // Pulsing shield scale
-      const shieldPulse = 1.0 + Math.sin(animTick * 0.1) * 0.05;
-      playerGfx.scale.set(shieldPulse);
-      playerGfx.tint = 0xaaeeff;
-      this.ensureEffectEmitter(particles, "pasta_shield", player.x, player.y, player.width, player.height);
-      particles.updateEffectEmitter(player.x, player.y, player.width, player.height, camY);
-      particles.clearTornadoParticles();
-      particles.clearRocketParticles();
-      particles.clearLasagnaParticles();
-      particles.clearSpringParticles();
-      particles.clearSneezeParticles();
-    } else if (activeType === "rigatoni_drill") {
-      drawChef(playerGfx, player.width, player.height);
-      playerGfx.pivot.set(player.width / 2, player.height / 2);
-      playerGfx.x = player.x + player.width / 2;
-      playerGfx.y = worldToScreen(player.y, camY) + player.height / 2;
-      // Spinning drill
-      playerGfx.rotation = animTick * 0.2;
-      playerGfx.scale.set(1);
-      playerGfx.tint = 0xddaa66;
-      this.ensureEffectEmitter(particles, "rigatoni_drill", player.x, player.y, player.width, player.height);
-      particles.updateEffectEmitter(player.x, player.y, player.width, player.height, camY);
-      particles.clearTornadoParticles();
-      particles.clearRocketParticles();
-      particles.clearLasagnaParticles();
-      particles.clearSpringParticles();
-      particles.clearSneezeParticles();
-    } else if (activeType === "penne_cannon") {
-      drawChef(playerGfx, player.width, player.height);
-      playerGfx.pivot.set(player.width / 2, 0);
-      playerGfx.rotation = 0;
-      playerGfx.x = player.x + player.width / 2;
-      playerGfx.y = worldToScreen(player.y, camY);
-      playerGfx.scale.set(1);
-      playerGfx.tint = 0xffdd66;
-      this.ensureEffectEmitter(particles, "penne_cannon", player.x, player.y, player.width, player.height);
-      particles.updateEffectEmitter(player.x, player.y, player.width, player.height, camY);
-      particles.clearTornadoParticles();
-      particles.clearRocketParticles();
-      particles.clearLasagnaParticles();
-      particles.clearSpringParticles();
-      particles.clearSneezeParticles();
-    } else if (activeType === "gnocchi_bounce") {
-      drawChef(playerGfx, player.width, player.height);
-      playerGfx.pivot.set(player.width / 2, 0);
-      playerGfx.rotation = 0;
-      playerGfx.x = player.x + player.width / 2;
-      playerGfx.y = worldToScreen(player.y, camY);
-      // Bouncy scale pulse
-      const bouncePulse = 1.0 + Math.sin(animTick * 0.15) * 0.1;
-      playerGfx.scale.set(bouncePulse);
-      playerGfx.tint = 0xffeedd;
-      this.ensureEffectEmitter(particles, "gnocchi_bounce", player.x, player.y, player.width, player.height);
-      particles.updateEffectEmitter(player.x, player.y, player.width, player.height, camY);
-      particles.clearTornadoParticles();
-      particles.clearRocketParticles();
-      particles.clearLasagnaParticles();
-      particles.clearSpringParticles();
-      particles.clearSneezeParticles();
-    } else if (activeType === "minestrone_soup") {
-      drawChef(playerGfx, player.width, player.height);
-      playerGfx.pivot.set(player.width / 2, 0);
-      playerGfx.rotation = 0;
-      playerGfx.x = player.x + player.width / 2;
-      playerGfx.y = worldToScreen(player.y, camY);
-      playerGfx.scale.set(1);
-      playerGfx.tint = 0xffaa88;
-      this.ensureEffectEmitter(particles, "minestrone_soup", player.x, player.y, player.width, player.height);
-      particles.updateEffectEmitter(player.x, player.y, player.width, player.height, camY);
-      particles.clearTornadoParticles();
-      particles.clearRocketParticles();
-      particles.clearLasagnaParticles();
-      particles.clearSpringParticles();
-      particles.clearSneezeParticles();
-    } else {
-      // Normal or spaghetti spring flash — clear config-driven emitter
-      if (this.activeEmitterType) {
-        particles.clearEffectEmitter();
-        this.activeEmitterType = null;
-      }
-      drawChef(playerGfx, player.width, player.height);
-      playerGfx.pivot.set(player.width / 2, 0);
-      playerGfx.rotation = 0;
-      playerGfx.x = player.x + player.width / 2;
-      playerGfx.y = worldToScreen(player.y, camY);
-      playerGfx.scale.set(1);
-
-      if (springFlashTicks > 0) {
-        const stretch = 1 + (springFlashTicks / 30) * 0.5;
-        playerGfx.scale.set(1, stretch);
-        playerGfx.tint = 0xf0c050;
-        particles.updateSpringParticles(
-          player.x, player.y, player.width, player.height, camY, animTick,
-        );
-      } else {
-        playerGfx.tint = 0xffffff;
-        particles.clearSpringParticles();
-      }
-
-      particles.clearTornadoParticles();
-      particles.clearRocketParticles();
-      particles.clearLasagnaParticles();
-      particles.clearSneezeParticles();
-    }
+    this.activeEmitterType = renderPlayerForEffect(
+      state,
+      playerGfx,
+      camY,
+      particles,
+      this.activeEmitterType,
+      this.ensureEffectEmitter.bind(this),
+    );
 
     // Sprite faces movement direction (skip for spinning effects)
     let lastFacing = state.lastFacing;
@@ -440,34 +201,3 @@ export class EffectRenderer {
   }
 }
 
-function getMaxDuration(type: string): number {
-  switch (type) {
-    case "fusilli_tornado":
-      return 300;
-    case "ravioli_rocket":
-      return 180;
-    case "lasagna_layers":
-      return 360;
-    case "pepper_sneeze":
-      return 30;
-    case "meatball_magnet":
-      return 300;
-    case "pasta_shield":
-      return 600;
-    case "rigatoni_drill":
-      return 180;
-    case "penne_cannon":
-      return 360;
-    case "gnocchi_bounce":
-      return 360;
-    case "minestrone_soup":
-      return 480;
-    case "chili_pepper":
-    case "soggy_noodle":
-    case "garlic_breath":
-    case "burnt_toast":
-      return 300;
-    default:
-      return 1;
-  }
-}
