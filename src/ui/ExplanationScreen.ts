@@ -187,29 +187,31 @@ export class ExplanationScreen {
       y += 8;
 
       for (const item of section.items) {
-        // Color dot
-        if (item.color != null) {
-          const dot = new Graphics();
-          dot.circle(22, y + 7, 5);
-          dot.fill(item.color);
-          dot.circle(22, y + 7, 5);
-          dot.stroke({ width: 1, color: 0x000000, alpha: 0.3 });
-          content.addChild(dot);
+        const hasColor = item.color != null;
+
+        // Color bar preview (platforms/power-ups)
+        if (hasColor) {
+          const bar = new Graphics();
+          bar.roundRect(15, y + 2, 50, 8, 3);
+          bar.fill(item.color);
+          bar.roundRect(15, y + 2, 50, 8, 3);
+          bar.stroke({ width: 1, color: 0x000000, alpha: 0.3 });
+          content.addChild(bar);
         }
 
-        // Label — bright white, readable size
+        // Label
         const labelText = new Text({
           text: item.label,
           style: new TextStyle({
-            fontFamily: "monospace", fontSize: 12,
+            fontFamily: "monospace", fontSize: 13,
             fill: "#ffffff", fontWeight: "bold",
           }),
         });
-        labelText.x = item.color != null ? 34 : 20;
+        labelText.x = hasColor ? 72 : 20;
         labelText.y = y;
         content.addChild(labelText);
 
-        // Description — light gray (good contrast on dark bg)
+        // Description
         const descText = new Text({
           text: item.desc,
           style: new TextStyle({
@@ -217,11 +219,11 @@ export class ExplanationScreen {
             fill: "#ccbbaa",
           }),
         });
-        descText.x = item.color != null ? 34 : 20;
-        descText.y = y + 15;
+        descText.x = hasColor ? 72 : 20;
+        descText.y = y + 16;
         content.addChild(descText);
 
-        y += 32;
+        y += 34;
       }
 
       y += 12;

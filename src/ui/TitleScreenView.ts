@@ -52,7 +52,7 @@ export function showTitleScreen(
     }),
   });
   titleText.x = GAME_WIDTH / 2;
-  titleText.y = GAME_HEIGHT * 0.2;
+  titleText.y = GAME_HEIGHT * 0.06;
   titleText.anchor.set(0.5, 0);
   titleContainer.addChild(titleText);
 
@@ -69,14 +69,14 @@ export function showTitleScreen(
     }),
   });
   subtitleText.x = GAME_WIDTH / 2;
-  subtitleText.y = GAME_HEIGHT * 0.2 + 115;
+  subtitleText.y = GAME_HEIGHT * 0.06 + 110;
   subtitleText.anchor.set(0.5, 0);
   titleContainer.addChild(subtitleText);
 
   // Animated chef character
   const chefGfx = new Graphics();
   chefGfx.x = GAME_WIDTH / 2 - 16;
-  chefGfx.y = GAME_HEIGHT * 0.38;
+  chefGfx.y = GAME_HEIGHT * 0.30;
   drawChef(chefGfx, 32, 40);
   titleContainer.addChild(chefGfx);
 
@@ -94,17 +94,17 @@ export function showTitleScreen(
       }),
     });
     hsText.x = GAME_WIDTH / 2;
-    hsText.y = GAME_HEIGHT * 0.2 + 135;
+    hsText.y = GAME_HEIGHT * 0.06 + 130;
     hsText.anchor.set(0.5, 0.5);
     titleContainer.addChild(hsText);
   }
 
   // ── Vertical button stack under chef ─────────────────────────────────
-  const btnMargin = 12;
-  const btnW = GAME_WIDTH - btnMargin * 2;
-  const btnH = 38;
+  const btnW = Math.min(260, GAME_WIDTH - 40);
+  const btnX = (GAME_WIDTH - btnW) / 2;
+  const btnH = 36;
   const btnSpacing = 6;
-  let btnTop = GAME_HEIGHT * 0.47;
+  let btnTop = GAME_HEIGHT * 0.39;
 
   // Helper: create a styled button
   function makeButton(
@@ -112,9 +112,9 @@ export function showTitleScreen(
     fillColor: number, textColor: string, fontSize: number,
   ): { bg: Graphics; text: Text } {
     const bg = new Graphics();
-    bg.roundRect(btnMargin, y, btnW, btnH, 10);
+    bg.roundRect(btnX, y, btnW, btnH, 10);
     bg.fill({ color: fillColor, alpha: 0.7 });
-    bg.roundRect(btnMargin, y, btnW, btnH, 10);
+    bg.roundRect(btnX, y, btnW, btnH, 10);
     bg.stroke({ width: 1.5, color: 0x6688bb, alpha: 0.5 });
     bg.eventMode = "static";
     bg.cursor = "pointer";
@@ -167,14 +167,13 @@ export function showTitleScreen(
   kbHint.anchor.set(0.5, 0);
   titleContainer.addChild(kbHint);
 
-  // Settings toggles
+  // Settings toggles — pushed to bottom area
   const settingsContainer = createSettingsToggles();
-  settingsContainer.y = btnTop + 22;
+  settingsContainer.y = btnTop + 30;
   titleContainer.addChild(settingsContainer);
 
   // Explanation screen
   const explanationScreen = new ExplanationScreen();
-  titleContainer.addChild(explanationScreen.container);
   const showHelp = (e: Event) => { e.stopPropagation(); explanationScreen.show(); };
   howBtnBg.on("pointertap", showHelp);
   howBtn.eventMode = "static";
@@ -182,7 +181,6 @@ export function showTitleScreen(
 
   // Custom run screen
   const customRunScreen = new CustomRunScreen();
-  titleContainer.addChild(customRunScreen.container);
   const showCustom = (e: Event) => {
     e.stopPropagation();
     customRunScreen.show((config: RunConfig) => {
@@ -203,9 +201,11 @@ export function showTitleScreen(
   customBtn.eventMode = "static";
   customBtn.on("pointertap", showCustom);
 
-  // Power-up Encyclopedia
+  // Add overlay containers LAST so they render on top of everything
   const encyclopedia = new PowerUpEncyclopedia();
   titleContainer.addChild(encyclopedia.container);
+  titleContainer.addChild(explanationScreen.container);
+  titleContainer.addChild(customRunScreen.container);
 
   // Stats display (below subtitle)
   const stats = loadStats();
@@ -258,7 +258,7 @@ export function showTitleScreen(
     animTick++;
     chefGfx.clear();
     drawChef(chefGfx, 32, 40);
-    chefGfx.y = GAME_HEIGHT * 0.38 + Math.sin(animTick * 0.05) * 4;
+    chefGfx.y = GAME_HEIGHT * 0.30 + Math.sin(animTick * 0.05) * 4;
   };
   app.ticker.add(titleTicker);
 
