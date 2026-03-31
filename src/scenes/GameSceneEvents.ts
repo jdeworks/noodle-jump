@@ -19,7 +19,6 @@ import {
   stopBossMusic,
 } from "../systems/Audio";
 import { setAmbientZone } from "../systems/AmbientAudio";
-import { markPowerUpCollected } from "../ui/PowerUpDescriptions";
 import type { GameWorldState } from "./GameState";
 import type { GameEvent } from "./GameLoop";
 import type { ParticleManager } from "./ParticleManager";
@@ -81,7 +80,6 @@ export function handleEvents(events: GameEvent[], deps: EventHandlerDeps): void 
 
       case "powerUpCollected":
         playSfxPowerUp(event.powerUpType);
-        markPowerUpCollected(event.powerUpType);
         effectRenderer.showEffectLabel(
           event.powerUpType,
           container,

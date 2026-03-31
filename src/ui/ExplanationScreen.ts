@@ -232,9 +232,11 @@ export class ExplanationScreen {
       y += 8;
 
       for (const item of section.items) {
-        const hasSprite = item.platformStyle != null || item.powerUpType != null;
-        const textX = hasSprite ? 80 : 20;
-        const rowH = hasSprite ? 40 : 34;
+        const hasPlatform = item.platformStyle != null;
+        const hasPowerUp = item.powerUpType != null;
+        const hasSprite = hasPlatform || hasPowerUp;
+        const textX = hasPowerUp ? 56 : (hasPlatform ? 80 : 20);
+        const rowH = hasSprite ? 42 : 34;
 
         // Platform sprite preview (animated)
         if (item.platformStyle != null && item.color != null) {
@@ -249,16 +251,16 @@ export class ExplanationScreen {
           });
         }
 
-        // Power-up sprite preview (animated)
+        // Power-up sprite preview (animated) — larger for visibility
         if (item.powerUpType != null && item.color != null) {
           const puGfx = new Graphics();
-          drawPowerUp(puGfx, 28, item.color, item.powerUpType);
-          puGfx.x = 18;
-          puGfx.y = y + 2;
+          drawPowerUp(puGfx, 36, item.color, item.powerUpType);
+          puGfx.x = 10;
+          puGfx.y = y - 2;
           content.addChild(puGfx);
           this.animSprites.push({
             gfx: puGfx, type: "powerup",
-            puType: item.powerUpType, color: item.color, baseY: y + 2,
+            puType: item.powerUpType, color: item.color, baseY: y - 2,
           });
         }
 

@@ -10,7 +10,6 @@ import { createSettingsToggles } from "./SettingsToggles";
 import { requestFullscreen } from "../utils/wakeLock";
 import { ExplanationScreen } from "./ExplanationScreen";
 import { CustomRunScreen } from "./CustomRunScreen";
-import { PowerUpEncyclopedia } from "./PowerUpEncyclopedia";
 import { loadStats } from "./StatsPanel";
 import { drawChef } from "../rendering/sprites";
 import type { RunConfig } from "../systems/CustomRunConfig";
@@ -210,8 +209,6 @@ export function showTitleScreen(
   customBtn.on("pointertap", showCustom);
 
   // Add overlay containers LAST so they render on top of everything
-  const encyclopedia = new PowerUpEncyclopedia();
-  titleContainer.addChild(encyclopedia.container);
   titleContainer.addChild(explanationScreen.container);
   titleContainer.addChild(customRunScreen.container);
 
@@ -232,28 +229,6 @@ export function showTitleScreen(
     statsText.anchor.set(0.5, 0.5);
     titleContainer.addChild(statsText);
   }
-
-  // Encyclopedia button
-  const encBtn = new Text({
-    text: "Power-up Encyclopedia",
-    style: new TextStyle({
-      fontFamily: "monospace",
-      fontSize: 13,
-      fill: "#ffddbb",
-      fontWeight: "bold",
-      stroke: { color: "#000000", width: 2 },
-    }),
-  });
-  encBtn.x = GAME_WIDTH / 2;
-  encBtn.y = kbHint.y + 18;
-  encBtn.anchor.set(0.5, 0);
-  encBtn.eventMode = "static";
-  encBtn.cursor = "pointer";
-  encBtn.on("pointertap", (e: Event) => {
-    e.stopPropagation();
-    encyclopedia.show();
-  });
-  titleContainer.addChild(encBtn);
 
   // Animate parallax + pulse prompt + chef
   let scrollY = 0;
@@ -276,7 +251,7 @@ export function showTitleScreen(
   let started = false;
   const startGame = async () => {
     if (started) return;
-    if (explanationScreen.isActive() || customRunScreen.isActive() || encyclopedia.isActive()) return;
+    if (explanationScreen.isActive() || customRunScreen.isActive()) return;
     started = true;
 
     window.removeEventListener("keydown", handleKey);
@@ -311,7 +286,7 @@ export function showTitleScreen(
 
   // Keyboard still works
   const handleKey = (e: KeyboardEvent) => {
-    if (explanationScreen.isActive() || customRunScreen.isActive() || encyclopedia.isActive()) return;
+    if (explanationScreen.isActive() || customRunScreen.isActive()) return;
     if (e.key === "Enter" || e.key === " ") startGame();
   };
   window.addEventListener("keydown", handleKey);
