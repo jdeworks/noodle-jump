@@ -38,8 +38,10 @@ export function createGameLoopTicker(
   let inGameFireworks: FireworkDisplay | null = null;
   let inGameHighScoreLabel: Text | null = null;
   let goTextTicks = 0;
+  let gameOverHandled = false;
 
-  return () => {
+  const gameLoopFn = () => {
+    if (gameOverHandled) return;
     scene.update();
 
     // Countdown display
@@ -119,7 +121,7 @@ export function createGameLoopTicker(
     // Game over
     if (scene.isGameOver()) {
       stopMusic();
-      app.ticker.stop();
+      gameOverHandled = true;
 
       const gameResult = {
         score: scene.getScore(),
@@ -174,4 +176,5 @@ export function createGameLoopTicker(
       );
     }
   };
+  return gameLoopFn;
 }

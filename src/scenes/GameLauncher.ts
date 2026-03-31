@@ -143,10 +143,10 @@ export async function launchGame(app: Application, runConfig?: RunConfig): Promi
   const checkOrientation = () => {
     if (orientationQuery.matches && !pausedByOrientation) {
       pausedByOrientation = true;
-      app.ticker.stop();
+      if (!scene.isPaused()) scene.togglePause();
     } else if (!orientationQuery.matches && pausedByOrientation) {
       pausedByOrientation = false;
-      if (!scene.isGameOver()) app.ticker.start();
+      if (scene.isPaused()) scene.togglePause();
     }
   };
   orientationQuery.addEventListener("change", checkOrientation);

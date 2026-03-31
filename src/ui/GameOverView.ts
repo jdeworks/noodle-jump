@@ -222,6 +222,43 @@ export function showGameOver(
   homeText.cursor = "pointer";
   app.stage.addChild(homeText);
 
+  // Clear data — with confirmation
+  const clearText = new Text({
+    text: "[Clear saved data]",
+    style: new TextStyle({
+      fontFamily: "monospace", fontSize: 12,
+      fill: "#887766",
+    }),
+  });
+  clearText.x = GAME_WIDTH / 2;
+  clearText.y = GAME_HEIGHT * 0.92;
+  clearText.anchor.set(0.5, 0.5);
+  clearText.eventMode = "static";
+  clearText.cursor = "pointer";
+  let clearConfirming = false;
+  clearText.on("pointertap", (e: Event) => {
+    e.stopPropagation();
+    suppressRestart();
+    if (!clearConfirming) {
+      clearConfirming = true;
+      clearText.text = "Tap again to confirm";
+      clearText.style.fill = "#ff6644";
+      setTimeout(() => {
+        if (clearConfirming) {
+          clearConfirming = false;
+          clearText.text = "[Clear saved data]";
+          clearText.style.fill = "#887766";
+        }
+      }, 3000);
+    } else {
+      localStorage.clear();
+      clearText.text = "Data cleared!";
+      clearText.style.fill = "#66cc66";
+      clearConfirming = false;
+    }
+  });
+  app.stage.addChild(clearText);
+
   // Cleanup helper
   const cleanup = () => {
     if (fireworkTicker) app.ticker.remove(fireworkTicker);

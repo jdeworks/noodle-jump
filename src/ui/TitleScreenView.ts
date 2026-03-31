@@ -212,21 +212,26 @@ export function showTitleScreen(
   titleContainer.addChild(explanationScreen.container);
   titleContainer.addChild(customRunScreen.container);
 
-  // Stats display (below subtitle)
+  // Stats display — below settings panel
   const stats = loadStats();
   if (stats.totalGames > 0) {
+    const statsLines = [
+      `Games: ${stats.totalGames}`,
+      `Meatballs: ${stats.totalMeatballs}`,
+      `Best Zone: ${stats.maxZone + 1}`,
+    ].join("  ·  ");
     const statsText = new Text({
-      text: `Games: ${stats.totalGames} | Meatballs: ${stats.totalMeatballs} | Zone: ${stats.maxZone + 1}`,
+      text: statsLines,
       style: new TextStyle({
         fontFamily: "monospace",
-        fontSize: 12,
-        fill: "#eeddcc",
+        fontSize: 11,
+        fill: "#ccbbaa",
         stroke: { color: "#000000", width: 2 },
       }),
     });
     statsText.x = GAME_WIDTH / 2;
-    statsText.y = GAME_HEIGHT * 0.58;
-    statsText.anchor.set(0.5, 0.5);
+    statsText.y = settingsContainer.y + 160;
+    statsText.anchor.set(0.5, 0);
     titleContainer.addChild(statsText);
   }
 
