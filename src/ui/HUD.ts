@@ -1,7 +1,7 @@
 /** HUD system — PixiJS overlay for gameplay information. */
 
 import { Container, Graphics, Text, TextStyle } from "pixi.js";
-import { GAME_WIDTH, GAME_HEIGHT, COLORS } from "../config/constants";
+import { GAME_WIDTH, GAME_HEIGHT } from "../config/constants";
 import { POWER_UP_INFO } from "./PowerUpDescriptions";
 import type { GameWorldState } from "../scenes/GameState";
 

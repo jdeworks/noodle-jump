@@ -2,7 +2,7 @@
 
 import { Container, Graphics } from "pixi.js";
 import { GraphicsPool } from "./GraphicsPool";
-import type { EmitterState, Particle, ParticleShape } from "../systems/ParticleEmitter";
+import type { EmitterState, Particle } from "../systems/ParticleEmitter";
 
 interface RenderedParticle {
   gfx: Graphics;

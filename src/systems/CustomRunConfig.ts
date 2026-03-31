@@ -1,7 +1,5 @@
 /** Custom run configuration — defines all tweakable game parameters. */
 
-import type { PowerUpType } from "../entities/PowerUp";
-
 export interface RunConfig {
   /** Seed for deterministic RNG. 0 = random (Math.random). */
   seed: number;

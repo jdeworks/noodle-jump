@@ -1,6 +1,6 @@
 /** Entity rendering — position and style platforms, meatballs, power-ups. */
 
-import { drawPlatform, drawEnemy, type PlatformStyle } from "../rendering/sprites";
+import { drawPlatform, type PlatformStyle } from "../rendering/sprites";
 import { worldToScreen } from "../systems/Camera";
 import { isNegativePowerUp } from "../entities/PowerUp";
 import { GAME_HEIGHT } from "../config/constants";

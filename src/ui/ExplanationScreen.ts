@@ -3,7 +3,6 @@
 import { Container, Graphics, Text, TextStyle } from "pixi.js";
 import { GAME_WIDTH, GAME_HEIGHT, COLORS } from "../config/constants";
 import { POWER_UP_INFO } from "./PowerUpDescriptions";
-import { drawPowerUp } from "../rendering/sprites";
 
 interface Section {
   title: string;

@@ -6,7 +6,6 @@ import {
   POWERUP_FLOAT_HEIGHT,
   POWERUP_SPAWN_CHANCE,
   POWERUP_COOLDOWN,
-  GAME_WIDTH,
 } from "../config/constants";
 import type { PlatformState } from "./Platform";
 import type { PlayerState } from "./Player";

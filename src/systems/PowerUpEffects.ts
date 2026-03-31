@@ -5,7 +5,6 @@ import type { PlatformState } from "../entities/Platform";
 import type { ActiveEffect } from "../entities/PowerUp";
 import {
   GNOCCHI_BOUNCE_MULTIPLIER,
-  PLAYER_JUMP_VELOCITY,
   MINESTRONE_RISE_SPEED,
   GAME_HEIGHT,
 } from "../config/constants";

@@ -100,7 +100,7 @@ export function burstEmitter(state: EmitterState): EmitterState {
 /** Tick the emitter — spawn new particles and update existing ones. */
 export function tickEmitter(state: EmitterState): EmitterState {
   const { config } = state;
-  let particles = [...state.particles];
+  const particles = [...state.particles];
   let spawnAccum = state.spawnAccum;
 
   // Spawn new particles if active

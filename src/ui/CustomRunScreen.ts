@@ -5,10 +5,9 @@ import { GAME_WIDTH, GAME_HEIGHT } from "../config/constants";
 import {
   createDefaultRunConfig,
   ALL_POWER_UP_TYPES,
-  serializeRunConfig,
   type RunConfig,
 } from "../systems/CustomRunConfig";
-import { seedToCode, getSeedFromString } from "../systems/DailyChallenge";
+import { seedToCode } from "../systems/DailyChallenge";
 
 export class CustomRunScreen {
   readonly container = new Container();

@@ -58,7 +58,7 @@ export function tickWeather(state: WeatherState): WeatherState {
   const config = WEATHER_CONFIGS[state.type];
   if (!config) return state;
 
-  let particles = [...state.particles];
+  const particles = [...state.particles];
 
   // Spawn
   if (particles.length < config.maxParticles && Math.random() < config.spawnRate) {
