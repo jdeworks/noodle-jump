@@ -182,7 +182,7 @@ export class EffectRenderer {
       }),
     });
     this.effectLabel.x = GAME_WIDTH / 2;
-    this.effectLabel.y = GAME_HEIGHT - 30;
+    this.effectLabel.y = GAME_HEIGHT - 50;
     this.effectLabel.anchor.set(0.5, 0.5);
     container.addChild(this.effectLabel);
   }

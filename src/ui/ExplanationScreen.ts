@@ -76,7 +76,7 @@ const SECTIONS: Section[] = [
     title: "7 ZONES",
     items: [
       { label: "Kitchen", desc: "Warm start — where it all begins" },
-      { label: "Ocean", desc: "Deep sea — bubbles and currents" },
+      { label: "Boiling Pot", desc: "Steamy bubbling zone — watch the heat" },
       { label: "Space", desc: "Dark void — stars and planets" },
       { label: "Freezer", desc: "Icy cold — snow and slippery platforms" },
       { label: "Volcano", desc: "Fiery — embers and rising heat" },

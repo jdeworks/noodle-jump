@@ -28,6 +28,11 @@ document.addEventListener("visibilitychange", () => {
 });
 
 export function requestFullscreen(): void {
+  // Toggle: exit if already fullscreen
+  if (document.fullscreenElement) {
+    document.exitFullscreen().catch(() => {});
+    return;
+  }
   const doc = document.documentElement as HTMLElement & {
     webkitRequestFullscreen?: () => Promise<void>;
     msRequestFullscreen?: () => Promise<void>;

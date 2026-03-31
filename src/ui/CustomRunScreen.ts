@@ -132,7 +132,7 @@ export class CustomRunScreen {
     y += 25;
 
     // Starting zone
-    const zoneNames = ["Kitchen", "Ocean", "Space", "Freezer", "Volcano", "Candy", "Final Kitchen"];
+    const zoneNames = ["Kitchen", "Boiling Pot", "Space", "Freezer", "Volcano", "Candy", "Final Kitchen"];
     const zoneLabel = new Text({
       text: `Start Zone: ${zoneNames[this.config.startingZone]}`,
       style: labelStyle,

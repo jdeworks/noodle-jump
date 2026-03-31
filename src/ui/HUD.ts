@@ -7,7 +7,7 @@ import { POWER_UP_INFO } from "./PowerUpDescriptions";
 import type { GameWorldState } from "../scenes/GameState";
 
 const ZONE_NAMES = [
-  "Kitchen", "Ocean", "Space", "Freezer",
+  "Kitchen", "Boiling Pot", "Space", "Freezer",
   "Volcano", "Candy", "Final Kitchen",
 ];
 const ZONE_THRESHOLDS = [0, 80, 280, 500, 750, 1000, 1300];
@@ -93,10 +93,11 @@ export class HUD {
     this.container.addChild(this.pauseHitArea);
 
     this.pauseBtn = new Text({
-      text: "| |",
+      text: "||",
       style: new TextStyle({
-        fontFamily: "monospace", fontSize: 16,
-        fill: "#ffaa33", fontWeight: "bold",
+        fontFamily: "monospace", fontSize: 20,
+        fill: "#dddddd", fontWeight: "bold",
+        letterSpacing: 3,
       }),
     });
     this.pauseBtn.x = GAME_WIDTH - 20;

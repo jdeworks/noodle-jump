@@ -172,38 +172,90 @@ export async function launchGame(app: Application, runConfig?: RunConfig): Promi
   effectTimerLabel.y = GAME_HEIGHT - 8;
   app.stage.addChild(effectTimerBar, effectTimerLabel);
 
-  // ── Pause overlay ──────────────────────────────────────────────────────
+  // ── Pause overlay with menu ────────────────────────────────────────
   const pauseOverlay = new Container();
   pauseOverlay.visible = false;
   const pauseDim = new Graphics();
   pauseDim.rect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-  pauseDim.fill({ color: 0x000000, alpha: 0.5 });
+  pauseDim.fill({ color: 0x000000, alpha: 0.6 });
   pauseOverlay.addChild(pauseDim);
-  const pauseText = new Text({
-    text: "PAUSED\n\nTap to resume",
+
+  const pauseTitle = new Text({
+    text: "PAUSED",
     style: new TextStyle({
-      fontFamily: "monospace", fontSize: 24,
+      fontFamily: "monospace", fontSize: 28,
       fill: "#ffffff", fontWeight: "bold",
-      align: "center", lineHeight: 32,
+      stroke: { color: "#000000", width: 3 },
     }),
   });
-  pauseText.x = GAME_WIDTH / 2;
-  pauseText.y = GAME_HEIGHT * 0.4;
-  pauseText.anchor.set(0.5, 0.5);
-  pauseOverlay.addChild(pauseText);
+  pauseTitle.x = GAME_WIDTH / 2;
+  pauseTitle.y = GAME_HEIGHT * 0.3;
+  pauseTitle.anchor.set(0.5, 0.5);
+  pauseOverlay.addChild(pauseTitle);
+
+  // Resume button
+  const resumeBg = new Graphics();
+  resumeBg.roundRect(GAME_WIDTH / 2 - 100, GAME_HEIGHT * 0.42 - 18, 200, 36, 8);
+  resumeBg.fill({ color: 0x1a3355, alpha: 0.8 });
+  resumeBg.roundRect(GAME_WIDTH / 2 - 100, GAME_HEIGHT * 0.42 - 18, 200, 36, 8);
+  resumeBg.stroke({ width: 1, color: 0x6688bb, alpha: 0.5 });
+  resumeBg.eventMode = "static";
+  resumeBg.cursor = "pointer";
+  pauseOverlay.addChild(resumeBg);
+
+  const resumeText = new Text({
+    text: "Resume",
+    style: new TextStyle({
+      fontFamily: "monospace", fontSize: 18,
+      fill: "#ffffff", fontWeight: "bold",
+      stroke: { color: "#000000", width: 2 },
+    }),
+  });
+  resumeText.x = GAME_WIDTH / 2;
+  resumeText.y = GAME_HEIGHT * 0.42;
+  resumeText.anchor.set(0.5, 0.5);
+  pauseOverlay.addChild(resumeText);
+
+  // Home button in pause menu
+  const pauseHomeBg = new Graphics();
+  pauseHomeBg.roundRect(GAME_WIDTH / 2 - 100, GAME_HEIGHT * 0.52 - 18, 200, 36, 8);
+  pauseHomeBg.fill({ color: 0x222244, alpha: 0.8 });
+  pauseHomeBg.eventMode = "static";
+  pauseHomeBg.cursor = "pointer";
+  pauseOverlay.addChild(pauseHomeBg);
+
+  const pauseHomeText = new Text({
+    text: "Home",
+    style: new TextStyle({
+      fontFamily: "monospace", fontSize: 16,
+      fill: "#aaccff", fontWeight: "bold",
+      stroke: { color: "#000000", width: 2 },
+    }),
+  });
+  pauseHomeText.x = GAME_WIDTH / 2;
+  pauseHomeText.y = GAME_HEIGHT * 0.52;
+  pauseHomeText.anchor.set(0.5, 0.5);
+  pauseOverlay.addChild(pauseHomeText);
+
   app.stage.addChild(pauseOverlay);
+
+  const resumeGame = () => {
+    if (scene.isPaused()) {
+      scene.togglePause();
+      pauseOverlay.visible = false;
+    }
+  };
 
   hud.onPause = () => {
     scene.togglePause();
     pauseOverlay.visible = scene.isPaused();
   };
-  pauseDim.eventMode = "static";
-  pauseDim.on("pointertap", () => {
-    if (scene.isPaused()) {
-      scene.togglePause();
-      pauseOverlay.visible = false;
-    }
-  });
+  resumeBg.on("pointertap", resumeGame);
+  resumeText.eventMode = "static";
+  resumeText.on("pointertap", resumeGame);
+  pauseHomeBg.on("pointertap", () => cleanupAndGoHome(app));
+  pauseHomeText.eventMode = "static";
+  pauseHomeText.on("pointertap", () => cleanupAndGoHome(app));
 
   // ── Countdown ──────────────────────────────────────────────────────────
   const countdownText = new Text({

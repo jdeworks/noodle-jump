@@ -5,7 +5,7 @@ import { GAME_WIDTH, GAME_HEIGHT } from "../config/constants";
 
 const ZONE_NAMES = [
   "The Kitchen",
-  "Ocean Deep",
+  "The Boiling Pot",
   "Outer Space",
   "The Freezer",
   "Volcano Core",

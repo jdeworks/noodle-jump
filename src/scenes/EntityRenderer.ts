@@ -8,16 +8,9 @@ import type { GameWorldState } from "./GameState";
 import type { GraphicsSync } from "./GraphicsSync";
 import type { ZoneTheme } from "../systems/Zone";
 
-// Track drawn state to avoid redundant redraws
-let lastZone = -1;
-let lastBurnt = false;
-const drawnPlatformIds = new Set<number>();
-
 /** Reset rendering state on new game. */
 export function resetRendererState(): void {
-  lastZone = -1;
-  lastBurnt = false;
-  drawnPlatformIds.clear();
+  // Currently no cached state — platforms redrawn each frame
 }
 
 /** Render all platforms with zone-appropriate colors. */
@@ -83,14 +76,8 @@ export function renderPlatforms(
       style = "weighted";
     }
 
-    // Redraw when zone changes, burnt toggles, or platform is new
-    const zoneChanged = state.zoneState.currentZone !== lastZone;
-    const burntChanged = isBurnt !== lastBurnt;
-    const isNew = !drawnPlatformIds.has(platform.id);
-    if (zoneChanged || burntChanged || isNew) {
-      drawPlatform(gfx, platform.width * shrink, platform.height, color, style);
-      drawnPlatformIds.add(platform.id);
-    }
+    // Always redraw visible platforms (only ~10-15 on screen, fast enough)
+    drawPlatform(gfx, platform.width * shrink, platform.height, color, style);
     gfx.x = platform.x + (platform.width * (1 - shrink)) / 2;
     gfx.y = worldToScreen(platform.y, camY);
     gfx.visible = gfx.y > -20 && gfx.y < GAME_HEIGHT + 20;
@@ -112,16 +99,6 @@ export function renderPlatforms(
     } else if (platform.type === "lasagna") {
       // Warm glow pulse
       gfx.alpha = 0.8 + Math.sin(t * 0.06) * 0.2;
-    }
-  }
-  lastZone = state.zoneState.currentZone;
-  lastBurnt = isBurnt;
-
-  // Clean up IDs of removed platforms
-  if (drawnPlatformIds.size > state.platforms.length * 2) {
-    const activeIds = new Set(state.platforms.map((p) => p.id));
-    for (const id of drawnPlatformIds) {
-      if (!activeIds.has(id)) drawnPlatformIds.delete(id);
     }
   }
 }
