@@ -38,6 +38,9 @@ export function showTitleScreen(
   dimOverlay.fill({ color: 0x1a1008, alpha: 0.55 });
   titleContainer.addChild(dimOverlay);
 
+  // ── Flowing layout — cursorY prevents overlaps ─────────────────────
+  let cursorY = 8;
+
   // Title text
   const titleText = new Text({
     text: "NOODLE\nJUMP",
@@ -52,9 +55,10 @@ export function showTitleScreen(
     }),
   });
   titleText.x = GAME_WIDTH / 2;
-  titleText.y = GAME_HEIGHT * 0.06;
+  titleText.y = cursorY;
   titleText.anchor.set(0.5, 0);
   titleContainer.addChild(titleText);
+  cursorY += 108;
 
   // Subtitle
   const subtitleText = new Text({
@@ -69,16 +73,10 @@ export function showTitleScreen(
     }),
   });
   subtitleText.x = GAME_WIDTH / 2;
-  subtitleText.y = GAME_HEIGHT * 0.06 + 110;
+  subtitleText.y = cursorY;
   subtitleText.anchor.set(0.5, 0);
   titleContainer.addChild(subtitleText);
-
-  // Animated chef character
-  const chefGfx = new Graphics();
-  chefGfx.x = GAME_WIDTH / 2 - 16;
-  chefGfx.y = GAME_HEIGHT * 0.30;
-  drawChef(chefGfx, 32, 40);
-  titleContainer.addChild(chefGfx);
+  cursorY += 20;
 
   // High score
   const highScore = loadHighScore();
@@ -94,17 +92,26 @@ export function showTitleScreen(
       }),
     });
     hsText.x = GAME_WIDTH / 2;
-    hsText.y = GAME_HEIGHT * 0.06 + 130;
-    hsText.anchor.set(0.5, 0.5);
+    hsText.y = cursorY;
+    hsText.anchor.set(0.5, 0);
     titleContainer.addChild(hsText);
+    cursorY += 24;
   }
 
-  // ── Vertical button stack under chef ─────────────────────────────────
+  // Animated chef character
+  const chefGfx = new Graphics();
+  chefGfx.x = GAME_WIDTH / 2 - 16;
+  chefGfx.y = cursorY;
+  drawChef(chefGfx, 32, 40);
+  titleContainer.addChild(chefGfx);
+  const chefBaseY = cursorY;
+  cursorY += 48;
+
+  // ── Vertical button stack ─────────────────────────────────────────
   const btnW = Math.min(260, GAME_WIDTH - 40);
   const btnX = (GAME_WIDTH - btnW) / 2;
   const btnH = 36;
   const btnSpacing = 6;
-  let btnTop = GAME_HEIGHT * 0.39;
 
   // Helper: create a styled button
   function makeButton(
@@ -135,29 +142,29 @@ export function showTitleScreen(
     return { bg, text };
   }
 
-  // 1. Tap to Play (primary — brighter)
-  const playButton = makeButton("Tap to Play", btnTop, 0x1a3355, "#ffffff", 20);
+  // 1. Tap to Play (primary)
+  const playButton = makeButton("Tap to Play", cursorY, 0x1a3355, "#ffffff", 20);
   const promptText = playButton.text;
-  btnTop += btnH + btnSpacing;
+  cursorY += btnH + btnSpacing;
 
   // 2. How to Play
-  const howButton = makeButton("How to Play", btnTop, 0x222244, "#aaccff", 15);
+  const howButton = makeButton("How to Play", cursorY, 0x222244, "#aaccff", 15);
   const howBtnBg = howButton.bg;
   const howBtn = howButton.text;
-  btnTop += btnH + btnSpacing;
+  cursorY += btnH + btnSpacing;
 
   // 3. Custom Run
-  const customButton = makeButton("Custom Run", btnTop, 0x222244, "#aaccff", 15);
+  const customButton = makeButton("Custom Run", cursorY, 0x222244, "#aaccff", 15);
   const customBtnBg = customButton.bg;
   const customBtn = customButton.text;
-  btnTop += btnH + btnSpacing;
+  cursorY += btnH + btnSpacing;
 
   // 4. Fullscreen
-  const fsButton = makeButton("Fullscreen", btnTop, 0x222233, "#aaaaaa", 13);
+  const fsButton = makeButton("Fullscreen", cursorY, 0x222233, "#aaaaaa", 13);
   fsButton.bg.on("pointertap", (e: Event) => { e.stopPropagation(); requestFullscreen(); });
   fsButton.text.eventMode = "static";
   fsButton.text.on("pointertap", (e: Event) => { e.stopPropagation(); requestFullscreen(); });
-  btnTop += btnH + btnSpacing + 4;
+  cursorY += btnH + btnSpacing + 4;
 
   // Keyboard hint
   const kbHint = new Text({
@@ -170,13 +177,14 @@ export function showTitleScreen(
     }),
   });
   kbHint.x = GAME_WIDTH / 2;
-  kbHint.y = btnTop;
+  kbHint.y = cursorY;
   kbHint.anchor.set(0.5, 0);
   titleContainer.addChild(kbHint);
+  cursorY += 20;
 
-  // Settings toggles — pushed to bottom area
+  // Settings toggles
   const settingsContainer = createSettingsToggles();
-  settingsContainer.y = btnTop + 50;
+  settingsContainer.y = cursorY;
   titleContainer.addChild(settingsContainer);
 
   // Explanation screen
@@ -230,7 +238,7 @@ export function showTitleScreen(
       }),
     });
     statsText.x = GAME_WIDTH / 2;
-    statsText.y = settingsContainer.y + 160;
+    statsText.y = cursorY + 160;
     statsText.anchor.set(0.5, 0);
     titleContainer.addChild(statsText);
   }
@@ -246,7 +254,7 @@ export function showTitleScreen(
     animTick++;
     chefGfx.clear();
     drawChef(chefGfx, 32, 40);
-    chefGfx.y = GAME_HEIGHT * 0.30 + Math.sin(animTick * 0.05) * 4;
+    chefGfx.y = chefBaseY + Math.sin(animTick * 0.05) * 4;
     explanationScreen.update();
   };
   app.ticker.add(titleTicker);

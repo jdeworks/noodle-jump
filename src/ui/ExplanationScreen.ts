@@ -254,16 +254,20 @@ export class ExplanationScreen {
           });
         }
 
-        // Power-up sprite preview (animated) — larger for visibility
+        // Power-up sprite preview (animated) — pivot at center
         if (item.powerUpType != null && item.color != null) {
+          const puSize = 36;
+          const puCenter = puSize / 2;
           const puGfx = new Graphics();
-          drawPowerUp(puGfx, 36, item.color, item.powerUpType);
-          puGfx.x = 10;
-          puGfx.y = y - 2;
+          drawPowerUp(puGfx, puSize, item.color, item.powerUpType);
+          // Pivot at the drawn center (drawPowerUp draws at (s,s))
+          puGfx.pivot.set(puCenter, puCenter);
+          puGfx.x = 10 + puCenter;
+          puGfx.y = y + puCenter - 2;
           content.addChild(puGfx);
           this.animSprites.push({
             gfx: puGfx, type: "powerup",
-            puType: item.powerUpType, color: item.color, baseY: y - 2,
+            puType: item.powerUpType, color: item.color, baseY: y + puCenter - 2,
           });
         }
 
