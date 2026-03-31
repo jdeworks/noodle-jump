@@ -166,9 +166,16 @@ export class ExplanationScreen {
           sprite.gfx.x = 15 + (t % 20) * 0.2;
         }
       } else if (sprite.type === "powerup") {
-        // Bob and spin
-        sprite.gfx.y = sprite.baseY + Math.sin(t * 0.06) * 2;
-        sprite.gfx.scale.x = 0.6 + Math.abs(Math.cos(t * 0.08)) * 0.4;
+        // Each power-up gets unique phase from its baseY position
+        const phase = sprite.baseY * 0.3;
+        const bobSpeed = 0.04 + (sprite.baseY % 7) * 0.005;
+        const bobAmp = 3 + (sprite.baseY % 4);
+        sprite.gfx.y = sprite.baseY + Math.sin(t * bobSpeed + phase) * bobAmp;
+        // Spin with per-item variation
+        const spinSpeed = 0.06 + (sprite.baseY % 5) * 0.01;
+        sprite.gfx.scale.x = 0.5 + Math.abs(Math.cos(t * spinSpeed + phase)) * 0.5;
+        // Gentle rotation wobble
+        sprite.gfx.rotation = Math.sin(t * 0.08 + phase) * 0.1;
       }
     }
   }
