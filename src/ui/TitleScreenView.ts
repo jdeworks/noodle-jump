@@ -169,7 +169,7 @@ export function showTitleScreen(
 
   // Settings toggles — pushed to bottom area
   const settingsContainer = createSettingsToggles();
-  settingsContainer.y = btnTop + 30;
+  settingsContainer.y = btnTop + 50;
   titleContainer.addChild(settingsContainer);
 
   // Explanation screen
@@ -294,9 +294,17 @@ export function showTitleScreen(
     );
   };
 
+  // Cooldown after closing overlays — prevent accidental game start
+  let overlayCooldown = 0;
+  const originalHideExpl = explanationScreen.hide.bind(explanationScreen);
+  explanationScreen.hide = () => { originalHideExpl(); overlayCooldown = Date.now() + 300; };
+  const originalHideEnc = encyclopedia.hide.bind(encyclopedia);
+  encyclopedia.hide = () => { originalHideEnc(); overlayCooldown = Date.now() + 300; };
+
   const startGame = async (e: Event) => {
-    // Don't start if an overlay is open
+    // Don't start if an overlay is open or just closed
     if (explanationScreen.isActive() || customRunScreen.isActive() || encyclopedia.isActive()) return;
+    if (Date.now() < overlayCooldown) return;
     if (e instanceof MouseEvent || e instanceof TouchEvent) {
       if (isInSettings(e)) return;
     }
