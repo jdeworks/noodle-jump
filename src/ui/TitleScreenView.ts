@@ -7,6 +7,7 @@ import { ParallaxBackground } from "../systems/Parallax";
 import { createZoneState, getInterpolatedTheme } from "../systems/Zone";
 import { initAudio, playMusic, playTitleMusic, stopMusic } from "../systems/Audio";
 import { createSettingsToggles } from "./SettingsToggles";
+import { requestFullscreen } from "../utils/wakeLock";
 import { ExplanationScreen } from "./ExplanationScreen";
 import { CustomRunScreen } from "./CustomRunScreen";
 import { PowerUpEncyclopedia } from "./PowerUpEncyclopedia";
@@ -150,6 +151,13 @@ export function showTitleScreen(
   const customButton = makeButton("Custom Run", btnTop, 0x222244, "#aaccff", 15);
   const customBtnBg = customButton.bg;
   const customBtn = customButton.text;
+  btnTop += btnH + btnSpacing;
+
+  // 4. Fullscreen
+  const fsButton = makeButton("Fullscreen", btnTop, 0x222233, "#aaaaaa", 13);
+  fsButton.bg.on("pointertap", (e: Event) => { e.stopPropagation(); requestFullscreen(); });
+  fsButton.text.eventMode = "static";
+  fsButton.text.on("pointertap", (e: Event) => { e.stopPropagation(); requestFullscreen(); });
   btnTop += btnH + btnSpacing + 4;
 
   // Keyboard hint

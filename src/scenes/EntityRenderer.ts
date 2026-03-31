@@ -125,14 +125,13 @@ export function renderMeatballs(
   }
 }
 
-/** Render power-ups with spin and pulse animations. */
+/** Render power-ups with per-item unique animations. */
 export function renderPowerUps(
   state: GameWorldState,
   gfxSync: GraphicsSync,
   camY: number,
 ): void {
-  const spin = Math.cos(state.animTick * 0.08);
-  const bob = Math.sin(state.animTick * 0.04) * 3;
+  const t = state.animTick;
 
   for (const pu of state.powerUps) {
     const gfx = gfxSync.powerUpGfxMap.get(pu.id);
@@ -143,15 +142,27 @@ export function renderPowerUps(
       continue;
     }
 
+    // Per-item phase offset from ID for variety
+    const phase = pu.id * 2.3;
+    // Each power-up bobs at a slightly different speed/amplitude
+    const bobSpeed = 0.03 + (pu.id % 5) * 0.008;
+    const bobAmp = 2 + (pu.id % 3);
+    const bob = Math.sin(t * bobSpeed + phase) * bobAmp;
+
     gfx.x = pu.x + pu.size / 2;
     gfx.y = worldToScreen(pu.y, camY) + bob;
     gfx.pivot.x = pu.size / 2;
 
     if (isNegativePowerUp(pu.type)) {
-      const pulse = 0.8 + Math.sin(state.animTick * 0.15) * 0.2;
+      // Negative: threatening pulse + slight wobble
+      const pulse = 0.85 + Math.sin(t * 0.12 + phase) * 0.15;
       gfx.scale.set(pulse);
+      gfx.rotation = Math.sin(t * 0.1 + phase) * 0.08;
     } else {
-      gfx.scale.x = 0.4 + Math.abs(spin) * 0.6;
+      // Positive: spin with per-item speed variation
+      const spinSpeed = 0.06 + (pu.id % 4) * 0.015;
+      gfx.scale.x = 0.4 + Math.abs(Math.cos(t * spinSpeed + phase)) * 0.6;
+      gfx.rotation = 0;
     }
 
     gfx.visible = gfx.y > -20 && gfx.y < GAME_HEIGHT + 20;

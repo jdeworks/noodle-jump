@@ -139,3 +139,21 @@ export function stopBossMusic(): void {
     }, 30);
   }
 }
+
+// ── Pause/resume on visibility change ────────────────────────────────────
+
+if (typeof document !== "undefined") {
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") {
+      if (musicElement && musicPlaying) musicElement.pause();
+      if (bossMusicElement && bossMusicPlaying) bossMusicElement.pause();
+    } else {
+      if (musicElement && musicPlaying && isMusicEnabled()) {
+        musicElement.play().catch(() => {});
+      }
+      if (bossMusicElement && bossMusicPlaying && isMusicEnabled()) {
+        bossMusicElement.play().catch(() => {});
+      }
+    }
+  });
+}

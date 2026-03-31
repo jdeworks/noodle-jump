@@ -88,3 +88,16 @@ export function setAmbientEnabled(v: boolean): void {
 export function getAmbientConfig(zone: number): { type: string; freq: number; vol: number } {
   return ZONE_AMBIENTS[Math.min(zone, ZONE_AMBIENTS.length - 1)];
 }
+
+// Suspend/resume ambient on tab visibility
+if (typeof document !== "undefined") {
+  document.addEventListener("visibilitychange", () => {
+    if (!ctx || !ambientGain) return;
+    if (document.visibilityState === "hidden") {
+      ambientGain.gain.setValueAtTime(0, ctx.currentTime);
+    } else if (enabled && currentZone >= 0) {
+      const config = ZONE_AMBIENTS[Math.min(currentZone, ZONE_AMBIENTS.length - 1)];
+      ambientGain.gain.linearRampToValueAtTime(config.vol, ctx.currentTime + 0.5);
+    }
+  });
+}
