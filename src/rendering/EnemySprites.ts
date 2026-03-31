@@ -78,17 +78,45 @@ export function drawEnemy(
   }
 }
 
-/** Draw a projectile (thrown knife). */
-export function drawProjectile(gfx: Graphics, size: number): void {
+/** Draw a projectile (thrown knife) — visible, knife-shaped. */
+export function drawProjectile(gfx: Graphics, _size: number): void {
   gfx.clear();
-  const s = size / 2;
-  // Blade
-  gfx.moveTo(s, 0);
-  gfx.lineTo(s + 2, s * 1.5);
-  gfx.lineTo(s - 2, s * 1.5);
+  // Draw at fixed visible size regardless of collision size
+  const bladeLen = 14;
+  const bladeW = 4;
+  const handleLen = 8;
+  const handleW = 3;
+
+  // Blade — sharp silver triangle pointing up
+  gfx.moveTo(0, -bladeLen);          // tip
+  gfx.lineTo(bladeW, 0);             // right base
+  gfx.lineTo(-bladeW, 0);            // left base
   gfx.closePath();
-  gfx.fill(0xcccccc);
-  // Handle
-  gfx.roundRect(s - 1.5, s * 1.5, 3, s * 0.8, 1);
+  gfx.fill(0xdddddd);
+  // Blade edge highlight
+  gfx.moveTo(0, -bladeLen);
+  gfx.lineTo(1, -2);
+  gfx.stroke({ width: 1, color: 0xffffff, alpha: 0.6 });
+  // Blade edge dark side
+  gfx.moveTo(0, -bladeLen);
+  gfx.lineTo(-1, -2);
+  gfx.stroke({ width: 1, color: 0x999999, alpha: 0.4 });
+
+  // Guard — small crossbar
+  gfx.roundRect(-bladeW - 1, 0, (bladeW + 1) * 2, 2, 1);
+  gfx.fill(0x888888);
+
+  // Handle — brown wooden grip
+  gfx.roundRect(-handleW / 2, 2, handleW, handleLen, 1);
   gfx.fill(0x885533);
+  // Handle grip lines
+  for (let hy = 4; hy < handleLen; hy += 3) {
+    gfx.moveTo(-handleW / 2, hy);
+    gfx.lineTo(handleW / 2, hy);
+    gfx.stroke({ width: 0.5, color: 0x664422, alpha: 0.4 });
+  }
+
+  // Pommel — small circle at bottom
+  gfx.circle(0, 2 + handleLen + 1, 2);
+  gfx.fill(0x888888);
 }

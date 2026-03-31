@@ -74,8 +74,14 @@ export async function launchGame(app: Application, runConfig?: RunConfig): Promi
   }
 
   // ── Knife throw on click/tap (enemies mode) ───────────────────────────
+  let lastThrowTime = 0;
   const handleThrow = (e: MouseEvent | TouchEvent) => {
     if (!isEnemiesEnabled() && !scene.isInBossFight()) return;
+    // Debounce — touchstart + click fire for the same tap
+    const now = Date.now();
+    if (now - lastThrowTime < 200) return;
+    lastThrowTime = now;
+
     const rect = app.canvas.getBoundingClientRect();
     const scaleX = GAME_WIDTH / rect.width;
     const scaleY = GAME_HEIGHT / rect.height;
