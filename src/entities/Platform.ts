@@ -223,12 +223,13 @@ export function generatePlatforms(
 
     let type = rollType(difficulty);
 
-    // Never two consecutive fall-through (brittle) platforms
-    if (lastWasUnlandable && type === "brittle") {
+    // Never two consecutive unreliable platforms (brittle, crumbling, breaking)
+    const isUnreliable = type === "brittle" || type === "crumbling" || type === "breaking";
+    if (lastWasUnlandable && isUnreliable) {
       type = "static";
     }
 
-    lastWasUnlandable = type === "brittle";
+    lastWasUnlandable = type === "brittle" || type === "crumbling" || type === "breaking";
 
     platforms.push(makePlatform(x, y, width, type));
   }

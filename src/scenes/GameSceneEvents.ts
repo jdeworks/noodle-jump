@@ -164,13 +164,11 @@ export function handleEvents(events: GameEvent[], deps: EventHandlerDeps): void 
 
       case "stagnantWarning":
         if (event.level === 1) {
-          deps.spawnFloatingText(
-            "KEEP CLIMBING!",
-            0xff4444,
-            28,
-            120,
-            true,
-          );
+          deps.spawnFloatingText("CLIMB UP!", 0xff4444, 32, 120, true);
+        } else if (event.level === 2) {
+          deps.spawnFloatingText("PLATFORMS BREAKING!", 0xff0000, 28, 90, true);
+        } else if (event.level === 3) {
+          deps.spawnFloatingText("GO UP NOW!", 0xff0000, 24, 60, true);
         }
         break;
 

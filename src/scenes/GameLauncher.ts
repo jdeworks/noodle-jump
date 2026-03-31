@@ -15,6 +15,7 @@ import { Tutorial } from "../ui/Tutorial";
 import { HUD } from "../ui/HUD";
 import type { RunConfig } from "../systems/CustomRunConfig";
 import { resetRNG } from "../systems/RNG";
+import { resetRendererState } from "./EntityRenderer";
 import { stopMusic } from "../systems/Audio";
 import { showTitleScreen } from "../ui/TitleScreenView";
 import { createGameLoopTicker } from "./GameLoopTicker";
@@ -49,6 +50,7 @@ export function cleanupAndRestart(app: Application): void {
   resetEnemyIds();
   resetProjectileIds();
   resetRNG();
+  resetRendererState();
   app.ticker.start();
   playMusic(0);
   launchGame(app);
