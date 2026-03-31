@@ -114,6 +114,7 @@ export function tickPlatformCollisions(
       platformBroke: collision.platformBroke,
       x: s.player.x + s.player.width / 2,
       y: s.player.y + s.player.height,
+      platformType: collision.landedPlatform?.type ?? "normal",
     });
 
     if (s.scoreState.landingStreak % 5 === 0) {

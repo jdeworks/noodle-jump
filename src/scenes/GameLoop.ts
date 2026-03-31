@@ -76,15 +76,16 @@ export function throwProjectile(
 ): GameWorldState {
   if (state.gameOver || state.isDying) return state;
   if (!state.enemiesEnabled && !state.inBossFight) return state;
-  if (state.knifeAmmo <= 0) return state;
+  const infinite = state.debugConfig.infiniteKnives;
+  if (!infinite && state.knifeAmmo <= 0) return state;
   const playerCX = state.player.x + state.player.width / 2;
   const playerCY = state.player.y + state.player.height / 2;
   const proj = createProjectile(playerCX, playerCY, targetX, targetY);
   return {
     ...state,
     projectiles: [...state.projectiles, proj],
-    knifeAmmo: state.knifeAmmo - 1,
-    knifeRegenTimer: KNIFE_REGEN_TICKS,
+    knifeAmmo: infinite ? state.knifeAmmo : state.knifeAmmo - 1,
+    knifeRegenTimer: infinite ? 0 : KNIFE_REGEN_TICKS,
   };
 }
 
@@ -257,7 +258,12 @@ export function tickGameWorld(
   s = tickStagnation(s, events);
 
   const prevZone = s.zoneState.currentZone;
-  const zoneResult = updateZone(s.zoneState, s.platformsPassed);
+  // Quick zone transitions in debug — scale platform count
+  const qzt = s.debugConfig.quickZoneTransitions;
+  const effectivePlatforms = qzt > 0
+    ? Math.floor(s.platformsPassed * (80 / qzt))
+    : s.platformsPassed;
+  const zoneResult = updateZone(s.zoneState, effectivePlatforms);
   s = { ...s, zoneState: zoneResult.state };
   if (zoneResult.changed) {
     events.push({
@@ -299,8 +305,8 @@ export function tickGameWorld(
   // Enemies & hazards
   s = tickEnemies(s, events);
 
-  // Death check (skip in practice mode)
-  if (!s.practiceMode && isPlayerDead(s.camera, s.player.y)) {
+  // Death check (skip in practice mode or debug invincible)
+  if (!s.practiceMode && !s.debugConfig.invincible && isPlayerDead(s.camera, s.player.y)) {
     s = {
       ...s,
       isDying: true,

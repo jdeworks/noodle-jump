@@ -58,6 +58,11 @@ export function playSfxLanding(platformType?: string): void {
     case "ice": playTone(1000, 0.06, "sine", 0.04, 1400); break;
     case "conveyor": playTone(180, 0.08, "square", 0.05, 250); break;
     case "teleport": playTone(600, 0.15, "sine", 0.06, 1200); break;
+    case "crumbling": playTone(150, 0.1, "square", 0.05, 100); break;
+    case "weighted": playTone(120, 0.1, "triangle", 0.06, 200); break;
+    case "brittle": playTone(250, 0.06, "square", 0.05, 180); break;
+    case "breaking": playTone(220, 0.06, "square", 0.04, 150); break;
+    case "moving": playTone(230, 0.08, "square", 0.06, 350); break;
     default: playTone(200, 0.08, "square", 0.06, 400); break;
   }
 }

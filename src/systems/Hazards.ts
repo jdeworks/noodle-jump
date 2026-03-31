@@ -1,5 +1,6 @@
 /** Environmental hazards — pure logic, no PixiJS. */
 
+import { random } from "./RNG";
 import {
   WIND_GUST_FORCE,
   WIND_GUST_DURATION,
@@ -42,11 +43,11 @@ export function tickWind(system: WindSystem): WindSystem {
 
   // Check if a new gust should start
   const ticks = system.ticksSinceLastGust + 1;
-  if (ticks >= WIND_GUST_INTERVAL && Math.random() < 0.3) {
+  if (ticks >= WIND_GUST_INTERVAL && random() < 0.3) {
     return {
       ticksSinceLastGust: 0,
       activeGust: {
-        direction: Math.random() > 0.5 ? 1 : -1,
+        direction: random() > 0.5 ? 1 : -1,
         strength: WIND_GUST_FORCE,
         ticksRemaining: WIND_GUST_DURATION,
       },

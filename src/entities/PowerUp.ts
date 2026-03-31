@@ -1,5 +1,6 @@
 /** Power-up logic — pure, no PixiJS. */
 
+import { random } from "../systems/RNG";
 import {
   POWERUP_SIZE,
   POWERUP_FLOAT_HEIGHT,
@@ -85,10 +86,10 @@ export function createPowerUp(
   let chosen: PowerUpType;
   if (type) {
     chosen = type;
-  } else if (Math.random() < (negativeChance ?? NEGATIVE_SPAWN_CHANCE)) {
-    chosen = NEGATIVE_TYPES[Math.floor(Math.random() * NEGATIVE_TYPES.length)];
+  } else if (random() < (negativeChance ?? NEGATIVE_SPAWN_CHANCE)) {
+    chosen = NEGATIVE_TYPES[Math.floor(random() * NEGATIVE_TYPES.length)];
   } else {
-    chosen = POSITIVE_TYPES[Math.floor(Math.random() * POSITIVE_TYPES.length)];
+    chosen = POSITIVE_TYPES[Math.floor(random() * POSITIVE_TYPES.length)];
   }
   return {
     x: platform.x + platform.width / 2 - POWERUP_SIZE / 2,
@@ -121,7 +122,7 @@ export function spawnPowerUps(
     if (platform.type !== "static" && platform.type !== "moving") continue;
     if (platform.width > 200) continue;
 
-    if (Math.random() < POWERUP_SPAWN_CHANCE) {
+    if (random() < POWERUP_SPAWN_CHANCE) {
       powerUps.push(createPowerUp(platform, undefined, negativeChance));
       cooldown = POWERUP_COOLDOWN;
     }

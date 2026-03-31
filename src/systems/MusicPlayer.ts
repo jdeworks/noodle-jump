@@ -3,14 +3,16 @@
 import { isMusicEnabled, musicVol, BASE_MUSIC_VOLUME } from "./Audio";
 
 const MUSIC_TRACKS = [
-  "audio/september.mp3",         // Zone 1
-  "audio/background-music.mp3",  // Zone 2
-  "audio/background-music.mp3",  // Zone 3
-  "audio/september.mp3",         // Zone 4
-  "audio/background-music.mp3",  // Zone 5
-  "audio/september.mp3",         // Zone 6
-  "audio/background-music.mp3",  // Zone 7
+  "audio/september.mp3",       // Zone 1: Kitchen — warm, upbeat
+  "audio/zone2-ocean.mp3",     // Zone 2: Ocean — cinematic adventure
+  "audio/zone3-space.mp3",     // Zone 3: Space — cosmic, atmospheric
+  "audio/zone4-freezer.mp3",   // Zone 4: Freezer — ethereal pan flute
+  "audio/zone5-volcano.mp3",   // Zone 5: Volcano — energetic dubstep
+  "audio/zone6-candy.mp3",     // Zone 6: Candy — gentle modern classical
+  "audio/zone7-final.mp3",     // Zone 7: Final Kitchen — dark, epic
 ];
+
+export const TITLE_TRACK = "audio/title-screen.mp3";
 
 let musicElement: HTMLAudioElement | null = null;
 let musicPlaying = false;
@@ -36,6 +38,20 @@ export function playMusic(_zone?: number): void {
   musicElement.play().catch(() => {});
   musicPlaying = true;
   currentMusicZone = _zone ?? 0;
+}
+
+export function playTitleMusic(): void {
+  if (!isMusicEnabled()) return;
+  if (!musicElement) {
+    musicElement = new Audio(TITLE_TRACK);
+    musicElement.loop = true;
+  } else {
+    musicElement.src = TITLE_TRACK;
+  }
+  musicElement.volume = targetVol();
+  musicElement.play().catch(() => {});
+  musicPlaying = true;
+  currentMusicZone = -1;
 }
 
 export function stopMusic(): void {

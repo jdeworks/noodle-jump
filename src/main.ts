@@ -2,6 +2,8 @@ import { Application } from "pixi.js";
 import { GAME_WIDTH, GAME_HEIGHT } from "./config/constants";
 import { showTitleScreen } from "./ui/TitleScreenView";
 import { launchGame } from "./scenes/GameLauncher";
+import { registerServiceWorker, listenForInstallPrompt } from "./services/PWA";
+import { initErrorTracking } from "./services/ErrorTracking";
 
 // Lock to portrait via Screen Orientation API
 const orient = screen.orientation as
@@ -24,7 +26,10 @@ async function main() {
   if (!container) throw new Error("Missing #game element");
   container.appendChild(app.canvas);
 
-  showTitleScreen(app, () => launchGame(app));
+  showTitleScreen(app, (runConfig) => launchGame(app, runConfig));
 }
 
+registerServiceWorker();
+listenForInstallPrompt();
+initErrorTracking();
 main();

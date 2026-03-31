@@ -1,5 +1,6 @@
 /** UFO — hovers and fires projectiles downward. Spread shot at phase 2+. */
 
+import { random } from "../../systems/RNG";
 import { GAME_WIDTH } from "../../config/constants";
 import type { PlayerState } from "../Player";
 import type { PlatformState } from "../Platform";
@@ -50,7 +51,7 @@ export const ufoBehavior: BossBehavior = {
         type: "projectile",
         x: boss.x + boss.width / 2,
         y: boss.y + boss.height,
-        vx: (Math.random() - 0.5) * 3,
+        vx: (random() - 0.5) * 3,
         vy: 2.5 + boss.phase * 0.5,
       });
     }

@@ -8,6 +8,7 @@ import { InputManager } from "../systems/Input";
 import { tickShake } from "../systems/ScreenShake";
 import { GAME_WIDTH, GAME_HEIGHT, DEATH_ANIMATION_TICKS } from "../config/constants";
 import { createInitialState, type GameWorldState } from "./GameState";
+import type { RunConfig } from "../systems/CustomRunConfig";
 import {
   tickGameWorld,
   startCountdown,
@@ -29,6 +30,9 @@ import {
 import { handleEvents } from "./GameSceneEvents";
 import { renderBoss, renderWeather } from "./GameSceneRender";
 import { getMaxDuration } from "./effectDuration";
+import { TrailRenderer } from "../rendering/TrailRenderer";
+import { loadCosmetics } from "../systems/Cosmetics";
+import { FloatingTextManager } from "./FloatingText";
 
 export class GameScene {
   readonly container = new Container();
@@ -48,14 +52,23 @@ export class GameScene {
   private bossHealthGfx = new Graphics();
   private bossAttackGfx: Graphics[] = [];
   private knifeAmmoText: Text;
-  private floatingTexts: { text: Text; life: number; maxLife: number }[] = [];
+  private trail: TrailRenderer;
+  private cosmeticTrail: string | null;
+  private comboGlowGfx = new Graphics();
+  private floatingTextMgr = new FloatingTextManager();
 
-  constructor() {
-    this.state = createInitialState();
+  constructor(runConfig?: RunConfig) {
+    this.state = createInitialState(runConfig);
     this.state = { ...this.state, enemiesEnabled: isEnemiesEnabled() };
     this.particles = new ParticleManager();
     this.effectRenderer = new EffectRenderer();
     this.gfxSync = new GraphicsSync();
+
+    // Trail renderer (cosmetic)
+    this.trail = new TrailRenderer();
+    const cosmetics = loadCosmetics();
+    this.cosmeticTrail = cosmetics.equipped.trail;
+    this.trail.setTrailType(this.cosmeticTrail);
 
     // Parallax background
     this.parallax = new ParallaxBackground();
@@ -73,6 +86,7 @@ export class GameScene {
     this.gameContainer.addChild(this.particles.rocketContainer);
     this.gameContainer.addChild(this.particles.tornadoContainer);
     this.gameContainer.addChild(this.particles.effectParticleContainer);
+    this.gameContainer.addChild(this.trail.container);
     this.gameContainer.addChild(this.playerGfx);
 
     // Weather container (behind game objects)
@@ -102,6 +116,9 @@ export class GameScene {
     this.knifeAmmoText.visible = false;
     this.container.addChild(this.knifeAmmoText);
 
+    // Combo border glow (on top of effects, below zone transition)
+    this.container.addChild(this.comboGlowGfx);
+
     // Zone transition overlay (on top of everything)
     this.zoneTransition = new ZoneTransition();
     this.container.addChild(this.zoneTransition.container);
@@ -125,6 +142,7 @@ export class GameScene {
 
   // ── State accessors ────────────────────────────────────────────────────
 
+  getState(): GameWorldState { return this.state; }
   isGameOver(): boolean { return this.state.gameOver; }
   getScore(): number { return this.state.scoreState.points; }
   getHeight(): number { return this.state.scoreState.height; }
@@ -143,6 +161,7 @@ export class GameScene {
   getKnifeAmmo(): number { return this.state.knifeAmmo; }
   getKnifeAmmoMax(): number { return this.state.knifeAmmoMax; }
   isInBossFight(): boolean { return this.state.inBossFight; }
+  getEnemiesKilled(): number { return this.state.enemiesKilled; }
   togglePause(): void { this.state = togglePause(this.state); }
   startCountdown(): void { this.state = startCountdown(this.state); }
 
@@ -195,7 +214,13 @@ export class GameScene {
       gfxSync: this.gfxSync,
       container: this.container,
       gameContainer: this.gameContainer,
-      spawnFloatingText: this.spawnFloatingText.bind(this),
+      spawnFloatingText: (msg: string, color: number, size?: number, duration?: number, centered?: boolean) => {
+        this.floatingTextMgr.spawn(
+          this.container, msg, color,
+          this.state.player.x, this.state.player.y, this.state.player.width,
+          this.state.camera.y, size, duration, centered,
+        );
+      },
     });
 
     // Sync graphics if entity counts changed
@@ -234,13 +259,18 @@ export class GameScene {
     // Death animation rendering
     if (this.state.isDying) {
       const t = this.state.dyingTicks / DEATH_ANIMATION_TICKS;
-      this.playerGfx.rotation += 0.15;
-      this.playerGfx.scale.set(1 - t * 0.8);
+      // Accelerating spin
+      this.playerGfx.rotation += 0.1 + t * 0.3;
+      // Squash/stretch during fall
+      this.playerGfx.scale.x = (1 - t * 0.6) * (1 + Math.sin(t * 20) * 0.15);
+      this.playerGfx.scale.y = 1 - t * 0.8;
+      // Alpha fade in the last 30%
+      this.playerGfx.alpha = t > 0.7 ? 1 - (t - 0.7) / 0.3 : 1;
       this.playerGfx.y = worldToScreen(
         this.state.player.y,
         this.state.camera.y,
       );
-      this.updateFloatingTexts();
+      this.floatingTextMgr.update();
       this.particles.updateCrumbleParticles();
       return;
     }
@@ -273,7 +303,7 @@ export class GameScene {
     // Particles and floating text
     this.particles.updateDustParticles();
     this.particles.updateCrumbleParticles();
-    this.updateFloatingTexts();
+    this.floatingTextMgr.update();
 
     // Boss rendering
     this.bossAttackGfx = renderBoss(
@@ -300,58 +330,42 @@ export class GameScene {
       this.weatherContainer,
     );
 
+    // Trail — speed effects override cosmetic trail
+    const speedEffect = this.state.activeEffect?.type;
+    if (speedEffect === "ravioli_rocket") {
+      this.trail.setTrailType("speed_rocket");
+    } else if (speedEffect === "fusilli_tornado") {
+      this.trail.setTrailType("speed_tornado");
+    } else if (speedEffect === "pepper_sneeze") {
+      this.trail.setTrailType("speed_sneeze");
+    } else {
+      this.trail.setTrailType(this.cosmeticTrail);
+    }
+    this.trail.addPoint(
+      this.state.player.x + this.state.player.width / 2,
+      this.state.player.y + this.state.player.height,
+    );
+    this.trail.update(camY);
+
     // Zone transition
     this.zoneTransition.update();
 
     // Effect overlays
     this.effectRenderer.renderEffectOverlay(this.state);
-  }
 
-  // ── Floating text ──────────────────────────────────────────────────────
-
-  private spawnFloatingText(
-    msg: string,
-    color: number,
-    size = 14,
-    duration = 40,
-    centered = false,
-  ): void {
-    const text = new Text({
-      text: msg,
-      style: new TextStyle({
-        fontFamily: "monospace",
-        fontSize: size,
-        fill: "#" + color.toString(16).padStart(6, "0"),
-        fontWeight: "bold",
-        stroke: { color: "#000000", width: Math.max(2, size / 6) },
-      }),
-    });
-    if (centered) {
-      text.x = GAME_WIDTH / 2;
-      text.y = GAME_HEIGHT * 0.35;
-    } else {
-      text.x = this.state.player.x + this.state.player.width / 2;
-      text.y = worldToScreen(
-        this.state.player.y - 20,
-        this.state.camera.y,
-      );
-    }
-    text.anchor.set(0.5, 0.5);
-    this.container.addChild(text);
-    this.floatingTexts.push({ text, life: duration, maxLife: duration });
-  }
-
-  private updateFloatingTexts(): void {
-    for (let i = this.floatingTexts.length - 1; i >= 0; i--) {
-      const ft = this.floatingTexts[i];
-      ft.text.y -= 1;
-      ft.life--;
-      ft.text.alpha = Math.max(0, ft.life / ft.maxLife);
-      if (ft.life <= 0) {
-        this.container.removeChild(ft.text);
-        ft.text.destroy();
-        this.floatingTexts.splice(i, 1);
-      }
+    // Combo border glow
+    this.comboGlowGfx.clear();
+    const combo = this.state.scoreState.comboMultiplier;
+    if (combo >= 2) {
+      const intensity = Math.min(combo / 5, 1);
+      const pulse = 0.3 + Math.sin(this.state.animTick * 0.1) * 0.2;
+      const alpha = intensity * pulse;
+      const gw = 4 + combo;
+      this.comboGlowGfx.rect(0, 0, GAME_WIDTH, gw);
+      this.comboGlowGfx.rect(0, GAME_HEIGHT - gw, GAME_WIDTH, gw);
+      this.comboGlowGfx.rect(0, 0, gw, GAME_HEIGHT);
+      this.comboGlowGfx.rect(GAME_WIDTH - gw, 0, gw, GAME_HEIGHT);
+      this.comboGlowGfx.fill({ color: 0xff8800, alpha });
     }
   }
 
@@ -362,6 +376,7 @@ export class GameScene {
     this.effectRenderer.destroy(this.container);
     this.particles.destroy();
     this.gfxSync.destroy();
+    this.trail.destroy();
     this.parallax.destroy();
     this.zoneTransition.destroy();
     for (const gfx of this.weatherGfx) {
@@ -369,11 +384,7 @@ export class GameScene {
       gfx.destroy();
     }
     this.weatherGfx = [];
-    for (const ft of this.floatingTexts) {
-      this.container.removeChild(ft.text);
-      ft.text.destroy();
-    }
-    this.floatingTexts = [];
+    this.floatingTextMgr.destroy();
     this.container.destroy({ children: true });
   }
 }

@@ -1,5 +1,6 @@
 /** Platform generation and pruning helpers extracted from GameLoop. */
 
+import { random } from "../systems/RNG";
 import type { GameWorldState } from "./GameState";
 import type { GameEvent } from "./GameLoopTypes";
 import {
@@ -29,10 +30,10 @@ export function spawnLasagnaPlatform(state: GameWorldState): GameWorldState {
     20,
     Math.min(
       GAME_WIDTH - 120,
-      state.player.x - 30 + (Math.random() - 0.5) * 80,
+      state.player.x - 30 + (random() - 0.5) * 80,
     ),
   );
-  const y = state.player.y - 60 - Math.random() * 50;
+  const y = state.player.y - 60 - random() * 50;
   const platform = createPlatform(x, y, "lasagna");
   platform.spawnTick = state.animTick;
   return {

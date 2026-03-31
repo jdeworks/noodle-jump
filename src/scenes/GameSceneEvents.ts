@@ -19,6 +19,7 @@ import {
   stopBossMusic,
 } from "../systems/Audio";
 import { setAmbientZone } from "../systems/AmbientAudio";
+import { markPowerUpCollected } from "../ui/PowerUpDescriptions";
 import type { GameWorldState } from "./GameState";
 import type { GameEvent } from "./GameLoop";
 import type { ParticleManager } from "./ParticleManager";
@@ -49,7 +50,7 @@ export function handleEvents(events: GameEvent[], deps: EventHandlerDeps): void 
   for (const event of events) {
     switch (event.type) {
       case "landed":
-        playSfxLanding();
+        playSfxLanding(event.platformType);
         particles.spawnDustPuff(
           event.x,
           event.y,
@@ -67,6 +68,7 @@ export function handleEvents(events: GameEvent[], deps: EventHandlerDeps): void 
 
       case "meatballCollected":
         playSfxMeatball();
+        deps.spawnFloatingText(`+${event.count * 1000}`, 0xffdd44, 12, 30);
         break;
 
       case "comboActive":
@@ -79,10 +81,14 @@ export function handleEvents(events: GameEvent[], deps: EventHandlerDeps): void 
 
       case "powerUpCollected":
         playSfxPowerUp(event.powerUpType);
+        markPowerUpCollected(event.powerUpType);
         effectRenderer.showEffectLabel(
           event.powerUpType,
           container,
         );
+        if (!event.isNegative) {
+          deps.spawnFloatingText("POWER UP!", 0x44ff44, 18, 50, true);
+        }
         break;
 
       case "effectEnded":
@@ -142,7 +148,12 @@ export function handleEvents(events: GameEvent[], deps: EventHandlerDeps): void 
         break;
 
       case "springBounce":
+        playSfxLanding("spring");
+        break;
+
       case "teleported":
+        playSfxLanding("teleport");
+        deps.spawnFloatingText("TELEPORT!", 0x8844ff, 14, 40, true);
         break;
 
       case "platformCrumbled":

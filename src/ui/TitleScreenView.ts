@@ -5,12 +5,18 @@ import { GAME_WIDTH, GAME_HEIGHT } from "../config/constants";
 import { loadHighScore } from "../systems/Score";
 import { ParallaxBackground } from "../systems/Parallax";
 import { createZoneState, getInterpolatedTheme } from "../systems/Zone";
-import { initAudio, playMusic } from "../systems/Audio";
+import { initAudio, playMusic, playTitleMusic, stopMusic } from "../systems/Audio";
 import { createSettingsToggles } from "./SettingsToggles";
+import { ExplanationScreen } from "./ExplanationScreen";
+import { CustomRunScreen } from "./CustomRunScreen";
+import { PowerUpEncyclopedia } from "./PowerUpEncyclopedia";
+import { loadStats } from "./StatsPanel";
+import { drawChef } from "../rendering/sprites";
+import type { RunConfig } from "../systems/CustomRunConfig";
 
 export function showTitleScreen(
   app: Application,
-  onStartGame: () => Promise<void>,
+  onStartGame: (runConfig?: RunConfig) => Promise<void>,
 ): void {
   const titleContainer = new Container();
   app.stage.addChild(titleContainer);
@@ -64,6 +70,13 @@ export function showTitleScreen(
   subtitleText.y = GAME_HEIGHT * 0.2 + 115;
   subtitleText.anchor.set(0.5, 0);
   titleContainer.addChild(subtitleText);
+
+  // Animated chef character
+  const chefGfx = new Graphics();
+  chefGfx.x = GAME_WIDTH / 2 - 16;
+  chefGfx.y = GAME_HEIGHT * 0.42;
+  drawChef(chefGfx, 32, 40);
+  titleContainer.addChild(chefGfx);
 
   // High score
   const highScore = loadHighScore();
@@ -119,22 +132,130 @@ export function showTitleScreen(
   settingsContainer.y = GAME_HEIGHT * 0.78;
   titleContainer.addChild(settingsContainer);
 
-  // Animate parallax + pulse prompt
+  // How to Play button
+  const howBtn = new Text({
+    text: "[How to Play]",
+    style: new TextStyle({
+      fontFamily: "monospace",
+      fontSize: 13,
+      fill: "#88aaff",
+      fontWeight: "bold",
+    }),
+  });
+  howBtn.x = GAME_WIDTH * 0.28;
+  howBtn.y = GAME_HEIGHT * 0.75;
+  howBtn.anchor.set(0.5, 0.5);
+  howBtn.eventMode = "static";
+  howBtn.cursor = "pointer";
+  titleContainer.addChild(howBtn);
+
+  // Custom Run button
+  const customBtn = new Text({
+    text: "[Custom Run]",
+    style: new TextStyle({
+      fontFamily: "monospace",
+      fontSize: 13,
+      fill: "#88aaff",
+      fontWeight: "bold",
+    }),
+  });
+  customBtn.x = GAME_WIDTH * 0.72;
+  customBtn.y = GAME_HEIGHT * 0.75;
+  customBtn.anchor.set(0.5, 0.5);
+  customBtn.eventMode = "static";
+  customBtn.cursor = "pointer";
+  titleContainer.addChild(customBtn);
+
+  // Explanation screen
+  const explanationScreen = new ExplanationScreen();
+  titleContainer.addChild(explanationScreen.container);
+  howBtn.on("pointertap", (e: Event) => {
+    e.stopPropagation();
+    explanationScreen.show();
+  });
+
+  // Custom run screen
+  const customRunScreen = new CustomRunScreen();
+  titleContainer.addChild(customRunScreen.container);
+  customBtn.on("pointertap", (e: Event) => {
+    e.stopPropagation();
+    customRunScreen.show((config: RunConfig) => {
+      // Start game with custom config
+      app.canvas.removeEventListener("click", startGame);
+      app.canvas.removeEventListener("touchstart", startGame);
+      window.removeEventListener("keydown", startGame);
+      initAudio();
+      playMusic(0);
+      app.ticker.remove(titleTicker);
+      parallax.destroy();
+      app.stage.removeChild(titleContainer);
+      titleContainer.destroy({ children: true });
+      onStartGame(config);
+    });
+  });
+
+  // Power-up Encyclopedia
+  const encyclopedia = new PowerUpEncyclopedia();
+  titleContainer.addChild(encyclopedia.container);
+
+  // Stats display (below subtitle)
+  const stats = loadStats();
+  if (stats.totalGames > 0) {
+    const statsText = new Text({
+      text: `Games: ${stats.totalGames} | Meatballs: ${stats.totalMeatballs} | Zone: ${stats.maxZone + 1}`,
+      style: new TextStyle({
+        fontFamily: "monospace",
+        fontSize: 10,
+        fill: "#888888",
+      }),
+    });
+    statsText.x = GAME_WIDTH / 2;
+    statsText.y = GAME_HEIGHT * 0.58;
+    statsText.anchor.set(0.5, 0.5);
+    titleContainer.addChild(statsText);
+  }
+
+  // Encyclopedia button (below keyboard hint)
+  const encBtn = new Text({
+    text: "[Encyclopedia]",
+    style: new TextStyle({
+      fontFamily: "monospace",
+      fontSize: 11,
+      fill: "#999999",
+    }),
+  });
+  encBtn.x = GAME_WIDTH / 2;
+  encBtn.y = GAME_HEIGHT * 0.72 + 14;
+  encBtn.anchor.set(0.5, 0);
+  encBtn.eventMode = "static";
+  encBtn.cursor = "pointer";
+  encBtn.on("pointertap", (e: Event) => {
+    e.stopPropagation();
+    encyclopedia.show();
+  });
+  titleContainer.addChild(encBtn);
+
+  // Animate parallax + pulse prompt + chef
   let scrollY = 0;
+  let animTick = 0;
   const titleTicker = () => {
     scrollY -= 4;
     parallax.update(scrollY);
     const pulse = 0.85 + Math.sin(Date.now() * 0.004) * 0.15;
     promptText.alpha = pulse;
+    animTick++;
+    chefGfx.clear();
+    drawChef(chefGfx, 32, 40);
+    chefGfx.y = GAME_HEIGHT * 0.42 + Math.sin(animTick * 0.05) * 4;
   };
   app.ticker.add(titleTicker);
 
-  // Start game on input — ignore taps on the settings area
+  // Start game on input — ignore taps on the settings/buttons area
   const settingsBounds = {
-    left: GAME_WIDTH / 2 - 130,
-    right: GAME_WIDTH / 2 + 130,
-    top: GAME_HEIGHT * 0.78 - 8,
-    bottom: GAME_HEIGHT * 0.78 + 122,
+    left: 0,
+    right: GAME_WIDTH,
+    top: GAME_HEIGHT * 0.73,
+    bottom: GAME_HEIGHT,
   };
 
   const isInSettings = (e: MouseEvent | TouchEvent): boolean => {
@@ -162,6 +283,8 @@ export function showTitleScreen(
   };
 
   const startGame = async (e: Event) => {
+    // Don't start if an overlay is open
+    if (explanationScreen.isActive() || customRunScreen.isActive() || encyclopedia.isActive()) return;
     if (e instanceof MouseEvent || e instanceof TouchEvent) {
       if (isInSettings(e)) return;
     }
@@ -171,6 +294,7 @@ export function showTitleScreen(
     window.removeEventListener("keydown", startGame);
 
     initAudio();
+    stopMusic();
     playMusic(0);
 
     app.ticker.remove(titleTicker);
@@ -180,6 +304,17 @@ export function showTitleScreen(
 
     await onStartGame();
   };
+
+  // Start title music on first interaction
+  let titleMusicStarted = false;
+  const startTitleMusic = () => {
+    if (titleMusicStarted) return;
+    titleMusicStarted = true;
+    initAudio();
+    playTitleMusic();
+  };
+  app.canvas.addEventListener("click", startTitleMusic, { once: true });
+  app.canvas.addEventListener("touchstart", startTitleMusic, { once: true });
 
   app.canvas.addEventListener("click", startGame);
   app.canvas.addEventListener("touchstart", startGame);

@@ -11,6 +11,7 @@ export type GameEvent =
       platformBroke: boolean;
       x: number;
       y: number;
+      platformType: string;
     }
   | { type: "meatballCollected"; count: number; combo: number }
   | {

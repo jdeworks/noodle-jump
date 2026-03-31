@@ -1,5 +1,6 @@
 /** Kraken — hovers at top, tentacles steal platform chunks. */
 
+import { random } from "../../systems/RNG";
 import { GAME_WIDTH } from "../../config/constants";
 import type { PlayerState } from "../Player";
 import type { PlatformState } from "../Platform";
@@ -46,7 +47,7 @@ export const krakenBehavior: BossBehavior = {
     if (patternTick % interval === 0) {
       const visible = platforms.filter((p) => !p.broken && p.width > 30);
       if (visible.length > 0) {
-        const target = visible[Math.floor(Math.random() * visible.length)];
+        const target = visible[Math.floor(random() * visible.length)];
         attacks.push({
           type: "tentacle",
           x: target.x + target.width / 2,
@@ -70,12 +71,12 @@ export const krakenBehavior: BossBehavior = {
 
 /** Apply tentacle attack — shrink a platform by removing a chunk. */
 export function applyTentacleAttack(platform: PlatformState): PlatformState {
-  const chunkSize = 20 + Math.random() * 15;
+  const chunkSize = 20 + random() * 15;
   const newWidth = platform.width - chunkSize;
   if (newWidth < 25) {
     return { ...platform, broken: true };
   }
-  if (Math.random() > 0.5) {
+  if (random() > 0.5) {
     return { ...platform, width: newWidth };
   }
   return { ...platform, x: platform.x + chunkSize, width: newWidth };

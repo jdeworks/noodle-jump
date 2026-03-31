@@ -98,8 +98,10 @@ export function renderMeatballs(
 
     gfx.x = meatball.x + meatball.size / 2;
     gfx.y = worldToScreen(meatball.y, camY) + bob;
-    gfx.pivot.x = meatball.size / 2;
-    gfx.scale.x = 0.75 + Math.abs(wobble) * 0.25;
+    gfx.pivot.set(meatball.size / 2, meatball.size / 2);
+    // Faux-3D spin: oscillate scaleX to simulate rotation
+    gfx.scale.x = 0.4 + Math.abs(wobble) * 0.6;
+    gfx.rotation = Math.sin(state.animTick * 0.02 + meatball.id) * 0.15;
     gfx.visible = gfx.y > -20 && gfx.y < GAME_HEIGHT + 20;
   }
 }

@@ -49,7 +49,11 @@ export function tickEnemies(
       s.projectiles,
       s.enemies,
     );
-    s = { ...s, projectiles: projResult.projectiles };
+    s = {
+      ...s,
+      projectiles: projResult.projectiles,
+      enemiesKilled: s.enemiesKilled + projResult.hitEnemyIds.length,
+    };
     for (const enemyId of projResult.hitEnemyIds) {
       const enemy = s.enemies.find((e) => e.id === enemyId);
       if (enemy) {

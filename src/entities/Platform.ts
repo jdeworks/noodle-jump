@@ -1,5 +1,6 @@
 /** Pure platform logic — no PixiJS imports. */
 
+import { random } from "../systems/RNG";
 import {
   PLATFORM_WIDTH_MIN,
   PLATFORM_WIDTH_MAX,
@@ -78,7 +79,7 @@ let nextPlatformId = 0;
 function randomWidth(): number {
   return (
     PLATFORM_WIDTH_MIN +
-    Math.random() * (PLATFORM_WIDTH_MAX - PLATFORM_WIDTH_MIN)
+    random() * (PLATFORM_WIDTH_MAX - PLATFORM_WIDTH_MIN)
   );
 }
 
@@ -96,7 +97,7 @@ export function createPlatform(
     broken: false,
     id: nextPlatformId++,
     originX: x,
-    moveDirection: Math.random() > 0.5 ? 1 : -1,
+    moveDirection: random() > 0.5 ? 1 : -1,
   };
 }
 
@@ -158,7 +159,7 @@ function rollType(difficulty?: DifficultyParams): PlatformType {
   const teleportChance = PLATFORM_TELEPORT_CHANCE * Math.max(0, t - 0.3); // only after 30% difficulty
   const weightedChance = PLATFORM_WEIGHTED_CHANCE * Math.max(0, t - 0.2); // only after 20% difficulty
 
-  const roll = Math.random();
+  const roll = random();
   let cumulative = 0;
 
   cumulative += breakChance;
@@ -213,12 +214,12 @@ export function generatePlatforms(
 
   for (let i = 0; i < count; i++) {
     const maxGap = lastWasUnlandable ? gapMin + 20 : gapMax;
-    const gap = gapMin + Math.random() * (maxGap - gapMin);
+    const gap = gapMin + random() * (maxGap - gapMin);
     y -= gap;
 
-    const width = widthMin + Math.random() * (widthMax - widthMin);
+    const width = widthMin + random() * (widthMax - widthMin);
     const maxX = GAME_WIDTH - width - PLATFORM_HORIZONTAL_MARGIN;
-    const x = PLATFORM_HORIZONTAL_MARGIN + Math.random() * Math.max(0, maxX);
+    const x = PLATFORM_HORIZONTAL_MARGIN + random() * Math.max(0, maxX);
 
     let type = rollType(difficulty);
 
@@ -251,11 +252,11 @@ function makePlatform(
     broken: false,
     id: nextPlatformId++,
     originX: x,
-    moveDirection: Math.random() > 0.5 ? 1 : -1,
+    moveDirection: random() > 0.5 ? 1 : -1,
   };
 
   if (type === "conveyor") {
-    base.conveyorDir = Math.random() > 0.5 ? 1 : -1;
+    base.conveyorDir = random() > 0.5 ? 1 : -1;
   } else if (type === "weighted") {
     base.tiltAngle = 0;
   }

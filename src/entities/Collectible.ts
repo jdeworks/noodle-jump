@@ -1,5 +1,6 @@
 /** Meatball collectibles — pure logic, no PixiJS. */
 
+import { random } from "../systems/RNG";
 import {
   MEATBALL_SIZE,
   MEATBALL_SPAWN_CHANCE,
@@ -70,7 +71,7 @@ export function spawnMeatballs(
   for (const platform of platforms) {
     if (platform.type === "breaking" || platform.width > 200) continue;
     if (excludePlatformIds?.has(platform.id)) continue;
-    if (Math.random() < MEATBALL_SPAWN_CHANCE) {
+    if (random() < MEATBALL_SPAWN_CHANCE) {
       meatballs.push(createMeatball(platform, zone));
     }
   }

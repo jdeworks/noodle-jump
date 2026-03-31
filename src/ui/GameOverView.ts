@@ -22,6 +22,7 @@ export function showGameOver(
   app: Application,
   stats: GameOverStats,
   onRestart: () => void,
+  achievements?: string[],
 ): void {
   // Remove fullscreen listeners so game-over taps don't trigger fullscreen
   app.canvas.removeEventListener("touchstart", requestFullscreen);
@@ -93,6 +94,26 @@ export function showGameOver(
   breakdown.y = GAME_HEIGHT * 0.42;
   breakdown.anchor.set(0.5, 0.5);
   app.stage.addChild(breakdown);
+
+  // Achievement unlocks
+  if (achievements && achievements.length > 0) {
+    const achText = new Text({
+      text: "UNLOCKED: " + achievements.join(", "),
+      style: new TextStyle({
+        fontFamily: "monospace",
+        fontSize: 11,
+        fill: "#ffdd44",
+        fontWeight: "bold",
+        wordWrap: true,
+        wordWrapWidth: GAME_WIDTH - 40,
+        align: "center",
+      }),
+    });
+    achText.x = GAME_WIDTH / 2;
+    achText.y = GAME_HEIGHT * 0.62;
+    achText.anchor.set(0.5, 0.5);
+    app.stage.addChild(achText);
+  }
 
   // Suppress restart briefly when a button is tapped
   let buttonTapped = false;

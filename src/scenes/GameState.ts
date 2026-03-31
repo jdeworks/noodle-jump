@@ -34,6 +34,7 @@ import type { LivesState } from "../systems/Lives";
 import { createLivesState } from "../systems/Lives";
 import type { RunConfig } from "../systems/CustomRunConfig";
 import { createDefaultRunConfig } from "../systems/CustomRunConfig";
+import { initRNG } from "../systems/RNG";
 import type { DebugConfig } from "../config/debug";
 import { createDebugConfig, isDebugMode } from "../config/debug";
 import type { BossState } from "../entities/Boss";
@@ -113,11 +114,14 @@ export interface GameWorldState {
   bossAttacks: { x: number; y: number; vx: number; vy: number; alive: boolean }[];
   /** Whether boss fight is active (disables stagnant timer). */
   inBossFight: boolean;
+  /** Enemies killed this game (for achievements). */
+  enemiesKilled: number;
 }
 
 /** Create the initial game world state for a new game. */
 export function createInitialState(runConfig?: RunConfig): GameWorldState {
   const config = runConfig ?? createDefaultRunConfig();
+  initRNG(config.seed);
   const scoreState = createScoreState();
   const zoneState = createZoneState();
   const highScore = loadHighScore();
@@ -202,5 +206,6 @@ export function createInitialState(runConfig?: RunConfig): GameWorldState {
     activeBoss: null,
     bossAttacks: [],
     inBossFight: false,
+    enemiesKilled: 0,
   };
 }

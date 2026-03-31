@@ -1,5 +1,6 @@
 /** Enemy spawning — pure logic, zone-aware. */
 
+import { random } from "./RNG";
 import {
   ENEMY_SPAWN_INTERVAL,
   ENEMY_SPAWN_CHANCE,
@@ -41,15 +42,15 @@ export function trySpawnEnemy(
     return { spawner: { ticksSinceLastSpawn: ticks }, enemy: null };
   }
 
-  if (Math.random() > ENEMY_SPAWN_CHANCE) {
+  if (random() > ENEMY_SPAWN_CHANCE) {
     return { spawner: { ticksSinceLastSpawn: 0 }, enemy: null };
   }
 
   const types = getEnemyTypesForZone(zone);
-  const type = types[Math.floor(Math.random() * types.length)];
-  const x = Math.random() * (GAME_WIDTH - ENEMY_SIZE);
+  const type = types[Math.floor(random() * types.length)];
+  const x = random() * (GAME_WIDTH - ENEMY_SIZE);
   const y = cameraY - 20; // just above screen
-  const movingRight = Math.random() > 0.5;
+  const movingRight = random() > 0.5;
 
   return {
     spawner: { ticksSinceLastSpawn: 0 },

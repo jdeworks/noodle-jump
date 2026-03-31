@@ -33,6 +33,7 @@ loadSettings();
 export function initAudio(): void {
   if (ctx) return;
   ctx = new AudioContext();
+  import("./AmbientAudio").then((m) => m.initAmbient(ctx!));
 }
 
 export function ensureContext(): AudioContext | null {
@@ -109,6 +110,6 @@ export {
 } from "./AudioSfx";
 
 export {
-  playMusic, stopMusic, crossfadeToZone,
+  playMusic, playTitleMusic, stopMusic, crossfadeToZone,
   playBossMusic, stopBossMusic,
 } from "./MusicPlayer";

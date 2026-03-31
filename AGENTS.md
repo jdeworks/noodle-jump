@@ -152,7 +152,7 @@ Game code tends to grow. Budget accordingly:
 ```
 SOFT_FILE_LOC=300
 HARD_FILE_LOC=400
-LOC_BUDGET=15000
+LOC_BUDGET=20000
 ```
 
 ---
