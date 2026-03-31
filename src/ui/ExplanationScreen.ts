@@ -213,7 +213,7 @@ export class ExplanationScreen {
         const descText = new Text({
           text: item.desc,
           style: new TextStyle({
-            fontFamily: "monospace", fontSize: 11,
+            fontFamily: "monospace", fontSize: 12,
             fill: "#ccbbaa",
           }),
         });
@@ -239,8 +239,8 @@ export class ExplanationScreen {
     const scrollHint = new Text({
       text: "Scroll to see more",
       style: new TextStyle({
-        fontFamily: "monospace", fontSize: 11,
-        fill: "#998877",
+        fontFamily: "monospace", fontSize: 12,
+        fill: "#ccbbaa",
       }),
     });
     scrollHint.x = GAME_WIDTH / 2;

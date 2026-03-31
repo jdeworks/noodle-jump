@@ -102,9 +102,10 @@ export function showGameOver(
       text: "UNLOCKED: " + achievements.join(", "),
       style: new TextStyle({
         fontFamily: "monospace",
-        fontSize: 11,
+        fontSize: 13,
         fill: "#ffdd44",
         fontWeight: "bold",
+        stroke: { color: "#000000", width: 2 },
         wordWrap: true,
         wordWrapWidth: GAME_WIDTH - 40,
         align: "center",
@@ -183,8 +184,8 @@ export function showGameOver(
     text: "[Clear saved data]",
     style: new TextStyle({
       fontFamily: "monospace",
-      fontSize: 11,
-      fill: "#666666",
+      fontSize: 13,
+      fill: "#aa9988",
     }),
   });
   clearText.x = GAME_WIDTH / 2;

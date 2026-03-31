@@ -106,8 +106,8 @@ export class Tutorial {
       text: `${this.step + 1} / ${this.steps.length}`,
       style: new TextStyle({
         fontFamily: "monospace",
-        fontSize: 12,
-        fill: "#888888",
+        fontSize: 14,
+        fill: "#ccbbaa",
       }),
     });
     counter.x = GAME_WIDTH / 2;
@@ -120,8 +120,8 @@ export class Tutorial {
       text: "Tap to continue",
       style: new TextStyle({
         fontFamily: "monospace",
-        fontSize: 14,
-        fill: "#aaaaaa",
+        fontSize: 15,
+        fill: "#ddccbb",
       }),
     });
     tapText.x = GAME_WIDTH / 2;

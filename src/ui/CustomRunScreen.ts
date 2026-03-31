@@ -76,8 +76,8 @@ export class CustomRunScreen {
       fill: "#ffffff", fontWeight: "bold",
     });
     const valStyle = (on: boolean) => new TextStyle({
-      fontFamily: "monospace", fontSize: 12,
-      fill: on ? "#44ff44" : "#666666", fontWeight: "bold",
+      fontFamily: "monospace", fontSize: 13,
+      fill: on ? "#44ff44" : "#aa8877", fontWeight: "bold",
     });
 
     let y = 55;
@@ -166,7 +166,7 @@ export class CustomRunScreen {
     // Power-ups section
     const puTitle = new Text({
       text: "POWER-UPS (tap to toggle)",
-      style: new TextStyle({ fontFamily: "monospace", fontSize: 10, fill: "#888888" }),
+      style: new TextStyle({ fontFamily: "monospace", fontSize: 12, fill: "#ccbbaa", fontWeight: "bold" }),
     });
     puTitle.x = GAME_WIDTH / 2;
     puTitle.y = y;
@@ -181,15 +181,15 @@ export class CustomRunScreen {
       const col = i % 2;
       const row = Math.floor(i / 2);
       const px = col === 0 ? 15 : GAME_WIDTH / 2 + 5;
-      const py = y + row * 18;
+      const py = y + row * 20;
 
       const isOn = enabled.has(type);
       const name = type.replace(/_/g, " ");
       const puText = new Text({
         text: `${isOn ? "+" : "-"} ${name}`,
         style: new TextStyle({
-          fontFamily: "monospace", fontSize: 9,
-          fill: isOn ? "#cccccc" : "#444444",
+          fontFamily: "monospace", fontSize: 11,
+          fill: isOn ? "#eeddcc" : "#666655",
         }),
       });
       puText.x = px;
@@ -205,7 +205,7 @@ export class CustomRunScreen {
       this.container.addChild(puText);
     }
 
-    y += Math.ceil(ALL_POWER_UP_TYPES.length / 2) * 18 + 15;
+    y += Math.ceil(ALL_POWER_UP_TYPES.length / 2) * 20 + 15;
 
     // Start button
     const startBtn = new Text({
@@ -229,7 +229,7 @@ export class CustomRunScreen {
     // Back button
     const backBtn = new Text({
       text: "[Back]",
-      style: new TextStyle({ fontFamily: "monospace", fontSize: 12, fill: "#888888" }),
+      style: new TextStyle({ fontFamily: "monospace", fontSize: 13, fill: "#ccbbaa" }),
     });
     backBtn.x = GAME_WIDTH / 2;
     backBtn.y = GAME_HEIGHT - 25;

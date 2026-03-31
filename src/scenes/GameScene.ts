@@ -106,8 +106,9 @@ export class GameScene {
       text: "",
       style: new TextStyle({
         fontFamily: "monospace",
-        fontSize: 12,
-        fill: "#cccccc",
+        fontSize: 14,
+        fill: "#ffffff",
+        stroke: { color: "#000000", width: 2 },
         fontWeight: "bold",
       }),
     });

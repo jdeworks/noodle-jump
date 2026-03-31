@@ -124,8 +124,9 @@ export async function launchGame(app: Application, runConfig?: RunConfig): Promi
   const effectTimerLabel = new Text({
     text: "",
     style: new TextStyle({
-      fontFamily: "monospace", fontSize: 13,
+      fontFamily: "monospace", fontSize: 14,
       fill: "#ffffff", fontWeight: "bold",
+      stroke: { color: "#000000", width: 2 },
     }),
   });
   effectTimerLabel.anchor.set(0.5, 1);

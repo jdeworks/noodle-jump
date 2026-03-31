@@ -84,8 +84,8 @@ export class PowerUpEncyclopedia {
         text: isCollected ? info.name : "???",
         style: new TextStyle({
           fontFamily: "monospace",
-          fontSize: 11,
-          fill: isCollected ? "#ffffff" : "#666666",
+          fontSize: 13,
+          fill: isCollected ? "#ffffff" : "#887766",
           fontWeight: "bold",
         }),
       });
@@ -99,8 +99,8 @@ export class PowerUpEncyclopedia {
           text: info.description,
           style: new TextStyle({
             fontFamily: "monospace",
-            fontSize: 9,
-            fill: "#aaaaaa",
+            fontSize: 11,
+            fill: "#ccbbaa",
           }),
         });
         desc.x = 28;
@@ -108,7 +108,7 @@ export class PowerUpEncyclopedia {
         this.container.addChild(desc);
       }
 
-      y += 28;
+      y += 32;
     }
 
     // Close button
@@ -116,8 +116,9 @@ export class PowerUpEncyclopedia {
       text: "[Close]",
       style: new TextStyle({
         fontFamily: "monospace",
-        fontSize: 14,
-        fill: "#aaaaaa",
+        fontSize: 16,
+        fill: "#ffddbb",
+        fontWeight: "bold",
       }),
     });
     closeText.x = GAME_WIDTH / 2;
@@ -133,8 +134,8 @@ export class PowerUpEncyclopedia {
       text: `${collected.size} / ${types.length} discovered`,
       style: new TextStyle({
         fontFamily: "monospace",
-        fontSize: 10,
-        fill: "#888888",
+        fontSize: 12,
+        fill: "#ccbbaa",
       }),
     });
     countText.x = GAME_WIDTH / 2;
