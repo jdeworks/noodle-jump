@@ -64,20 +64,7 @@ export async function launchGame(app: Application, runConfig?: RunConfig): Promi
   const hud = new HUD();
   app.stage.addChild(hud.container);
 
-  // Pause button (on top of HUD)
-  const pauseBtn = new Text({
-    text: "II",
-    style: new TextStyle({
-      fontFamily: "monospace", fontSize: 16,
-      fill: "#ffffff", fontWeight: "bold",
-    }),
-  });
-  pauseBtn.x = GAME_WIDTH - 10;
-  pauseBtn.y = 26;
-  pauseBtn.anchor.set(1, 0);
-  pauseBtn.eventMode = "static";
-  pauseBtn.cursor = "pointer";
-  app.stage.addChild(pauseBtn);
+  // Pause — handled by HUD's built-in button
 
   // ── Fullscreen on first tap ──────────────────────────────────────────────
   app.canvas.addEventListener("touchstart", requestFullscreen, { once: true });
@@ -167,10 +154,10 @@ export async function launchGame(app: Application, runConfig?: RunConfig): Promi
   pauseOverlay.addChild(pauseText);
   app.stage.addChild(pauseOverlay);
 
-  pauseBtn.on("pointertap", () => {
+  hud.onPause = () => {
     scene.togglePause();
     pauseOverlay.visible = scene.isPaused();
-  });
+  };
   pauseDim.eventMode = "static";
   pauseDim.on("pointertap", () => {
     if (scene.isPaused()) {

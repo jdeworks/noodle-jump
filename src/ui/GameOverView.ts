@@ -119,12 +119,18 @@ export function showGameOver(
   // Suppress restart briefly when a button is tapped
   let buttonTapped = false;
 
-  // Share button
+  // Share button — bigger touch target
+  const shareBg = new Graphics();
+  shareBg.roundRect(GAME_WIDTH / 2 - 80, GAME_HEIGHT * 0.68 - 16, 160, 32, 8);
+  shareBg.fill({ color: 0x224466, alpha: 0.6 });
+  shareBg.eventMode = "static";
+  app.stage.addChild(shareBg);
+
   const shareText = new Text({
-    text: "[Share Score]",
+    text: "Share Score",
     style: new TextStyle({
       fontFamily: "monospace",
-      fontSize: 14,
+      fontSize: 16,
       fill: "#44aaff",
       fontWeight: "bold",
     }),
@@ -134,7 +140,7 @@ export function showGameOver(
   shareText.anchor.set(0.5, 0.5);
   shareText.eventMode = "static";
   shareText.cursor = "pointer";
-  shareText.on("pointertap", (e: Event) => {
+  const handleShare = (e: Event) => {
     e.stopPropagation();
     buttonTapped = true;
     setTimeout(() => { buttonTapped = false; }, 200);
@@ -151,17 +157,20 @@ export function showGameOver(
         shareText.text = "Copy failed";
       },
     );
-  });
+  };
+  shareText.on("pointertap", handleShare);
+  shareBg.on("pointertap", handleShare);
   app.stage.addChild(shareText);
 
-  // Tap to restart
+  // Tap to restart — prominent
   const restartText = new Text({
     text: "Tap to restart",
     style: new TextStyle({
       fontFamily: "monospace",
-      fontSize: 16,
+      fontSize: 20,
       fill: "#ffffff",
       fontWeight: "bold",
+      stroke: { color: "#000000", width: 2 },
     }),
   });
   restartText.x = GAME_WIDTH / 2;

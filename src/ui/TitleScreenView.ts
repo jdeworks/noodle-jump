@@ -132,52 +132,62 @@ export function showTitleScreen(
   settingsContainer.y = GAME_HEIGHT * 0.78;
   titleContainer.addChild(settingsContainer);
 
-  // How to Play button
+  // How to Play button — large touch target
+  const howBtnBg = new Graphics();
+  howBtnBg.roundRect(10, GAME_HEIGHT * 0.75 - 18, GAME_WIDTH / 2 - 15, 36, 8);
+  howBtnBg.fill({ color: 0x222244, alpha: 0.6 });
+  howBtnBg.eventMode = "static";
+  howBtnBg.cursor = "pointer";
+  titleContainer.addChild(howBtnBg);
+
   const howBtn = new Text({
-    text: "[How to Play]",
+    text: "How to Play",
     style: new TextStyle({
       fontFamily: "monospace",
-      fontSize: 13,
+      fontSize: 15,
       fill: "#88aaff",
       fontWeight: "bold",
     }),
   });
-  howBtn.x = GAME_WIDTH * 0.28;
+  howBtn.x = GAME_WIDTH * 0.25;
   howBtn.y = GAME_HEIGHT * 0.75;
   howBtn.anchor.set(0.5, 0.5);
-  howBtn.eventMode = "static";
-  howBtn.cursor = "pointer";
   titleContainer.addChild(howBtn);
 
-  // Custom Run button
+  // Custom Run button — large touch target
+  const customBtnBg = new Graphics();
+  customBtnBg.roundRect(GAME_WIDTH / 2 + 5, GAME_HEIGHT * 0.75 - 18, GAME_WIDTH / 2 - 15, 36, 8);
+  customBtnBg.fill({ color: 0x222244, alpha: 0.6 });
+  customBtnBg.eventMode = "static";
+  customBtnBg.cursor = "pointer";
+  titleContainer.addChild(customBtnBg);
+
   const customBtn = new Text({
-    text: "[Custom Run]",
+    text: "Custom Run",
     style: new TextStyle({
       fontFamily: "monospace",
-      fontSize: 13,
+      fontSize: 15,
       fill: "#88aaff",
       fontWeight: "bold",
     }),
   });
-  customBtn.x = GAME_WIDTH * 0.72;
+  customBtn.x = GAME_WIDTH * 0.75;
   customBtn.y = GAME_HEIGHT * 0.75;
   customBtn.anchor.set(0.5, 0.5);
-  customBtn.eventMode = "static";
-  customBtn.cursor = "pointer";
   titleContainer.addChild(customBtn);
 
   // Explanation screen
   const explanationScreen = new ExplanationScreen();
   titleContainer.addChild(explanationScreen.container);
-  howBtn.on("pointertap", (e: Event) => {
-    e.stopPropagation();
-    explanationScreen.show();
-  });
+  const showHelp = (e: Event) => { e.stopPropagation(); explanationScreen.show(); };
+  howBtnBg.on("pointertap", showHelp);
+  howBtn.eventMode = "static";
+  howBtn.on("pointertap", showHelp);
 
   // Custom run screen
   const customRunScreen = new CustomRunScreen();
   titleContainer.addChild(customRunScreen.container);
-  customBtn.on("pointertap", (e: Event) => {
+  const showCustom = (e: Event) => {
     e.stopPropagation();
     customRunScreen.show((config: RunConfig) => {
       // Start game with custom config
@@ -192,7 +202,10 @@ export function showTitleScreen(
       titleContainer.destroy({ children: true });
       onStartGame(config);
     });
-  });
+  };
+  customBtnBg.on("pointertap", showCustom);
+  customBtn.eventMode = "static";
+  customBtn.on("pointertap", showCustom);
 
   // Power-up Encyclopedia
   const encyclopedia = new PowerUpEncyclopedia();
@@ -215,17 +228,17 @@ export function showTitleScreen(
     titleContainer.addChild(statsText);
   }
 
-  // Encyclopedia button (below keyboard hint)
+  // Encyclopedia button
   const encBtn = new Text({
-    text: "[Encyclopedia]",
+    text: "Power-up Encyclopedia",
     style: new TextStyle({
       fontFamily: "monospace",
-      fontSize: 11,
-      fill: "#999999",
+      fontSize: 12,
+      fill: "#ccbbaa",
     }),
   });
   encBtn.x = GAME_WIDTH / 2;
-  encBtn.y = GAME_HEIGHT * 0.72 + 14;
+  encBtn.y = GAME_HEIGHT * 0.70;
   encBtn.anchor.set(0.5, 0);
   encBtn.eventMode = "static";
   encBtn.cursor = "pointer";

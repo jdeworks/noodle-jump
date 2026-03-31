@@ -22,9 +22,12 @@ export class HUD {
   private zoneLabel: Text;
   private effectDescText: Text;
   private comboText: Text;
+  private pauseBtn: Text;
+  private pauseHitArea = new Graphics();
   private miniMapContainer = new Container();
   private miniMapBg = new Graphics();
   private miniMapDots: Graphics[] = [];
+  private _onPause: (() => void) | null = null;
 
   constructor() {
     const hudStyle = new TextStyle({
@@ -52,12 +55,32 @@ export class HUD {
     this.heightText.y = 9;
     this.container.addChild(this.heightText);
 
-    // Score
+    // Score — left of pause button
     this.scoreText = new Text({ text: "0", style: hudStyle });
-    this.scoreText.x = GAME_WIDTH - 10;
+    this.scoreText.x = GAME_WIDTH - 50;
     this.scoreText.anchor.set(1, 0);
     this.scoreText.y = 9;
     this.container.addChild(this.scoreText);
+
+    // Pause button — inside HUD bar, large touch target
+    this.pauseHitArea.rect(GAME_WIDTH - 44, 0, 44, 36);
+    this.pauseHitArea.fill({ color: 0x000000, alpha: 0.001 });
+    this.pauseHitArea.eventMode = "static";
+    this.pauseHitArea.cursor = "pointer";
+    this.pauseHitArea.on("pointertap", () => this._onPause?.());
+    this.container.addChild(this.pauseHitArea);
+
+    this.pauseBtn = new Text({
+      text: "| |",
+      style: new TextStyle({
+        fontFamily: "monospace", fontSize: 16,
+        fill: "#ffaa33", fontWeight: "bold",
+      }),
+    });
+    this.pauseBtn.x = GAME_WIDTH - 22;
+    this.pauseBtn.y = 9;
+    this.pauseBtn.anchor.set(0.5, 0);
+    this.container.addChild(this.pauseBtn);
 
     // Zone progress bar
     this.container.addChild(this.zoneBar);
@@ -119,6 +142,9 @@ export class HUD {
     this.miniMapContainer.addChild(this.miniMapBg);
     this.container.addChild(this.miniMapContainer);
   }
+
+  /** Set pause callback. */
+  set onPause(fn: () => void) { this._onPause = fn; }
 
   /** Update all HUD elements from game state. */
   update(state: GameWorldState, elapsedSeconds: number): void {
