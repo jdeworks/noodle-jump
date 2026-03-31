@@ -34,6 +34,8 @@ import type { LivesState } from "../systems/Lives";
 import { createLivesState } from "../systems/Lives";
 import type { RunConfig } from "../systems/CustomRunConfig";
 import { createDefaultRunConfig } from "../systems/CustomRunConfig";
+import type { DebugConfig } from "../config/debug";
+import { createDebugConfig, isDebugMode } from "../config/debug";
 import type { BossState } from "../entities/Boss";
 import {
   GAME_WIDTH,
@@ -97,6 +99,8 @@ export interface GameWorldState {
   practiceMode: boolean;
   /** Run configuration (custom runs, daily challenge). */
   runConfig: RunConfig;
+  /** Debug configuration (only active in DEBUG_MODE). */
+  debugConfig: DebugConfig;
   /** Knife ammo for throwing. */
   knifeAmmo: number;
   /** Max knife ammo. */
@@ -189,8 +193,9 @@ export function createInitialState(runConfig?: RunConfig): GameWorldState {
     weather: createWeather(0),
     dayNight: createDayNight(),
     livesState: createLivesState(false),
-    practiceMode: config.practiceMode,
+    practiceMode: config.practiceMode || (isDebugMode() && createDebugConfig().invincible),
     runConfig: config,
+    debugConfig: createDebugConfig(),
     knifeAmmo: 3,
     knifeAmmoMax: 3,
     knifeRegenTimer: 0,

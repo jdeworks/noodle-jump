@@ -12,6 +12,6 @@ export {
   drawBurntToastSprite,
 } from "./EffectSprites";
 export { type PlatformStyle, drawPlatform } from "./PlatformSprites";
-export { drawMeatball, drawPowerUp } from "./ItemSprites";
+export { drawMeatball, drawMeatballVariant, drawPowerUp } from "./ItemSprites";
 export { drawEnemy, drawProjectile } from "./EnemySprites";
 export { drawBoss, drawBossHealthBar } from "./BossSprites";
