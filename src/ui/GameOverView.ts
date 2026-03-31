@@ -34,6 +34,7 @@ export function showGameOver(
   const dim = new Graphics();
   dim.rect(0, 0, GAME_WIDTH, GAME_HEIGHT);
   dim.fill({ color: 0x000000, alpha: 0.5 });
+  dim.eventMode = "static";
   app.stage.addChild(dim);
 
   if (isNewRecord) {
@@ -206,6 +207,11 @@ export function showGameOver(
       app.canvas.addEventListener("click", restart);
       app.canvas.addEventListener("touchstart", restart);
       window.addEventListener("keydown", restart);
+      // Also handle pixi tap on the dim overlay
+      dim.on("pointertap", () => restart());
+      restartText.eventMode = "static";
+      restartText.cursor = "pointer";
+      restartText.on("pointertap", () => restart());
     },
     isNewRecord ? 1500 : 300,
   );

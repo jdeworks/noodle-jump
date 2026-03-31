@@ -13,76 +13,73 @@ const SECTIONS: Section[] = [
   {
     title: "CONTROLS",
     items: [
-      { label: "Tilt", desc: "Tilt your device to move left/right" },
-      { label: "Keyboard", desc: "Arrow keys or WASD to move" },
-      { label: "Throw", desc: "Tap/click to throw a knife (enemies mode)" },
+      { label: "Tilt / Arrows / WASD", desc: "Move left and right" },
+      { label: "Tap / Click", desc: "Throw a knife (when enemies are on)" },
     ],
   },
   {
     title: "SCORING",
     items: [
-      { label: "Height", desc: "Climb higher for more points" },
-      { label: "Meatballs", desc: "Collect for 1000 points each" },
-      { label: "Combos", desc: "Collect meatballs quickly for multipliers" },
-      { label: "Close calls", desc: "Land on platform edges for bonus" },
+      { label: "Climb higher", desc: "Height = points" },
+      { label: "Meatballs", desc: "1000 points each — collect quickly for combos" },
+      { label: "Edge landings", desc: "Close call bonus for landing near edges" },
       { label: "Streaks", desc: "Every 5 consecutive landings = bonus" },
     ],
   },
   {
     title: "PLATFORMS",
     items: [
-      { label: "Normal", desc: "Standard platform — always bouncy", color: 0xd4a574 },
-      { label: "Breaking", desc: "Cracks visible — bounces once then breaks", color: 0x8b6914 },
-      { label: "Brittle", desc: "Crumbly dots — falls through instantly", color: 0xc4a882 },
-      { label: "Moving", desc: "Arrows on sides — slides left/right", color: 0xc8915a },
-      { label: "Conveyor", desc: "Belt pattern — pushes you sideways", color: 0x999999 },
-      { label: "Spring", desc: "Coil pattern — extra high bounce", color: 0x44cc44 },
-      { label: "Ice", desc: "Sparkly blue — slippery, you slide", color: 0xaaddff },
-      { label: "Crumbling", desc: "Cracked + orange — breaks after 1.5s", color: 0xbb8855 },
-      { label: "Teleport", desc: "Purple glow — warps you to another", color: 0x8844ff },
-      { label: "Weighted", desc: "Fulcrum — tilts based on your position", color: 0xaa8866 },
+      { label: "Normal", desc: "Standard — always bouncy", color: 0xd4a574 },
+      { label: "Breaking", desc: "Bounces once then breaks", color: 0x8b6914 },
+      { label: "Brittle", desc: "Fall through instantly!", color: 0xc4a882 },
+      { label: "Moving", desc: "Slides left and right", color: 0xc8915a },
+      { label: "Conveyor", desc: "Pushes you sideways", color: 0x999999 },
+      { label: "Spring", desc: "Extra high bounce", color: 0x44cc44 },
+      { label: "Ice", desc: "Slippery — you slide", color: 0xaaddff },
+      { label: "Crumbling", desc: "Breaks after 1.5 seconds", color: 0xbb8855 },
+      { label: "Teleport", desc: "Warps you to another", color: 0x8844ff },
+      { label: "Weighted", desc: "Tilts where you land", color: 0xaa8866 },
     ],
   },
   {
-    title: "POWER-UPS (POSITIVE)",
+    title: "POSITIVE POWER-UPS",
     items: Object.entries(POWER_UP_INFO)
       .filter(([, info]) => info.positive)
       .map(([type, info]) => ({
         label: info.name,
         desc: info.description,
-        color: COLORS.powerups[type] ?? 0xffffff,
+        color: COLORS.powerups[type] ?? 0x44ff44,
       })),
   },
   {
-    title: "POWER-UPS (NEGATIVE)",
+    title: "NEGATIVE POWER-UPS",
     items: Object.entries(POWER_UP_INFO)
       .filter(([, info]) => !info.positive)
       .map(([type, info]) => ({
         label: info.name,
         desc: info.description,
-        color: COLORS.powerups[type] ?? 0xff0000,
+        color: COLORS.powerups[type] ?? 0xff4444,
       })),
   },
   {
-    title: "ZONES",
+    title: "7 ZONES",
     items: [
-      { label: "1. Kitchen", desc: "Warm pasta kitchen — where it all begins", color: 0xfff8e7 },
-      { label: "2. Ocean", desc: "Deep sea boiling zone — bubbles rise", color: 0xd4e6f1 },
-      { label: "3. Space", desc: "Dark void — stars and planets", color: 0x1a1a2e },
-      { label: "4. Freezer", desc: "Icy cold — snow falls, platforms slip", color: 0xe8f0ff },
-      { label: "5. Volcano", desc: "Fiery depths — embers and lava", color: 0x2a0a00 },
-      { label: "6. Candy", desc: "Sweet pastel world — sugar crystals", color: 0xffeeff },
-      { label: "7. Final Kitchen", desc: "Golden finale — everything combined", color: 0xfff5d4 },
+      { label: "Kitchen", desc: "Warm start — where it all begins" },
+      { label: "Ocean", desc: "Deep sea — bubbles and currents" },
+      { label: "Space", desc: "Dark void — stars and planets" },
+      { label: "Freezer", desc: "Icy cold — snow and slippery platforms" },
+      { label: "Volcano", desc: "Fiery — embers and rising heat" },
+      { label: "Candy World", desc: "Sweet pastels — sugar crystals" },
+      { label: "Final Kitchen", desc: "Golden — everything combined" },
     ],
   },
   {
-    title: "ENEMIES (opt-in)",
+    title: "ENEMIES & BOSSES",
     items: [
-      { label: "Rats", desc: "Kitchen zone — scurry left and right" },
-      { label: "Fish", desc: "Ocean zone — swim horizontally" },
-      { label: "Aliens", desc: "Space zone — hover and move" },
-      { label: "Throw knife", desc: "Tap to throw! Killed enemies become meatballs" },
-      { label: "Shield", desc: "Pasta Shield absorbs one enemy hit" },
+      { label: "Enemies", desc: "Toggle in settings — rats, fish, aliens per zone" },
+      { label: "Knives", desc: "Tap to throw! 3 ammo, regenerates over time" },
+      { label: "Killed enemies", desc: "Turn into meatballs you can collect" },
+      { label: "Bosses", desc: "Appear at zone transitions — 3 unique types" },
     ],
   },
 ];
@@ -120,7 +117,6 @@ export class ExplanationScreen {
     return this.active;
   }
 
-  /** Handle scroll input (touch drag or mouse wheel). */
   scroll(deltaY: number): void {
     this.scrollY = Math.max(
       0,
@@ -129,7 +125,6 @@ export class ExplanationScreen {
     this.updateScroll();
   }
 
-  /** Update animation tick (call each frame while visible). */
   update(): void {
     this.animTick++;
   }
@@ -141,25 +136,25 @@ export class ExplanationScreen {
       child.destroy();
     }
 
-    // Background
+    // Background — dark with slight warmth
     const bg = new Graphics();
     bg.rect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-    bg.fill({ color: 0x111111, alpha: 0.95 });
+    bg.fill({ color: 0x1a1410, alpha: 0.97 });
     bg.eventMode = "static";
     this.container.addChild(bg);
 
-    // Scrollable content container
+    // Scrollable content
     const content = new Container();
     content.label = "scroll-content";
     this.container.addChild(content);
 
-    let y = 20;
+    let y = 24;
 
     // Header
     const header = new Text({
       text: "HOW TO PLAY",
       style: new TextStyle({
-        fontFamily: "monospace", fontSize: 22,
+        fontFamily: "monospace", fontSize: 24,
         fill: "#ffdd44", fontWeight: "bold",
         stroke: { color: "#000000", width: 3 },
       }),
@@ -168,15 +163,14 @@ export class ExplanationScreen {
     header.y = y;
     header.anchor.set(0.5, 0);
     content.addChild(header);
-    y += 40;
+    y += 44;
 
-    // Sections
     for (const section of SECTIONS) {
-      // Section title
+      // Section title — larger, colored
       const titleText = new Text({
         text: section.title,
         style: new TextStyle({
-          fontFamily: "monospace", fontSize: 14,
+          fontFamily: "monospace", fontSize: 15,
           fill: "#ffaa33", fontWeight: "bold",
         }),
       });
@@ -185,77 +179,94 @@ export class ExplanationScreen {
       content.addChild(titleText);
       y += 22;
 
-      // Divider
+      // Divider — warm color
       const div = new Graphics();
       div.rect(15, y, GAME_WIDTH - 30, 1);
-      div.fill({ color: 0x444444 });
+      div.fill({ color: 0x554433 });
       content.addChild(div);
-      y += 6;
+      y += 8;
 
-      // Items
       for (const item of section.items) {
         // Color dot
         if (item.color != null) {
           const dot = new Graphics();
-          dot.circle(22, y + 6, 4);
+          dot.circle(22, y + 7, 5);
           dot.fill(item.color);
+          dot.circle(22, y + 7, 5);
+          dot.stroke({ width: 1, color: 0x000000, alpha: 0.3 });
           content.addChild(dot);
         }
 
+        // Label — bright white, readable size
         const labelText = new Text({
           text: item.label,
           style: new TextStyle({
-            fontFamily: "monospace", fontSize: 11,
+            fontFamily: "monospace", fontSize: 12,
             fill: "#ffffff", fontWeight: "bold",
           }),
         });
-        labelText.x = item.color != null ? 32 : 20;
+        labelText.x = item.color != null ? 34 : 20;
         labelText.y = y;
         content.addChild(labelText);
 
+        // Description — light gray (good contrast on dark bg)
         const descText = new Text({
           text: item.desc,
           style: new TextStyle({
-            fontFamily: "monospace", fontSize: 9,
-            fill: "#999999",
+            fontFamily: "monospace", fontSize: 11,
+            fill: "#ccbbaa",
           }),
         });
-        descText.x = item.color != null ? 32 : 20;
-        descText.y = y + 13;
+        descText.x = item.color != null ? 34 : 20;
+        descText.y = y + 15;
         content.addChild(descText);
 
-        y += 28;
+        y += 32;
       }
 
-      y += 10;
+      y += 12;
     }
 
     this.contentHeight = y;
 
+    // Bottom bar with gradient fade
+    const fadeBar = new Graphics();
+    fadeBar.rect(0, GAME_HEIGHT - 40, GAME_WIDTH, 40);
+    fadeBar.fill({ color: 0x1a1410, alpha: 0.9 });
+    this.container.addChild(fadeBar);
+
     // Scroll hint
     const scrollHint = new Text({
-      text: "Scroll to see more | Tap [X] to close",
+      text: "Scroll to see more",
       style: new TextStyle({
-        fontFamily: "monospace", fontSize: 10,
-        fill: "#666666",
+        fontFamily: "monospace", fontSize: 11,
+        fill: "#998877",
       }),
     });
     scrollHint.x = GAME_WIDTH / 2;
-    scrollHint.y = GAME_HEIGHT - 15;
+    scrollHint.y = GAME_HEIGHT - 18;
     scrollHint.anchor.set(0.5, 0.5);
     this.container.addChild(scrollHint);
 
-    // Close button
+    // Close button — bigger, more visible
+    const closeBg = new Graphics();
+    closeBg.roundRect(GAME_WIDTH - 42, 6, 36, 28, 6);
+    closeBg.fill({ color: 0x442222, alpha: 0.8 });
+    closeBg.eventMode = "static";
+    closeBg.cursor = "pointer";
+    closeBg.on("pointertap", () => this.hide());
+    this.container.addChild(closeBg);
+
     const closeBtn = new Text({
-      text: "[X]",
+      text: "X",
       style: new TextStyle({
-        fontFamily: "monospace", fontSize: 18,
-        fill: "#ff4444", fontWeight: "bold",
+        fontFamily: "monospace", fontSize: 16,
+        fill: "#ff6644", fontWeight: "bold",
       }),
     });
-    closeBtn.x = GAME_WIDTH - 15;
-    closeBtn.y = 10;
-    closeBtn.anchor.set(1, 0);
+    closeBtn.x = GAME_WIDTH - 24;
+    closeBtn.y = 20;
+    closeBtn.anchor.set(0.5, 0.5);
     closeBtn.eventMode = "static";
     closeBtn.cursor = "pointer";
     closeBtn.on("pointertap", () => this.hide());
@@ -264,6 +275,16 @@ export class ExplanationScreen {
     // Wire scroll events
     bg.on("wheel", (e: WheelEvent) => {
       this.scroll(e.deltaY * 0.5);
+    });
+
+    // Touch drag scrolling
+    let touchStartY = 0;
+    bg.on("pointerdown", (e) => { touchStartY = e.globalY; });
+    bg.on("pointermove", (e) => {
+      if (e.pressure > 0) {
+        this.scroll(touchStartY - e.globalY);
+        touchStartY = e.globalY;
+      }
     });
 
     this.updateScroll();

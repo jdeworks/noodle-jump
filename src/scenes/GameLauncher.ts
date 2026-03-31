@@ -194,16 +194,18 @@ export async function launchGame(app: Application, runConfig?: RunConfig): Promi
   app.stage.addChild(countdownText);
   scene.startCountdown();
 
-  // ── Tutorial (first play) ────────────────────────────────────────────────
+  // ── Tutorial (first play) — pauses game while active ──────────────────
   const tutorial = new Tutorial();
   app.stage.addChild(tutorial.container);
   if (tutorial.shouldShow()) {
     tutorial.show();
+    scene.togglePause(); // pause game during tutorial
     const advanceTutorial = () => {
       if (tutorial.isActive()) {
         if (!tutorial.advance()) {
           app.canvas.removeEventListener("click", advanceTutorial);
           app.canvas.removeEventListener("touchstart", advanceTutorial);
+          scene.togglePause(); // unpause when tutorial ends
         }
       }
     };

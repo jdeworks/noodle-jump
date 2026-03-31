@@ -15,45 +15,54 @@ import { isEnemiesEnabled, setEnemiesEnabled } from "../systems/EnemySettings";
 export function createSettingsToggles(): Container {
   const container = new Container();
 
-  // Background panel — taller for volume controls
+  const panelW = Math.min(280, GAME_WIDTH - 20);
+  const panelX = (GAME_WIDTH - panelW) / 2;
+
+  // Background panel
   const bg = new Graphics();
-  bg.roundRect(GAME_WIDTH / 2 - 130, -8, 260, 130, 8);
-  bg.fill({ color: 0x000000, alpha: 0.4 });
+  bg.roundRect(panelX, -8, panelW, 140, 10);
+  bg.fill({ color: 0x1a1410, alpha: 0.7 });
+  bg.roundRect(panelX, -8, panelW, 140, 10);
+  bg.stroke({ width: 1, color: 0x554433, alpha: 0.5 });
   container.addChild(bg);
 
   const headerStyle = new TextStyle({
     fontFamily: "monospace",
-    fontSize: 12,
-    fill: "#888888",
-    align: "center",
+    fontSize: 13,
+    fill: "#ffaa33",
+    fontWeight: "bold",
   });
   const header = new Text({ text: "SETTINGS", style: headerStyle });
   header.x = GAME_WIDTH / 2;
-  header.y = -2;
+  header.y = 0;
   header.anchor.set(0.5, 0);
   container.addChild(header);
 
   const labelStyle = new TextStyle({
     fontFamily: "monospace",
-    fontSize: 13,
+    fontSize: 14,
     fill: "#ffffff",
     fontWeight: "bold",
   });
-  const smallStyle = new TextStyle({
+  const btnStyle = new TextStyle({
     fontFamily: "monospace",
-    fontSize: 13,
-    fill: "#88aaff",
+    fontSize: 16,
+    fill: "#ffaa33",
     fontWeight: "bold",
   });
+
   const valueOn = "#44ff44";
-  const valueOff = "#666666";
+  const valueOff = "#ff6644";
   const valueStyle = (on: boolean) =>
     new TextStyle({
       fontFamily: "monospace",
-      fontSize: 13,
+      fontSize: 14,
       fill: on ? valueOn : valueOff,
       fontWeight: "bold",
     });
+
+  const leftX = panelX + 12;
+  const rightX = panelX + panelW - 12;
 
   /** Create a volume row with -/+ buttons and percentage display. */
   function addVolumeRow(
@@ -63,21 +72,23 @@ export function createSettingsToggles(): Container {
     setVal: (v: number) => void,
   ): void {
     const lbl = new Text({ text: label, style: labelStyle });
-    lbl.x = GAME_WIDTH / 2 - 120;
+    lbl.x = leftX;
     lbl.y = y;
     container.addChild(lbl);
 
     const valText = new Text({
       text: `${getVal()}%`,
-      style: new TextStyle({ fontFamily: "monospace", fontSize: 13, fill: "#ffffff", fontWeight: "bold" }),
+      style: new TextStyle({ fontFamily: "monospace", fontSize: 14, fill: "#ffffff", fontWeight: "bold" }),
     });
-    valText.x = GAME_WIDTH / 2 + 30;
+    valText.x = rightX - 80;
     valText.y = y;
+    valText.anchor.set(0.5, 0);
     container.addChild(valText);
 
-    const minus = new Text({ text: "[-]", style: smallStyle });
-    minus.x = GAME_WIDTH / 2 + 70;
+    const minus = new Text({ text: "  -  ", style: btnStyle });
+    minus.x = rightX - 40;
     minus.y = y;
+    minus.anchor.set(0.5, 0);
     minus.eventMode = "static";
     minus.cursor = "pointer";
     minus.on("pointertap", (e: Event) => {
@@ -87,9 +98,10 @@ export function createSettingsToggles(): Container {
     });
     container.addChild(minus);
 
-    const plus = new Text({ text: "[+]", style: smallStyle });
-    plus.x = GAME_WIDTH / 2 + 100;
+    const plus = new Text({ text: "  +  ", style: btnStyle });
+    plus.x = rightX;
     plus.y = y;
+    plus.anchor.set(0.5, 0);
     plus.eventMode = "static";
     plus.cursor = "pointer";
     plus.on("pointertap", (e: Event) => {
@@ -101,33 +113,34 @@ export function createSettingsToggles(): Container {
   }
 
   // SFX volume
-  addVolumeRow(18, "SFX:", getSfxVolume, (v) => {
+  addVolumeRow(20, "SFX", getSfxVolume, (v) => {
     setSfxVolume(v);
     setSfxEnabled(v > 0);
   });
 
   // Music volume
-  addVolumeRow(38, "Music:", getMusicVolume, (v) => {
+  addVolumeRow(44, "Music", getMusicVolume, (v) => {
     setMusicVolume(v);
     setMusicEnabled(v > 0);
   });
 
   // Enemies toggle
-  const enemyLabel = new Text({ text: "Enemies: ", style: labelStyle });
-  enemyLabel.x = GAME_WIDTH / 2 - 120;
-  enemyLabel.y = 60;
+  const enemyLabel = new Text({ text: "Enemies", style: labelStyle });
+  enemyLabel.x = leftX;
+  enemyLabel.y = 70;
   container.addChild(enemyLabel);
 
   const enemyValue = new Text({
     text: isEnemiesEnabled() ? "ON" : "OFF",
     style: valueStyle(isEnemiesEnabled()),
   });
-  enemyValue.x = GAME_WIDTH / 2 + 30;
-  enemyValue.y = 60;
+  enemyValue.x = rightX - 40;
+  enemyValue.y = 70;
+  enemyValue.anchor.set(0.5, 0);
   container.addChild(enemyValue);
 
   const enemyHit = new Graphics();
-  enemyHit.rect(GAME_WIDTH / 2 - 130, 56, 260, 22);
+  enemyHit.rect(panelX, 66, panelW, 26);
   enemyHit.fill({ color: 0x000000, alpha: 0.001 });
   enemyHit.eventMode = "static";
   enemyHit.cursor = "pointer";
@@ -139,7 +152,21 @@ export function createSettingsToggles(): Container {
   });
   container.addChild(enemyHit);
 
-  // Make the container interactive so taps on it don't start the game
+  // Hint text
+  const hint = new Text({
+    text: "Tap enemies row to toggle",
+    style: new TextStyle({
+      fontFamily: "monospace",
+      fontSize: 10,
+      fill: "#887766",
+    }),
+  });
+  hint.x = GAME_WIDTH / 2;
+  hint.y = 100;
+  hint.anchor.set(0.5, 0);
+  container.addChild(hint);
+
+  // Make panel interactive so taps don't start the game
   bg.eventMode = "static";
   bg.on("pointertap", (e: Event) => e.stopPropagation());
 
