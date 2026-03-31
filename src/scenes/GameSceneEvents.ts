@@ -44,7 +44,7 @@ export interface EventHandlerDeps {
 }
 
 export function handleEvents(events: GameEvent[], deps: EventHandlerDeps): void {
-  const { state, particles, effectRenderer, zoneTransition, gfxSync, container, gameContainer } = deps;
+  const { state, particles, zoneTransition, gfxSync, gameContainer } = deps;
 
   for (const event of events) {
     switch (event.type) {
@@ -78,19 +78,16 @@ export function handleEvents(events: GameEvent[], deps: EventHandlerDeps): void 
         );
         break;
 
-      case "powerUpCollected":
+      case "powerUpCollected": {
         playSfxPowerUp(event.powerUpType);
-        effectRenderer.showEffectLabel(
-          event.powerUpType,
-          container,
-        );
-        if (!event.isNegative) {
-          deps.spawnFloatingText("POWER UP!", 0x44ff44, 18, 50, true);
-        }
+        // Show name as floating text near player
+        const puName = event.powerUpType.replace(/_/g, " ").toUpperCase();
+        const puColor = event.isNegative ? 0xff4444 : 0x44ff44;
+        deps.spawnFloatingText(puName, puColor, 16, 60);
         break;
+      }
 
       case "effectEnded":
-        effectRenderer.clearEffectLabel(container);
         break;
 
       case "died":

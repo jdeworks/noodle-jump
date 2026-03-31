@@ -101,7 +101,7 @@ export function createGameLoopTicker(
       }
     }
 
-    // Effect timer bar
+    // Effect timer bar (no text label — HUD shows description)
     overlays.effectTimerBar.clear();
     const effectName = scene.getActiveEffectName();
     const effectProgress = scene.getActiveEffectProgress();
@@ -112,11 +112,8 @@ export function createGameLoopTicker(
       overlays.effectTimerBar.fill({ color: 0x333333, alpha: 0.5 });
       overlays.effectTimerBar.rect(20, GAME_HEIGHT - 6, barW, 4);
       overlays.effectTimerBar.fill(color);
-      overlays.effectTimerLabel.text = effectName.replace("_", " ").toUpperCase();
-      overlays.effectTimerLabel.visible = true;
-    } else {
-      overlays.effectTimerLabel.visible = false;
     }
+    overlays.effectTimerLabel.visible = false;
 
     // Game over
     if (scene.isGameOver()) {
