@@ -3,10 +3,18 @@
 import { Container, Graphics, Text, TextStyle } from "pixi.js";
 import { GAME_WIDTH, GAME_HEIGHT, COLORS } from "../config/constants";
 import { POWER_UP_INFO } from "./PowerUpDescriptions";
+import { drawPlatform, type PlatformStyle } from "../rendering/PlatformSprites";
+import { drawPowerUp } from "../rendering/ItemSprites";
 
 interface Section {
   title: string;
-  items: { label: string; desc: string; color?: number }[];
+  items: {
+    label: string;
+    desc: string;
+    color?: number;
+    platformStyle?: PlatformStyle;
+    powerUpType?: string;
+  }[];
 }
 
 const SECTIONS: Section[] = [
@@ -29,16 +37,16 @@ const SECTIONS: Section[] = [
   {
     title: "PLATFORMS",
     items: [
-      { label: "Normal", desc: "Standard — always bouncy", color: 0xd4a574 },
-      { label: "Breaking", desc: "Bounces once then breaks", color: 0x8b6914 },
-      { label: "Brittle", desc: "Fall through instantly!", color: 0xc4a882 },
-      { label: "Moving", desc: "Slides left and right", color: 0xc8915a },
-      { label: "Conveyor", desc: "Pushes you sideways", color: 0x999999 },
-      { label: "Spring", desc: "Extra high bounce", color: 0x44cc44 },
-      { label: "Ice", desc: "Slippery — you slide", color: 0xaaddff },
-      { label: "Crumbling", desc: "Breaks after 1.5 seconds", color: 0xbb8855 },
-      { label: "Teleport", desc: "Warps you to another", color: 0x8844ff },
-      { label: "Weighted", desc: "Tilts where you land", color: 0xaa8866 },
+      { label: "Normal", desc: "Standard — always bouncy", color: 0xd4a574, platformStyle: "normal" as PlatformStyle },
+      { label: "Breaking", desc: "Bounces once then breaks", color: 0x8b6914, platformStyle: "breaking" as PlatformStyle },
+      { label: "Brittle", desc: "Fall through instantly!", color: 0xc4a882, platformStyle: "brittle" as PlatformStyle },
+      { label: "Moving", desc: "Slides left and right", color: 0xc8915a, platformStyle: "moving" as PlatformStyle },
+      { label: "Conveyor", desc: "Pushes you sideways", color: 0x999999, platformStyle: "conveyor" as PlatformStyle },
+      { label: "Spring", desc: "Extra high bounce", color: 0x44cc44, platformStyle: "spring" as PlatformStyle },
+      { label: "Ice", desc: "Slippery — you slide", color: 0xaaddff, platformStyle: "ice" as PlatformStyle },
+      { label: "Crumbling", desc: "Breaks after 1.5 seconds", color: 0xbb8855, platformStyle: "crumbling" as PlatformStyle },
+      { label: "Teleport", desc: "Warps you to another", color: 0x8844ff, platformStyle: "teleport" as PlatformStyle },
+      { label: "Weighted", desc: "Tilts where you land", color: 0xaa8866, platformStyle: "weighted" as PlatformStyle },
     ],
   },
   {
@@ -49,16 +57,18 @@ const SECTIONS: Section[] = [
         label: info.name,
         desc: info.description,
         color: COLORS.powerups[type] ?? 0x44ff44,
+        powerUpType: type,
       })),
   },
   {
-    title: "NEGATIVE POWER-UPS",
+    title: "NEGATIVE POWER-UPS  —  avoid these!",
     items: Object.entries(POWER_UP_INFO)
       .filter(([, info]) => !info.positive)
       .map(([type, info]) => ({
         label: info.name,
         desc: info.description,
         color: COLORS.powerups[type] ?? 0xff4444,
+        powerUpType: type,
       })),
   },
   {
@@ -187,16 +197,34 @@ export class ExplanationScreen {
       y += 8;
 
       for (const item of section.items) {
-        const hasColor = item.color != null;
+        const hasSprite = item.platformStyle != null || item.powerUpType != null;
+        const textX = hasSprite ? 80 : 20;
+        const rowH = hasSprite ? 40 : 34;
 
-        // Color bar preview (platforms/power-ups)
-        if (hasColor) {
-          const bar = new Graphics();
-          bar.roundRect(15, y + 2, 50, 8, 3);
-          bar.fill(item.color);
-          bar.roundRect(15, y + 2, 50, 8, 3);
-          bar.stroke({ width: 1, color: 0x000000, alpha: 0.3 });
-          content.addChild(bar);
+        // Platform sprite preview
+        if (item.platformStyle != null && item.color != null) {
+          const platGfx = new Graphics();
+          drawPlatform(platGfx, 56, 10, item.color, item.platformStyle);
+          platGfx.x = 15;
+          platGfx.y = y + 6;
+          content.addChild(platGfx);
+        }
+
+        // Power-up sprite preview
+        if (item.powerUpType != null && item.color != null) {
+          const puGfx = new Graphics();
+          drawPowerUp(puGfx, 28, item.color, item.powerUpType);
+          puGfx.x = 18;
+          puGfx.y = y + 2;
+          content.addChild(puGfx);
+        }
+
+        // Color dot fallback for items without sprites
+        if (!hasSprite && item.color != null) {
+          const dot = new Graphics();
+          dot.circle(22, y + 7, 5);
+          dot.fill(item.color);
+          content.addChild(dot);
         }
 
         // Label
@@ -207,7 +235,7 @@ export class ExplanationScreen {
             fill: "#ffffff", fontWeight: "bold",
           }),
         });
-        labelText.x = hasColor ? 72 : 20;
+        labelText.x = textX;
         labelText.y = y;
         content.addChild(labelText);
 
@@ -219,11 +247,11 @@ export class ExplanationScreen {
             fill: "#ccbbaa",
           }),
         });
-        descText.x = hasColor ? 72 : 20;
+        descText.x = textX;
         descText.y = y + 16;
         content.addChild(descText);
 
-        y += 34;
+        y += rowH;
       }
 
       y += 12;
