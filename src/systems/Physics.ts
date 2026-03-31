@@ -5,6 +5,7 @@ import type { PlatformState } from "../entities/Platform";
 import { playerJump } from "../entities/Player";
 import { breakPlatform } from "../entities/Platform";
 import { CLOSE_CALL_THRESHOLD } from "../config/constants";
+import { applySpringBounce, startCrumbleTimer } from "./PlatformEffects";
 
 export interface CollisionResult {
   player: PlayerState;
@@ -12,6 +13,12 @@ export interface CollisionResult {
   landed: boolean;
   edgeLanding: boolean;
   platformBroke: boolean;
+  /** The platform that was landed on (null if no landing). */
+  landedPlatform: PlatformState | null;
+  /** True if this was a teleport platform (caller should resolve teleport). */
+  teleported: boolean;
+  /** True if this was a spring platform. */
+  springBounce: boolean;
 }
 
 /**
@@ -36,6 +43,9 @@ export function checkPlatformCollisions(
     landed: false,
     edgeLanding: false,
     platformBroke: false,
+    landedPlatform: null,
+    teleported: false,
+    springBounce: false,
   };
 
   if (player.vy < 0) return noHit;
@@ -96,10 +106,61 @@ export function checkPlatformCollisions(
       landed: false,
       edgeLanding: false,
       platformBroke: true,
+      landedPlatform: null,
+      teleported: false,
+      springBounce: false,
     };
   }
 
   const landed = { ...player, y: platform.y - player.height };
+
+  // Spring platform: extra high bounce
+  if (platform.type === "spring") {
+    const springPlayer = applySpringBounce(landed);
+    return {
+      player: springPlayer,
+      platforms,
+      landed: true,
+      edgeLanding,
+      platformBroke: false,
+      landedPlatform: platform,
+      teleported: false,
+      springBounce: true,
+    };
+  }
+
+  // Teleport platform: signal caller to resolve teleport
+  if (platform.type === "teleport") {
+    const jumped = playerJump(landed);
+    return {
+      player: jumped,
+      platforms,
+      landed: true,
+      edgeLanding,
+      platformBroke: false,
+      landedPlatform: platform,
+      teleported: true,
+      springBounce: false,
+    };
+  }
+
+  // Crumbling platform: start timer on landing, still bounce
+  if (platform.type === "crumbling") {
+    const updatedPlatforms = [...platforms];
+    updatedPlatforms[bestIdx] = startCrumbleTimer(platform);
+    const jumped = playerJump(landed);
+    return {
+      player: jumped,
+      platforms: updatedPlatforms,
+      landed: true,
+      edgeLanding,
+      platformBroke: false,
+      landedPlatform: platform,
+      teleported: false,
+      springBounce: false,
+    };
+  }
+
   const jumped = playerJump(landed);
 
   // Breaking platform, lasagna stepping stone, or soggy noodle effect
@@ -116,6 +177,9 @@ export function checkPlatformCollisions(
       landed: true,
       edgeLanding,
       platformBroke: true,
+      landedPlatform: platform,
+      teleported: false,
+      springBounce: false,
     };
   }
 
@@ -125,5 +189,8 @@ export function checkPlatformCollisions(
     landed: true,
     edgeLanding,
     platformBroke: false,
+    landedPlatform: platform,
+    teleported: false,
+    springBounce: false,
   };
 }

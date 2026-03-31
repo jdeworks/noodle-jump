@@ -101,11 +101,15 @@ Compiled 2026-03-30. Organized by priority within each category.
 - [ ] Combo escalation SFX (pitch rises with multiplier)
 
 ### Music
+- [x] Boss battle music (8-bit, CC0 by nene from OpenGameArt)
+- [x] Volume normalization across all tracks (-16 LUFS target)
+- [x] Volume sliders (SFX + Music, 0-100%)
+- [ ] Dedicated music per zone (7 unique tracks — currently reusing 2)
 - [ ] Compose original soundtrack (currently using placeholder tracks)
-- [ ] Per-zone music themes with smooth crossfade
+- [ ] Per-zone music themes with smooth crossfade (system exists, needs tracks)
 - [ ] Dynamic music layers that intensify with difficulty
-- [ ] Boss/danger music when stagnant timer is active
 - [ ] Victory jingle for zone completion
+- [ ] Menu/title screen music
 
 ---
 

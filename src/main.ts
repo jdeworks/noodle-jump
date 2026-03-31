@@ -14,7 +14,17 @@ import {
   isMusicEnabled,
   setSfxEnabled,
   setMusicEnabled,
+  getSfxVolume,
+  setSfxVolume,
+  getMusicVolume,
+  setMusicVolume,
 } from "./systems/Audio";
+import { resetPlatformIds } from "./entities/Platform";
+import { resetPowerUpIds } from "./entities/PowerUp";
+import { resetCollectibleIds } from "./entities/Collectible";
+import { resetEnemyIds } from "./entities/Enemy";
+import { resetProjectileIds } from "./entities/Projectile";
+import { isEnemiesEnabled, setEnemiesEnabled } from "./systems/EnemySettings";
 
 // Lock to portrait via Screen Orientation API
 const orient = screen.orientation as
@@ -207,10 +217,10 @@ function showTitleScreen(app: Application): void {
   // Start game on input — ignore taps on the settings area
   let settingsClicked = false;
   const settingsBounds = {
-    left: GAME_WIDTH / 2 - 110,
-    right: GAME_WIDTH / 2 + 110,
+    left: GAME_WIDTH / 2 - 130,
+    right: GAME_WIDTH / 2 + 130,
     top: GAME_HEIGHT * 0.78 - 8,
-    bottom: GAME_HEIGHT * 0.78 + 57,
+    bottom: GAME_HEIGHT * 0.78 + 122,
   };
 
   const isInSettings = (e: MouseEvent | TouchEvent): boolean => {
@@ -262,11 +272,53 @@ function showTitleScreen(app: Application): void {
   window.addEventListener("keydown", startGame);
 }
 
+// ── State-based restart ──────────────────────────────────────────────────
+
+// Track active game session for clean restart
+let activeScene: GameScene | null = null;
+let activeGameTicker: (() => void) | null = null;
+let activeOrientationCleanup: (() => void) | null = null;
+
+function cleanupAndRestart(app: Application): void {
+  // Remove game loop ticker
+  if (activeGameTicker) {
+    app.ticker.remove(activeGameTicker);
+    activeGameTicker = null;
+  }
+  // Clean up orientation listener
+  if (activeOrientationCleanup) {
+    activeOrientationCleanup();
+    activeOrientationCleanup = null;
+  }
+  // Destroy scene
+  if (activeScene) {
+    activeScene.destroy();
+    activeScene = null;
+  }
+  // Clear stage
+  while (app.stage.children.length > 0) {
+    const child = app.stage.children[0];
+    app.stage.removeChild(child);
+    child.destroy({ children: true });
+  }
+  // Reset entity ID counters
+  resetPlatformIds();
+  resetPowerUpIds();
+  resetCollectibleIds();
+  resetEnemyIds();
+  resetProjectileIds();
+
+  // Relaunch
+  playMusic(0);
+  launchGame(app);
+}
+
 // ── Game Launch ───────────────────────────────────────────────────────────
 
 async function launchGame(app: Application): Promise<void> {
   requestWakeLock();
   const scene = new GameScene();
+  activeScene = scene;
   scene.initInput(app.canvas);
   app.stage.addChild(scene.container);
 
@@ -350,6 +402,29 @@ async function launchGame(app: Application): Promise<void> {
     await scene.input.requestTiltPermission();
   }
 
+  // ── Knife throw on click/tap (enemies mode) ───────────────────────────
+  const handleThrow = (e: MouseEvent | TouchEvent) => {
+    if (!isEnemiesEnabled() && !scene.isInBossFight()) return;
+    const rect = app.canvas.getBoundingClientRect();
+    const scaleX = GAME_WIDTH / rect.width;
+    const scaleY = GAME_HEIGHT / rect.height;
+    let clientX: number, clientY: number;
+    if ("touches" in e && e.touches.length > 0) {
+      clientX = e.touches[0].clientX;
+      clientY = e.touches[0].clientY;
+    } else if ("clientX" in e) {
+      clientX = (e as MouseEvent).clientX;
+      clientY = (e as MouseEvent).clientY;
+    } else {
+      return;
+    }
+    const screenX = (clientX - rect.left) * scaleX;
+    const screenY = (clientY - rect.top) * scaleY;
+    scene.handleThrow(screenX, screenY);
+  };
+  app.canvas.addEventListener("click", handleThrow);
+  app.canvas.addEventListener("touchstart", handleThrow);
+
   // ── Orientation pause ─────────────────────────────────────────────────────
   const orientationQuery = window.matchMedia(
     "(orientation: landscape) and (max-height: 500px)",
@@ -366,6 +441,9 @@ async function launchGame(app: Application): Promise<void> {
     }
   };
   orientationQuery.addEventListener("change", checkOrientation);
+  activeOrientationCleanup = () => {
+    orientationQuery.removeEventListener("change", checkOrientation);
+  };
   checkOrientation();
 
   // ── Effect timer bar ──────────────────────────────────────────────────────
@@ -443,7 +521,7 @@ async function launchGame(app: Application): Promise<void> {
 
   // ── Game loop ────────────────────────────────────────────────────────────
   let goTextTicks = 0;
-  app.ticker.add(() => {
+  const gameLoopTicker = () => {
     scene.update();
 
     // Countdown display
@@ -527,7 +605,7 @@ async function launchGame(app: Application): Promise<void> {
 
     // Zone progress bar
     zoneBar.clear();
-    const zoneNames = ["Kitchen", "Ocean", "Space"];
+    const zoneNames = ["Kitchen", "Ocean", "Space", "Freezer", "Volcano", "Candy", "Final Kitchen"];
     const zone = scene.getZone();
     const zp = scene.getZoneProgress();
     const barTop = 36;
@@ -558,7 +636,9 @@ async function launchGame(app: Application): Promise<void> {
         platforms: scene.getPlatformsPassed(),
       });
     }
-  });
+  };
+  activeGameTicker = gameLoopTicker;
+  app.ticker.add(gameLoopTicker);
 }
 
 // ── Settings Toggles ──────────────────────────────────────────────────────
@@ -566,9 +646,9 @@ async function launchGame(app: Application): Promise<void> {
 function createSettingsToggles(): Container {
   const container = new Container();
 
-  // Background panel
+  // Background panel — taller for volume controls
   const bg = new Graphics();
-  bg.roundRect(GAME_WIDTH / 2 - 110, -8, 220, 65, 8);
+  bg.roundRect(GAME_WIDTH / 2 - 130, -8, 260, 130, 8);
   bg.fill({ color: 0x000000, alpha: 0.4 });
   container.addChild(bg);
 
@@ -586,8 +666,14 @@ function createSettingsToggles(): Container {
 
   const labelStyle = new TextStyle({
     fontFamily: "monospace",
-    fontSize: 15,
+    fontSize: 13,
     fill: "#ffffff",
+    fontWeight: "bold",
+  });
+  const smallStyle = new TextStyle({
+    fontFamily: "monospace",
+    fontSize: 13,
+    fill: "#88aaff",
     fontWeight: "bold",
   });
   const valueOn = "#44ff44";
@@ -595,65 +681,94 @@ function createSettingsToggles(): Container {
   const valueStyle = (on: boolean) =>
     new TextStyle({
       fontFamily: "monospace",
-      fontSize: 15,
+      fontSize: 13,
       fill: on ? valueOn : valueOff,
       fontWeight: "bold",
     });
 
-  // SFX toggle
-  const sfxLabel = new Text({ text: "SFX: ", style: labelStyle });
-  sfxLabel.x = GAME_WIDTH / 2 - 80;
-  sfxLabel.y = 22;
-  container.addChild(sfxLabel);
+  /** Create a volume row with -/+ buttons and percentage display. */
+  function addVolumeRow(
+    y: number,
+    label: string,
+    getVal: () => number,
+    setVal: (v: number) => void,
+  ): void {
+    const lbl = new Text({ text: label, style: labelStyle });
+    lbl.x = GAME_WIDTH / 2 - 120;
+    lbl.y = y;
+    container.addChild(lbl);
 
-  const sfxValue = new Text({
-    text: isSfxEnabled() ? "ON" : "OFF",
-    style: valueStyle(isSfxEnabled()),
+    const valText = new Text({
+      text: `${getVal()}%`,
+      style: new TextStyle({ fontFamily: "monospace", fontSize: 13, fill: "#ffffff", fontWeight: "bold" }),
+    });
+    valText.x = GAME_WIDTH / 2 + 30;
+    valText.y = y;
+    container.addChild(valText);
+
+    const minus = new Text({ text: "[-]", style: smallStyle });
+    minus.x = GAME_WIDTH / 2 + 70;
+    minus.y = y;
+    minus.eventMode = "static";
+    minus.cursor = "pointer";
+    minus.on("pointertap", (e: Event) => {
+      e.stopPropagation();
+      setVal(Math.max(0, getVal() - 10));
+      valText.text = `${getVal()}%`;
+    });
+    container.addChild(minus);
+
+    const plus = new Text({ text: "[+]", style: smallStyle });
+    plus.x = GAME_WIDTH / 2 + 100;
+    plus.y = y;
+    plus.eventMode = "static";
+    plus.cursor = "pointer";
+    plus.on("pointertap", (e: Event) => {
+      e.stopPropagation();
+      setVal(Math.min(100, getVal() + 10));
+      valText.text = `${getVal()}%`;
+    });
+    container.addChild(plus);
+  }
+
+  // SFX volume
+  addVolumeRow(18, "SFX:", getSfxVolume, (v) => {
+    setSfxVolume(v);
+    setSfxEnabled(v > 0);
   });
-  sfxValue.x = sfxLabel.x + 42;
-  sfxValue.y = 22;
-  container.addChild(sfxValue);
 
-  // Hit area covers both label + value
-  const sfxHit = new Graphics();
-  sfxHit.rect(GAME_WIDTH / 2 - 110, 18, 110, 28);
-  sfxHit.fill({ color: 0x000000, alpha: 0.001 });
-  sfxHit.eventMode = "static";
-  sfxHit.cursor = "pointer";
-  sfxHit.on("pointertap", (e: Event) => {
+  // Music volume
+  addVolumeRow(38, "Music:", getMusicVolume, (v) => {
+    setMusicVolume(v);
+    setMusicEnabled(v > 0);
+  });
+
+  // Enemies toggle
+  const enemyLabel = new Text({ text: "Enemies: ", style: labelStyle });
+  enemyLabel.x = GAME_WIDTH / 2 - 120;
+  enemyLabel.y = 60;
+  container.addChild(enemyLabel);
+
+  const enemyValue = new Text({
+    text: isEnemiesEnabled() ? "ON" : "OFF",
+    style: valueStyle(isEnemiesEnabled()),
+  });
+  enemyValue.x = GAME_WIDTH / 2 + 30;
+  enemyValue.y = 60;
+  container.addChild(enemyValue);
+
+  const enemyHit = new Graphics();
+  enemyHit.rect(GAME_WIDTH / 2 - 130, 56, 260, 22);
+  enemyHit.fill({ color: 0x000000, alpha: 0.001 });
+  enemyHit.eventMode = "static";
+  enemyHit.cursor = "pointer";
+  enemyHit.on("pointertap", (e: Event) => {
     e.stopPropagation();
-    setSfxEnabled(!isSfxEnabled());
-    sfxValue.text = isSfxEnabled() ? "ON" : "OFF";
-    sfxValue.style = valueStyle(isSfxEnabled());
+    setEnemiesEnabled(!isEnemiesEnabled());
+    enemyValue.text = isEnemiesEnabled() ? "ON" : "OFF";
+    enemyValue.style = valueStyle(isEnemiesEnabled());
   });
-  container.addChild(sfxHit);
-
-  // Music toggle
-  const musicLabel = new Text({ text: "Music: ", style: labelStyle });
-  musicLabel.x = GAME_WIDTH / 2 + 10;
-  musicLabel.y = 22;
-  container.addChild(musicLabel);
-
-  const musicValue = new Text({
-    text: isMusicEnabled() ? "ON" : "OFF",
-    style: valueStyle(isMusicEnabled()),
-  });
-  musicValue.x = musicLabel.x + 62;
-  musicValue.y = 22;
-  container.addChild(musicValue);
-
-  const musicHit = new Graphics();
-  musicHit.rect(GAME_WIDTH / 2, 18, 110, 28);
-  musicHit.fill({ color: 0x000000, alpha: 0.001 });
-  musicHit.eventMode = "static";
-  musicHit.cursor = "pointer";
-  musicHit.on("pointertap", (e: Event) => {
-    e.stopPropagation();
-    setMusicEnabled(!isMusicEnabled());
-    musicValue.text = isMusicEnabled() ? "ON" : "OFF";
-    musicValue.style = valueStyle(isMusicEnabled());
-  });
-  container.addChild(musicHit);
+  container.addChild(enemyHit);
 
   // Make the container interactive so taps on it don't start the game
   bg.eventMode = "static";
@@ -828,7 +943,9 @@ function showGameOver(app: Application, stats: GameOverStats): void {
     app.canvas.removeEventListener("click", restart);
     app.canvas.removeEventListener("touchstart", restart);
     window.removeEventListener("keydown", restart);
-    window.location.reload();
+
+    // State-based restart — clean up and relaunch without page reload
+    cleanupAndRestart(app);
   };
 
   setTimeout(

@@ -25,6 +25,8 @@ export interface DifficultyParams {
   breakChance: number;
   brittleChance: number;
   movingSpeedMultiplier: number;
+  /** Raw difficulty factor 0-1 (0=easy, 1=max difficulty). */
+  difficultyT: number;
 }
 
 function lerp(a: number, b: number, t: number): number {
@@ -56,5 +58,6 @@ export function getDifficulty(platformsPassed: number): DifficultyParams {
       t,
     ),
     movingSpeedMultiplier: lerp(1, 2.5, t),
+    difficultyT: t,
   };
 }

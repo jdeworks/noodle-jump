@@ -60,7 +60,7 @@ test-arch: ## Run architecture tests only (Tier 2)
 	npx vitest run tests/architecture/
 
 health: ## Run code health check (file size, LOC budget, console.log)
-	@bash scripts/health-check.sh
+	@SOFT_FILE_LOC=300 HARD_FILE_LOC=400 LOC_BUDGET=15000 bash scripts/health-check.sh
 
 ## ── Changelog + context ──────────────────────────────────────────────────────
 

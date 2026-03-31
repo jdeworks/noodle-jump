@@ -32,6 +32,21 @@ export const PLATFORM_MOVING_CHANCE = 0.12; // 12% chance a platform moves
 export const PLATFORM_MOVING_SPEED = 1.5;
 export const PLATFORM_MOVING_RANGE = 60; // pixels each direction from start
 
+// New platform types
+export const PLATFORM_CONVEYOR_CHANCE = 0.06; // 6% base chance
+export const PLATFORM_CONVEYOR_SPEED = 2.5; // horizontal push speed
+export const PLATFORM_SPRING_CHANCE = 0.05; // 5% base chance
+export const PLATFORM_SPRING_VELOCITY_MULTIPLIER = 1.8; // bounce height multiplier
+export const PLATFORM_ICE_CHANCE = 0.05; // 5% base chance
+export const PLATFORM_ICE_FRICTION = 0.015; // very low friction (normal ~0.3)
+export const PLATFORM_CRUMBLING_CHANCE = 0.04; // 4% base chance
+export const PLATFORM_CRUMBLE_TIMER_TICKS = 90; // 1.5 seconds after landing
+export const PLATFORM_TELEPORT_CHANCE = 0.03; // 3% base chance
+export const PLATFORM_WEIGHTED_CHANCE = 0.04; // 4% base chance
+export const PLATFORM_WEIGHTED_TILT_RATE = 0.02; // tilt speed per tick
+export const PLATFORM_WEIGHTED_MAX_TILT = 0.5; // max tilt in radians (~28 degrees)
+export const PLATFORM_WEIGHTED_SLIDE_SPEED = 0.8; // player slide speed at max tilt
+
 // ── Collectibles ────────────────────────────────────────────────────────────
 export const MEATBALL_SIZE = 22;
 export const MEATBALL_SPAWN_CHANCE = 0.25; // 25% of platforms have a meatball
@@ -76,6 +91,21 @@ export const GARLIC_BREATH_JUMP_MULTIPLIER = 0.6;
 export const MEATBALL_MAGNET_DURATION = 300;
 export const MEATBALL_MAGNET_RADIUS = 800;
 
+// Pasta Shield: absorbs one negative hit
+export const PASTA_SHIELD_DURATION = 600; // 10 seconds
+// Rigatoni Drill: smash downward through platforms
+export const RIGATONI_DRILL_VELOCITY = 12; // positive = downward
+export const RIGATONI_DRILL_DURATION = 180; // 3 seconds
+// Penne Cannon: shoots platforms upward
+export const PENNE_CANNON_DURATION = 360; // 6 seconds
+export const PENNE_CANNON_INTERVAL = 30; // spawn a platform every 0.5s
+// Gnocchi Bounce: all platforms give 2x jump height
+export const GNOCCHI_BOUNCE_DURATION = 360; // 6 seconds
+export const GNOCCHI_BOUNCE_MULTIPLIER = 1.8; // jump velocity multiplier
+// Minestrone Soup: rising flood from below
+export const MINESTRONE_SOUP_DURATION = 480; // 8 seconds
+export const MINESTRONE_RISE_SPEED = 1.5; // pixels per tick the flood rises
+
 // ── Combo / Close Call ─────────────────────────────────────────────────────
 export const COMBO_TIMEOUT_TICKS = 120; // 2 seconds at 60fps
 export const COMBO_MAX_MULTIPLIER = 4;
@@ -96,18 +126,57 @@ export const DIFFICULTY_BRITTLE_CHANCE_HARD = 0.12;
 // ── Death animation ────────────────────────────────────────────────────────
 export const DEATH_ANIMATION_TICKS = 60;
 
+// ── Stagnant timer ────────────────────────────────────────────────────────
+export const STAGNANT_WARNING_1_TICKS = 180; // 3 seconds — first warning shake
+export const STAGNANT_WARNING_2_TICKS = 270; // 4.5 seconds — stronger shake
+export const STAGNANT_KILL_START_TICKS = 300; // 5 seconds — platforms start crumbling
+export const STAGNANT_CRUMBLE_INTERVAL = 40; // ticks between forced crumbles
+
+// ── Lasagna platforms ─────────────────────────────────────────────────────
+export const LASAGNA_TTL_TICKS = 300; // 5 seconds at 60fps
+
+// ── Countdown ─────────────────────────────────────────────────────────────
+export const COUNTDOWN_TICKS = 180; // 3 seconds
+
+// ── Squash/stretch ────────────────────────────────────────────────────────
+export const SQUASH_HOLD_FRAMES = 5;
+export const SQUASH_TOTAL_FRAMES = 13;
+
+// ── Burnt toast ───────────────────────────────────────────────────────────
+// (BURNT_TOAST_SHRINK already defined above)
+
 // ── Camera ──────────────────────────────────────────────────────────────────
 export const CAMERA_LERP_SPEED = 0.1;
 export const CAMERA_GRACE_PLATFORMS = 3; // how many platform-heights below camera before death
 export const CAMERA_DEAD_ZONE_TOP = 0.35; // player position threshold to start scrolling up
 
+// ── Enemies ───────────────────────────────────────────────────────────────
+export const ENEMY_SIZE = 24;
+export const ENEMY_SPEED = 1.2;
+export const ENEMY_SPAWN_INTERVAL = 200; // ticks between spawn attempts
+export const ENEMY_SPAWN_CHANCE = 0.4; // chance per attempt
+export const ENEMY_SPAWN_MIN_PLATFORMS = 30; // don't spawn until this many platforms passed
+
+// ── Projectiles (knife throw) ────────────────────────────────────────────
+export const PROJECTILE_SPEED = 8;
+export const PROJECTILE_SIZE = 12;
+export const PROJECTILE_LIFETIME = 60; // 1 second
+
+// ── Hazards ──────────────────────────────────────────────────────────────
+export const WIND_GUST_FORCE = 2.5;
+export const WIND_GUST_DURATION = 120; // 2 seconds
+export const WIND_GUST_INTERVAL = 600; // ticks between gusts
+export const LAVA_RISE_SPEED = 0.5;
+
 // ── Zones ───────────────────────────────────────────────────────────────────
-export const ZONE_THRESHOLDS = DEBUG_MODE ? [0, 10, 25] : [0, 80, 280];
+export const ZONE_THRESHOLDS = DEBUG_MODE
+  ? [0, 10, 25, 40, 55, 70, 85]
+  : [0, 80, 280, 500, 750, 1000, 1300];
 
 // ── Colors (placeholder until pixel art) ────────────────────────────────────
 export const COLORS = {
-  background: [0xfff8e7, 0xd4e6f1, 0x1a1a2e] as const, // per zone
-  platform: [0xd4a574, 0x7fb3d8, 0x6c3483] as const,
+  background: [0xfff8e7, 0xd4e6f1, 0x1a1a2e, 0xe8f0ff, 0x2a0a00, 0xffeeff, 0xfff5d4] as const,
+  platform: [0xd4a574, 0x7fb3d8, 0x6c3483, 0x88bbdd, 0x884422, 0xee88cc, 0xeebb44] as const,
   platformBreaking: 0x8b6914, // wet pasta brown
   platformBrittle: 0xc4a882, // pale/crumbly pasta
   platformLasagna: 0xff8c00, // orange cheese — matches lasagna power-up
@@ -124,5 +193,11 @@ export const COLORS = {
     soggy_noodle: 0x5588cc, // wet blue
     garlic_breath: 0x88bb44, // green gas
     burnt_toast: 0x3d2b1f, // charred dark brown
+    // New positive power-ups
+    pasta_shield: 0x44ddff, // light blue shield
+    rigatoni_drill: 0xaa6633, // brown rigatoni
+    penne_cannon: 0xffcc33, // golden penne
+    gnocchi_bounce: 0xffe4c4, // bisque/potato
+    minestrone_soup: 0xcc4422, // tomato soup red
   } as Record<string, number>,
 };

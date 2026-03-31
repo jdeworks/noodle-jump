@@ -1,9 +1,25 @@
 {
   "name": "Noodle Jump",
-  "short_name": "Noodle Jump",
-  "start_url": "/",
-  "display": "fullscreen",
+  "short_name": "NoodleJump",
+  "description": "A pasta-themed endless jumper game",
+  "start_url": "./",
+  "display": "standalone",
   "orientation": "portrait",
+  "theme_color": "#fff8e7",
   "background_color": "#fff8e7",
-  "theme_color": "#fff8e7"
+  "categories": ["games"],
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
 }

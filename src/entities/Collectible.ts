@@ -8,6 +8,31 @@ import {
 } from "../config/constants";
 import type { PlatformState } from "./Platform";
 
+export type MeatballVariant =
+  | "meatball"
+  | "fishball"
+  | "meteor"
+  | "snowball"
+  | "fireball"
+  | "gummy"
+  | "golden_meatball";
+
+/** Zone-to-meatball variant mapping. */
+const ZONE_VARIANTS: MeatballVariant[] = [
+  "meatball",        // Zone 1: Kitchen
+  "fishball",        // Zone 2: Ocean
+  "meteor",          // Zone 3: Space
+  "snowball",        // Zone 4: Freezer
+  "fireball",        // Zone 5: Volcano
+  "gummy",           // Zone 6: Candy
+  "golden_meatball", // Zone 7: Final Kitchen
+];
+
+/** Get the meatball variant for a zone. */
+export function getMeatballVariant(zone: number): MeatballVariant {
+  return ZONE_VARIANTS[Math.min(zone, ZONE_VARIANTS.length - 1)];
+}
+
 export interface CollectibleState {
   x: number;
   y: number;
@@ -15,11 +40,15 @@ export interface CollectibleState {
   collected: boolean;
   platformId: number;
   id: number;
+  variant: MeatballVariant;
 }
 
 let nextCollectibleId = 0;
 
-export function createMeatball(platform: PlatformState): CollectibleState {
+export function createMeatball(
+  platform: PlatformState,
+  zone = 0,
+): CollectibleState {
   return {
     x: platform.x + platform.width / 2 - MEATBALL_SIZE / 2,
     y: platform.y - MEATBALL_FLOAT_HEIGHT,
@@ -27,6 +56,7 @@ export function createMeatball(platform: PlatformState): CollectibleState {
     collected: false,
     platformId: platform.id,
     id: nextCollectibleId++,
+    variant: getMeatballVariant(zone),
   };
 }
 
@@ -34,13 +64,14 @@ export function createMeatball(platform: PlatformState): CollectibleState {
 export function spawnMeatballs(
   platforms: PlatformState[],
   excludePlatformIds?: Set<number>,
+  zone = 0,
 ): CollectibleState[] {
   const meatballs: CollectibleState[] = [];
   for (const platform of platforms) {
     if (platform.type === "breaking" || platform.width > 200) continue;
     if (excludePlatformIds?.has(platform.id)) continue;
     if (Math.random() < MEATBALL_SPAWN_CHANCE) {
-      meatballs.push(createMeatball(platform));
+      meatballs.push(createMeatball(platform, zone));
     }
   }
   return meatballs;

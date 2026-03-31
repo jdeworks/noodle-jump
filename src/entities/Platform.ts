@@ -12,6 +12,12 @@ import {
   PLATFORM_MOVING_CHANCE,
   PLATFORM_MOVING_SPEED,
   PLATFORM_MOVING_RANGE,
+  PLATFORM_CONVEYOR_CHANCE,
+  PLATFORM_SPRING_CHANCE,
+  PLATFORM_ICE_CHANCE,
+  PLATFORM_CRUMBLING_CHANCE,
+  PLATFORM_TELEPORT_CHANCE,
+  PLATFORM_WEIGHTED_CHANCE,
   GAME_WIDTH,
 } from "../config/constants";
 import type { DifficultyParams } from "../systems/Difficulty";
@@ -21,7 +27,13 @@ export type PlatformType =
   | "breaking"
   | "brittle"
   | "moving"
-  | "lasagna";
+  | "lasagna"
+  | "conveyor"
+  | "spring"
+  | "ice"
+  | "crumbling"
+  | "teleport"
+  | "weighted";
 
 /** Whether a platform can support a landing (player won't fall through). */
 export function isSolid(type: PlatformType): boolean {
@@ -29,7 +41,13 @@ export function isSolid(type: PlatformType): boolean {
     type === "static" ||
     type === "moving" ||
     type === "breaking" ||
-    type === "lasagna"
+    type === "lasagna" ||
+    type === "conveyor" ||
+    type === "spring" ||
+    type === "ice" ||
+    type === "crumbling" ||
+    type === "teleport" ||
+    type === "weighted"
   );
 }
 
@@ -45,6 +63,14 @@ export interface PlatformState {
   moveDirection: number;
   /** Tick when this platform was spawned (used for timed self-destruct). */
   spawnTick?: number;
+  /** Conveyor push direction: -1 = left, 1 = right. */
+  conveyorDir?: -1 | 1;
+  /** Crumbling countdown timer (ticks remaining, starts on landing). */
+  crumbleTimer?: number;
+  /** Weighted platform tilt angle in radians. */
+  tiltAngle?: number;
+  /** Teleport target platform ID (paired teleport). */
+  teleportTargetId?: number;
 }
 
 let nextPlatformId = 0;
@@ -122,11 +148,46 @@ export function updatePlatforms(
 function rollType(difficulty?: DifficultyParams): PlatformType {
   const breakChance = difficulty?.breakChance ?? PLATFORM_BREAK_CHANCE;
   const brittleChance = difficulty?.brittleChance ?? PLATFORM_BRITTLE_CHANCE;
+  const t = difficulty?.difficultyT ?? 0;
+
+  // New platform types scale in with difficulty
+  const conveyorChance = PLATFORM_CONVEYOR_CHANCE * t;
+  const springChance = PLATFORM_SPRING_CHANCE * t;
+  const iceChance = PLATFORM_ICE_CHANCE * t;
+  const crumblingChance = PLATFORM_CRUMBLING_CHANCE * t;
+  const teleportChance = PLATFORM_TELEPORT_CHANCE * Math.max(0, t - 0.3); // only after 30% difficulty
+  const weightedChance = PLATFORM_WEIGHTED_CHANCE * Math.max(0, t - 0.2); // only after 20% difficulty
+
   const roll = Math.random();
-  if (roll < breakChance) return "breaking";
-  if (roll < breakChance + brittleChance) return "brittle";
-  if (roll < breakChance + brittleChance + PLATFORM_MOVING_CHANCE)
-    return "moving";
+  let cumulative = 0;
+
+  cumulative += breakChance;
+  if (roll < cumulative) return "breaking";
+
+  cumulative += brittleChance;
+  if (roll < cumulative) return "brittle";
+
+  cumulative += PLATFORM_MOVING_CHANCE;
+  if (roll < cumulative) return "moving";
+
+  cumulative += conveyorChance;
+  if (roll < cumulative) return "conveyor";
+
+  cumulative += springChance;
+  if (roll < cumulative) return "spring";
+
+  cumulative += iceChance;
+  if (roll < cumulative) return "ice";
+
+  cumulative += crumblingChance;
+  if (roll < cumulative) return "crumbling";
+
+  cumulative += teleportChance;
+  if (roll < cumulative) return "teleport";
+
+  cumulative += weightedChance;
+  if (roll < cumulative) return "weighted";
+
   return "static";
 }
 
@@ -168,20 +229,38 @@ export function generatePlatforms(
 
     lastWasUnlandable = type === "brittle";
 
-    platforms.push({
-      x,
-      y,
-      width,
-      height: PLATFORM_HEIGHT,
-      type,
-      broken: false,
-      id: nextPlatformId++,
-      originX: x,
-      moveDirection: Math.random() > 0.5 ? 1 : -1,
-    });
+    platforms.push(makePlatform(x, y, width, type));
   }
 
   return platforms;
+}
+
+/** Create a platform with type-specific extra fields. */
+function makePlatform(
+  x: number,
+  y: number,
+  width: number,
+  type: PlatformType,
+): PlatformState {
+  const base: PlatformState = {
+    x,
+    y,
+    width,
+    height: PLATFORM_HEIGHT,
+    type,
+    broken: false,
+    id: nextPlatformId++,
+    originX: x,
+    moveDirection: Math.random() > 0.5 ? 1 : -1,
+  };
+
+  if (type === "conveyor") {
+    base.conveyorDir = Math.random() > 0.5 ? 1 : -1;
+  } else if (type === "weighted") {
+    base.tiltAngle = 0;
+  }
+
+  return base;
 }
 
 /** Mark a breaking platform as broken. Returns updated platform. */
