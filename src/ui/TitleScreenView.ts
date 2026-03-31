@@ -259,6 +259,7 @@ export function showTitleScreen(
     chefGfx.clear();
     drawChef(chefGfx, 32, 40);
     chefGfx.y = GAME_HEIGHT * 0.30 + Math.sin(animTick * 0.05) * 4;
+    explanationScreen.update();
   };
   app.ticker.add(titleTicker);
 

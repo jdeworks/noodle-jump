@@ -94,12 +94,22 @@ const SECTIONS: Section[] = [
   },
 ];
 
+interface AnimatedSprite {
+  gfx: Graphics;
+  type: "platform" | "powerup";
+  style?: PlatformStyle;
+  puType?: string;
+  color: number;
+  baseY: number;
+}
+
 export class ExplanationScreen {
   readonly container = new Container();
   private active = false;
   private scrollY = 0;
   private contentHeight = 0;
   private animTick = 0;
+  private animSprites: AnimatedSprite[] = [];
 
   constructor() {
     this.container.visible = false;
@@ -136,10 +146,35 @@ export class ExplanationScreen {
   }
 
   update(): void {
+    if (!this.active) return;
     this.animTick++;
+    const t = this.animTick;
+    for (const sprite of this.animSprites) {
+      if (sprite.type === "platform") {
+        // Redraw with slight animation based on style
+        sprite.gfx.clear();
+        drawPlatform(sprite.gfx, 56, 10, sprite.color, sprite.style ?? "normal");
+        if (sprite.style === "spring") {
+          sprite.gfx.scale.y = 1 + Math.sin(t * 0.1) * 0.15;
+        } else if (sprite.style === "teleport") {
+          sprite.gfx.alpha = 0.7 + Math.sin(t * 0.12) * 0.3;
+        } else if (sprite.style === "crumbling") {
+          sprite.gfx.x = 15 + Math.sin(t * 0.3) * 1;
+        } else if (sprite.style === "moving") {
+          sprite.gfx.x = 15 + Math.sin(t * 0.05) * 4;
+        } else if (sprite.style === "conveyor") {
+          sprite.gfx.x = 15 + (t % 20) * 0.2;
+        }
+      } else if (sprite.type === "powerup") {
+        // Bob and spin
+        sprite.gfx.y = sprite.baseY + Math.sin(t * 0.06) * 2;
+        sprite.gfx.scale.x = 0.6 + Math.abs(Math.cos(t * 0.08)) * 0.4;
+      }
+    }
   }
 
   private render(): void {
+    this.animSprites = [];
     while (this.container.children.length > 0) {
       const child = this.container.children[0];
       this.container.removeChild(child);
@@ -201,22 +236,30 @@ export class ExplanationScreen {
         const textX = hasSprite ? 80 : 20;
         const rowH = hasSprite ? 40 : 34;
 
-        // Platform sprite preview
+        // Platform sprite preview (animated)
         if (item.platformStyle != null && item.color != null) {
           const platGfx = new Graphics();
           drawPlatform(platGfx, 56, 10, item.color, item.platformStyle);
           platGfx.x = 15;
           platGfx.y = y + 6;
           content.addChild(platGfx);
+          this.animSprites.push({
+            gfx: platGfx, type: "platform",
+            style: item.platformStyle, color: item.color, baseY: y + 6,
+          });
         }
 
-        // Power-up sprite preview
+        // Power-up sprite preview (animated)
         if (item.powerUpType != null && item.color != null) {
           const puGfx = new Graphics();
           drawPowerUp(puGfx, 28, item.color, item.powerUpType);
           puGfx.x = 18;
           puGfx.y = y + 2;
           content.addChild(puGfx);
+          this.animSprites.push({
+            gfx: puGfx, type: "powerup",
+            puType: item.powerUpType, color: item.color, baseY: y + 2,
+          });
         }
 
         // Color dot fallback for items without sprites

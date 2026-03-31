@@ -75,6 +75,25 @@ export function renderPlatforms(
     gfx.x = platform.x + (platform.width * (1 - shrink)) / 2;
     gfx.y = worldToScreen(platform.y, camY);
     gfx.visible = gfx.y > -20 && gfx.y < GAME_HEIGHT + 20;
+
+    // Per-type animations
+    const t = state.animTick;
+    if (platform.type === "spring") {
+      // Gentle bounce compression
+      gfx.scale.y = 1 + Math.sin(t * 0.1 + platform.id) * 0.08;
+    } else if (platform.type === "teleport") {
+      // Pulsing glow
+      gfx.alpha = 0.75 + Math.sin(t * 0.12 + platform.id) * 0.25;
+    } else if (platform.type === "crumbling") {
+      // Subtle shake when visible
+      gfx.x += Math.sin(t * 0.3 + platform.id * 7) * 0.5;
+    } else if (platform.type === "ice") {
+      // Shimmer via slight alpha oscillation
+      gfx.alpha = 0.85 + Math.sin(t * 0.08 + platform.id) * 0.15;
+    } else if (platform.type === "lasagna") {
+      // Warm glow pulse
+      gfx.alpha = 0.8 + Math.sin(t * 0.06) * 0.2;
+    }
   }
 }
 
@@ -159,7 +178,10 @@ export function renderEnemies(
     gfx.x = enemy.x + enemy.width / 2;
     gfx.y = worldToScreen(enemy.y, camY) + bob;
     gfx.pivot.set(enemy.width / 2, enemy.height / 2);
-    gfx.scale.x = enemy.vx >= 0 ? 1 : -1;
+    const facing = enemy.vx >= 0 ? 1 : -1;
+    gfx.scale.x = facing;
+    // Wobble rotation for liveliness
+    gfx.rotation = Math.sin(state.animTick * 0.08 + enemy.id * 3) * 0.12;
     gfx.visible = gfx.y > -30 && gfx.y < GAME_HEIGHT + 30;
   }
 }
