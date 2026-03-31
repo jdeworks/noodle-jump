@@ -196,9 +196,6 @@ export class GameScene {
   update(): void {
     if (this.state.gameOver || this.state.paused) return;
     this.input.update();
-    const prevPlatformCount = this.state.platforms.length;
-    const prevMeatballCount = this.state.meatballs.length;
-    const prevPowerUpCount = this.state.powerUps.length;
     const result = tickGameWorld(this.state, this.input.inputX);
     this.state = result.state;
 
@@ -220,32 +217,22 @@ export class GameScene {
       },
     });
 
-    // Sync graphics if any entity counts changed
-    const prevProjectileCount = this.gfxSync.projectileGfxMap.size;
-    const prevEnemyCount = this.gfxSync.enemyGfxMap.size;
-    if (
-      this.state.platforms.length !== prevPlatformCount ||
-      this.state.meatballs.length !== prevMeatballCount ||
-      this.state.powerUps.length !== prevPowerUpCount ||
-      this.state.projectiles.filter((p) => p.alive).length !== prevProjectileCount ||
-      this.state.enemies.filter((e) => e.alive).length !== prevEnemyCount
-    ) {
-      this.gfxSync.syncAll(
-        this.state.platforms,
-        this.state.meatballs,
-        this.state.powerUps,
-        this.gameContainer,
-        this.state.enemies,
-        this.state.projectiles,
-      );
-      this.gfxSync.cleanup(
-        this.state.platforms,
-        this.state.meatballs,
-        this.state.powerUps,
-        this.state.enemies,
-        this.state.projectiles,
-      );
-    }
+    // Sync all entity graphics every frame (cheap — just skips existing)
+    this.gfxSync.syncAll(
+      this.state.platforms,
+      this.state.meatballs,
+      this.state.powerUps,
+      this.gameContainer,
+      this.state.enemies,
+      this.state.projectiles,
+    );
+    this.gfxSync.cleanup(
+      this.state.platforms,
+      this.state.meatballs,
+      this.state.powerUps,
+      this.state.enemies,
+      this.state.projectiles,
+    );
 
     // Screen shake
     if (this.state.shakeState) {
