@@ -4,7 +4,7 @@
  * Uses a single PixiJS Application with a wider canvas (800x700).
  */
 
-import { Application, Container, Graphics, Text, TextStyle } from "pixi.js";
+import { Application, Graphics, Text, TextStyle } from "pixi.js";
 import { GameScene } from "../scenes/GameScene";
 import { GAME_WIDTH, GAME_HEIGHT } from "../config/constants";
 import { playMusic, stopMusic, killBossMusic } from "../systems/Audio";
