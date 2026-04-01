@@ -317,6 +317,10 @@ export async function launchLocalCoop(
   }
 
   function showResults(): void {
+    // Hide all overlays
+    spectateOverlay.visible = false; spectateLabel.visible = false;
+    countdownText.visible = false; countdownDim.visible = false;
+    deathToast.visible = false;
     showLocalCoopResults({
       app, scene1, scene2,
       p1DeathHeight, p2DeathHeight, mode, p1Dead, p2Dead,
