@@ -10,6 +10,7 @@ const OVERLAY_Z = "10000";
 export function createCodeInput(
   placeholder: string,
   onSubmit: (value: string) => void,
+  topPercent = 50,
 ): { element: HTMLInputElement; cleanup: () => void } {
   const container = document.getElementById("game");
   if (!container) throw new Error("Missing #game element");
@@ -22,7 +23,7 @@ export function createCodeInput(
   input.spellcheck = false;
   input.style.cssText = `
     position: absolute;
-    top: 50%;
+    top: ${topPercent}%;
     left: 50%;
     transform: translate(-50%, -50%);
     width: 80%;
@@ -45,6 +46,12 @@ export function createCodeInput(
   // Auto-focus (opens keyboard on mobile)
   setTimeout(() => input.focus(), 100);
 
+  // Prevent all keyboard events from reaching the game
+  const stopProp = (e: Event) => { e.stopPropagation(); };
+  input.addEventListener("keydown", stopProp);
+  input.addEventListener("keyup", stopProp);
+  input.addEventListener("keypress", stopProp);
+
   // Submit on Enter
   const onKeyDown = (e: KeyboardEvent) => {
     if (e.key === "Enter" && input.value.trim()) {
@@ -55,6 +62,9 @@ export function createCodeInput(
 
   const cleanup = () => {
     input.removeEventListener("keydown", onKeyDown);
+    input.removeEventListener("keydown", stopProp);
+    input.removeEventListener("keyup", stopProp);
+    input.removeEventListener("keypress", stopProp);
     input.remove();
   };
 
@@ -65,6 +75,7 @@ export function createCodeInput(
 export function createSubmitButton(
   label: string,
   onClick: () => void,
+  topPercent = 50,
 ): { element: HTMLButtonElement; cleanup: () => void } {
   const container = document.getElementById("game");
   if (!container) throw new Error("Missing #game element");
@@ -73,7 +84,7 @@ export function createSubmitButton(
   btn.textContent = label;
   btn.style.cssText = `
     position: absolute;
-    top: calc(50% + 40px);
+    top: calc(${topPercent}% + 40px);
     left: 50%;
     transform: translate(-50%, 0);
     padding: 10px 24px;

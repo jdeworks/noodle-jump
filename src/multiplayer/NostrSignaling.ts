@@ -17,6 +17,16 @@ const RTC_CONFIG: RTCConfiguration = {
   iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
 };
 
+/** Known-reliable Nostr relays (overrides Trystero defaults which include many dead ones). */
+const RELAY_URLS = [
+  "wss://relay.damus.io",
+  "wss://nos.lol",
+  "wss://relay.nostr.band",
+  "wss://relay.snort.social",
+  "wss://purplerelay.com",
+  "wss://relay.primal.net",
+];
+
 /** Generate a random 6-character room code. */
 function generateRoomCode(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no I/O/0/1 to avoid confusion
@@ -46,7 +56,7 @@ export class NostrSignaling implements SignalingStrategy {
     this.callbacks?.onStateChange("waiting");
 
     this.room = joinRoom(
-      { appId: APP_ID, rtcConfig: RTC_CONFIG },
+      { appId: APP_ID, rtcConfig: RTC_CONFIG, relayUrls: RELAY_URLS },
       code,
     );
 
@@ -62,7 +72,7 @@ export class NostrSignaling implements SignalingStrategy {
     this.callbacks?.onStateChange("connecting");
 
     this.room = joinRoom(
-      { appId: APP_ID, rtcConfig: RTC_CONFIG },
+      { appId: APP_ID, rtcConfig: RTC_CONFIG, relayUrls: RELAY_URLS },
       code.toUpperCase().trim(),
     );
 

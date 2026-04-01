@@ -250,6 +250,7 @@ export async function doPrivateCreate(ctx: MenuContext): Promise<void> {
           step2Text.style.fill = "#ff6666";
         }
       },
+      70,
     );
     const { cleanup: cleanupBtn } = createSubmitButton("Connect", async () => {
       const val = respInput.value.trim();
@@ -261,7 +262,7 @@ export async function doPrivateCreate(ctx: MenuContext): Promise<void> {
         step2Text.text = "Invalid code. Must start with 'A'.";
         step2Text.style.fill = "#ff6666";
       }
-    });
+    }, 70);
     btnY += 100;
 
     ctx.addButton(view, "Cancel", btnY, 160, 34,

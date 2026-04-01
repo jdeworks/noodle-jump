@@ -27,8 +27,11 @@ export async function launchLocalCoop(
   app: Application,
   seed: number,
 ): Promise<void> {
-  // Resize canvas for split-screen
+  // Resize canvas for split-screen and override CSS constraints
   app.renderer.resize(SPLIT_WIDTH, GAME_HEIGHT);
+  const canvas = app.canvas;
+  canvas.style.maxWidth = "1000px";
+  canvas.style.aspectRatio = `${SPLIT_WIDTH} / ${GAME_HEIGHT}`;
 
   const input = new LocalInput();
   input.init();
@@ -288,6 +291,8 @@ export async function launchLocalCoop(
     const goHome = () => {
       cleanupLocalCoop(app, scene1, scene2, input, gameLoop);
       app.renderer.resize(GAME_WIDTH, GAME_HEIGHT);
+      app.canvas.style.maxWidth = "500px";
+      app.canvas.style.aspectRatio = "400 / 700";
       showTitleScreen(app, (runConfig) => launchGame(app, runConfig));
     };
     homeBg.on("pointertap", goHome);
