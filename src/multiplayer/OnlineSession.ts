@@ -61,6 +61,7 @@ export class OnlineSession {
   private spectateText: Text | null = null;
   private escapeHandler: ((e: KeyboardEvent) => void) | null = null;
   private resultsShown = false;
+  private connDot: Graphics | null = null;
 
   constructor(config: OnlineSessionConfig) {
     this.app = config.app;
@@ -84,6 +85,9 @@ export class OnlineSession {
     this.app.stage.addChild(this.deathToast);
     this.fpsText = this.makeFps();
     if (this.fpsText) this.app.stage.addChild(this.fpsText);
+    this.connDot = new Graphics();
+    this.connDot.circle(GAME_WIDTH - 15, 15, 6); this.connDot.fill(0x44ff44);
+    this.app.stage.addChild(this.connDot);
     this.makeCountdown();
     this.setupSync();
   }
@@ -181,6 +185,13 @@ export class OnlineSession {
     } else if (this.countdownText) {
       this.countdownText.visible = false;
       if (this.countdownDim) this.countdownDim.visible = false;
+    }
+
+    // Connection quality dot (green < 200ms, yellow < 500ms, red > 500ms)
+    if (this.connDot) {
+      const ms = this.interpolation.msSinceLastUpdate;
+      const color = ms < 200 ? 0x44ff44 : ms < 500 ? 0xffcc00 : 0xff4444;
+      this.connDot.clear(); this.connDot.circle(GAME_WIDTH - 15, 15, 6); this.connDot.fill(color);
     }
 
     // FPS counter
@@ -321,6 +332,9 @@ export class OnlineSession {
     this.app.stage.addChild(this.deathToast);
     this.fpsText = this.makeFps();
     if (this.fpsText) this.app.stage.addChild(this.fpsText);
+    this.connDot = new Graphics();
+    this.connDot.circle(GAME_WIDTH - 15, 15, 6); this.connDot.fill(0x44ff44);
+    this.app.stage.addChild(this.connDot);
     this.makeCountdown();
     this.setupSync();
     this.start();

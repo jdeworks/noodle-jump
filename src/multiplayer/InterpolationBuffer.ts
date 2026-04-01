@@ -26,6 +26,7 @@ export class InterpolationBuffer {
   private currentVy = 0;
   private _playerState = 0;
   private hasReceivedUpdate = false;
+  private lastUpdateTime = 0;
 
   /** Feed a new position update from the network (called at ~20Hz). */
   pushUpdate(x: number, y: number, vx: number, vy: number, playerState: number): void {
@@ -35,8 +36,8 @@ export class InterpolationBuffer {
     this.targetVy = vy;
     this._playerState = playerState;
 
+    this.lastUpdateTime = performance.now();
     if (!this.hasReceivedUpdate) {
-      // First update — snap to position
       this.currentX = x;
       this.currentY = y;
       this.currentVx = vx;
@@ -76,6 +77,11 @@ export class InterpolationBuffer {
 
   get playerState(): number {
     return this._playerState;
+  }
+
+  /** Time since last update in ms. Use for connection quality indicator. */
+  get msSinceLastUpdate(): number {
+    return this.lastUpdateTime === 0 ? Infinity : performance.now() - this.lastUpdateTime;
   }
 
   reset(): void {
