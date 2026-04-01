@@ -12,6 +12,7 @@ import { resetProjectileIds } from "../entities/Projectile";
 import { resetRNG } from "../systems/RNG";
 import { resetRendererState } from "../scenes/EntityRenderer";
 import { createDefaultRunConfig, type RunConfig } from "../systems/CustomRunConfig";
+import { DEBUG_MODE } from "../config/constants";
 import { showTitleScreen } from "../ui/TitleScreenView";
 import { launchGame } from "../scenes/GameLauncher";
 import { ConnectionManager } from "./ConnectionManager";
@@ -58,6 +59,7 @@ export class OnlineSession {
   private countdownDim: Graphics | null = null;
   private countdownText: Text | null = null;
   private spectateText: Text | null = null;
+  private escapeHandler: ((e: KeyboardEvent) => void) | null = null;
 
   constructor(config: OnlineSessionConfig) {
     this.app = config.app;
@@ -80,7 +82,7 @@ export class OnlineSession {
     this.deathToast = this.makeToast();
     this.app.stage.addChild(this.deathToast);
     this.fpsText = this.makeFps();
-    this.app.stage.addChild(this.fpsText);
+    if (this.fpsText) this.app.stage.addChild(this.fpsText);
     this.makeCountdown();
     this.setupSync();
   }
@@ -118,9 +120,13 @@ export class OnlineSession {
       this.app.stage.addChild(this.fpsText);
     }
 
-    this.gameLoop = () => {
-      this.tick();
+    // Escape to forfeit
+    this.escapeHandler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setTimeout(() => this.goHome(), 0);
     };
+    window.addEventListener("keydown", this.escapeHandler);
+
+    this.gameLoop = () => { this.tick(); };
     this.app.ticker.add(this.gameLoop);
   }
 
@@ -313,7 +319,7 @@ export class OnlineSession {
     this.deathToast = this.makeToast();
     this.app.stage.addChild(this.deathToast);
     this.fpsText = this.makeFps();
-    this.app.stage.addChild(this.fpsText);
+    if (this.fpsText) this.app.stage.addChild(this.fpsText);
     this.makeCountdown();
     this.setupSync();
     this.start();
@@ -326,7 +332,8 @@ export class OnlineSession {
     return t;
   }
 
-  private makeFps(): Text {
+  private makeFps(): Text | null {
+    if (!DEBUG_MODE) return null;
     const t = new Text({ text: "FPS: --", style: new TextStyle({ fontFamily: "monospace",
       fontSize: 11, fill: "#00ff00", stroke: { color: "#000000", width: 2 } }) });
     t.x = 10; t.y = GAME_HEIGHT - 16;
@@ -360,6 +367,7 @@ export class OnlineSession {
   }
 
   private goHome(): void {
+    if (this.escapeHandler) { window.removeEventListener("keydown", this.escapeHandler); this.escapeHandler = null; }
     this.cleanup(); this.sync.destroy(); this.connection.disconnect();
     stopMusic(); killBossMusic();
     showTitleScreen(this.app, (rc) => launchGame(this.app, rc));

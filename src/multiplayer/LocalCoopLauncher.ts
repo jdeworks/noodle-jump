@@ -17,6 +17,7 @@ import { resetRNG, getRNGFunction, setRNGFunction } from "../systems/RNG";
 import { seededRandom } from "../systems/DailyChallenge";
 import { resetRendererState } from "../scenes/EntityRenderer";
 import { createDefaultRunConfig, type RunConfig } from "../systems/CustomRunConfig";
+import { DEBUG_MODE } from "../config/constants";
 import { LocalInput } from "./LocalInput";
 import { showTitleScreen } from "../ui/TitleScreenView";
 import { launchGame } from "../scenes/GameLauncher";
@@ -142,11 +143,14 @@ export async function launchLocalCoop(
   spectateLabel.x = GAME_WIDTH / 2; spectateLabel.y = GAME_HEIGHT * 0.4;
   spectateLabel.anchor.set(0.5, 0.5); app.stage.addChild(spectateLabel);
 
-  // FPS counter
-  const fpsText = new Text({ text: "FPS: --", style: new TextStyle({ fontFamily: "monospace",
-    fontSize: 11, fill: "#00ff00", stroke: { color: "#000000", width: 2 } }) });
-  fpsText.x = SPLIT_WIDTH / 2; fpsText.y = GAME_HEIGHT - 16; fpsText.anchor.set(0.5, 0);
-  app.stage.addChild(fpsText); let fpsFrames = 0, fpsLast = performance.now();
+  // FPS counter (debug only)
+  let fpsText: Text | null = null, fpsFrames = 0, fpsLast = performance.now();
+  if (DEBUG_MODE) {
+    fpsText = new Text({ text: "FPS: --", style: new TextStyle({ fontFamily: "monospace",
+      fontSize: 11, fill: "#00ff00", stroke: { color: "#000000", width: 2 } }) });
+    fpsText.x = SPLIT_WIDTH / 2; fpsText.y = GAME_HEIGHT - 16; fpsText.anchor.set(0.5, 0);
+    app.stage.addChild(fpsText);
+  }
 
   // Countdown overlay with dim background
   const countdownDim = new Graphics();
@@ -235,13 +239,14 @@ export async function launchLocalCoop(
       countdownText.visible = true; countdownDim.visible = true;
     } else { countdownText.visible = false; countdownDim.visible = false; }
 
-    // FPS counter
-    fpsFrames++;
-    const now = performance.now();
-    if (now - fpsLast >= 500) {
-      fpsText.text = `FPS: ${Math.round(fpsFrames / ((now - fpsLast) / 1000))}`;
-      fpsFrames = 0;
-      fpsLast = now;
+    // FPS counter (debug only)
+    if (fpsText) {
+      fpsFrames++;
+      const now = performance.now();
+      if (now - fpsLast >= 500) {
+        fpsText.text = `FPS: ${Math.round(fpsFrames / ((now - fpsLast) / 1000))}`;
+        fpsFrames = 0; fpsLast = now;
+      }
     }
 
     // Toast timer

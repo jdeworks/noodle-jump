@@ -106,12 +106,24 @@ export class LobbyScreen {
     this.p2StatusText.anchor.set(0.5, 0.5);
     this.container.addChild(this.p2StatusText);
 
-    // Mode display
-    const modeLabel = new Text({ text: "Mode: Best Height", style: LABEL_STYLE });
-    modeLabel.x = GAME_WIDTH / 2;
-    modeLabel.y = 300;
-    modeLabel.anchor.set(0.5, 0.5);
+    // Mode selection (host can cycle, guest sees current)
+    const MODES = ["best-height", "first-to-die", "timed-2min"] as const;
+    const MODE_LABELS: Record<string, string> = {
+      "best-height": "Best Height", "first-to-die": "First to Die", "timed-2min": "Timed (2 min)",
+    };
+    const modeLabel = new Text({ text: `Mode: ${MODE_LABELS[this.mode]}`, style: LABEL_STYLE });
+    modeLabel.x = GAME_WIDTH / 2; modeLabel.y = 300; modeLabel.anchor.set(0.5, 0.5);
     this.container.addChild(modeLabel);
+    if (role === "host") {
+      modeLabel.eventMode = "static"; modeLabel.cursor = "pointer";
+      modeLabel.on("pointertap", () => {
+        const idx = MODES.indexOf(this.mode as typeof MODES[number]);
+        this.mode = MODES[(idx + 1) % MODES.length];
+        modeLabel.text = `Mode: ${MODE_LABELS[this.mode]} (tap to change)`;
+        this.sync.sendGameEvent({ type: "ready", payload: { mode: this.mode } });
+      });
+      modeLabel.text = `Mode: ${MODE_LABELS[this.mode]} (tap to change)`;
+    }
 
     // Ready button
     const readyBtnY = 370;
@@ -226,11 +238,13 @@ export class LobbyScreen {
 
   private handleRemoteEvent(event: GameSyncEvent): void {
     if (event.type === "ready") {
-      const isHost = event.payload.role === "host";
-      if (isHost) {
-        this.hostReady = event.payload.ready as boolean;
-      } else {
-        this.guestReady = event.payload.ready as boolean;
+      if (event.payload.mode) {
+        this.mode = event.payload.mode as string;
+      }
+      if (event.payload.role) {
+        const isHost = event.payload.role === "host";
+        if (isHost) this.hostReady = event.payload.ready as boolean;
+        else this.guestReady = event.payload.ready as boolean;
       }
       this.updateUI();
     }
