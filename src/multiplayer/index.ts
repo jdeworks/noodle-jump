@@ -38,3 +38,6 @@ export {
   type MultiplayerResult,
 } from "./MultiplayerSession";
 export { launchLocalCoop } from "./LocalCoopLauncher";
+export { InterpolationBuffer, type InterpolatedState } from "./InterpolationBuffer";
+export { RemotePlayerRenderer } from "./RemotePlayerRenderer";
+export { OnlineSession, type OnlineRole } from "./OnlineSession";

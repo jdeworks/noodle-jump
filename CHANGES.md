@@ -92,3 +92,5 @@ intent: Stage 1 — Multiplayer networking layer (signaling strategies, connecti
 - progress: LocalInput (split keyboard P1=WASD, P2=Arrows), MultiplayerSession (two states, shared seed, winner logic), LocalCoopLauncher (split-screen with masks, death toasts, results/rematch) | src/multiplayer/LocalInput.ts, src/multiplayer/MultiplayerSession.ts, src/multiplayer/LocalCoopLauncher.ts
 - progress: Added updateWithInput() to GameScene for external input control | src/scenes/GameScene.ts
 - progress: Tests for LocalInput and MultiplayerSession | tests/multiplayer/local-input.test.ts, tests/multiplayer/multiplayer-session.test.ts
+- progress: InterpolationBuffer (lerp+extrapolation for 20Hz→60FPS), RemotePlayerRenderer (ghost chef + off-screen arrows), OnlineSession (wires networking to game loop with death events, results, rematch) | src/multiplayer/InterpolationBuffer.ts, src/multiplayer/RemotePlayerRenderer.ts, src/multiplayer/OnlineSession.ts
+- progress: InterpolationBuffer tests | tests/multiplayer/interpolation-buffer.test.ts
