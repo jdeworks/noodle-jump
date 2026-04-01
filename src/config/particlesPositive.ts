@@ -167,28 +167,6 @@ export const SHIELD_PARTICLES: ParticleConfig = {
   drag: 0.99,
 };
 
-/** Rigatoni Drill — brown/orange debris flying upward as player drills down. */
-export const DRILL_PARTICLES: ParticleConfig = {
-  count: 15,
-  lifetime: 20,
-  lifetimeVariance: 8,
-  speed: 3,
-  speedVariance: 1.5,
-  angle: UP,
-  angleSpread: 0.8,
-  gravity: 0,
-  fadeRate: 0.035,
-  scaleRate: 0.98,
-  rotationSpeed: 0.1,
-  colors: [0xaa6633, 0xcc8844, 0x886622, 0xddaa55],
-  alpha: 0.8,
-  alphaVariance: 0.1,
-  shape: "rect",
-  size: [3, 7],
-  spawnRate: 2,
-  burst: false,
-  drag: 1.0,
-};
 
 /** Penne Cannon — golden projectile trail shooting upward. */
 export const CANNON_PARTICLES: ParticleConfig = {

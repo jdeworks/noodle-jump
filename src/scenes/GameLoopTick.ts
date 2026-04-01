@@ -21,7 +21,7 @@ import {
 } from "../systems/PlatformEffects";
 import {
   tryShieldAbsorb,
-  drillBreakPlatforms,
+
   createMinestroneFlood,
   tickMinestroneFlood,
   isPlayerInFlood,
@@ -194,24 +194,6 @@ export function tickPlatformEffects(s: GameWorldState): GameWorldState {
       platforms: s.platforms.map((p) => (p.id === tilted.id ? tilted : p)),
       player: applyWeightedSlide(s.player, tilted),
     };
-  }
-  return s;
-}
-
-/** Tick rigatoni drill platform breaking. */
-export function tickDrill(
-  s: GameWorldState,
-  events: GameEvent[],
-): GameWorldState {
-  if (s.activeEffect?.type !== "rigatoni_drill") return s;
-
-  const drillResult = drillBreakPlatforms(s.player, s.platforms);
-  s = { ...s, platforms: drillResult.platforms };
-  for (const id of drillResult.brokenIds) {
-    const broken = s.platforms.find((p) => p.id === id);
-    if (broken) {
-      events.push({ type: "platformCrumbled", platform: broken });
-    }
   }
   return s;
 }

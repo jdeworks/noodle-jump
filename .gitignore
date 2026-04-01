@@ -21,3 +21,4 @@ build/
 out/
 coverage/
 *.log
+.claude/.progress-counter

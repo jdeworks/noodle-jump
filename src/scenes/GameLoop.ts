@@ -49,7 +49,7 @@ import {
 import {
   tickPlatformCollisions,
   tickPlatformEffects,
-  tickDrill,
+
   tickFlood,
   tickMeatballCollection,
   tickPowerUpCollection,
@@ -234,10 +234,9 @@ export function tickGameWorld(
     s = { ...s, player: updatePlayer(s.player, adjustedInputX) };
   }
 
-  // Platform collisions, effects, drill, flood
+  // Platform collisions, effects, flood
   s = tickPlatformCollisions(s, events, previousX, previousY, inSquashHold, isSquashTransition);
   s = tickPlatformEffects(s);
-  s = tickDrill(s, events);
   s = tickFlood(s);
 
   // Meatball magnet attraction

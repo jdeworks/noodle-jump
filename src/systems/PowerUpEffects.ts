@@ -1,7 +1,5 @@
 /** Complex power-up effect logic — pure functions. */
 
-import type { PlayerState } from "../entities/Player";
-import type { PlatformState } from "../entities/Platform";
 import type { ActiveEffect } from "../entities/PowerUp";
 import {
   GNOCCHI_BOUNCE_MULTIPLIER,
@@ -28,37 +26,6 @@ export function tryShieldAbsorb(
 /** Check if the player currently has an active shield. */
 export function hasShield(effect: ActiveEffect | null): boolean {
   return effect?.type === "pasta_shield";
-}
-
-// ── Rigatoni Drill ───────────────────────────────────────────────────────
-
-/**
- * Drill smashes through platforms. Returns platform IDs that were broken.
- * Called each tick while drill is active.
- */
-export function drillBreakPlatforms(
-  player: PlayerState,
-  platforms: PlatformState[],
-): { platforms: PlatformState[]; brokenIds: number[] } {
-  const brokenIds: number[] = [];
-  const updated = platforms.map((p) => {
-    if (p.broken) return p;
-    if (p.type === "lasagna") return p; // don't break lasagna
-    if (p.type === "breaking") return p; // preserve single-use platforms as landing spots
-    if (p.type === "brittle") return p; // preserve brittle platforms as landing spots
-    // Check if player is drilling through this platform
-    const playerBottom = player.y + player.height;
-    const playerRight = player.x + player.width;
-    const horizontalOverlap = playerRight > p.x && player.x < p.x + p.width;
-    const verticalOverlap =
-      playerBottom >= p.y && player.y <= p.y + p.height;
-    if (horizontalOverlap && verticalOverlap) {
-      brokenIds.push(p.id);
-      return { ...p, broken: true };
-    }
-    return p;
-  });
-  return { platforms: updated, brokenIds };
 }
 
 // ── Gnocchi Bounce ───────────────────────────────────────────────────────

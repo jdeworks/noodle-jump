@@ -22,7 +22,7 @@ export type PositivePowerUpType =
   | "pepper_sneeze"
   | "meatball_magnet"
   | "pasta_shield"
-  | "rigatoni_drill"
+
   | "penne_cannon"
   | "gnocchi_bounce"
   | "minestrone_soup";

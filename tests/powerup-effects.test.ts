@@ -2,7 +2,7 @@ import { describe, test, expect } from "vitest";
 import {
   tryShieldAbsorb,
   hasShield,
-  drillBreakPlatforms,
+
   applyGnocchiBounce,
   hasGnocchiBounce,
   createMinestroneFlood,
@@ -62,59 +62,6 @@ describe("Pasta Shield", () => {
     expect(hasShield(makeEffect("pasta_shield"))).toBe(true);
     expect(hasShield(makeEffect("fusilli_tornado"))).toBe(false);
     expect(hasShield(null)).toBe(false);
-  });
-});
-
-describe("Rigatoni Drill", () => {
-  test("breaks platforms the player passes through", () => {
-    const player = { ...createPlayer(120, 298), width: 32, height: 40 };
-    const platforms = [
-      makePlatform({ id: 1, x: 100, y: 300, width: 100 }),
-      makePlatform({ id: 2, x: 300, y: 300, width: 100 }), // not overlapping
-    ];
-    const result = drillBreakPlatforms(player, platforms);
-    expect(result.brokenIds).toContain(1);
-    expect(result.brokenIds).not.toContain(2);
-    expect(result.platforms[0].broken).toBe(true);
-    expect(result.platforms[1].broken).toBe(false);
-  });
-
-  test("does not break already broken platforms", () => {
-    const player = { ...createPlayer(120, 298), width: 32, height: 40 };
-    const platforms = [
-      makePlatform({ id: 1, x: 100, y: 300, broken: true }),
-    ];
-    const result = drillBreakPlatforms(player, platforms);
-    expect(result.brokenIds).toHaveLength(0);
-  });
-
-  test("does not break lasagna platforms", () => {
-    const player = { ...createPlayer(120, 298), width: 32, height: 40 };
-    const platforms = [
-      makePlatform({ id: 1, x: 100, y: 300, type: "lasagna" }),
-    ];
-    const result = drillBreakPlatforms(player, platforms);
-    expect(result.brokenIds).toHaveLength(0);
-  });
-
-  test("does not break breaking platforms (drill safety)", () => {
-    const player = { ...createPlayer(120, 298), width: 32, height: 40 };
-    const platforms = [
-      makePlatform({ id: 1, x: 100, y: 300, type: "breaking" }),
-    ];
-    const result = drillBreakPlatforms(player, platforms);
-    expect(result.brokenIds).toHaveLength(0);
-    expect(result.platforms[0].broken).toBe(false);
-  });
-
-  test("does not break brittle platforms (drill safety)", () => {
-    const player = { ...createPlayer(120, 298), width: 32, height: 40 };
-    const platforms = [
-      makePlatform({ id: 1, x: 100, y: 300, type: "brittle" }),
-    ];
-    const result = drillBreakPlatforms(player, platforms);
-    expect(result.brokenIds).toHaveLength(0);
-    expect(result.platforms[0].broken).toBe(false);
   });
 });
 

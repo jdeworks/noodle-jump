@@ -181,21 +181,6 @@ export function renderPlayerForEffect(
     particles.clearLasagnaParticles();
     particles.clearSpringParticles();
     particles.clearSneezeParticles();
-  } else if (activeType === "rigatoni_drill") {
-    drawChef(playerGfx, player.width, player.height);
-    playerGfx.pivot.set(player.width / 2, player.height / 2);
-    playerGfx.x = player.x + player.width / 2;
-    playerGfx.y = worldToScreen(player.y, camY) + player.height / 2;
-    playerGfx.rotation = animTick * 0.2;
-    playerGfx.scale.set(1);
-    playerGfx.tint = 0xddaa66;
-    ensureEffectEmitter(particles, "rigatoni_drill", player.x, player.y, player.width, player.height);
-    particles.updateEffectEmitter(player.x, player.y, player.width, player.height, camY);
-    particles.clearTornadoParticles();
-    particles.clearRocketParticles();
-    particles.clearLasagnaParticles();
-    particles.clearSpringParticles();
-    particles.clearSneezeParticles();
   } else if (activeType === "penne_cannon") {
     drawChef(playerGfx, player.width, player.height);
     playerGfx.pivot.set(player.width / 2, 0);

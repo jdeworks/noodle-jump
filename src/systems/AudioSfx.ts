@@ -40,7 +40,7 @@ export function playSfxPowerUp(type: string): void {
     case "pepper_sneeze": playNoise(0.08, 0.1); setTimeout(() => playTone(800, 0.06, "square", 0.08, 200), 60); break;
     case "meatball_magnet": playTone(120, 0.2, "sine", 0.06, 180); break;
     case "pasta_shield": [523, 784, 1047].forEach((f, i) => setTimeout(() => playTone(f, 0.1, "sine", 0.07), i * 50)); break;
-    case "rigatoni_drill": playTone(80, 0.15, "sawtooth", 0.08, 120); playNoise(0.1, 0.05); break;
+
     case "penne_cannon": playNoise(0.06, 0.1); playTone(200, 0.1, "square", 0.08, 100); break;
     case "gnocchi_bounce": playTone(400, 0.06, "sine", 0.08, 600); setTimeout(() => playTone(500, 0.06, "sine", 0.06, 700), 60); break;
     case "minestrone_soup": [200, 250, 220, 280].forEach((f, i) => setTimeout(() => playTone(f, 0.04, "sine", 0.05), i * 30)); break;

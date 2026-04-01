@@ -162,9 +162,6 @@ export function drawPowerUpIcon(
     case "pasta_shield":
       drawPastaShieldIcon(gfx, s);
       break;
-    case "rigatoni_drill":
-      drawRigatoniDrillIcon(gfx, s);
-      break;
     case "penne_cannon":
       drawPenneCannonIcon(gfx, s);
       break;
@@ -267,26 +264,6 @@ function drawPastaShieldIcon(gfx: Graphics, s: number): void {
   gfx.lineTo(s, s + 3);
   gfx.moveTo(s - 3, s);
   gfx.lineTo(s + 3, s);
-  gfx.stroke({ width: 1.5, color: 0xffffff, alpha: 0.6 });
-}
-
-function drawRigatoniDrillIcon(gfx: Graphics, s: number): void {
-  gfx.moveTo(s, s + 8);
-  gfx.lineTo(s - 4, s - 2);
-  gfx.lineTo(s + 4, s - 2);
-  gfx.closePath();
-  gfx.fill(0xaa6633);
-  gfx.roundRect(s - 3, s - 6, 6, 5, 1);
-  gfx.fill(0xcc8844);
-  for (let ry = -5; ry <= -2; ry += 2) {
-    gfx.moveTo(s - 3, s + ry);
-    gfx.lineTo(s + 3, s + ry);
-    gfx.stroke({ width: 0.8, color: 0x886622 });
-  }
-  gfx.moveTo(s, s + 8);
-  gfx.lineTo(s - 2, s + 5);
-  gfx.moveTo(s, s + 8);
-  gfx.lineTo(s + 2, s + 5);
   gfx.stroke({ width: 1.5, color: 0xffffff, alpha: 0.6 });
 }
 

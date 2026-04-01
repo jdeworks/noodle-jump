@@ -50,12 +50,7 @@ export const POWER_UP_INFO: Record<string, PowerUpInfo> = {
     shortDesc: "SHIELDED!",
     positive: true,
   },
-  rigatoni_drill: {
-    name: "Rigatoni Drill",
-    description: "Drill downward, smashing through platforms!",
-    shortDesc: "DRILL DOWN!",
-    positive: true,
-  },
+
   penne_cannon: {
     name: "Penne Cannon",
     description: "Shoots platforms upward for you to jump on.",

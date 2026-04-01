@@ -17,7 +17,7 @@ import {
   BURNT_PARTICLES,
   MAGNET_PARTICLES,
   SHIELD_PARTICLES,
-  DRILL_PARTICLES,
+
   CANNON_PARTICLES,
   GNOCCHI_PARTICLES,
   MINESTRONE_PARTICLES,
@@ -78,7 +78,7 @@ export class ParticleManager {
       burnt_toast: BURNT_PARTICLES,
       meatball_magnet: MAGNET_PARTICLES,
       pasta_shield: SHIELD_PARTICLES,
-      rigatoni_drill: DRILL_PARTICLES,
+
       penne_cannon: CANNON_PARTICLES,
       gnocchi_bounce: GNOCCHI_PARTICLES,
       minestrone_soup: MINESTRONE_PARTICLES,

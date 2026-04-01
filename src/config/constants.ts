@@ -93,9 +93,6 @@ export const MEATBALL_MAGNET_RADIUS = 800;
 
 // Pasta Shield: absorbs one negative hit
 export const PASTA_SHIELD_DURATION = 600; // 10 seconds
-// Rigatoni Drill: smash downward through platforms
-export const RIGATONI_DRILL_VELOCITY = 12; // positive = downward
-export const RIGATONI_DRILL_DURATION = 180; // 3 seconds
 // Penne Cannon: shoots platforms upward
 export const PENNE_CANNON_DURATION = 360; // 6 seconds
 export const PENNE_CANNON_INTERVAL = 30; // spawn a platform every 0.5s
@@ -195,7 +192,7 @@ export const COLORS = {
     burnt_toast: 0x3d2b1f, // charred dark brown
     // New positive power-ups
     pasta_shield: 0x44ddff, // light blue shield
-    rigatoni_drill: 0xaa6633, // brown rigatoni
+
     penne_cannon: 0xffcc33, // golden penne
     gnocchi_bounce: 0xffe4c4, // bisque/potato
     minestrone_soup: 0xcc4422, // tomato soup red
