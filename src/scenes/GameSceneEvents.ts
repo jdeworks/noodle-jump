@@ -17,6 +17,7 @@ import {
   crossfadeToZone,
   playBossMusic,
   stopBossMusic,
+  stopMusic,
 } from "../systems/Audio";
 import { setAmbientZone } from "../systems/AmbientAudio";
 import type { GameWorldState } from "./GameState";
@@ -125,6 +126,7 @@ export function handleEvents(events: GameEvent[], deps: EventHandlerDeps): void 
         break;
 
       case "bossSpawned":
+        stopMusic(); // Kill any zone music crossfade before starting boss music
         playBossMusic();
         deps.spawnFloatingText("BOSS!", 0xff4444, 32, 90, true);
         break;

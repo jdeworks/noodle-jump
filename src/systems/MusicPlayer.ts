@@ -18,7 +18,26 @@ let musicElement: HTMLAudioElement | null = null;
 let musicPlaying = false;
 let currentMusicZone = -1;
 
+// Track active fade intervals so we can cancel them
+let activeFadeIntervals: ReturnType<typeof setInterval>[] = [];
+
 function targetVol(): number { return musicVol() * BASE_MUSIC_VOLUME; }
+
+/** Cancel all active fade intervals to prevent music overlap. */
+function cancelAllFades(): void {
+  for (const id of activeFadeIntervals) clearInterval(id);
+  activeFadeIntervals = [];
+}
+
+function trackInterval(id: ReturnType<typeof setInterval>): ReturnType<typeof setInterval> {
+  activeFadeIntervals.push(id);
+  return id;
+}
+
+function removeInterval(id: ReturnType<typeof setInterval>): void {
+  clearInterval(id);
+  activeFadeIntervals = activeFadeIntervals.filter((i) => i !== id);
+}
 
 export function applyMusicVolume(): void {
   if (musicElement) musicElement.volume = targetVol();
@@ -55,6 +74,7 @@ export function playTitleMusic(): void {
 }
 
 export function stopMusic(): void {
+  cancelAllFades();
   if (musicElement) { musicElement.pause(); musicElement.currentTime = 0; }
   musicPlaying = false;
   currentMusicZone = -1;
@@ -66,23 +86,23 @@ export function crossfadeToZone(zone: number): void {
   const curIdx = Math.min(currentMusicZone, MUSIC_TRACKS.length - 1);
   if (trackIdx === curIdx) { currentMusicZone = zone; return; }
 
-  const fadeOut = setInterval(() => {
-    if (!musicElement) { clearInterval(fadeOut); return; }
+  const fadeOut = trackInterval(setInterval(() => {
+    if (!musicElement || !musicPlaying) { removeInterval(fadeOut); return; }
     musicElement.volume = Math.max(0, musicElement.volume - 0.03);
     if (musicElement.volume <= 0.01) {
-      clearInterval(fadeOut);
+      removeInterval(fadeOut);
       musicElement.src = MUSIC_TRACKS[trackIdx];
       musicElement.volume = 0;
       musicElement.play().catch(() => {});
-      const fadeIn = setInterval(() => {
-        if (!musicElement) { clearInterval(fadeIn); return; }
+      const fadeIn = trackInterval(setInterval(() => {
+        if (!musicElement || !musicPlaying) { removeInterval(fadeIn); return; }
         const tv = targetVol();
         musicElement.volume = Math.min(tv, musicElement.volume + 0.03);
-        if (musicElement.volume >= tv - 0.01) clearInterval(fadeIn);
-      }, 50);
+        if (musicElement.volume >= tv - 0.01) removeInterval(fadeIn);
+      }, 50));
       currentMusicZone = zone;
     }
-  }, 50);
+  }, 50));
 }
 
 // ── Boss music ────────────────────────────────────────────────────────────
@@ -93,34 +113,31 @@ let bossMusicPlaying = false;
 
 export function playBossMusic(): void {
   if (!isMusicEnabled() || bossMusicPlaying) return;
-  // Fade out zone music
-  if (musicElement && musicPlaying) {
-    const fo = setInterval(() => {
-      if (!musicElement) { clearInterval(fo); return; }
-      musicElement.volume = Math.max(0, musicElement.volume - 0.02);
-      if (musicElement.volume <= 0.01) { clearInterval(fo); musicElement.pause(); }
-    }, 30);
-  }
+  // Immediately stop zone music (cancel any ongoing crossfades)
+  cancelAllFades();
+  if (musicElement) { musicElement.pause(); }
+  musicPlaying = false;
+
   if (!bossMusicElement) { bossMusicElement = new Audio(BOSS_TRACK); bossMusicElement.loop = true; }
   bossMusicElement.volume = 0;
   bossMusicElement.play().catch(() => {});
   bossMusicPlaying = true;
-  const fi = setInterval(() => {
-    if (!bossMusicElement) { clearInterval(fi); return; }
+  const fi = trackInterval(setInterval(() => {
+    if (!bossMusicElement) { removeInterval(fi); return; }
     const tv = targetVol();
     bossMusicElement.volume = Math.min(tv, bossMusicElement.volume + 0.02);
-    if (bossMusicElement.volume >= tv - 0.01) clearInterval(fi);
-  }, 30);
+    if (bossMusicElement.volume >= tv - 0.01) removeInterval(fi);
+  }, 30));
 }
 
 export function stopBossMusic(resumeZoneMusic = true): void {
   if (!bossMusicPlaying && !bossMusicElement) return;
   if (bossMusicElement) {
-    const fo = setInterval(() => {
-      if (!bossMusicElement) { clearInterval(fo); return; }
+    const fo = trackInterval(setInterval(() => {
+      if (!bossMusicElement) { removeInterval(fo); return; }
       bossMusicElement.volume = Math.max(0, bossMusicElement.volume - 0.03);
       if (bossMusicElement.volume <= 0.01) {
-        clearInterval(fo);
+        removeInterval(fo);
         bossMusicElement.pause();
         bossMusicElement.currentTime = 0;
         bossMusicPlaying = false;
@@ -128,20 +145,22 @@ export function stopBossMusic(resumeZoneMusic = true): void {
         if (resumeZoneMusic && musicElement && isMusicEnabled()) {
           musicElement.volume = 0;
           musicElement.play().catch(() => {});
-          const fi = setInterval(() => {
-            if (!musicElement) { clearInterval(fi); return; }
+          musicPlaying = true;
+          const fi = trackInterval(setInterval(() => {
+            if (!musicElement) { removeInterval(fi); return; }
             const tv = targetVol();
             musicElement.volume = Math.min(tv, musicElement.volume + 0.02);
-            if (musicElement.volume >= tv - 0.01) clearInterval(fi);
-          }, 30);
+            if (musicElement.volume >= tv - 0.01) removeInterval(fi);
+          }, 30));
         }
       }
-    }, 30);
+    }, 30));
   }
 }
 
 /** Immediately stop boss music without fade — used during game over/restart. */
 export function killBossMusic(): void {
+  cancelAllFades();
   if (bossMusicElement) {
     bossMusicElement.pause();
     bossMusicElement.currentTime = 0;

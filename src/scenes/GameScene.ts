@@ -33,6 +33,7 @@ import { getMaxDuration } from "./effectDuration";
 import { TrailRenderer } from "../rendering/TrailRenderer";
 import { loadCosmetics } from "../systems/Cosmetics";
 import { FloatingTextManager } from "./FloatingText";
+import { renderTentacles, renderKnifeAmmo, renderDebugHitboxes } from "./BossArenaRenderer";
 
 export class GameScene {
   readonly container = new Container();
@@ -52,9 +53,12 @@ export class GameScene {
   private bossHealthGfx = new Graphics();
   private bossAttackGfx: Graphics[] = [];
   private knifeAmmoText: Text;
+  private knifeAmmoIcons = new Container();
   private trail: TrailRenderer;
   private cosmeticTrail: string | null;
   private comboGlowGfx = new Graphics();
+  private hitboxGfx = new Graphics();
+  private tentacleGfx = new Graphics();
   private floatingTextMgr = new FloatingTextManager();
 
   constructor(runConfig?: RunConfig) {
@@ -100,22 +104,31 @@ export class GameScene {
     this.gameContainer.addChild(this.bossGfx);
     this.bossHealthGfx.visible = false;
     this.container.addChild(this.bossHealthGfx);
+    // Tentacle overlay renders above everything in the main container (not gameContainer)
+    this.container.addChild(this.tentacleGfx);
 
-    // Knife ammo display
+    // Knife ammo display (text label + small knife icons)
     this.knifeAmmoText = new Text({
       text: "",
       style: new TextStyle({
         fontFamily: "monospace",
-        fontSize: 14,
+        fontSize: 11,
         fill: "#ffffff",
         stroke: { color: "#000000", width: 2 },
         fontWeight: "bold",
       }),
     });
-    this.knifeAmmoText.x = 10;
-    this.knifeAmmoText.y = GAME_HEIGHT - 30;
+    this.knifeAmmoText.x = GAME_WIDTH - 10;
+    this.knifeAmmoText.y = GAME_HEIGHT - 18;
+    this.knifeAmmoText.anchor.set(1, 0);
     this.knifeAmmoText.visible = false;
     this.container.addChild(this.knifeAmmoText);
+    this.knifeAmmoIcons.y = GAME_HEIGHT - 35;
+    this.knifeAmmoIcons.visible = false;
+    this.container.addChild(this.knifeAmmoIcons);
+
+    // Debug hitbox overlay
+    this.container.addChild(this.hitboxGfx);
 
     // Combo border glow (on top of effects, below zone transition)
     this.container.addChild(this.comboGlowGfx);
@@ -217,6 +230,7 @@ export class GameScene {
       },
     });
 
+
     // Sync all entity graphics every frame (cheap — just skips existing)
     this.gfxSync.syncAll(
       this.state.platforms,
@@ -285,8 +299,13 @@ export class GameScene {
     renderPowerUps(this.state, this.gfxSync, camY);
     if (this.state.enemiesEnabled) {
       renderEnemies(this.state, this.gfxSync, camY);
+    }
+    if (this.state.enemiesEnabled || this.state.inBossFight) {
       renderProjectiles(this.state, this.gfxSync, camY);
     }
+
+    // Debug hitboxes
+    renderDebugHitboxes(this.hitboxGfx, this.state, camY);
 
     // Particles and floating text
     this.particles.updateDustParticles();
@@ -303,18 +322,11 @@ export class GameScene {
       camY,
     );
 
-    // Knife ammo display — filled/empty knife icons
-    if (this.state.enemiesEnabled || this.state.inBossFight) {
-      const knives = this.state.knifeAmmo;
-      const max = this.state.knifeAmmoMax;
-      const filled = "\u25AE".repeat(knives);   // ▮
-      const empty = "\u25AF".repeat(max - knives); // ▯
-      this.knifeAmmoText.text = `KNIVES ${filled}${empty}`;
-      this.knifeAmmoText.style.fill = knives > 0 ? "#ffffff" : "#ff6644";
-      this.knifeAmmoText.visible = true;
-    } else {
-      this.knifeAmmoText.visible = false;
-    }
+    // Tentacle grab animations — driven by pendingTentacles state
+    renderTentacles(this.tentacleGfx, this.state, camY);
+
+    // Knife ammo display — knife icons at bottom-right
+    renderKnifeAmmo(this.knifeAmmoIcons, this.knifeAmmoText, this.state, GAME_WIDTH);
 
     // Weather particles
     this.weatherGfx = renderWeather(

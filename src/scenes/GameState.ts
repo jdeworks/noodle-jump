@@ -36,7 +36,7 @@ import type { RunConfig } from "../systems/CustomRunConfig";
 import { createDefaultRunConfig } from "../systems/CustomRunConfig";
 import { initRNG } from "../systems/RNG";
 import type { DebugConfig } from "../config/debug";
-import { createDebugConfig, isDebugMode } from "../config/debug";
+import { createDebugConfig, getDebugConfig, isDebugMode } from "../config/debug";
 import type { BossState } from "../entities/Boss";
 import {
   GAME_WIDTH,
@@ -112,6 +112,8 @@ export interface GameWorldState {
   activeBoss: BossState | null;
   /** Boss attack projectiles (separate from player knives). */
   bossAttacks: { x: number; y: number; vx: number; vy: number; alive: boolean }[];
+  /** Pending kraken tentacle grabs (animate then apply damage). */
+  pendingTentacles: { platformId: number; x: number; targetY: number; ticksLeft: number; totalTicks: number; side: "left" | "right" }[];
   /** Whether boss fight is active (disables stagnant timer). */
   inBossFight: boolean;
   /** Enemies killed this game (for achievements). */
@@ -197,14 +199,15 @@ export function createInitialState(runConfig?: RunConfig): GameWorldState {
     weather: createWeather(0),
     dayNight: createDayNight(),
     livesState: createLivesState(false),
-    practiceMode: config.practiceMode || (isDebugMode() && createDebugConfig().invincible),
+    practiceMode: config.practiceMode || (isDebugMode() && getDebugConfig().invincible),
     runConfig: config,
-    debugConfig: createDebugConfig(),
+    debugConfig: isDebugMode() ? { ...getDebugConfig() } : createDebugConfig(),
     knifeAmmo: 3,
     knifeAmmoMax: 3,
     knifeRegenTimer: 0,
     activeBoss: null,
     bossAttacks: [],
+    pendingTentacles: [],
     inBossFight: false,
     enemiesKilled: 0,
   };

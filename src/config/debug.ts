@@ -68,11 +68,10 @@ export function createDebugConfig(): DebugConfig {
   };
 }
 
-/** Preset: boss testing — quick zone transitions, infinite knives. */
+/** Preset: boss testing — quick zone transitions. */
 export function bossTestPreset(): Partial<DebugConfig> {
   return {
     quickZoneTransitions: 15,
-    infiniteKnives: true,
     enemySpawnMultiplier: 0.1,
   };
 }

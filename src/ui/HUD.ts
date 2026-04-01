@@ -29,6 +29,10 @@ export class HUD {
   private miniMapBg = new Graphics();
   private miniMapDots: Graphics[] = [];
   private _onPause: (() => void) | null = null;
+  private fpsText: Text;
+  private fpsFrames = 0;
+  private fpsLastTime = performance.now();
+  private fpsValue = 0;
 
   constructor() {
     const hudStyle = new TextStyle({
@@ -165,6 +169,20 @@ export class HUD {
     this.miniMapContainer.y = 55;
     this.miniMapContainer.addChild(this.miniMapBg);
     this.container.addChild(this.miniMapContainer);
+
+    // FPS counter (debug)
+    this.fpsText = new Text({
+      text: "",
+      style: new TextStyle({
+        fontFamily: "monospace", fontSize: 11,
+        fill: "#00ff00", fontWeight: "bold",
+        stroke: { color: "#000000", width: 2 },
+      }),
+    });
+    this.fpsText.x = 10;
+    this.fpsText.y = GAME_HEIGHT - 20;
+    this.fpsText.visible = false;
+    this.container.addChild(this.fpsText);
   }
 
   /** Set pause callback. */
@@ -219,6 +237,21 @@ export class HUD {
 
     // Mini-map — show nearby platforms as dots
     this.updateMiniMap(state);
+
+    // FPS counter (debug)
+    if (state.debugConfig.showFPS) {
+      this.fpsFrames++;
+      const now = performance.now();
+      if (now - this.fpsLastTime >= 500) {
+        this.fpsValue = Math.round(this.fpsFrames / ((now - this.fpsLastTime) / 1000));
+        this.fpsFrames = 0;
+        this.fpsLastTime = now;
+      }
+      this.fpsText.text = `FPS: ${this.fpsValue}`;
+      this.fpsText.visible = true;
+    } else {
+      this.fpsText.visible = false;
+    }
   }
 
   private getZoneProgress(platformsPassed: number, zone: number): number {

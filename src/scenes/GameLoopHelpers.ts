@@ -78,9 +78,10 @@ export function maybeGeneratePlatforms(state: GameWorldState): GameWorldState {
     );
 
     const hasUncollected = state.powerUps.some((pu) => !pu.collected);
+    const forcedType = state.debugConfig.forcePowerUpType ?? undefined;
     const newPowerUps = hasUncollected
       ? []
-      : spawnPowerUps(generated, difficulty.negativeSpawnChance);
+      : spawnPowerUps(generated, difficulty.negativeSpawnChance, forcedType);
 
     const allPuPlatformIds = new Set([
       ...state.powerUps.map((pu) => pu.platformId),

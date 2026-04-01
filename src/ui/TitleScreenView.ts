@@ -142,6 +142,8 @@ export function showTitleScreen(
     text.x = GAME_WIDTH / 2;
     text.y = y + btnH / 2;
     text.anchor.set(0.5, 0.5);
+    text.eventMode = "static";
+    text.cursor = "pointer";
     contentGroup.addChild(text);
     return { bg, text };
   }

@@ -26,7 +26,6 @@ export const ALL_POWER_UP_TYPES: string[] = [
   "pepper_sneeze",
   "meatball_magnet",
   "pasta_shield",
-  "rigatoni_drill",
   "penne_cannon",
   "gnocchi_bounce",
   "minestrone_soup",

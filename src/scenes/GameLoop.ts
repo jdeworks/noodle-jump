@@ -34,9 +34,12 @@ import {
   COUNTDOWN_TICKS,
   SQUASH_HOLD_FRAMES,
   SQUASH_TOTAL_FRAMES,
+  GAME_HEIGHT,
+  GAME_WIDTH,
 } from "../config/constants";
 import { maybeSpawnBoss, tickBoss, tickKnifeAmmo } from "./GameLoopBoss";
 import { tickEnemies } from "./GameLoopEnemies";
+import { updateProjectiles } from "../entities/Projectile";
 import {
   spawnLasagnaPlatform,
   expireLasagnaPlatforms,
@@ -260,12 +263,16 @@ export function tickGameWorld(
   s = tickStagnation(s, events);
 
   const prevZone = s.zoneState.currentZone;
-  // Quick zone transitions in debug — scale platform count
+  // Quick zone transitions in debug — directly compute zone from platform count
   const qzt = s.debugConfig.quickZoneTransitions;
-  const effectivePlatforms = qzt > 0
-    ? Math.floor(s.platformsPassed * (80 / qzt))
-    : s.platformsPassed;
-  const zoneResult = updateZone(s.zoneState, effectivePlatforms);
+  let zoneResult: { state: typeof s.zoneState; changed: boolean };
+  if (qzt > 0) {
+    const directZone = Math.min(6, Math.floor(s.platformsPassed / qzt));
+    const changed = directZone !== s.zoneState.currentZone;
+    zoneResult = { state: { currentZone: directZone, platformsPassed: s.platformsPassed }, changed };
+  } else {
+    zoneResult = updateZone(s.zoneState, s.platformsPassed);
+  }
   s = { ...s, zoneState: zoneResult.state };
   if (zoneResult.changed) {
     events.push({
@@ -307,26 +314,42 @@ export function tickGameWorld(
   // Enemies & hazards
   s = tickEnemies(s, events);
 
+  // Update projectiles even when enemies are disabled (needed for boss fights)
+  if (!s.enemiesEnabled && s.projectiles.length > 0) {
+    s = { ...s, projectiles: updateProjectiles(s.projectiles) };
+  }
+
   // Death check
   if (isPlayerDead(s.camera, s.player.y)) {
     if (s.practiceMode || s.debugConfig.invincible) {
-      // Rescue: teleport to the highest non-broken platform
-      const rescue = s.platforms
-        .filter((p) => !p.broken)
-        .sort((a, b) => a.y - b.y)[0]; // highest = smallest y
-      if (rescue) {
-        s = {
-          ...s,
-          player: {
-            ...s.player,
-            x: rescue.x + rescue.width / 2 - s.player.width / 2,
-            y: rescue.y - s.player.height,
-            vy: -12,
-            isJumping: true,
-          },
-          stagnantTicks: 0,
+      // Rescue: teleport to a visible non-broken platform (prefer near player)
+      const camTop = s.camera.y;
+      const camBot = camTop + GAME_HEIGHT;
+      const visible = s.platforms
+        .filter((p) => !p.broken && p.y >= camTop && p.y <= camBot);
+      let rescue = visible.length > 0
+        ? visible.sort((a, b) => a.y - b.y)[0]
+        : s.platforms.filter((p) => !p.broken).sort((a, b) => a.y - b.y)[0];
+      // If no platforms exist at all (e.g. post-boss), create an emergency one
+      if (!rescue) {
+        rescue = {
+          x: GAME_WIDTH / 2 - 50, y: camTop + GAME_HEIGHT * 0.6,
+          width: 100, height: 15, type: "static" as const,
+          broken: false, id: Date.now(), originX: GAME_WIDTH / 2 - 50, moveDirection: 0,
         };
+        s = { ...s, platforms: [...s.platforms, rescue] };
       }
+      s = {
+        ...s,
+        player: {
+          ...s.player,
+          x: rescue.x + rescue.width / 2 - s.player.width / 2,
+          y: rescue.y - s.player.height,
+          vy: -12,
+          isJumping: true,
+        },
+        stagnantTicks: 0,
+      };
     } else {
       s = {
         ...s,

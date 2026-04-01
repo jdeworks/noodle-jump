@@ -1,5 +1,6 @@
 /** Chef Rival — jumps between platforms chasing the player. Contact kills. */
 
+import { random } from "../../systems/RNG";
 import { GAME_WIDTH } from "../../config/constants";
 import type { PlayerState } from "../Player";
 import type { PlatformState } from "../Platform";
@@ -11,6 +12,7 @@ const HEALTH = 3;
 const GRAVITY = 0.4;
 const BASE_JUMP_COOLDOWN = 60;
 const MIN_JUMP_COOLDOWN = 30;
+const MAX_SAME_PLATFORM_JUMPS = 2; // force variety after landing here N times
 
 export const chefRivalBehavior: BossBehavior = {
   create(cameraY: number, platforms?: PlatformState[]): BossState {
@@ -69,21 +71,31 @@ export const chefRivalBehavior: BossBehavior = {
       }
     }
 
-    // Jump toward player
+    // Jump toward player — with variety so boss doesn't camp one platform
     jumpCooldown = Math.max(0, jumpCooldown - 1);
     if (jumpCooldown === 0 && vy === 0) {
-      const targets = platforms
-        .filter((p) => !p.broken && p.id !== currentPlatformId)
-        .sort((a, b) => {
-          const da = Math.abs(a.x + a.width / 2 - player.x) + Math.abs(a.y - player.y);
-          const db = Math.abs(b.x + b.width / 2 - player.x) + Math.abs(b.y - player.y);
-          return da - db;
-        });
+      // Only consider non-broken platforms (broken = off-screen during boss fights)
+      const visiblePlatforms = platforms.filter((p) =>
+        !p.broken && p.id !== currentPlatformId,
+      );
+      const targets = visiblePlatforms.sort((a, b) => {
+        const da = Math.abs(a.x + a.width / 2 - player.x) + Math.abs(a.y - player.y);
+        const db = Math.abs(b.x + b.width / 2 - player.x) + Math.abs(b.y - player.y);
+        return da - db;
+      });
 
       if (targets.length > 0) {
-        // Only target nearby platforms (not far above/below)
-        const nearby = targets.filter((p) => Math.abs(p.y - y) < 200);
-        const target = nearby.length > 0 ? nearby[0] : targets[0];
+        // Mix up targeting: sometimes pick a random platform instead of nearest
+        const useRandom = patternTick % (MAX_SAME_PLATFORM_JUMPS + 1) === 0 && targets.length > 2;
+        let target: PlatformState;
+        if (useRandom) {
+          // Pick from top 4 candidates randomly for variety
+          const pool = targets.slice(0, Math.min(4, targets.length));
+          target = pool[Math.floor(random() * pool.length)];
+        } else {
+          const nearby = targets.filter((p) => Math.abs(p.y - y) < 200);
+          target = nearby.length > 0 ? nearby[0] : targets[0];
+        }
         const dx = (target.x + target.width / 2) - (x + boss.width / 2);
         const dy = target.y - y;
         // Clamp jump strength — never launch off-screen

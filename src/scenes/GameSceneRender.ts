@@ -38,6 +38,12 @@ export function renderBoss(
   bossGfx.x = boss.x;
   bossGfx.y = worldToScreen(boss.y, camY);
   bossGfx.visible = true;
+  // Flash during spawn grace period (2 seconds)
+  if (boss.patternTick <= 120) {
+    bossGfx.alpha = Math.sin(boss.patternTick * 0.3) * 0.4 + 0.6;
+  } else {
+    bossGfx.alpha = 1;
+  }
 
   // Health bar at top of screen
   drawBossHealthBar(

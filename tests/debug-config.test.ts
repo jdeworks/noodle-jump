@@ -27,10 +27,9 @@ describe("DebugConfig", () => {
     expect(result.gameSpeed).toBe(1.0); // unchanged
   });
 
-  test("bossTestPreset has quick transitions and infinite knives", () => {
+  test("bossTestPreset has quick transitions", () => {
     const preset = bossTestPreset();
     expect(preset.quickZoneTransitions).toBeGreaterThan(0);
-    expect(preset.infiniteKnives).toBe(true);
   });
 
   test("enemyTestPreset has fast spawns and hitboxes", () => {

@@ -41,7 +41,6 @@ const POSITIVE_TYPES: PositivePowerUpType[] = [
   "pepper_sneeze",
   "meatball_magnet",
   "pasta_shield",
-  "rigatoni_drill",
   "penne_cannon",
   "gnocchi_bounce",
   "minestrone_soup",
@@ -107,6 +106,7 @@ const POWERUP_SKIP_FIRST = 10; // don't spawn on the first N platforms
 export function spawnPowerUps(
   platforms: PlatformState[],
   negativeChance?: number,
+  forcedType?: string,
 ): PowerUpState[] {
   const powerUps: PowerUpState[] = [];
   let cooldown = 0;
@@ -122,7 +122,8 @@ export function spawnPowerUps(
     if (platform.width > 200) continue;
 
     if (random() < POWERUP_SPAWN_CHANCE) {
-      powerUps.push(createPowerUp(platform, undefined, negativeChance));
+      const type = forcedType as PowerUpType | undefined;
+      powerUps.push(createPowerUp(platform, type, negativeChance));
       cooldown = POWERUP_COOLDOWN;
     }
   }

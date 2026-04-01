@@ -4,7 +4,7 @@ import { Application, Graphics, Text, TextStyle } from "pixi.js";
 import { GameScene } from "./GameScene";
 import { GAME_WIDTH, GAME_HEIGHT, COLORS } from "../config/constants";
 import { FireworkDisplay } from "../rendering/fireworks";
-import { stopMusic, playSfxHighScore } from "../systems/Audio";
+import { stopMusic, killBossMusic, playSfxHighScore } from "../systems/Audio";
 import { showGameOver } from "../ui/GameOverView";
 import { HUD } from "../ui/HUD";
 import { loadStats, updateStatsAfterGame, saveStats } from "../ui/StatsPanel";
@@ -118,6 +118,7 @@ export function createGameLoopTicker(
     // Game over
     if (scene.isGameOver()) {
       stopMusic();
+      killBossMusic();
       gameOverHandled = true;
 
       const gameResult = {

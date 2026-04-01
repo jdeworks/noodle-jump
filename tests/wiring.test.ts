@@ -78,7 +78,6 @@ describe("Debug config wiring", () => {
   it("bossTestPreset sets quickZoneTransitions", () => {
     const debug = applyPreset(createDebugConfig(), bossTestPreset());
     expect(debug.quickZoneTransitions).toBe(15);
-    expect(debug.infiniteKnives).toBe(true);
   });
 });
 
