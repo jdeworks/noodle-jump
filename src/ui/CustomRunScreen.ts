@@ -14,6 +14,7 @@ export class CustomRunScreen {
   private active = false;
   private config: RunConfig = createDefaultRunConfig();
   private onStart: ((config: RunConfig) => void) | null = null;
+  onClose: (() => void) | null = null;
 
   constructor() {
     this.container.visible = false;
@@ -37,6 +38,7 @@ export class CustomRunScreen {
       this.container.removeChild(child);
       child.destroy();
     }
+    this.onClose?.();
   }
 
   isActive(): boolean {

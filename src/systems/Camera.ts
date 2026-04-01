@@ -24,7 +24,10 @@ export function createCamera(): CameraState {
 export function updateCamera(
   camera: CameraState,
   playerY: number,
+  inBossFight = false,
 ): CameraState {
+  // Lock the camera during boss fights so the arena stays fixed
+  if (inBossFight) return camera;
   const targetY = playerY - GAME_HEIGHT * 0.4;
   const viewportBottom = camera.y + GAME_HEIGHT;
 

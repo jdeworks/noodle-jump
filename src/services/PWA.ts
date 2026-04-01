@@ -2,9 +2,21 @@
 
 let deferredPrompt: Event | null = null;
 
-/** Register the service worker. Call once at app start. */
+/** Register the service worker. Call once at app start. Skipped in dev. */
 export function registerServiceWorker(): void {
   if (!("serviceWorker" in navigator)) return;
+
+  // In dev mode, unregister any existing SW so stale caches don't interfere
+  const isDev = location.hostname === "localhost" || location.hostname === "127.0.0.1";
+  if (isDev) {
+    navigator.serviceWorker.getRegistrations().then((regs) => {
+      for (const reg of regs) reg.unregister();
+    });
+    caches.keys().then((names) => {
+      for (const name of names) caches.delete(name);
+    });
+    return;
+  }
 
   window.addEventListener("load", () => {
     navigator.serviceWorker.register("./sw.js").catch(() => {

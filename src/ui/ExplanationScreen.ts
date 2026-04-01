@@ -111,6 +111,7 @@ export class ExplanationScreen {
   private contentHeight = 0;
   private animTick = 0;
   private animSprites: AnimatedSprite[] = [];
+  onClose: (() => void) | null = null;
 
   constructor() {
     this.container.visible = false;
@@ -132,6 +133,7 @@ export class ExplanationScreen {
       this.container.removeChild(child);
       child.destroy();
     }
+    this.onClose?.();
   }
 
   isActive(): boolean {

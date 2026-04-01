@@ -38,6 +38,10 @@ export function showTitleScreen(
   dimOverlay.fill({ color: 0x1a1008, alpha: 0.55 });
   titleContainer.addChild(dimOverlay);
 
+  // Content group — hidden when sub-menus (How to Play / Custom Run) open
+  const contentGroup = new Container();
+  titleContainer.addChild(contentGroup);
+
   // ── Flowing layout — cursorY prevents overlaps ─────────────────────
   let cursorY = 8;
 
@@ -57,7 +61,7 @@ export function showTitleScreen(
   titleText.x = GAME_WIDTH / 2;
   titleText.y = cursorY;
   titleText.anchor.set(0.5, 0);
-  titleContainer.addChild(titleText);
+  contentGroup.addChild(titleText);
   cursorY += 108;
 
   // Subtitle
@@ -75,7 +79,7 @@ export function showTitleScreen(
   subtitleText.x = GAME_WIDTH / 2;
   subtitleText.y = cursorY;
   subtitleText.anchor.set(0.5, 0);
-  titleContainer.addChild(subtitleText);
+  contentGroup.addChild(subtitleText);
   cursorY += 20;
 
   // High score
@@ -94,7 +98,7 @@ export function showTitleScreen(
     hsText.x = GAME_WIDTH / 2;
     hsText.y = cursorY;
     hsText.anchor.set(0.5, 0);
-    titleContainer.addChild(hsText);
+    contentGroup.addChild(hsText);
     cursorY += 24;
   }
 
@@ -103,7 +107,7 @@ export function showTitleScreen(
   chefGfx.x = GAME_WIDTH / 2 - 16;
   chefGfx.y = cursorY;
   drawChef(chefGfx, 32, 40);
-  titleContainer.addChild(chefGfx);
+  contentGroup.addChild(chefGfx);
   const chefBaseY = cursorY;
   cursorY += 48;
 
@@ -125,7 +129,7 @@ export function showTitleScreen(
     bg.stroke({ width: 1.5, color: 0x6688bb, alpha: 0.5 });
     bg.eventMode = "static";
     bg.cursor = "pointer";
-    titleContainer.addChild(bg);
+    contentGroup.addChild(bg);
 
     const text = new Text({
       text: label,
@@ -138,7 +142,7 @@ export function showTitleScreen(
     text.x = GAME_WIDTH / 2;
     text.y = y + btnH / 2;
     text.anchor.set(0.5, 0.5);
-    titleContainer.addChild(text);
+    contentGroup.addChild(text);
     return { bg, text };
   }
 
@@ -179,17 +183,17 @@ export function showTitleScreen(
   kbHint.x = GAME_WIDTH / 2;
   kbHint.y = cursorY;
   kbHint.anchor.set(0.5, 0);
-  titleContainer.addChild(kbHint);
+  contentGroup.addChild(kbHint);
   cursorY += 38;
 
   // Settings toggles
   const settingsContainer = createSettingsToggles();
   settingsContainer.y = cursorY;
-  titleContainer.addChild(settingsContainer);
+  contentGroup.addChild(settingsContainer);
 
   // Explanation screen
   const explanationScreen = new ExplanationScreen();
-  const showHelp = (e: Event) => { e.stopPropagation(); explanationScreen.show(); };
+  const showHelp = (e: Event) => { e.stopPropagation(); contentGroup.visible = false; explanationScreen.show(); };
   howBtnBg.on("pointertap", showHelp);
   howBtn.eventMode = "static";
   howBtn.on("pointertap", showHelp);
@@ -198,6 +202,7 @@ export function showTitleScreen(
   const customRunScreen = new CustomRunScreen();
   const showCustom = (e: Event) => {
     e.stopPropagation();
+    contentGroup.visible = false;
     customRunScreen.show((config: RunConfig) => {
       // Start game with custom config
       app.canvas.removeEventListener("click", startGame);
@@ -215,6 +220,10 @@ export function showTitleScreen(
   customBtnBg.on("pointertap", showCustom);
   customBtn.eventMode = "static";
   customBtn.on("pointertap", showCustom);
+
+  // Restore content when sub-menus close
+  explanationScreen.onClose = () => { contentGroup.visible = true; };
+  customRunScreen.onClose = () => { contentGroup.visible = true; };
 
   // Add overlay containers LAST so they render on top of everything
   titleContainer.addChild(explanationScreen.container);
@@ -240,7 +249,7 @@ export function showTitleScreen(
     statsText.x = GAME_WIDTH / 2;
     statsText.y = cursorY + 160;
     statsText.anchor.set(0.5, 0);
-    titleContainer.addChild(statsText);
+    contentGroup.addChild(statsText);
   }
 
   // Animate parallax + pulse prompt + chef

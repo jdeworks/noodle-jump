@@ -44,6 +44,8 @@ export function drillBreakPlatforms(
   const updated = platforms.map((p) => {
     if (p.broken) return p;
     if (p.type === "lasagna") return p; // don't break lasagna
+    if (p.type === "breaking") return p; // preserve single-use platforms as landing spots
+    if (p.type === "brittle") return p; // preserve brittle platforms as landing spots
     // Check if player is drilling through this platform
     const playerBottom = player.y + player.height;
     const playerRight = player.x + player.width;

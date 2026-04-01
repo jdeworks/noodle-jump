@@ -113,8 +113,8 @@ export function playBossMusic(): void {
   }, 30);
 }
 
-export function stopBossMusic(): void {
-  if (!bossMusicPlaying) return;
+export function stopBossMusic(resumeZoneMusic = true): void {
+  if (!bossMusicPlaying && !bossMusicElement) return;
   if (bossMusicElement) {
     const fo = setInterval(() => {
       if (!bossMusicElement) { clearInterval(fo); return; }
@@ -124,20 +124,29 @@ export function stopBossMusic(): void {
         bossMusicElement.pause();
         bossMusicElement.currentTime = 0;
         bossMusicPlaying = false;
+        // Resume zone music only AFTER boss music fade-out completes
+        if (resumeZoneMusic && musicElement && isMusicEnabled()) {
+          musicElement.volume = 0;
+          musicElement.play().catch(() => {});
+          const fi = setInterval(() => {
+            if (!musicElement) { clearInterval(fi); return; }
+            const tv = targetVol();
+            musicElement.volume = Math.min(tv, musicElement.volume + 0.02);
+            if (musicElement.volume >= tv - 0.01) clearInterval(fi);
+          }, 30);
+        }
       }
     }, 30);
   }
-  // Resume zone music
-  if (musicElement && isMusicEnabled()) {
-    musicElement.volume = 0;
-    musicElement.play().catch(() => {});
-    const fi = setInterval(() => {
-      if (!musicElement) { clearInterval(fi); return; }
-      const tv = targetVol();
-      musicElement.volume = Math.min(tv, musicElement.volume + 0.02);
-      if (musicElement.volume >= tv - 0.01) clearInterval(fi);
-    }, 30);
+}
+
+/** Immediately stop boss music without fade — used during game over/restart. */
+export function killBossMusic(): void {
+  if (bossMusicElement) {
+    bossMusicElement.pause();
+    bossMusicElement.currentTime = 0;
   }
+  bossMusicPlaying = false;
 }
 
 // ── Pause/resume on visibility change ────────────────────────────────────

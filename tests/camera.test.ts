@@ -53,4 +53,11 @@ describe("Camera", () => {
     const aliveY = cam.y + GAME_HEIGHT + 50;
     expect(isPlayerDead(cam, aliveY)).toBe(false);
   });
+
+  test("camera locks during boss fight", () => {
+    const cam = { y: -1000, highestY: -1000 };
+    const updated = updateCamera(cam, -1500, true);
+    expect(updated.y).toBe(cam.y);
+    expect(updated.highestY).toBe(cam.highestY);
+  });
 });

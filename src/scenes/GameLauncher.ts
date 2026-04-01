@@ -16,7 +16,7 @@ import { HUD } from "../ui/HUD";
 import type { RunConfig } from "../systems/CustomRunConfig";
 import { resetRNG } from "../systems/RNG";
 import { resetRendererState } from "./EntityRenderer";
-import { stopMusic, stopBossMusic } from "../systems/Audio";
+import { stopMusic, stopBossMusic, killBossMusic } from "../systems/Audio";
 import { showTitleScreen } from "../ui/TitleScreenView";
 import { createGameLoopTicker } from "./GameLoopTicker";
 
@@ -52,7 +52,7 @@ export function cleanupAndRestart(app: Application): void {
   resetRNG();
   resetRendererState();
   stopMusic();
-  stopBossMusic();
+  killBossMusic();
   app.ticker.start();
   playMusic(0);
   launchGame(app);
@@ -83,7 +83,7 @@ export function cleanupAndGoHome(app: Application): void {
   resetProjectileIds();
   resetRNG();
   stopMusic();
-  stopBossMusic();
+  killBossMusic();
   app.ticker.start();
   showTitleScreen(app, (runConfig) => launchGame(app, runConfig));
 }

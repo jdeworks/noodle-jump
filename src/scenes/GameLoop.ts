@@ -286,7 +286,7 @@ export function tickGameWorld(
   s = { ...s, dayNight: tickDayNight(s.dayNight) };
 
   // Camera
-  s = { ...s, camera: updateCamera(s.camera, s.player.y) };
+  s = { ...s, camera: updateCamera(s.camera, s.player.y, s.inBossFight) };
 
   // Screen shake
   if (s.shakeState) {

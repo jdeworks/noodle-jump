@@ -66,6 +66,7 @@ export function expireLasagnaPlatforms(
 
 /** Generate new platforms if the camera is approaching the top of existing ones. */
 export function maybeGeneratePlatforms(state: GameWorldState): GameWorldState {
+  if (state.inBossFight) return state; // freeze platform generation during boss fights
   const cameraTop = state.camera.y;
   if (state.highestPlatformY > cameraTop - GAME_HEIGHT) {
     const difficulty = getDifficulty(state.platformsPassed);

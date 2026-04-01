@@ -96,6 +96,26 @@ describe("Rigatoni Drill", () => {
     const result = drillBreakPlatforms(player, platforms);
     expect(result.brokenIds).toHaveLength(0);
   });
+
+  test("does not break breaking platforms (drill safety)", () => {
+    const player = { ...createPlayer(120, 298), width: 32, height: 40 };
+    const platforms = [
+      makePlatform({ id: 1, x: 100, y: 300, type: "breaking" }),
+    ];
+    const result = drillBreakPlatforms(player, platforms);
+    expect(result.brokenIds).toHaveLength(0);
+    expect(result.platforms[0].broken).toBe(false);
+  });
+
+  test("does not break brittle platforms (drill safety)", () => {
+    const player = { ...createPlayer(120, 298), width: 32, height: 40 };
+    const platforms = [
+      makePlatform({ id: 1, x: 100, y: 300, type: "brittle" }),
+    ];
+    const result = drillBreakPlatforms(player, platforms);
+    expect(result.brokenIds).toHaveLength(0);
+    expect(result.platforms[0].broken).toBe(false);
+  });
 });
 
 describe("Gnocchi Bounce", () => {
