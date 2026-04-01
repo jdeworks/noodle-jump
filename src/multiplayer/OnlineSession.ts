@@ -18,6 +18,7 @@ import { ConnectionManager } from "./ConnectionManager";
 import { GameSync, type PlayerSyncState, type GameSyncEvent } from "./GameSync";
 import { InterpolationBuffer } from "./InterpolationBuffer";
 import { RemotePlayerRenderer } from "./RemotePlayerRenderer";
+import { LobbyScreen } from "./LobbyScreen";
 
 export type OnlineRole = "host" | "guest";
 
@@ -71,33 +72,10 @@ export class OnlineSession {
     this.remoteRenderer.hide();
     this.app.stage.addChild(this.remoteRenderer.container);
 
-    // Death toast
-    this.deathToast = new Text({
-      text: "",
-      style: new TextStyle({
-        fontFamily: "monospace",
-        fontSize: 16,
-        fill: "#ff6666",
-        fontWeight: "bold",
-        stroke: { color: "#000000", width: 3 },
-      }),
-    });
-    this.deathToast.x = GAME_WIDTH / 2;
-    this.deathToast.y = GAME_HEIGHT * 0.15;
-    this.deathToast.anchor.set(0.5, 0.5);
-    this.deathToast.visible = false;
+    this.deathToast = this.makeToast();
     this.app.stage.addChild(this.deathToast);
-
-    // FPS counter for multiplayer testing
-    this.fpsText = new Text({
-      text: "FPS: --",
-      style: new TextStyle({ fontFamily: "monospace", fontSize: 11, fill: "#00ff00",
-        stroke: { color: "#000000", width: 2 } }),
-    });
-    this.fpsText.x = 10;
-    this.fpsText.y = GAME_HEIGHT - 16;
+    this.fpsText = this.makeFps();
     this.app.stage.addChild(this.fpsText);
-
     this.setupSync();
   }
 
@@ -259,15 +237,7 @@ export class OnlineSession {
       this.app.stage.addChild(t);
     });
 
-    // Rematch button
-    const btnStyle = new TextStyle({
-      fontFamily: "monospace",
-      fontSize: 18,
-      fill: "#ffffff",
-      fontWeight: "bold",
-      stroke: { color: "#000000", width: 2 },
-    });
-
+    // Rematch — go back to lobby with ready-up
     const rematchBg = new Graphics();
     rematchBg.roundRect(GAME_WIDTH / 2 - 90, GAME_HEIGHT * 0.5 - 18, 180, 36, 10);
     rematchBg.fill({ color: 0x1a3355, alpha: 0.9 });
@@ -277,7 +247,11 @@ export class OnlineSession {
     rematchBg.cursor = "pointer";
     this.app.stage.addChild(rematchBg);
 
-    const rematchText = new Text({ text: "Rematch", style: btnStyle });
+    const rematchText = new Text({
+      text: "Rematch",
+      style: new TextStyle({ fontFamily: "monospace", fontSize: 18,
+        fill: "#ffffff", fontWeight: "bold", stroke: { color: "#000000", width: 2 } }),
+    });
     rematchText.x = GAME_WIDTH / 2;
     rematchText.y = GAME_HEIGHT * 0.5;
     rematchText.anchor.set(0.5, 0.5);
@@ -286,18 +260,12 @@ export class OnlineSession {
     this.app.stage.addChild(rematchText);
 
     const doRematch = () => {
-      // Signal rematch, generate new seed, restart
-      const newSeed = Math.floor(Math.random() * 0xffffffff);
-      this.sync.sendGameEvent({
-        type: "seed",
-        payload: { seed: newSeed },
-      });
-      this.restart(newSeed);
+      setTimeout(() => this.returnToLobby(), 0);
     };
     rematchBg.on("pointertap", doRematch);
     rematchText.on("pointertap", doRematch);
 
-    // Home button
+    // Leave button
     const homeBg = new Graphics();
     homeBg.roundRect(GAME_WIDTH / 2 - 90, GAME_HEIGHT * 0.58 - 16, 180, 32, 10);
     homeBg.fill({ color: 0x222244, alpha: 0.9 });
@@ -307,13 +275,8 @@ export class OnlineSession {
 
     const homeText = new Text({
       text: "Leave",
-      style: new TextStyle({
-        fontFamily: "monospace",
-        fontSize: 15,
-        fill: "#aaccff",
-        fontWeight: "bold",
-        stroke: { color: "#000000", width: 2 },
-      }),
+      style: new TextStyle({ fontFamily: "monospace", fontSize: 15,
+        fill: "#aaccff", fontWeight: "bold", stroke: { color: "#000000", width: 2 } }),
     });
     homeText.x = GAME_WIDTH / 2;
     homeText.y = GAME_HEIGHT * 0.58;
@@ -322,18 +285,44 @@ export class OnlineSession {
     homeText.cursor = "pointer";
     this.app.stage.addChild(homeText);
 
-    homeBg.on("pointertap", () => this.goHome());
-    homeText.on("pointertap", () => this.goHome());
+    homeBg.on("pointertap", () => setTimeout(() => this.goHome(), 0));
+    homeText.on("pointertap", () => setTimeout(() => this.goHome(), 0));
   }
 
-  private restart(newSeed: number): void {
+  /** Return to lobby for rematch — reuses existing connection. */
+  private returnToLobby(): void {
     this.cleanup();
+
+    // Create a fresh GameSync on the same connection
+    const sync = new GameSync();
+    const mode = this.connection.getMode();
+    if (mode === "nostr") {
+      const room = this.connection.getRoom();
+      if (room) sync.initWithRoom(room);
+    } else {
+      const channel = this.connection.getChannel();
+      if (channel) sync.initWithChannel(channel);
+    }
+
+    const lobby = new LobbyScreen(this.role, sync, {
+      onStart: (seed) => {
+        this.app.stage.removeChild(lobby.container);
+        lobby.destroy();
+        this.startNewGame(seed, sync);
+      },
+    });
+    this.app.stage.addChild(lobby.container);
+  }
+
+  /** Start a new game after lobby ready-up. */
+  private startNewGame(newSeed: number, sync: GameSync): void {
     this.seed = newSeed;
     this.localDead = false;
     this.remoteDead = false;
     this.localDeathHeight = 0;
     this.remoteDeathHeight = 0;
     this.interpolation.reset();
+    this.sync = sync;
 
     const runConfig: RunConfig = { ...createDefaultRunConfig(), seed: newSeed };
     this.scene = new GameScene(runConfig);
@@ -344,56 +333,46 @@ export class OnlineSession {
     this.remoteRenderer.hide();
     this.app.stage.addChild(this.remoteRenderer.container);
 
-    this.deathToast = new Text({
-      text: "",
-      style: new TextStyle({
-        fontFamily: "monospace",
-        fontSize: 16,
-        fill: "#ff6666",
-        fontWeight: "bold",
-        stroke: { color: "#000000", width: 3 },
-      }),
-    });
-    this.deathToast.x = GAME_WIDTH / 2;
-    this.deathToast.y = GAME_HEIGHT * 0.15;
-    this.deathToast.anchor.set(0.5, 0.5);
-    this.deathToast.visible = false;
+    this.deathToast = this.makeToast();
     this.app.stage.addChild(this.deathToast);
-
+    this.fpsText = this.makeFps();
+    this.app.stage.addChild(this.fpsText);
     this.setupSync();
     this.start();
   }
 
+  private makeToast(): Text {
+    const t = new Text({ text: "", style: new TextStyle({ fontFamily: "monospace",
+      fontSize: 16, fill: "#ff6666", fontWeight: "bold", stroke: { color: "#000000", width: 3 } }) });
+    t.x = GAME_WIDTH / 2; t.y = GAME_HEIGHT * 0.15; t.anchor.set(0.5, 0.5); t.visible = false;
+    return t;
+  }
+
+  private makeFps(): Text {
+    const t = new Text({ text: "FPS: --", style: new TextStyle({ fontFamily: "monospace",
+      fontSize: 11, fill: "#00ff00", stroke: { color: "#000000", width: 2 } }) });
+    t.x = 10; t.y = GAME_HEIGHT - 16;
+    return t;
+  }
+
   private cleanup(): void {
-    if (this.gameLoop) {
-      this.app.ticker.remove(this.gameLoop);
-      this.gameLoop = null;
-    }
+    if (this.gameLoop) { this.app.ticker.remove(this.gameLoop); this.gameLoop = null; }
     this.sync.stopSending();
+    if (this.scene.container.parent) this.scene.container.parent.removeChild(this.scene.container);
     this.scene.destroy();
     this.remoteRenderer.destroy();
-
     while (this.app.stage.children.length > 0) {
-      const child = this.app.stage.children[0];
-      this.app.stage.removeChild(child);
-      child.destroy({ children: true });
+      const c = this.app.stage.children[0];
+      this.app.stage.removeChild(c);
+      c.destroy({ children: true });
     }
-
-    resetPlatformIds();
-    resetPowerUpIds();
-    resetCollectibleIds();
-    resetEnemyIds();
-    resetProjectileIds();
-    resetRNG();
-    resetRendererState();
+    resetPlatformIds(); resetPowerUpIds(); resetCollectibleIds();
+    resetEnemyIds(); resetProjectileIds(); resetRNG(); resetRendererState();
   }
 
   private goHome(): void {
-    this.cleanup();
-    this.sync.destroy();
-    this.connection.disconnect();
-    stopMusic();
-    killBossMusic();
-    showTitleScreen(this.app, (runConfig) => launchGame(this.app, runConfig));
+    this.cleanup(); this.sync.destroy(); this.connection.disconnect();
+    stopMusic(); killBossMusic();
+    showTitleScreen(this.app, (rc) => launchGame(this.app, rc));
   }
 }
