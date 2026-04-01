@@ -8,6 +8,7 @@ import { GAME_WIDTH, GAME_HEIGHT } from "../config/constants";
 import { ManualSignaling } from "./ManualSignaling";
 import { NostrSignaling } from "./NostrSignaling";
 import { ConnectionManager } from "./ConnectionManager";
+import { copyToClipboard, showHtmlToast, createCodeInput, createSubmitButton } from "./HtmlOverlay";
 
 const BTN_STYLE = new TextStyle({
   fontFamily: "monospace",
@@ -130,9 +131,8 @@ export async function doQuickCreate(ctx: MenuContext): Promise<void> {
     const copyBtnY = 270;
     ctx.addButton(view, "Copy Code", copyBtnY, 180, 36,
       (GAME_WIDTH - 180) / 2, 0x333355, async () => {
-        try {
-          await navigator.clipboard.writeText(code);
-        } catch { /* clipboard may not be available */ }
+        const ok = await copyToClipboard(code);
+        if (ok) showHtmlToast("Copied!");
       });
 
     ctx.addButton(view, "Cancel", 330, 160, 36,
@@ -223,7 +223,8 @@ export async function doPrivateCreate(ctx: MenuContext): Promise<void> {
 
     ctx.addButton(view, "Copy Code", btnY, 180, 34,
       (GAME_WIDTH - 180) / 2, 0x333355, async () => {
-        try { await navigator.clipboard.writeText(offerCode); } catch {}
+        const ok = await copyToClipboard(offerCode);
+        if (ok) showHtmlToast("Copied!");
       });
     btnY += 50;
 
@@ -237,25 +238,35 @@ export async function doPrivateCreate(ctx: MenuContext): Promise<void> {
     view.addChild(step2Text);
     btnY += 25;
 
-    ctx.addButton(view, "Paste Response", btnY, 200, 36,
-      (GAME_WIDTH - 200) / 2, 0x2a6e3f, async () => {
-        try {
-          const responseCode = await navigator.clipboard.readText();
-          if (responseCode && responseCode.startsWith("A")) {
-            await ctx.getConnection()?.acceptResponse(responseCode);
-          } else {
-            step2Text.text = "Invalid code. Make sure to copy the full response.";
-            step2Text.style.fill = "#ff6666";
-          }
-        } catch {
-          step2Text.text = "Could not read clipboard. Paste is not supported here.";
+    // HTML input for pasting response code (works on mobile)
+    const { element: respInput, cleanup: cleanupInput } = createCodeInput(
+      "Paste response code here...",
+      async (val) => {
+        cleanupInput(); cleanupBtn();
+        if (val.startsWith("A")) {
+          await ctx.getConnection()?.acceptResponse(val);
+        } else {
+          step2Text.text = "Invalid code. Must start with 'A'.";
           step2Text.style.fill = "#ff6666";
         }
-      });
-    btnY += 55;
+      },
+    );
+    const { cleanup: cleanupBtn } = createSubmitButton("Connect", async () => {
+      const val = respInput.value.trim();
+      if (!val) return;
+      cleanupInput(); cleanupBtn();
+      if (val.startsWith("A")) {
+        await ctx.getConnection()?.acceptResponse(val);
+      } else {
+        step2Text.text = "Invalid code. Must start with 'A'.";
+        step2Text.style.fill = "#ff6666";
+      }
+    });
+    btnY += 100;
 
     ctx.addButton(view, "Cancel", btnY, 160, 34,
       (GAME_WIDTH - 160) / 2, 0x993333, () => {
+        cleanupInput(); cleanupBtn();
         ctx.getConnection()?.disconnect();
         ctx.showPrivateConnect();
       });
@@ -315,7 +326,8 @@ export async function doPrivateJoin(
 
     ctx.addButton(view, "Copy Code", btnY, 180, 34,
       (GAME_WIDTH - 180) / 2, 0x333355, async () => {
-        try { await navigator.clipboard.writeText(answerCode as string); } catch {}
+        const ok = await copyToClipboard(answerCode as string);
+        if (ok) showHtmlToast("Copied!");
       });
     btnY += 50;
 

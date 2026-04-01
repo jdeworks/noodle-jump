@@ -18,6 +18,7 @@ import {
   doPrivateCreate,
   doPrivateJoin,
 } from "./ConnectFlows";
+import { createCodeInput, createSubmitButton } from "./HtmlOverlay";
 
 export type MenuCallback = () => void;
 
@@ -334,24 +335,26 @@ export class MultiplayerMenu implements MenuContext {
     promptText.anchor.set(0.5, 0);
     view.addChild(promptText);
 
-    this.addButton(view, "Paste from Clipboard", 150, 240, 40,
-      (GAME_WIDTH - 240) / 2, 0x2a6e3f, async () => {
-        try {
-          const text = await navigator.clipboard.readText();
-          if (text && text.trim()) {
-            onSubmit(text.trim());
-          } else {
-            promptText.text = "Clipboard is empty.";
-            promptText.style.fill = "#ff6666";
-          }
-        } catch {
-          promptText.text = "Could not read clipboard.";
-          promptText.style.fill = "#ff6666";
-        }
-      });
+    // Real HTML input for mobile keyboard support
+    const { element: input, cleanup: cleanupInput } = createCodeInput(
+      "Enter code here...",
+      (value) => { cleanupInput(); cleanupBtn(); onSubmit(value); },
+    );
+    const { cleanup: cleanupBtn } = createSubmitButton("Submit", () => {
+      if (input.value.trim()) {
+        const val = input.value.trim();
+        cleanupInput();
+        cleanupBtn();
+        onSubmit(val);
+      }
+    });
 
-    this.addButton(view, "Cancel", 220, 160, 36,
-      (GAME_WIDTH - 160) / 2, 0x222244, onCancel);
+    this.addButton(view, "Cancel", GAME_HEIGHT - 80, 160, 36,
+      (GAME_WIDTH - 160) / 2, 0x222244, () => {
+        cleanupInput();
+        cleanupBtn();
+        onCancel();
+      });
 
     this.container.addChild(view);
   }
