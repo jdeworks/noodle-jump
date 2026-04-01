@@ -105,13 +105,9 @@ export function tickEnemies(
     } else {
       // Player dies
       events.push({ type: "enemyHitPlayer" });
-      s = {
-        ...s,
-        isDying: true,
-        squashTicks: 0,
-        pendingJumpVy: 0,
-      };
-      events.push({ type: "died" });
+      s = { ...s, isDying: true, squashTicks: 0, pendingJumpVy: 0,
+        ghostDeathHeight: s.ghostDeathHeight || s.scoreState.height };
+      if (!s.isGhost) events.push({ type: "died" });
     }
   }
 

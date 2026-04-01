@@ -153,7 +153,7 @@ export function tickGameWorld(
           plats = [...plats, rescue];
         }
         const ph = Math.max(0, Math.floor(state.ghostDeathHeight * 0.9));
-        events.push({ type: "died" });
+        // Don't push "died" event to avoid repeated death sounds
         return { state: { ...state, platforms: plats, player: { ...state.player,
           x: rescue.x + rescue.width / 2 - state.player.width / 2,
           y: rescue.y - state.player.height, vy: -12, isJumping: true,
@@ -353,20 +353,15 @@ export function tickGameWorld(
       const penalizedScore = s.deathPenaltyEnabled
         ? { ...s.scoreState, height: Math.max(0, Math.floor(s.scoreState.height * 0.9)) }
         : s.scoreState;
-      if (s.deathPenaltyEnabled) events.push({ type: "died" });
+      // Timed mode: silent rescue, no death sound
       s = { ...s, player: { ...s.player,
           x: rescue.x + rescue.width / 2 - s.player.width / 2,
           y: rescue.y - s.player.height, vy: -12, isJumping: true,
         }, stagnantTicks: 0, scoreState: penalizedScore };
     } else {
-      s = {
-        ...s,
-        isDying: true,
-        squashTicks: 0,
-        pendingJumpVy: 0,
-        ghostDeathHeight: s.ghostDeathHeight || s.scoreState.height,
-      };
-      events.push({ type: "died" });
+      s = { ...s, isDying: true, squashTicks: 0, pendingJumpVy: 0,
+        ghostDeathHeight: s.ghostDeathHeight || s.scoreState.height };
+      if (!s.isGhost) events.push({ type: "died" });
     }
   }
 
