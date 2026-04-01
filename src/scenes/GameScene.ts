@@ -179,7 +179,7 @@ export class GameScene {
   startCountdown(): void { this.state = startCountdown(this.state); }
   /** Enable ghost mode — player respawns after death with frozen scoring. */
   enableGhostMode(): void {
-    this.state = { ...this.state, isGhost: true, ghostDeathHeight: this.state.scoreState.height };
+    this.state = { ...this.state, isGhost: true };
   }
 
   getActiveEffectProgress(): number {

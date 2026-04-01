@@ -44,11 +44,14 @@ export async function launchLocalCoop(
 
   const config: RunConfig = { ...createDefaultRunConfig(), seed };
 
-  // Create two game scenes with the same seed.
-  // Each createInitialState() calls initRNG(seed) which resets the global RNG,
-  // so both scenes get identical initial worlds.
   const scene1 = new GameScene(config);
   const scene2 = new GameScene(config);
+
+  // Enable ghost mode at creation for modes that need it
+  if (mode === "best-height" || mode === "timed-2min") {
+    scene1.enableGhostMode();
+    scene2.enableGhostMode();
+  }
 
   // Create separate RNG streams for each player's ongoing gameplay.
   // Without this, both scenes share the global RNG and their worlds diverge.
@@ -210,6 +213,7 @@ export async function launchLocalCoop(
     input.update();
 
     // Tick scenes with split keyboard input and separate RNG streams
+    if (gameEnded) return;
     if (!scene1.isGameOver()) {
       setRNGFunction(p1Rng);
       if (input.p1Fire) scene1.autoAimThrow();
@@ -242,18 +246,16 @@ export async function launchLocalCoop(
       }
     }
 
-    // Track deaths — mode determines what happens
+    // Track deaths
     if (!p1Dead && scene1.getState().isDying) {
       p1Dead = true;
       p1DeathHeight = scene1.getHeight();
       showToast(`P1 died at ${p1DeathHeight}m!`);
-      if (mode === "best-height" || mode === "timed-2min") scene1.enableGhostMode();
     }
     if (!p2Dead && scene2.getState().isDying) {
       p2Dead = true;
       p2DeathHeight = scene2.getHeight();
       showToast(`P2 died at ${p2DeathHeight}m!`);
-      if (mode === "best-height" || mode === "timed-2min") scene2.enableGhostMode();
     }
     // Show "GHOST" label on dead player's side
     if (p1Dead && !p2Dead) {

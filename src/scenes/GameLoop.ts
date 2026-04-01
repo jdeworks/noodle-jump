@@ -361,6 +361,7 @@ export function tickGameWorld(
         isDying: true,
         squashTicks: 0,
         pendingJumpVy: 0,
+        ghostDeathHeight: s.ghostDeathHeight || s.scoreState.height,
       };
       events.push({ type: "died" });
     }

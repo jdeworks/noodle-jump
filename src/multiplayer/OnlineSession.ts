@@ -73,6 +73,7 @@ export class OnlineSession {
     // Create game scene with shared seed
     const runConfig: RunConfig = { ...createDefaultRunConfig(), seed: config.seed };
     this.scene = new GameScene(runConfig);
+    this.scene.enableGhostMode(); // Ghost mode always on for online multiplayer
     this.scene.initInput(this.app.canvas);
     this.app.stage.addChild(this.scene.container);
 
@@ -136,7 +137,7 @@ export class OnlineSession {
   }
 
   private tick(): void {
-    // Update local game
+    if (this.resultsShown) return;
     this.scene.update();
     const state = this.scene.getState();
 
@@ -149,11 +150,10 @@ export class OnlineSession {
       this.localDead ? (state.gameOver ? 2 : 1) : 0,
     );
 
-    // Track local death → enable ghost mode
+    // Track local death
     if (!this.localDead && state.isDying) {
       this.localDead = true;
       this.localDeathHeight = state.scoreState.height;
-      this.scene.enableGhostMode();
       this.sync.sendGameEvent({ type: "death", payload: { height: this.localDeathHeight } });
     }
 
@@ -321,6 +321,7 @@ export class OnlineSession {
 
     const runConfig: RunConfig = { ...createDefaultRunConfig(), seed: newSeed };
     this.scene = new GameScene(runConfig);
+    this.scene.enableGhostMode();
     this.scene.initInput(this.app.canvas);
     this.app.stage.addChild(this.scene.container);
 
