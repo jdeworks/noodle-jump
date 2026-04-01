@@ -147,12 +147,15 @@ export function tickGameWorld(
         const rescue = vis.length > 0 ? vis.sort((a, b) => a.y - b.y)[0]
           : state.platforms.filter((p) => !p.broken).sort((a, b) => a.y - b.y)[0];
         if (rescue) {
+          // Death penalty: reduce height by 10% each ghost death
+          const penaltyHeight = Math.max(0, Math.floor(state.ghostDeathHeight * 0.9));
+          events.push({ type: "died" }); // signal ghost death for UI toast
           return { state: { ...state, player: { ...state.player,
             x: rescue.x + rescue.width / 2 - state.player.width / 2,
             y: rescue.y - state.player.height, vy: -12, isJumping: true,
-          }, isDying: false, dyingTicks: 0, stagnantTicks: 0 }, events };
+          }, isDying: false, dyingTicks: 0, stagnantTicks: 0,
+          ghostDeathHeight: penaltyHeight }, events };
         }
-        // No platform to rescue to — end the game
       }
       const isCustom = state.runConfig.seed !== 0 || state.practiceMode;
       const isNewRecord = isCustom ? false : saveHighScore(state.scoreState.points);
