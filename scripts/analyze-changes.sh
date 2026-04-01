@@ -16,20 +16,28 @@ fi
 
 echo "==> Analyzing $CHANGES_FILE for dead code signals..."
 
-# ── Extract all symbols_removed entries ──────────────────────────────────────
+# ── Extract all symbols_removed entries (from completed entries + progress lines) ─
 mapfile -t removed_symbols < <(
-  sed -n '/<!-- Entries below/,$p' "$CHANGES_FILE" \
-    | grep '^symbols_removed:' \
-    | sed 's/^symbols_removed: //' \
-    | tr ',' '\n' \
+  {
+    # From completed entry symbols_removed fields
+    sed -n '/<!-- Entries below/,$p' "$CHANGES_FILE" \
+      | grep '^symbols_removed:' \
+      | sed 's/^symbols_removed: //' \
+      | tr ',' '\n'
+    # From progress lines with (removed: ...) annotations
+    sed -n '/<!-- Entries below/,$p' "$CHANGES_FILE" \
+      | grep -oP '\(removed?: \K[^)]+' \
+      | tr ',' '\n'
+  } \
     | sed 's/^[[:space:]]*//' \
     | sed 's/[[:space:]]*$//' \
     | grep -v '^$' \
     | grep -v '^(none)$' \
+    | grep -v '^(fill in)$' \
     | sort -u
 )
 
-echo "    Found ${#removed_symbols[@]} unique removed symbol(s) in history."
+echo "    Found ${#removed_symbols[@]} unique removed symbol(s) in history (completed entries + progress lines)."
 
 # ── Check which removed symbols still appear in source ───────────────────────
 echo ""

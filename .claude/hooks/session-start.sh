@@ -67,8 +67,50 @@ if [ -n "$entries_section" ]; then
     if ! echo "$entries_section" | grep -q "session-$sid | status: completed" 2>/dev/null; then
       intent=$(echo "$entries_section" | grep -A1 "session-$sid | status: started" | tail -1 | sed 's/^intent: //')
       abandoned+="  - session-$sid: $intent\n"
+      # Show progress lines if any exist
+      progress=$(echo "$entries_section" | sed -n "/session-$sid | status: started/,/^## \[/p" | grep '^- progress:' | head -5)
+      if [ -n "$progress" ]; then
+        abandoned+="    Progress logged before interruption:\n$(echo "$progress" | sed 's/^/    /')\n"
+      fi
     fi
   done < <(echo "$entries_section" | grep 'status: started' 2>/dev/null)
+fi
+
+# ── Stale staged changes detection ───────────────────────────────────────────
+# Staged changes persist silently across sessions — git checkout won't touch them.
+# If there's an abandoned session AND staged changes, that's a red flag.
+staged_changes=""
+staged_count=$(git diff --cached --name-only 2>/dev/null | wc -l | tr -d '[:space:]')
+if [ "$staged_count" -gt 0 ]; then
+  staged_deletions=$(git diff --cached --name-status 2>/dev/null | grep -c '^D' || true)
+  staged_deletions=$((staged_deletions + 0))
+  staged_mods=$(git diff --cached --name-status 2>/dev/null | grep -c '^M' || true)
+  staged_mods=$((staged_mods + 0))
+  staged_summary="$staged_count file(s) staged"
+  [ "$staged_deletions" -gt 0 ] && staged_summary+=", $staged_deletions DELETION(S)"
+  [ "$staged_mods" -gt 0 ] && staged_summary+=", $staged_mods modification(s)"
+  staged_files=$(git diff --cached --name-status 2>/dev/null | head -15)
+  staged_changes="$staged_summary\n$staged_files"
+  [ "$staged_count" -gt 15 ] && staged_changes+="\n  ... and $((staged_count - 15)) more"
+fi
+
+# ── Untracked files check ────────────────────────────────────────────────────
+# Every file should be committed or gitignored. Untracked files silently accumulate.
+untracked_files=""
+untracked_count=$(git ls-files --others --exclude-standard 2>/dev/null | wc -l | tr -d '[:space:]')
+if [ "$untracked_count" -gt 0 ]; then
+  untracked_list=$(git ls-files --others --exclude-standard 2>/dev/null | head -10)
+  untracked_files="$untracked_count untracked file(s):\n$untracked_list"
+  [ "$untracked_count" -gt 10 ] && untracked_files+="\n  ... and $((untracked_count - 10)) more"
+fi
+
+# ── Dead code check from last session ────────────────────────────────────────
+dead_code=""
+if [ -f "scripts/analyze-changes.sh" ]; then
+  dead_output=$(SRC_DIR="${SRC_DIR:-src}" bash scripts/analyze-changes.sh 2>&1 | grep 'DEAD:' || true)
+  if [ -n "$dead_output" ]; then
+    dead_code="$dead_output"
+  fi
 fi
 
 # Inject recent CHANGES.md entries
@@ -89,6 +131,17 @@ fi
 
 # Build context message
 ctx="### Session info\nMode: **$mode**\n"
+if [ -n "$staged_changes" ]; then
+  ctx+="\n### WARNING: Stale staged changes detected\n${staged_changes}\n"
+  if [ -n "$abandoned" ]; then
+    ctx+="These staged changes likely come from an interrupted session. Staged files persist\n"
+    ctx+="silently across sessions — git checkout won't touch them. **Review before doing anything else.**\n"
+    ctx+="Run \`git diff --cached\` to inspect. Then either commit them or \`git reset HEAD\` to unstage.\n"
+  else
+    ctx+="Staged files persist across sessions. Run \`git diff --cached\` to review.\n"
+  fi
+  ctx+="\n"
+fi
 if [ -n "$abandoned" ]; then
   ctx+="### Abandoned sessions (started but never completed)\n${abandoned}"
   ctx+="Review these — complete or mark as abandoned before starting new work.\n\n"
@@ -98,6 +151,13 @@ if [ -n "$recent" ]; then
 fi
 if [ -n "$fix_areas" ]; then
   ctx+="\n### Fix hotspots\n${fix_areas}\nConsider preventive tests in these areas.\n"
+fi
+if [ -n "$dead_code" ]; then
+  ctx+="\n### Dead code from previous sessions\n${dead_code}\nClean these up before starting new work.\n"
+fi
+if [ -n "$untracked_files" ]; then
+  ctx+="\n### Untracked files\n${untracked_files}\n"
+  ctx+="Each should be either committed (if part of the project) or added to .gitignore (if local-only).\n"
 fi
 ctx+="\n### Required action\n"
 ctx+="Write a CHANGES.md **started** entry now with your session intent.\n"

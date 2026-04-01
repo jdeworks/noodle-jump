@@ -7,7 +7,7 @@ SOFT_FILE_LOC=${SOFT_FILE_LOC:-250}
 HARD_FILE_LOC=${HARD_FILE_LOC:-350}
 SOFT_FN_LOC=${SOFT_FN_LOC:-60}
 HARD_FN_LOC=${HARD_FN_LOC:-80}
-LOC_BUDGET=${LOC_BUDGET:-20000}
+LOC_BUDGET=${LOC_BUDGET:-15000}
 SRC_DIR=${SRC_DIR:-src}
 
 # Source file extensions to check. Override with SRC_EXTENSIONS env var.
@@ -105,6 +105,47 @@ if [ "$total" -ge "$LOC_BUDGET" ]; then
   log_fail "Total LOC $total exceeds budget $LOC_BUDGET — review scope or raise budget consciously"
 elif [ "$total" -ge "$((LOC_BUDGET * 85 / 100))" ]; then
   log_warn "Total LOC $total is at $(( total * 100 / LOC_BUDGET ))% of budget $LOC_BUDGET"
+fi
+
+# ── Test coverage check ─────────────────────────────────────────────────────
+echo "==> Checking test coverage (file-level)..."
+TEST_DIR=${TEST_DIR:-tests}
+untested=0
+untested_files=""
+if [ -d "$SRC_DIR" ] && [ -d "$TEST_DIR" ]; then
+  while IFS= read -r -d '' file; do
+    name=$(basename "$file")
+    if is_test_file "$name"; then
+      continue
+    fi
+    # Strip extension to get the base name
+    base="${name%.*}"
+    # Convert PascalCase/camelCase to kebab-case for matching
+    kebab=$(echo "$base" | sed -E 's/([a-z])([A-Z])/\1-\2/g' | tr '[:upper:]' '[:lower:]')
+    lower=$(echo "$base" | tr '[:upper:]' '[:lower:]')
+    # Look for any matching test file (case-insensitive, kebab-case, original)
+    found=0
+    for variant in "$base" "$kebab" "$lower"; do
+      for pattern in "${variant}.test" "${variant}.spec" "${variant}_test"; do
+        if find "$TEST_DIR" -iname "${pattern}.*" -print -quit 2>/dev/null | grep -q .; then
+          found=1
+          break 2
+        fi
+      done
+    done
+    if [ "$found" -eq 0 ]; then
+      untested=$((untested+1))
+      untested_files="$untested_files  $file\n"
+    fi
+  done < <(find "$SRC_DIR" -type f \( "${find_args[@]}" \) -print0 2>/dev/null)
+
+  if [ "$untested" -gt 0 ]; then
+    log_warn "$untested source file(s) have no corresponding test file"
+    printf "$untested_files" | head -10
+    if [ "$untested" -gt 10 ]; then
+      echo "  ... and $((untested-10)) more"
+    fi
+  fi
 fi
 
 # ── LLM cost annotation check (if LLM calls exist) ──────────────────────────

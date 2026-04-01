@@ -19,8 +19,8 @@ if [[ "$file_path" == *.test.* || "$file_path" == *.spec.* || "$file_path" == *c
 fi
 
 loc=$(wc -l < "$file_path" | tr -d ' ')
-SOFT_FILE_LOC=${SOFT_FILE_LOC:-300}
-HARD_FILE_LOC=${HARD_FILE_LOC:-400}
+SOFT_FILE_LOC=${SOFT_FILE_LOC:-250}
+HARD_FILE_LOC=${HARD_FILE_LOC:-350}
 
 if [ "$loc" -ge "$HARD_FILE_LOC" ]; then
   echo "Health warning: $file_path is $loc LOC (hard limit $HARD_FILE_LOC). This file should be split before adding more code." >&2

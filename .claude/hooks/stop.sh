@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # stop.sh — runs when Claude Code finishes responding
-# Reminds about CHANGES.md completion via additionalContext
+# Auto-drafts a completed CHANGES.md entry from git diff + progress lines.
 # Triggered by: Stop
 set -uo pipefail
 
@@ -20,44 +20,73 @@ last_started_sid=$(echo "$entries_section" | grep 'status: started' | tail -1 | 
 
 if [ -n "$last_started_sid" ]; then
   if echo "$entries_section" | grep -q "session-$last_started_sid | status: completed" 2>/dev/null; then
-    # Session properly completed — all good
+    # Session properly completed — all good, reset counter
+    rm -f .claude/.progress-counter
     exit 0
   fi
 fi
 
 # ── Gather actual changes from git ───────────────────────────────────────────
 changed_files=$(git diff --name-only HEAD 2>/dev/null; git diff --name-only --cached HEAD 2>/dev/null; git ls-files --others --exclude-standard 2>/dev/null)
-changed_files=$(echo "$changed_files" | sort -u | grep -v '^$' || echo "")
+changed_files=$(echo "$changed_files" | sort -u | grep -v '^$' | grep -v 'CHANGES.md' | grep -v 'SESSION_SUMMARY.md' || echo "")
 diff_stat=$(git diff --stat HEAD 2>/dev/null || echo "")
 
-git_context=""
-if [ -n "$changed_files" ]; then
-  git_context="
-Files changed this session (from git):
-$changed_files
-"
-  [ -n "$diff_stat" ] && git_context+="
-Diff summary:
-$diff_stat
-"
+# ── Gather existing progress lines ──────────────────────────────────────────
+progress_lines=""
+if [ -n "$last_started_sid" ]; then
+  session_block=$(echo "$entries_section" | sed -n "/session-$last_started_sid | status: started/,/^## \[/p" | head -n -1)
+  progress_lines=$(echo "$session_block" | grep '^- progress:' 2>/dev/null || echo "")
 fi
+
+# ── Extract removed symbols from progress lines ─────────────────────────────
+removed_from_progress=""
+if [ -n "$progress_lines" ]; then
+  removed_from_progress=$(echo "$progress_lines" | grep -oP '\(removed?: \K[^)]+' 2>/dev/null | tr ',' '\n' | sed 's/^[[:space:]]*//' | sort -u | paste -sd', ' || echo "")
+fi
+
+# ── Detect session type from started entry ───────────────────────────────────
+session_type=$(echo "$entries_section" | grep "session-${last_started_sid:-xxxx} | status: started" | sed -n 's/.*type: \([a-z]*\).*/\1/p')
+[ -z "$session_type" ] && session_type="add"
+
+# ── Build draft completed entry ──────────────────────────────────────────────
+files_list=$(echo "$changed_files" | head -20 | tr '\n' ', ' | sed 's/,$//')
+[ -z "$files_list" ] && files_list="(none detected — check git status)"
+
+draft="## [$(date +%Y-%m-%dT%H:%M)] session-${last_started_sid:-xxxx} | status: completed | mode: $mode | type: $session_type
+files_touched: $files_list
+symbols_added: (fill in)
+symbols_removed: ${removed_from_progress:-(fill in)}
+tests_added: (fill in)
+reason: (fill in — summarize from progress lines above)
+health_snapshot: LOC=?, tests=?, complexity=?"
 
 # No completed entry for the current/last session
 if [ "$mode" = "full" ]; then
   MSG="--- CHANGES.md: session not completed ---
-You have a started session without a completed entry.
-In full mode, you MUST append a completed entry to CHANGES.md before finishing.
-${git_context}
-Format:
-## [$(date +%Y-%m-%dT%H:%M)] session-${last_started_sid:-xxxx} | status: completed | mode: full | type: add|fix|refactor|chore
-files_touched: <files you changed>
-symbols_added: <new exports>
-symbols_removed: <deleted exports>
-tests_added: <test files>
-reason: <one sentence>
-health_snapshot: LOC=<n>, tests=<n>, complexity=ok|warn|fail
+You have a started session (${last_started_sid}) without a completed entry.
+In full mode, you MUST append a completed entry to CHANGES.md before finishing."
 
-See .kit/changelog-protocol.md for details.
+  if [ -n "$progress_lines" ]; then
+    MSG+="
+
+Progress logged so far:
+$progress_lines"
+  fi
+
+  MSG+="
+
+Draft completed entry (review and fill in blanks):
+
+$draft"
+
+  if [ -n "$diff_stat" ]; then
+    MSG+="
+
+Git diff summary:
+$diff_stat"
+  fi
+
+  MSG+="
 ---"
 
   escaped=$(printf '%s' "$MSG" | python3 -c "import sys,json; sys.stdout.write(json.dumps(sys.stdin.read()))" 2>/dev/null || printf '"%s"' "$MSG")
@@ -65,10 +94,19 @@ See .kit/changelog-protocol.md for details.
   exit 1
 fi
 
-# Lean mode — just a gentle reminder
+# Lean mode — gentle reminder with draft
 MSG="--- Session end reminder (lean mode) ---
-Consider logging this session in CHANGES.md if you removed or renamed any symbols.
-${git_context}---"
+Consider completing session ${last_started_sid:-?} in CHANGES.md if you removed or renamed symbols."
+
+if [ -n "$progress_lines" ]; then
+  MSG+="
+
+Progress logged:
+$progress_lines"
+fi
+
+MSG+="
+---"
 
 escaped=$(printf '%s' "$MSG" | python3 -c "import sys,json; sys.stdout.write(json.dumps(sys.stdin.read()))" 2>/dev/null || printf '"%s"' "$MSG")
 printf '{"additionalContext": %s}\n' "$escaped"
