@@ -30,13 +30,16 @@ async function main() {
 
   showTitleScreen(app, (runConfig) => launchGame(app, runConfig));
 
-  // Debug mode indicator
+  // Debug mode indicator — overlaid on the canvas itself
   if (DEBUG_MODE) {
+    const wrapper = document.createElement("div");
+    wrapper.style.cssText = "position:relative;display:inline-block";
+    app.canvas.parentNode?.insertBefore(wrapper, app.canvas);
+    wrapper.appendChild(app.canvas);
     const badge = document.createElement("div");
     badge.textContent = "DEBUG";
     badge.style.cssText = "position:absolute;top:4px;left:4px;padding:2px 6px;font:bold 10px monospace;color:#ff0;background:rgba(0,0,0,0.6);border-radius:4px;z-index:99999;pointer-events:none";
-    container.style.position = "relative";
-    container.appendChild(badge);
+    wrapper.appendChild(badge);
   }
 }
 
