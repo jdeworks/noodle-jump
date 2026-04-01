@@ -1,8 +1,4 @@
-/**
- * Online multiplayer session — wires networking to the game loop.
- * Local player ticks normally, remote player position comes from network.
- * Handles death events, ghost mode, game over, and death toasts.
- */
+/** Online multiplayer session — wires networking to the game loop. */
 
 import { Application, Graphics, Text, TextStyle } from "pixi.js";
 import { GameScene } from "../scenes/GameScene";
@@ -131,6 +127,12 @@ export class OnlineSession {
     this.scene.startCountdown();
     this.sync.startSending();
     playMusic(0);
+
+    // Re-add FPS text on top of everything
+    if (this.fpsText) {
+      this.app.stage.removeChild(this.fpsText);
+      this.app.stage.addChild(this.fpsText);
+    }
 
     this.gameLoop = () => {
       this.tick();

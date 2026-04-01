@@ -148,6 +148,23 @@ export async function launchLocalCoop(
 
   playMusic(0);
 
+  // Escape to quit mid-game
+  let quitRequested = false;
+  const midGameEscape = (e: KeyboardEvent) => {
+    if (e.key === "Escape" && !quitRequested) {
+      quitRequested = true;
+      window.removeEventListener("keydown", midGameEscape);
+      setTimeout(() => {
+        cleanupLocalCoop(app, scene1, scene2, input, gameLoop);
+        app.renderer.resize(GAME_WIDTH, GAME_HEIGHT);
+        app.canvas.style.maxWidth = "500px";
+        app.canvas.style.aspectRatio = "400 / 700";
+        showTitleScreen(app, (runConfig) => launchGame(app, runConfig));
+      }, 0);
+    }
+  };
+  window.addEventListener("keydown", midGameEscape);
+
   let p1Dead = false;
   let p2Dead = false;
   let p1DeathHeight = 0;
@@ -203,6 +220,7 @@ export async function launchLocalCoop(
     // Both dead → show results
     if (scene1.isGameOver() && scene2.isGameOver()) {
       app.ticker.remove(gameLoop);
+      window.removeEventListener("keydown", midGameEscape);
       showResults();
     }
   };
@@ -261,75 +279,74 @@ export async function launchLocalCoop(
       app.stage.addChild(t);
     });
 
-    // Rematch button
-    const rematchBg = new Graphics();
-    rematchBg.roundRect(SPLIT_WIDTH / 2 - 100, GAME_HEIGHT * 0.55 - 20, 200, 40, 10);
-    rematchBg.fill({ color: 0x1a3355, alpha: 0.9 });
-    rematchBg.roundRect(SPLIT_WIDTH / 2 - 100, GAME_HEIGHT * 0.55 - 20, 200, 40, 10);
-    rematchBg.stroke({ width: 1.5, color: 0x6688bb, alpha: 0.5 });
-    rematchBg.eventMode = "static";
-    rematchBg.cursor = "pointer";
-    app.stage.addChild(rematchBg);
+    // Rematch ready-up: P1 presses W, P2 presses Up to ready
+    let p1Ready = false, p2Ready = false;
 
-    const rematchText = new Text({
-      text: "Rematch",
+    const makeReadyStyle = () => new TextStyle({
+      fontFamily: "monospace", fontSize: 14, fill: "#aaaaaa",
+      stroke: { color: "#000000", width: 2 },
+    });
+    const p1ReadyText = new Text({ text: "P1: Press W to rematch", style: makeReadyStyle() });
+    p1ReadyText.x = SPLIT_WIDTH / 2;
+    p1ReadyText.y = GAME_HEIGHT * 0.53;
+    p1ReadyText.anchor.set(0.5, 0.5);
+    app.stage.addChild(p1ReadyText);
+
+    const p2ReadyText = new Text({ text: "P2: Press ↑ to rematch", style: makeReadyStyle() });
+    p2ReadyText.x = SPLIT_WIDTH / 2;
+    p2ReadyText.y = GAME_HEIGHT * 0.58;
+    p2ReadyText.anchor.set(0.5, 0.5);
+    app.stage.addChild(p2ReadyText);
+
+    const rematchKeyHandler = (e: KeyboardEvent) => {
+      if ((e.key === "w" || e.key === "W") && !p1Ready) {
+        p1Ready = true;
+        p1ReadyText.text = "P1: Ready!";
+        p1ReadyText.style.fill = "#44ff44";
+      }
+      if (e.key === "ArrowUp" && !p2Ready) {
+        p2Ready = true;
+        p2ReadyText.text = "P2: Ready!";
+        p2ReadyText.style.fill = "#44ff44";
+      }
+      if (p1Ready && p2Ready) {
+        window.removeEventListener("keydown", rematchKeyHandler);
+        // Defer cleanup to next frame to avoid destroying mid-handler
+        setTimeout(() => {
+          cleanupLocalCoop(app, scene1, scene2, input, gameLoop);
+          const newSeed = Math.floor(Math.random() * 0xffffffff);
+          launchLocalCoop(app, newSeed);
+        }, 0);
+      }
+    };
+    window.addEventListener("keydown", rematchKeyHandler);
+
+    // Home — press Escape
+    const homeHint = new Text({
+      text: "Press Escape to quit",
       style: new TextStyle({
-        fontFamily: "monospace",
-        fontSize: 20,
-        fill: "#ffffff",
-        fontWeight: "bold",
+        fontFamily: "monospace", fontSize: 12, fill: "#888888",
         stroke: { color: "#000000", width: 2 },
       }),
     });
-    rematchText.x = SPLIT_WIDTH / 2;
-    rematchText.y = GAME_HEIGHT * 0.55;
-    rematchText.anchor.set(0.5, 0.5);
-    rematchText.eventMode = "static";
-    rematchText.cursor = "pointer";
-    app.stage.addChild(rematchText);
-
-    const doRematch = () => {
-      cleanupLocalCoop(app, scene1, scene2, input, gameLoop);
-      const newSeed = Math.floor(Math.random() * 0xffffffff);
-      launchLocalCoop(app, newSeed);
+    homeHint.x = SPLIT_WIDTH / 2;
+    homeHint.y = GAME_HEIGHT * 0.65;
+    homeHint.anchor.set(0.5, 0.5);
+    app.stage.addChild(homeHint);
+    const escapeHandler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        window.removeEventListener("keydown", rematchKeyHandler);
+        window.removeEventListener("keydown", escapeHandler);
+        setTimeout(() => {
+          cleanupLocalCoop(app, scene1, scene2, input, gameLoop);
+          app.renderer.resize(GAME_WIDTH, GAME_HEIGHT);
+          app.canvas.style.maxWidth = "500px";
+          app.canvas.style.aspectRatio = "400 / 700";
+          showTitleScreen(app, (runConfig) => launchGame(app, runConfig));
+        }, 0);
+      }
     };
-    rematchBg.on("pointertap", doRematch);
-    rematchText.on("pointertap", doRematch);
-
-    // Home button
-    const homeBg = new Graphics();
-    homeBg.roundRect(SPLIT_WIDTH / 2 - 100, GAME_HEIGHT * 0.63 - 18, 200, 36, 10);
-    homeBg.fill({ color: 0x222244, alpha: 0.9 });
-    homeBg.eventMode = "static";
-    homeBg.cursor = "pointer";
-    app.stage.addChild(homeBg);
-
-    const homeText = new Text({
-      text: "Home",
-      style: new TextStyle({
-        fontFamily: "monospace",
-        fontSize: 16,
-        fill: "#aaccff",
-        fontWeight: "bold",
-        stroke: { color: "#000000", width: 2 },
-      }),
-    });
-    homeText.x = SPLIT_WIDTH / 2;
-    homeText.y = GAME_HEIGHT * 0.63;
-    homeText.anchor.set(0.5, 0.5);
-    homeText.eventMode = "static";
-    homeText.cursor = "pointer";
-    app.stage.addChild(homeText);
-
-    const goHome = () => {
-      cleanupLocalCoop(app, scene1, scene2, input, gameLoop);
-      app.renderer.resize(GAME_WIDTH, GAME_HEIGHT);
-      app.canvas.style.maxWidth = "500px";
-      app.canvas.style.aspectRatio = "400 / 700";
-      showTitleScreen(app, (runConfig) => launchGame(app, runConfig));
-    };
-    homeBg.on("pointertap", goHome);
-    homeText.on("pointertap", goHome);
+    window.addEventListener("keydown", escapeHandler);
   }
 
   app.ticker.add(gameLoop);
