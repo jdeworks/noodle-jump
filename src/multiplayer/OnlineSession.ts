@@ -54,6 +54,10 @@ export class OnlineSession {
   private fpsFrames = 0;
   private fpsLast = performance.now();
 
+  // Countdown overlay
+  private countdownDim: Graphics | null = null;
+  private countdownText: Text | null = null;
+
   constructor(config: OnlineSessionConfig) {
     this.app = config.app;
     this.connection = config.connection;
@@ -76,6 +80,7 @@ export class OnlineSession {
     this.app.stage.addChild(this.deathToast);
     this.fpsText = this.makeFps();
     this.app.stage.addChild(this.fpsText);
+    this.makeCountdown();
     this.setupSync();
   }
 
@@ -148,6 +153,16 @@ export class OnlineSession {
       this.remoteRenderer.update(remoteState, state.camera.y);
     }
 
+    // Countdown overlay
+    const cd = this.scene.getCountdownSeconds();
+    if (cd !== undefined && cd >= 0 && this.countdownText && this.countdownDim) {
+      this.countdownText.text = cd > 0 ? `${cd}` : "GO!";
+      this.countdownText.visible = true; this.countdownDim.visible = true;
+    } else if (this.countdownText) {
+      this.countdownText.visible = false;
+      if (this.countdownDim) this.countdownDim.visible = false;
+    }
+
     // FPS counter
     this.fpsFrames++;
     const now = performance.now();
@@ -184,16 +199,10 @@ export class OnlineSession {
   }
 
   private showResults(): void {
-    if (this.gameLoop) {
-      this.app.ticker.remove(this.gameLoop);
-      this.gameLoop = null;
-    }
+    if (this.gameLoop) { this.app.ticker.remove(this.gameLoop); this.gameLoop = null; }
     this.sync.stopSending();
-
-    const h1 = this.localDeathHeight;
-    const h2 = this.remoteDeathHeight;
+    const h1 = this.localDeathHeight, h2 = this.remoteDeathHeight;
     const localLabel = this.role === "host" ? "You (Host)" : "You (Guest)";
-    const remoteLabel = this.role === "host" ? "Opponent" : "Opponent";
     const winner = h1 > h2 ? "You Win!" : h2 > h1 ? "You Lose!" : "It's a Tie!";
 
     // Overlay
@@ -224,16 +233,10 @@ export class OnlineSession {
       stroke: { color: "#000000", width: 2 },
     });
 
-    const lines = [
-      `${localLabel}: ${h1}m  |  ${remoteLabel}: ${h2}m`,
-      `Score: ${this.scene.getScore()}`,
-    ];
-
+    const lines = [`${localLabel}: ${h1}m  |  Opponent: ${h2}m`, `Score: ${this.scene.getScore()}`];
     lines.forEach((line, i) => {
       const t = new Text({ text: line, style: compStyle });
-      t.x = GAME_WIDTH / 2;
-      t.y = GAME_HEIGHT * 0.36 + i * 22;
-      t.anchor.set(0.5, 0.5);
+      t.x = GAME_WIDTH / 2; t.y = GAME_HEIGHT * 0.36 + i * 22; t.anchor.set(0.5, 0.5);
       this.app.stage.addChild(t);
     });
 
@@ -337,6 +340,7 @@ export class OnlineSession {
     this.app.stage.addChild(this.deathToast);
     this.fpsText = this.makeFps();
     this.app.stage.addChild(this.fpsText);
+    this.makeCountdown();
     this.setupSync();
     this.start();
   }
@@ -353,6 +357,17 @@ export class OnlineSession {
       fontSize: 11, fill: "#00ff00", stroke: { color: "#000000", width: 2 } }) });
     t.x = 10; t.y = GAME_HEIGHT - 16;
     return t;
+  }
+
+  private makeCountdown(): void {
+    this.countdownDim = new Graphics();
+    this.countdownDim.rect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+    this.countdownDim.fill({ color: 0x000000, alpha: 0.4 });
+    this.app.stage.addChild(this.countdownDim);
+    this.countdownText = new Text({ text: "", style: new TextStyle({ fontFamily: "monospace",
+      fontSize: 48, fill: "#ffffff", fontWeight: "bold", stroke: { color: "#000000", width: 4 } }) });
+    this.countdownText.x = GAME_WIDTH / 2; this.countdownText.y = GAME_HEIGHT * 0.4;
+    this.countdownText.anchor.set(0.5, 0.5); this.app.stage.addChild(this.countdownText);
   }
 
   private cleanup(): void {

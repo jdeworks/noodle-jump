@@ -130,19 +130,17 @@ export async function launchLocalCoop(
   app.stage.addChild(deathToast);
   let toastTimer = 0;
 
-  // FPS counter (always visible during multiplayer testing)
-  const fpsText = new Text({
-    text: "FPS: --",
-    style: new TextStyle({ fontFamily: "monospace", fontSize: 11, fill: "#00ff00",
-      stroke: { color: "#000000", width: 2 } }),
-  });
-  fpsText.x = SPLIT_WIDTH / 2;
-  fpsText.y = GAME_HEIGHT - 16;
-  fpsText.anchor.set(0.5, 0);
-  app.stage.addChild(fpsText);
-  let fpsFrames = 0, fpsLast = performance.now();
+  // FPS counter
+  const fpsText = new Text({ text: "FPS: --", style: new TextStyle({ fontFamily: "monospace",
+    fontSize: 11, fill: "#00ff00", stroke: { color: "#000000", width: 2 } }) });
+  fpsText.x = SPLIT_WIDTH / 2; fpsText.y = GAME_HEIGHT - 16; fpsText.anchor.set(0.5, 0);
+  app.stage.addChild(fpsText); let fpsFrames = 0, fpsLast = performance.now();
 
-  // Countdown overlay
+  // Countdown overlay with dim background
+  const countdownDim = new Graphics();
+  countdownDim.rect(0, 0, SPLIT_WIDTH, GAME_HEIGHT);
+  countdownDim.fill({ color: 0x000000, alpha: 0.4 });
+  app.stage.addChild(countdownDim);
   const countdownText = new Text({ text: "", style: new TextStyle({ fontFamily: "monospace",
     fontSize: 48, fill: "#ffffff", fontWeight: "bold", stroke: { color: "#000000", width: 4 } }) });
   countdownText.x = SPLIT_WIDTH / 2; countdownText.y = GAME_HEIGHT * 0.4;
@@ -211,8 +209,8 @@ export async function launchLocalCoop(
     const cd = scene1.getCountdownSeconds();
     if (cd !== undefined && cd >= 0) {
       countdownText.text = cd > 0 ? `${cd}` : "GO!";
-      countdownText.visible = true;
-    } else { countdownText.visible = false; }
+      countdownText.visible = true; countdownDim.visible = true;
+    } else { countdownText.visible = false; countdownDim.visible = false; }
 
     // FPS counter
     fpsFrames++;
