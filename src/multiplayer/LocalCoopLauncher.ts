@@ -13,7 +13,7 @@ import { resetPowerUpIds } from "../entities/PowerUp";
 import { resetCollectibleIds } from "../entities/Collectible";
 import { resetEnemyIds } from "../entities/Enemy";
 import { resetProjectileIds } from "../entities/Projectile";
-import { resetRNG, getRNGFunction, setRNGFunction, initRNG } from "../systems/RNG";
+import { resetRNG, getRNGFunction, setRNGFunction } from "../systems/RNG";
 import { seededRandom } from "../systems/DailyChallenge";
 import { resetRendererState } from "../scenes/EntityRenderer";
 import { createDefaultRunConfig, type RunConfig } from "../systems/CustomRunConfig";
