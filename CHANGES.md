@@ -54,3 +54,32 @@ symbols_removed: (none)
 tests_added: tests/camera.test.ts (boss lock), tests/powerup-effects.test.ts (drill safety)
 reason: Fixed drill destroying landing platforms, camera/platform-gen not locking during boss fights, music overlap on death/restart, title screen content visible behind sub-menus, and double-tap zoom on mobile.
 health_snapshot: LOC=9800, tests=689, complexity=ok
+
+## [2026-04-01T12:00] session-a1d4 | status: started | mode: lean | type: add
+intent: Debug mode UI, boss fight overhaul, remove drill, fix music overlap
+
+- progress: Enable DEBUG_MODE, add debug options to Custom Run screen | src/config/constants.ts, src/ui/CustomRunScreen.ts, src/scenes/GameState.ts
+- progress: Remove rigatoni drill from spawn lists | src/entities/PowerUp.ts, src/systems/CustomRunConfig.ts (removed: rigatoni_drill from POSITIVE_TYPES, ALL_POWER_UP_TYPES)
+- progress: Fix button text cursor on title screen | src/ui/TitleScreenView.ts
+- progress: Add localStorage persistence, presets, reset, scrolling to Custom Run | src/ui/CustomRunScreen.ts
+- progress: Wire forcePowerUpType into spawn system | src/entities/PowerUp.ts, src/scenes/GameLoopHelpers.ts
+- progress: Fix quick zone transitions formula (direct zone calc) | src/scenes/GameLoop.ts
+- progress: Fix boss Y-bounds (Kraken, UFO track player), ChefRival visibility constraint | src/entities/bosses/KrakenBoss.ts, src/entities/bosses/UFOBoss.ts, src/entities/bosses/ChefRivalBoss.ts
+- progress: Implement FPS counter in HUD | src/ui/HUD.ts
+- progress: Implement hitbox debug rendering (player, platforms, powerups, meatballs, enemies, boss) | src/scenes/GameScene.ts
+- progress: Fix knife rendering during boss fights, knife ammo as mini icons | src/scenes/GameScene.ts, src/scenes/EntityRenderer.ts
+- progress: Fix music overlap — track/cancel fade intervals, stop all music on death | src/systems/MusicPlayer.ts, src/scenes/GameLoopTicker.ts, src/scenes/GameSceneEvents.ts
+- progress: Boss fight arena — break off-screen platforms, boss grace period, safe powerups | src/scenes/GameLoopBoss.ts
+- progress: Fix activeBoss not nulled on kill (blocked subsequent bosses) | src/scenes/GameLoopBoss.ts
+- progress: Kraken rework — tentacle extend/hold/remove animation, escalating speed, edge-only, sliver-then-destroy | src/entities/bosses/KrakenBoss.ts, src/scenes/GameLoopBoss.ts, src/scenes/GameScene.ts, src/scenes/GameState.ts
+- progress: UFO aimed projectiles at player with spread shot | src/entities/bosses/UFOBoss.ts
+- progress: Split GameScene.ts and CustomRunScreen.ts for LOC limits | src/scenes/BossArenaRenderer.ts, src/ui/CustomRunStorage.ts
+- progress: Fix tests for drill removal and bossTestPreset change | tests/custom-run-config.test.ts, tests/debug-config.test.ts, tests/wiring.test.ts
+
+## [2026-04-01T14:10] session-a1d4 | status: completed | mode: lean | type: add
+files_touched: src/config/constants.ts, src/config/debug.ts, src/entities/PowerUp.ts, src/entities/bosses/ChefRivalBoss.ts, src/entities/bosses/KrakenBoss.ts, src/entities/bosses/UFOBoss.ts, src/scenes/GameLoop.ts, src/scenes/GameLoopBoss.ts, src/scenes/GameLoopHelpers.ts, src/scenes/GameLoopTicker.ts, src/scenes/GameScene.ts, src/scenes/GameSceneEvents.ts, src/scenes/GameSceneRender.ts, src/scenes/GameState.ts, src/systems/CustomRunConfig.ts, src/systems/MusicPlayer.ts, src/ui/CustomRunScreen.ts, src/ui/CustomRunStorage.ts, src/ui/HUD.ts, src/ui/TitleScreenView.ts, src/scenes/BossArenaRenderer.ts, tests/custom-run-config.test.ts, tests/debug-config.test.ts, tests/wiring.test.ts
+symbols_added: BossArenaRenderer (renderTentacles, renderKnifeAmmo, renderDebugHitboxes), CustomRunStorage (saveRunConfigToStorage, loadRunConfigFromStorage, saveDebugConfigToStorage, loadDebugConfigFromStorage, addSectionHeader, addRow, addToggleRow, addPresetRow, buildPresets, addPowerUpGrid, createBottomBar), pendingTentacles (GameWorldState)
+symbols_removed: rigatoni_drill (from POSITIVE_TYPES, ALL_POWER_UP_TYPES), infiniteKnives (from bossTestPreset)
+tests_added: (updated existing: tests/custom-run-config.test.ts, tests/debug-config.test.ts, tests/wiring.test.ts)
+reason: Added debug mode UI with presets/persistence, overhauled all 3 boss fights (grace period, arena locking, tentacle animations, aimed projectiles), removed drill power-up, fixed music overlap and knife rendering.
+health_snapshot: LOC=16124, tests=346, complexity=ok
