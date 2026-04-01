@@ -157,7 +157,9 @@ export function tickGameWorld(
         return { state: { ...state, platforms: plats, player: { ...state.player,
           x: rescue.x + rescue.width / 2 - state.player.width / 2,
           y: rescue.y - state.player.height, vy: -12, isJumping: true,
-        }, isDying: false, dyingTicks: 0, stagnantTicks: 0, ghostDeathHeight: ph }, events };
+        }, isDying: false, dyingTicks: 0, stagnantTicks: 0, ghostDeathHeight: ph,
+        // Clear boss fight so ghost player isn't immediately killed again
+        activeBoss: null, inBossFight: false, bossAttacks: [] }, events };
       }
       const isCustom = state.runConfig.seed !== 0 || state.practiceMode;
       const isNewRecord = isCustom ? false : saveHighScore(state.scoreState.points);

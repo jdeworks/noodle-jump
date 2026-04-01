@@ -34,8 +34,9 @@ async function main() {
   if (DEBUG_MODE) {
     const badge = document.createElement("div");
     badge.textContent = "DEBUG";
-    badge.style.cssText = "position:fixed;top:4px;left:4px;padding:2px 6px;font:bold 10px monospace;color:#ff0;background:rgba(0,0,0,0.6);border-radius:4px;z-index:99999;pointer-events:none";
-    document.body.appendChild(badge);
+    badge.style.cssText = "position:absolute;top:4px;left:4px;padding:2px 6px;font:bold 10px monospace;color:#ff0;background:rgba(0,0,0,0.6);border-radius:4px;z-index:99999;pointer-events:none";
+    container.style.position = "relative";
+    container.appendChild(badge);
   }
 }
 

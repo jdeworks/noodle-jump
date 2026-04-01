@@ -231,8 +231,8 @@ export async function launchLocalCoop(
     }
 
     // Update height displays
-    p1Height.text = `H: ${scene1.getHeight()}`;
-    p2Height.text = `H: ${scene2.getHeight()}`;
+    p1Height.text = `H: ${scene1.getMaxHeight()}`;
+    p2Height.text = `H: ${scene2.getMaxHeight()}`;
 
     // Timed mode countdown
     if (timerTicks > 0) {

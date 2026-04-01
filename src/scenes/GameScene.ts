@@ -38,6 +38,7 @@ import { renderTentacles, renderKnifeAmmo, renderDebugHitboxes } from "./BossAre
 export class GameScene {
   readonly container = new Container();
   readonly input = new InputManager();
+  private destroyed = false;
 
   private state: GameWorldState;
   private parallax: ParallaxBackground;
@@ -221,7 +222,7 @@ export class GameScene {
   updateWithInput(inputX: number): void { this.update(inputX); }
 
   update(externalInputX?: number): void {
-    if (this.state.gameOver || this.state.paused) return;
+    if (this.destroyed || this.state.gameOver || this.state.paused) return;
     if (externalInputX === undefined) this.input.update();
     const result = tickGameWorld(this.state, externalInputX ?? this.input.inputX);
     this.state = result.state;
@@ -376,6 +377,7 @@ export class GameScene {
   // ── Cleanup ────────────────────────────────────────────────────────────
 
   destroy(): void {
+    this.destroyed = true;
     this.input.destroy();
     this.effectRenderer.destroy(this.container);
     this.particles.destroy();
