@@ -206,10 +206,13 @@ export class GameScene {
 
   // ── Main update ────────────────────────────────────────────────────────
 
-  update(): void {
+  /** Update game. Pass inputX to override keyboard (for multiplayer). */
+  updateWithInput(inputX: number): void { this.update(inputX); }
+
+  update(externalInputX?: number): void {
     if (this.state.gameOver || this.state.paused) return;
-    this.input.update();
-    const result = tickGameWorld(this.state, this.input.inputX);
+    if (externalInputX === undefined) this.input.update();
+    const result = tickGameWorld(this.state, externalInputX ?? this.input.inputX);
     this.state = result.state;
 
     // Dispatch events to audio/visual side effects

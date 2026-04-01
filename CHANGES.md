@@ -89,3 +89,6 @@ intent: Stage 1 — Multiplayer networking layer (signaling strategies, connecti
 
 - progress: SignalingStrategy interface, ManualSignaling (SDP compression via pako+base62), NostrSignaling (Trystero wrapper), ConnectionManager, GameSync (binary position + events) | src/multiplayer/SignalingStrategy.ts, src/multiplayer/ManualSignaling.ts, src/multiplayer/NostrSignaling.ts, src/multiplayer/ConnectionManager.ts, src/multiplayer/GameSync.ts, src/multiplayer/SDPCompressor.ts, src/multiplayer/index.ts
 - progress: Unit tests for SDP compression round-trip, base62 encoding, position encoding/decoding | tests/multiplayer/sdp-compressor.test.ts, tests/multiplayer/game-sync.test.ts
+- progress: LocalInput (split keyboard P1=WASD, P2=Arrows), MultiplayerSession (two states, shared seed, winner logic), LocalCoopLauncher (split-screen with masks, death toasts, results/rematch) | src/multiplayer/LocalInput.ts, src/multiplayer/MultiplayerSession.ts, src/multiplayer/LocalCoopLauncher.ts
+- progress: Added updateWithInput() to GameScene for external input control | src/scenes/GameScene.ts
+- progress: Tests for LocalInput and MultiplayerSession | tests/multiplayer/local-input.test.ts, tests/multiplayer/multiplayer-session.test.ts

@@ -29,3 +29,12 @@ export {
   toBase62,
   fromBase62,
 } from "./SDPCompressor";
+export { LocalInput } from "./LocalInput";
+export {
+  MultiplayerSession,
+  type MultiplayerMode,
+  type PlayerStatus,
+  type PlayerResult,
+  type MultiplayerResult,
+} from "./MultiplayerSession";
+export { launchLocalCoop } from "./LocalCoopLauncher";
