@@ -30,11 +30,11 @@ export function showLocalCoopResults(params: ResultsParams): void {
 
   let winner: string;
   if (mode === "first-to-die") {
-    // Survivor wins — if both dead simultaneously, use height
     winner = p1Dead && !p2Dead ? "Player 2 Wins!" : !p1Dead && p2Dead ? "Player 1 Wins!" : "It's a Tie!";
   } else {
     winner = h1 > h2 ? "Player 1 Wins!" : h2 > h1 ? "Player 2 Wins!" : "It's a Tie!";
   }
+  if (mode === "timed-2min") winner = "Time's Up! " + winner;
   const winnerText = new Text({
     text: winner,
     style: new TextStyle({

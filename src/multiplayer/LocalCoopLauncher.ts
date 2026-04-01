@@ -246,23 +246,29 @@ export async function launchLocalCoop(
       }
     }
 
-    // Track deaths
-    if (!p1Dead && scene1.getState().isDying) {
-      p1Dead = true;
-      p1DeathHeight = scene1.getHeight();
-      showToast(`P1 died at ${p1DeathHeight}m!`);
+    // Track deaths (timed mode: deaths are just penalties, no tracking)
+    if (mode !== "timed-2min") {
+      if (!p1Dead && scene1.getState().isDying) {
+        p1Dead = true;
+        p1DeathHeight = scene1.getHeight();
+        showToast(`P1 died at ${p1DeathHeight}m!`);
+      }
+      if (!p2Dead && scene2.getState().isDying) {
+        p2Dead = true;
+        p2DeathHeight = scene2.getHeight();
+        showToast(`P2 died at ${p2DeathHeight}m!`);
+      }
+    } else {
+      // Timed mode: just show death toasts, ghost respawn handles the rest
+      if (scene1.getState().isDying && !scene1.getState().gameOver) showToast("P1 died! -10% height");
+      if (scene2.getState().isDying && !scene2.getState().gameOver) showToast("P2 died! -10% height");
     }
-    if (!p2Dead && scene2.getState().isDying) {
-      p2Dead = true;
-      p2DeathHeight = scene2.getHeight();
-      showToast(`P2 died at ${p2DeathHeight}m!`);
-    }
-    // Show "GHOST" label on dead player's side
-    if (p1Dead && !p2Dead) {
+    // Show "GHOST" label on dead player's side (not for timed mode)
+    if (mode !== "timed-2min" && p1Dead && !p2Dead) {
       spectateOverlay.visible = true; spectateOverlay.x = 0;
       spectateLabel.x = GAME_WIDTH / 2;
       spectateLabel.text = `GHOST\nHeight locked: ${p1DeathHeight}m`;
-    } else if (p2Dead && !p1Dead) {
+    } else if (mode !== "timed-2min" && p2Dead && !p1Dead) {
       spectateOverlay.visible = true; spectateOverlay.x = GAME_WIDTH;
       spectateLabel.x = GAME_WIDTH + GAME_WIDTH / 2;
       spectateLabel.text = `GHOST\nHeight locked: ${p2DeathHeight}m`;
@@ -291,12 +297,12 @@ export async function launchLocalCoop(
       if (toastTimer === 0) deathToast.visible = false;
     }
 
-    // Both dead → show results
-    // End condition depends on mode
-    const shouldEnd = mode === "first-to-die"
-      ? (p1Dead || p2Dead) && !gameEnded
-      : (p1Dead && p2Dead) && !gameEnded;
-    if (shouldEnd) {
+    // End condition depends on mode (timed mode ends ONLY from timer, not deaths)
+    let shouldEnd = false;
+    if (mode === "first-to-die") shouldEnd = (p1Dead || p2Dead);
+    else if (mode === "best-height") shouldEnd = (p1Dead && p2Dead);
+    // timed-2min: shouldEnd stays false — timer handles it above
+    if (shouldEnd && !gameEnded) {
       gameEnded = true;
       app.ticker.remove(gameLoop);
       window.removeEventListener("keydown", midGameEscape);
