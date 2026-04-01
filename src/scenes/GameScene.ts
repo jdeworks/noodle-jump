@@ -154,8 +154,6 @@ export class GameScene {
     this.input.init(canvas);
   }
 
-  // ── State accessors ────────────────────────────────────────────────────
-
   getState(): GameWorldState { return this.state; }
   isGameOver(): boolean { return this.state.gameOver; }
   getScore(): number { return this.state.scoreState.points; }
@@ -181,27 +179,36 @@ export class GameScene {
   startCountdown(): void { this.state = startCountdown(this.state); }
 
   getActiveEffectProgress(): number {
-    if (!this.state.activeEffect) return 0;
-    return this.state.activeEffect.ticksRemaining / getMaxDuration(this.state.activeEffect.type);
+    return this.state.activeEffect ? this.state.activeEffect.ticksRemaining / getMaxDuration(this.state.activeEffect.type) : 0;
   }
   getCountdownSeconds(): number | undefined {
-    if (this.state.countdownTicks < 0) return undefined;
-    return Math.ceil(this.state.countdownTicks / 60);
+    return this.state.countdownTicks < 0 ? undefined : Math.ceil(this.state.countdownTicks / 60);
   }
   getZoneProgress(): number {
-    const thresholds = [0, 80, 280, 500, 750, 1000, 1300];
-    const zone = this.state.zoneState.currentZone;
-    if (zone >= thresholds.length - 1) return 1;
-    const current = this.state.platformsPassed;
-    return Math.min(1, (current - thresholds[zone]) / (thresholds[zone + 1] - thresholds[zone]));
+    const th = [0, 80, 280, 500, 750, 1000, 1300], z = this.state.zoneState.currentZone;
+    return z >= th.length - 1 ? 1 : Math.min(1, (this.state.platformsPassed - th[z]) / (th[z + 1] - th[z]));
   }
   checkNewHighScore(): boolean {
-    if (this.state.highScoreBeatShown) return false;
-    return this.state.highScore > 0 && this.state.scoreState.points > this.state.highScore;
+    return !this.state.highScoreBeatShown && this.state.highScore > 0 && this.state.scoreState.points > this.state.highScore;
   }
   handleThrow(screenX: number, screenY: number): void {
     if (!this.state.enemiesEnabled && !this.state.inBossFight) return;
     this.state = throwProjectile(this.state, screenX, screenY + this.state.camera.y);
+  }
+
+  /** Auto-aim throw — targets nearest boss or enemy. For local co-op. */
+  autoAimThrow(): void {
+    if (!this.state.enemiesEnabled && !this.state.inBossFight) return;
+    const px = this.state.player.x + this.state.player.width / 2;
+    const py = this.state.player.y + this.state.player.height / 2;
+    let tx = px, ty = py - 200;
+    const b = this.state.activeBoss;
+    if (b) { tx = b.x + b.width / 2; ty = b.y + b.height / 2; }
+    else if (this.state.enemies.length > 0) {
+      let best = Infinity;
+      for (const e of this.state.enemies) { const d = (e.x-px)**2+(e.y-py)**2; if (d<best) { best=d; tx=e.x; ty=e.y; } }
+    }
+    this.state = throwProjectile(this.state, tx, ty);
   }
 
   // ── Main update ────────────────────────────────────────────────────────
@@ -287,27 +294,12 @@ export class GameScene {
 
     const camY = this.state.camera.y;
 
-    // Player + effects
-    this.effectRenderer.renderPlayer(
-      this.state,
-      this.playerGfx,
-      camY,
-      this.particles,
-      this.input.inputX,
-    );
-
-    // Entities
+    this.effectRenderer.renderPlayer(this.state, this.playerGfx, camY, this.particles, this.input.inputX);
     renderPlatforms(this.state, this.gfxSync, theme, camY);
     renderMeatballs(this.state, this.gfxSync, camY);
     renderPowerUps(this.state, this.gfxSync, camY);
-    if (this.state.enemiesEnabled) {
-      renderEnemies(this.state, this.gfxSync, camY);
-    }
-    if (this.state.enemiesEnabled || this.state.inBossFight) {
-      renderProjectiles(this.state, this.gfxSync, camY);
-    }
-
-    // Debug hitboxes
+    if (this.state.enemiesEnabled) renderEnemies(this.state, this.gfxSync, camY);
+    if (this.state.enemiesEnabled || this.state.inBossFight) renderProjectiles(this.state, this.gfxSync, camY);
     renderDebugHitboxes(this.hitboxGfx, this.state, camY);
 
     // Particles and floating text

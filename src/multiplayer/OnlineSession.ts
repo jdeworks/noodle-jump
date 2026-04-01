@@ -57,6 +57,7 @@ export class OnlineSession {
   // Countdown overlay
   private countdownDim: Graphics | null = null;
   private countdownText: Text | null = null;
+  private spectateText: Text | null = null;
 
   constructor(config: OnlineSessionConfig) {
     this.app = config.app;
@@ -147,10 +148,24 @@ export class OnlineSession {
       });
     }
 
-    // Render remote player
+    // Render remote player + spectate mode
     if (this.interpolation.isReady) {
       const remoteState = this.interpolation.getState();
-      this.remoteRenderer.update(remoteState, state.camera.y);
+      if (state.gameOver && !this.remoteDead) {
+        // Spectating: show remote player with label
+        this.remoteRenderer.update(remoteState, state.camera.y, state.player.y);
+        if (!this.spectateText) {
+          this.spectateText = new Text({ text: "", style: new TextStyle({ fontFamily: "monospace",
+            fontSize: 16, fill: "#ffdd44", fontWeight: "bold", align: "center",
+            stroke: { color: "#000000", width: 3 } }) });
+          this.spectateText.x = GAME_WIDTH / 2; this.spectateText.y = 50;
+          this.spectateText.anchor.set(0.5, 0.5); this.app.stage.addChild(this.spectateText);
+        }
+        const rh = Math.abs(Math.round(remoteState.y / 10));
+        this.spectateText.text = `Spectating opponent — H: ${rh}`;
+      } else {
+        this.remoteRenderer.update(remoteState, state.camera.y, state.player.y);
+      }
     }
 
     // Countdown overlay
@@ -202,94 +217,53 @@ export class OnlineSession {
     if (this.gameLoop) { this.app.ticker.remove(this.gameLoop); this.gameLoop = null; }
     this.sync.stopSending();
     const h1 = this.localDeathHeight, h2 = this.remoteDeathHeight;
-    const localLabel = this.role === "host" ? "You (Host)" : "You (Guest)";
+    const label = this.role === "host" ? "You (Host)" : "You (Guest)";
     const winner = h1 > h2 ? "You Win!" : h2 > h1 ? "You Lose!" : "It's a Tie!";
+    const cx = GAME_WIDTH / 2;
 
-    // Overlay
-    const overlay = new Graphics();
-    overlay.rect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-    overlay.fill({ color: 0x000000, alpha: 0.7 });
-    this.app.stage.addChild(overlay);
+    const bg = new Graphics();
+    bg.rect(0, 0, GAME_WIDTH, GAME_HEIGHT); bg.fill({ color: 0x000000, alpha: 0.7 });
+    this.app.stage.addChild(bg);
 
-    const winnerText = new Text({
-      text: winner,
-      style: new TextStyle({
-        fontFamily: "monospace",
-        fontSize: 28,
-        fill: h1 > h2 ? "#44ff44" : h2 > h1 ? "#ff6666" : "#ffdd44",
-        fontWeight: "bold",
-        stroke: { color: "#000000", width: 4 },
-      }),
-    });
-    winnerText.x = GAME_WIDTH / 2;
-    winnerText.y = GAME_HEIGHT * 0.25;
-    winnerText.anchor.set(0.5, 0.5);
-    this.app.stage.addChild(winnerText);
+    const wt = new Text({ text: winner, style: new TextStyle({ fontFamily: "monospace",
+      fontSize: 28, fill: h1 > h2 ? "#44ff44" : h2 > h1 ? "#ff6666" : "#ffdd44",
+      fontWeight: "bold", stroke: { color: "#000000", width: 4 } }) });
+    wt.x = cx; wt.y = GAME_HEIGHT * 0.25; wt.anchor.set(0.5, 0.5);
+    this.app.stage.addChild(wt);
 
-    const compStyle = new TextStyle({
-      fontFamily: "monospace",
-      fontSize: 14,
-      fill: "#ffffff",
-      stroke: { color: "#000000", width: 2 },
-    });
-
-    const lines = [`${localLabel}: ${h1}m  |  Opponent: ${h2}m`, `Score: ${this.scene.getScore()}`];
-    lines.forEach((line, i) => {
-      const t = new Text({ text: line, style: compStyle });
-      t.x = GAME_WIDTH / 2; t.y = GAME_HEIGHT * 0.36 + i * 22; t.anchor.set(0.5, 0.5);
+    const cs = new TextStyle({ fontFamily: "monospace", fontSize: 14,
+      fill: "#ffffff", stroke: { color: "#000000", width: 2 } });
+    [`${label}: ${h1}m  |  Opponent: ${h2}m`, `Score: ${this.scene.getScore()}`].forEach((ln, i) => {
+      const t = new Text({ text: ln, style: cs });
+      t.x = cx; t.y = GAME_HEIGHT * 0.36 + i * 22; t.anchor.set(0.5, 0.5);
       this.app.stage.addChild(t);
     });
 
-    // Rematch — go back to lobby with ready-up
-    const rematchBg = new Graphics();
-    rematchBg.roundRect(GAME_WIDTH / 2 - 90, GAME_HEIGHT * 0.5 - 18, 180, 36, 10);
-    rematchBg.fill({ color: 0x1a3355, alpha: 0.9 });
-    rematchBg.roundRect(GAME_WIDTH / 2 - 90, GAME_HEIGHT * 0.5 - 18, 180, 36, 10);
-    rematchBg.stroke({ width: 1.5, color: 0x6688bb, alpha: 0.5 });
-    rematchBg.eventMode = "static";
-    rematchBg.cursor = "pointer";
-    this.app.stage.addChild(rematchBg);
-
-    const rematchText = new Text({
-      text: "Rematch",
-      style: new TextStyle({ fontFamily: "monospace", fontSize: 18,
-        fill: "#ffffff", fontWeight: "bold", stroke: { color: "#000000", width: 2 } }),
-    });
-    rematchText.x = GAME_WIDTH / 2;
-    rematchText.y = GAME_HEIGHT * 0.5;
-    rematchText.anchor.set(0.5, 0.5);
-    rematchText.eventMode = "static";
-    rematchText.cursor = "pointer";
-    this.app.stage.addChild(rematchText);
-
-    const doRematch = () => {
-      setTimeout(() => this.returnToLobby(), 0);
-    };
-    rematchBg.on("pointertap", doRematch);
-    rematchText.on("pointertap", doRematch);
+    // Rematch button
+    const rbg = this.makeButton(cx, GAME_HEIGHT * 0.5, 180, 36, 0x1a3355, true);
+    const rtx = this.makeLabel("Rematch", cx, GAME_HEIGHT * 0.5, 18, "#ffffff");
+    const doRematch = () => setTimeout(() => this.returnToLobby(), 0);
+    rbg.on("pointertap", doRematch); rtx.on("pointertap", doRematch);
 
     // Leave button
-    const homeBg = new Graphics();
-    homeBg.roundRect(GAME_WIDTH / 2 - 90, GAME_HEIGHT * 0.58 - 16, 180, 32, 10);
-    homeBg.fill({ color: 0x222244, alpha: 0.9 });
-    homeBg.eventMode = "static";
-    homeBg.cursor = "pointer";
-    this.app.stage.addChild(homeBg);
+    const hbg = this.makeButton(cx, GAME_HEIGHT * 0.58, 180, 32, 0x222244, false);
+    const htx = this.makeLabel("Leave", cx, GAME_HEIGHT * 0.58, 15, "#aaccff");
+    const doHome = () => setTimeout(() => this.goHome(), 0);
+    hbg.on("pointertap", doHome); htx.on("pointertap", doHome);
+  }
 
-    const homeText = new Text({
-      text: "Leave",
-      style: new TextStyle({ fontFamily: "monospace", fontSize: 15,
-        fill: "#aaccff", fontWeight: "bold", stroke: { color: "#000000", width: 2 } }),
-    });
-    homeText.x = GAME_WIDTH / 2;
-    homeText.y = GAME_HEIGHT * 0.58;
-    homeText.anchor.set(0.5, 0.5);
-    homeText.eventMode = "static";
-    homeText.cursor = "pointer";
-    this.app.stage.addChild(homeText);
+  private makeButton(x: number, y: number, w: number, h: number, color: number, stroke: boolean): Graphics {
+    const g = new Graphics();
+    g.roundRect(x - w / 2, y - h / 2, w, h, 10); g.fill({ color, alpha: 0.9 });
+    if (stroke) { g.roundRect(x - w / 2, y - h / 2, w, h, 10); g.stroke({ width: 1.5, color: 0x6688bb, alpha: 0.5 }); }
+    g.eventMode = "static"; g.cursor = "pointer"; this.app.stage.addChild(g); return g;
+  }
 
-    homeBg.on("pointertap", () => setTimeout(() => this.goHome(), 0));
-    homeText.on("pointertap", () => setTimeout(() => this.goHome(), 0));
+  private makeLabel(text: string, x: number, y: number, size: number, fill: string): Text {
+    const t = new Text({ text, style: new TextStyle({ fontFamily: "monospace", fontSize: size,
+      fill, fontWeight: "bold", stroke: { color: "#000000", width: 2 } }) });
+    t.x = x; t.y = y; t.anchor.set(0.5, 0.5); t.eventMode = "static"; t.cursor = "pointer";
+    this.app.stage.addChild(t); return t;
   }
 
   /** Return to lobby for rematch — reuses existing connection. */

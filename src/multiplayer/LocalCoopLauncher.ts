@@ -20,6 +20,7 @@ import { createDefaultRunConfig, type RunConfig } from "../systems/CustomRunConf
 import { LocalInput } from "./LocalInput";
 import { showTitleScreen } from "../ui/TitleScreenView";
 import { launchGame } from "../scenes/GameLauncher";
+import { showLocalCoopResults } from "./ResultsScreen";
 
 const SPLIT_WIDTH = GAME_WIDTH * 2;
 const DIVIDER_WIDTH = 2;
@@ -130,6 +131,17 @@ export async function launchLocalCoop(
   app.stage.addChild(deathToast);
   let toastTimer = 0;
 
+  // Spectate overlay (shown on the dead player's side)
+  const spectateOverlay = new Graphics();
+  spectateOverlay.rect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+  spectateOverlay.fill({ color: 0x000000, alpha: 0.5 });
+  spectateOverlay.visible = false; app.stage.addChild(spectateOverlay);
+  const spectateLabel = new Text({ text: "", style: new TextStyle({ fontFamily: "monospace",
+    fontSize: 18, fill: "#ffdd44", fontWeight: "bold", align: "center",
+    stroke: { color: "#000000", width: 3 } }) });
+  spectateLabel.x = GAME_WIDTH / 2; spectateLabel.y = GAME_HEIGHT * 0.4;
+  spectateLabel.anchor.set(0.5, 0.5); app.stage.addChild(spectateLabel);
+
   // FPS counter
   const fpsText = new Text({ text: "FPS: --", style: new TextStyle({ fontFamily: "monospace",
     fontSize: 11, fill: "#00ff00", stroke: { color: "#000000", width: 2 } }) });
@@ -180,11 +192,13 @@ export async function launchLocalCoop(
     // Tick scenes with split keyboard input and separate RNG streams
     if (!scene1.isGameOver()) {
       setRNGFunction(p1Rng);
+      if (input.p1Fire) scene1.autoAimThrow();
       scene1.updateWithInput(input.p1InputX);
       p1Rng = getRNGFunction();
     }
     if (!scene2.isGameOver()) {
       setRNGFunction(p2Rng);
+      if (input.p2Fire) scene2.autoAimThrow();
       scene2.updateWithInput(input.p2InputX);
       p2Rng = getRNGFunction();
     }
@@ -193,7 +207,7 @@ export async function launchLocalCoop(
     p1Height.text = `H: ${scene1.getHeight()}`;
     p2Height.text = `H: ${scene2.getHeight()}`;
 
-    // Track deaths
+    // Track deaths + spectate overlay
     if (!p1Dead && scene1.getState().isDying) {
       p1Dead = true;
       p1DeathHeight = scene1.getHeight();
@@ -204,6 +218,15 @@ export async function launchLocalCoop(
       p2DeathHeight = scene2.getHeight();
       showToast(`P2 died at ${p2DeathHeight}m!`);
     }
+    // Show spectate overlay on dead side
+    if (scene1.isGameOver() && !scene2.isGameOver()) {
+      spectateOverlay.visible = true; spectateOverlay.x = 0;
+      spectateLabel.text = `Spectating P2\nH: ${scene2.getHeight()}`;
+    } else if (scene2.isGameOver() && !scene1.isGameOver()) {
+      spectateOverlay.visible = true; spectateOverlay.x = GAME_WIDTH;
+      spectateLabel.text = `Spectating P1\nH: ${scene1.getHeight()}`;
+      spectateLabel.x = GAME_WIDTH + GAME_WIDTH / 2;
+    } else { spectateOverlay.visible = false; }
 
     // Countdown display
     const cd = scene1.getCountdownSeconds();
@@ -242,121 +265,22 @@ export async function launchLocalCoop(
   }
 
   function showResults(): void {
-    // Dim overlay
-    const overlay = new Graphics();
-    overlay.rect(0, 0, SPLIT_WIDTH, GAME_HEIGHT);
-    overlay.fill({ color: 0x000000, alpha: 0.7 });
-    app.stage.addChild(overlay);
-
-    const h1 = p1DeathHeight;
-    const h2 = p2DeathHeight;
-    const winner = h1 > h2 ? "Player 1 Wins!" : h2 > h1 ? "Player 2 Wins!" : "It's a Tie!";
-
-    const winnerText = new Text({
-      text: winner,
-      style: new TextStyle({
-        fontFamily: "monospace",
-        fontSize: 32,
-        fill: "#ffdd44",
-        fontWeight: "bold",
-        stroke: { color: "#000000", width: 4 },
-      }),
+    showLocalCoopResults({
+      app, scene1, scene2,
+      p1DeathHeight, p2DeathHeight,
+      cleanupAndReset: () => {
+        cleanupLocalCoop(app, scene1, scene2, input, gameLoop);
+        const newSeed = Math.floor(Math.random() * 0xffffffff);
+        launchLocalCoop(app, newSeed);
+      },
+      cleanupAndGoHome: () => {
+        cleanupLocalCoop(app, scene1, scene2, input, gameLoop);
+        app.renderer.resize(GAME_WIDTH, GAME_HEIGHT);
+        app.canvas.style.maxWidth = "500px";
+        app.canvas.style.aspectRatio = "400 / 700";
+        showTitleScreen(app, (runConfig) => launchGame(app, runConfig));
+      },
     });
-    winnerText.x = SPLIT_WIDTH / 2;
-    winnerText.y = GAME_HEIGHT * 0.25;
-    winnerText.anchor.set(0.5, 0.5);
-    app.stage.addChild(winnerText);
-
-    // Score comparison
-    const compStyle = new TextStyle({
-      fontFamily: "monospace",
-      fontSize: 16,
-      fill: "#ffffff",
-      stroke: { color: "#000000", width: 2 },
-    });
-
-    const lines = [
-      `P1 Height: ${h1}m    |    P2 Height: ${h2}m`,
-      `P1 Score:  ${scene1.getScore()}    |    P2 Score:  ${scene2.getScore()}`,
-      `P1 Platforms: ${scene1.getPlatformsPassed()}    |    P2 Platforms: ${scene2.getPlatformsPassed()}`,
-    ];
-
-    lines.forEach((line, i) => {
-      const t = new Text({ text: line, style: compStyle });
-      t.x = SPLIT_WIDTH / 2;
-      t.y = GAME_HEIGHT * 0.38 + i * 24;
-      t.anchor.set(0.5, 0.5);
-      app.stage.addChild(t);
-    });
-
-    // Rematch ready-up: P1 presses W, P2 presses Up to ready
-    let p1Ready = false, p2Ready = false;
-
-    const makeReadyStyle = () => new TextStyle({
-      fontFamily: "monospace", fontSize: 14, fill: "#aaaaaa",
-      stroke: { color: "#000000", width: 2 },
-    });
-    const p1ReadyText = new Text({ text: "P1: Press W to rematch", style: makeReadyStyle() });
-    p1ReadyText.x = SPLIT_WIDTH / 2;
-    p1ReadyText.y = GAME_HEIGHT * 0.53;
-    p1ReadyText.anchor.set(0.5, 0.5);
-    app.stage.addChild(p1ReadyText);
-
-    const p2ReadyText = new Text({ text: "P2: Press ↑ to rematch", style: makeReadyStyle() });
-    p2ReadyText.x = SPLIT_WIDTH / 2;
-    p2ReadyText.y = GAME_HEIGHT * 0.58;
-    p2ReadyText.anchor.set(0.5, 0.5);
-    app.stage.addChild(p2ReadyText);
-
-    const rematchKeyHandler = (e: KeyboardEvent) => {
-      if ((e.key === "w" || e.key === "W") && !p1Ready) {
-        p1Ready = true;
-        p1ReadyText.text = "P1: Ready!";
-        p1ReadyText.style.fill = "#44ff44";
-      }
-      if (e.key === "ArrowUp" && !p2Ready) {
-        p2Ready = true;
-        p2ReadyText.text = "P2: Ready!";
-        p2ReadyText.style.fill = "#44ff44";
-      }
-      if (p1Ready && p2Ready) {
-        window.removeEventListener("keydown", rematchKeyHandler);
-        // Defer cleanup to next frame to avoid destroying mid-handler
-        setTimeout(() => {
-          cleanupLocalCoop(app, scene1, scene2, input, gameLoop);
-          const newSeed = Math.floor(Math.random() * 0xffffffff);
-          launchLocalCoop(app, newSeed);
-        }, 0);
-      }
-    };
-    window.addEventListener("keydown", rematchKeyHandler);
-
-    // Home — press Escape
-    const homeHint = new Text({
-      text: "Press Escape to quit",
-      style: new TextStyle({
-        fontFamily: "monospace", fontSize: 12, fill: "#888888",
-        stroke: { color: "#000000", width: 2 },
-      }),
-    });
-    homeHint.x = SPLIT_WIDTH / 2;
-    homeHint.y = GAME_HEIGHT * 0.65;
-    homeHint.anchor.set(0.5, 0.5);
-    app.stage.addChild(homeHint);
-    const escapeHandler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        window.removeEventListener("keydown", rematchKeyHandler);
-        window.removeEventListener("keydown", escapeHandler);
-        setTimeout(() => {
-          cleanupLocalCoop(app, scene1, scene2, input, gameLoop);
-          app.renderer.resize(GAME_WIDTH, GAME_HEIGHT);
-          app.canvas.style.maxWidth = "500px";
-          app.canvas.style.aspectRatio = "400 / 700";
-          showTitleScreen(app, (runConfig) => launchGame(app, runConfig));
-        }, 0);
-      }
-    };
-    window.addEventListener("keydown", escapeHandler);
   }
 
   app.ticker.add(gameLoop);
