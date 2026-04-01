@@ -18,3 +18,13 @@ export function resetRNG(): void {
 export function random(): number {
   return rngFn();
 }
+
+/** Get the current RNG function (for saving/restoring in multiplayer). */
+export function getRNGFunction(): () => number {
+  return rngFn;
+}
+
+/** Set the RNG function directly (for restoring in multiplayer). */
+export function setRNGFunction(fn: () => number): void {
+  rngFn = fn;
+}

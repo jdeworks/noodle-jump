@@ -230,13 +230,19 @@ export function showTitleScreen(
 
   // Multiplayer
   let mpMenu: MultiplayerMenu | null = null;
+  const cleanupTitle = () => {
+    app.ticker.remove(titleTicker);
+    parallax.destroy();
+    app.stage.removeChild(titleContainer);
+    titleContainer.destroy({ children: true });
+  };
   const showMultiplayer = (e: Event) => {
     e.stopPropagation();
     contentGroup.visible = false;
     mpMenu = new MultiplayerMenu(app, () => {
       contentGroup.visible = true;
       mpMenu = null;
-    });
+    }, cleanupTitle);
     titleContainer.addChild(mpMenu.container);
   };
   mpButton.bg.on("pointertap", showMultiplayer);

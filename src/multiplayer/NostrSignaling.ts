@@ -19,12 +19,10 @@ const RTC_CONFIG: RTCConfiguration = {
 
 /** Known-reliable Nostr relays (overrides Trystero defaults which include many dead ones). */
 const RELAY_URLS = [
-  "wss://relay.damus.io",
   "wss://nos.lol",
-  "wss://relay.nostr.band",
-  "wss://relay.snort.social",
-  "wss://purplerelay.com",
   "wss://relay.primal.net",
+  "wss://purplerelay.com",
+  "wss://relay.snort.social",
 ];
 
 /** Generate a random 6-character room code. */

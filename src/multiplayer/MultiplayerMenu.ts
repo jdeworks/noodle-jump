@@ -51,11 +51,13 @@ export class MultiplayerMenu implements MenuContext {
   readonly container = new Container();
   private app: Application;
   private onBack: MenuCallback;
+  private onLaunch: MenuCallback | null;
   private connection: ConnectionManager | null = null;
   private currentView: Container | null = null;
 
-  constructor(app: Application, onBack: MenuCallback) {
+  constructor(app: Application, onBack: MenuCallback, onLaunch?: MenuCallback) {
     this.app = app;
+    this.onLaunch = onLaunch ?? null;
     this.onBack = onBack;
     this.showMainMenu();
   }
@@ -89,13 +91,11 @@ export class MultiplayerMenu implements MenuContext {
     view.addChild(title);
 
     let y = 110;
-    const btnW = 260;
-    const btnH = 44;
-    const btnX = (GAME_WIDTH - btnW) / 2;
+    const btnW = 260, btnH = 44, btnX = (GAME_WIDTH - btnW) / 2;
 
-    // Local Co-op
     y = this.addButton(view, "Local Co-op", y, btnW, btnH, btnX, 0x1a3355, () => {
       const seed = Math.floor(Math.random() * 0xffffffff);
+      this.onLaunch?.();
       this.container.visible = false;
       launchLocalCoop(this.app, seed);
     });
@@ -258,6 +258,7 @@ export class MultiplayerMenu implements MenuContext {
       onStart: (seed, _mode) => {
         this.container.removeChild(lobby.container);
         lobby.destroy();
+        this.onLaunch?.();
         this.container.visible = false;
 
         const session = new OnlineSession({

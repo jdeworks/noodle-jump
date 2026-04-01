@@ -13,7 +13,8 @@ import { resetPowerUpIds } from "../entities/PowerUp";
 import { resetCollectibleIds } from "../entities/Collectible";
 import { resetEnemyIds } from "../entities/Enemy";
 import { resetProjectileIds } from "../entities/Projectile";
-import { resetRNG } from "../systems/RNG";
+import { resetRNG, getRNGFunction, setRNGFunction, initRNG } from "../systems/RNG";
+import { seededRandom } from "../systems/DailyChallenge";
 import { resetRendererState } from "../scenes/EntityRenderer";
 import { createDefaultRunConfig, type RunConfig } from "../systems/CustomRunConfig";
 import { LocalInput } from "./LocalInput";
@@ -38,9 +39,16 @@ export async function launchLocalCoop(
 
   const config: RunConfig = { ...createDefaultRunConfig(), seed };
 
-  // Create two game scenes with the same seed
+  // Create two game scenes with the same seed.
+  // Each createInitialState() calls initRNG(seed) which resets the global RNG,
+  // so both scenes get identical initial worlds.
   const scene1 = new GameScene(config);
   const scene2 = new GameScene(config);
+
+  // Create separate RNG streams for each player's ongoing gameplay.
+  // Without this, both scenes share the global RNG and their worlds diverge.
+  let p1Rng = seededRandom(seed);
+  let p2Rng = seededRandom(seed);
 
   // Position scenes side by side
   scene1.container.x = 0;
@@ -137,12 +145,16 @@ export async function launchLocalCoop(
   const gameLoop = () => {
     input.update();
 
-    // Tick scenes with split keyboard input
+    // Tick scenes with split keyboard input and separate RNG streams
     if (!scene1.isGameOver()) {
+      setRNGFunction(p1Rng);
       scene1.updateWithInput(input.p1InputX);
+      p1Rng = getRNGFunction();
     }
     if (!scene2.isGameOver()) {
+      setRNGFunction(p2Rng);
       scene2.updateWithInput(input.p2InputX);
+      p2Rng = getRNGFunction();
     }
 
     // Update height displays
