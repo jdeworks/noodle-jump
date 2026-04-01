@@ -266,7 +266,8 @@ export function tickGameWorld(
   s = tickMeatballCollection(s, events, previousX, previousY);
   s = { ...s, scoreState: tickCombo(s.scoreState) };
   s = tickPowerUpCollection(s, events, previousX, previousY);
-  if (!s.isGhost) s = { ...s, scoreState: updateHeightScore(s.scoreState, s.player.y) };
+  // Ghost mode: freeze height only after first death (ghostDeathHeight > 0)
+  if (!s.isGhost || !s.ghostDeathHeight) s = { ...s, scoreState: updateHeightScore(s.scoreState, s.player.y) };
 
   // Stagnation and zone transitions
   s = tickStagnation(s, events);

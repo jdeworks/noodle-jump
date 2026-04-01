@@ -264,6 +264,7 @@ export class GameScene {
     );
 
     // Screen shake
+    if (!this.gameContainer.parent) return; // scene was destroyed
     if (this.state.shakeState) {
       const shakeResult = tickShake(this.state.shakeState);
       this.gameContainer.x = shakeResult.offsetX;
