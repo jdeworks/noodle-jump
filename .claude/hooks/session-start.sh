@@ -38,13 +38,23 @@ if [ -n "$warnings" ]; then
   output+="### Starter-kit warnings\n${warnings}\n"
 fi
 
-# Inject SESSION_SUMMARY if it has content beyond the template
+# Inject only actionable parts of SESSION_SUMMARY (not full session history)
 has_summary=false
 if [ -f "SESSION_SUMMARY.md" ]; then
   summary_lines=$(wc -l < SESSION_SUMMARY.md | tr -d ' ')
   if [ "$summary_lines" -gt 10 ]; then
-    output+="$(cat SESSION_SUMMARY.md)\n\n"
     has_summary=true
+    # Extract just health, dead code, and next steps — skip verbose session history
+    health=$(sed -n '/^## Current health/,/^##/p' SESSION_SUMMARY.md | head -n -1)
+    dead=$(sed -n '/^## Pending dead code/,/^##/p' SESSION_SUMMARY.md | head -n -1)
+    next=$(sed -n '/^## Next steps/,/^##/p' SESSION_SUMMARY.md | head -n -1)
+    [ -n "$health" ] && output+="$health\n"
+    if [ -n "$dead" ] && ! echo "$dead" | grep -q 'None detected'; then
+      output+="$dead\n"
+    fi
+    if [ -n "$next" ] && ! echo "$next" | grep -q '<!-- Agent:'; then
+      output+="$next\n"
+    fi
   fi
 fi
 
