@@ -16,7 +16,7 @@ import { HUD } from "../ui/HUD";
 import type { RunConfig } from "../systems/CustomRunConfig";
 import { resetRNG } from "../systems/RNG";
 import { resetRendererState } from "./EntityRenderer";
-import { stopMusic, stopBossMusic, killBossMusic } from "../systems/Audio";
+import { stopMusic, killBossMusic } from "../systems/Audio";
 import { showTitleScreen } from "../ui/TitleScreenView";
 import { createGameLoopTicker } from "./GameLoopTicker";
 
