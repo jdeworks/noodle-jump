@@ -41,3 +41,5 @@ export { launchLocalCoop } from "./LocalCoopLauncher";
 export { InterpolationBuffer, type InterpolatedState } from "./InterpolationBuffer";
 export { RemotePlayerRenderer } from "./RemotePlayerRenderer";
 export { OnlineSession, type OnlineRole } from "./OnlineSession";
+export { LobbyScreen, type LobbyRole, type LobbyCallbacks } from "./LobbyScreen";
+export { MultiplayerMenu } from "./MultiplayerMenu";

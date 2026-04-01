@@ -94,3 +94,5 @@ intent: Stage 1 — Multiplayer networking layer (signaling strategies, connecti
 - progress: Tests for LocalInput and MultiplayerSession | tests/multiplayer/local-input.test.ts, tests/multiplayer/multiplayer-session.test.ts
 - progress: InterpolationBuffer (lerp+extrapolation for 20Hz→60FPS), RemotePlayerRenderer (ghost chef + off-screen arrows), OnlineSession (wires networking to game loop with death events, results, rematch) | src/multiplayer/InterpolationBuffer.ts, src/multiplayer/RemotePlayerRenderer.ts, src/multiplayer/OnlineSession.ts
 - progress: InterpolationBuffer tests | tests/multiplayer/interpolation-buffer.test.ts
+- progress: LobbyScreen (ready-up, host controls, start), MultiplayerMenu + ConnectFlows (create/join for Quick/Private Connect, DSGVO info text), Multiplayer button on title screen | src/multiplayer/LobbyScreen.ts, src/multiplayer/MultiplayerMenu.ts, src/multiplayer/ConnectFlows.ts, src/ui/TitleScreenView.ts
+- progress: Lobby/session integration tests | tests/multiplayer/lobby-session.test.ts

@@ -13,6 +13,7 @@ import { CustomRunScreen } from "./CustomRunScreen";
 import { loadStats } from "./StatsPanel";
 import { drawChef } from "../rendering/sprites";
 import type { RunConfig } from "../systems/CustomRunConfig";
+import { MultiplayerMenu } from "../multiplayer/MultiplayerMenu";
 
 export function showTitleScreen(
   app: Application,
@@ -153,7 +154,11 @@ export function showTitleScreen(
   const promptText = playButton.text;
   cursorY += btnH + btnSpacing;
 
-  // 2. How to Play
+  // 2. Multiplayer
+  const mpButton = makeButton("Multiplayer", cursorY, 0x2a3355, "#ffccaa", 16);
+  cursorY += btnH + btnSpacing;
+
+  // 3. How to Play
   const howButton = makeButton("How to Play", cursorY, 0x222244, "#aaccff", 15);
   const howBtnBg = howButton.bg;
   const howBtn = howButton.text;
@@ -222,6 +227,21 @@ export function showTitleScreen(
   customBtnBg.on("pointertap", showCustom);
   customBtn.eventMode = "static";
   customBtn.on("pointertap", showCustom);
+
+  // Multiplayer
+  let mpMenu: MultiplayerMenu | null = null;
+  const showMultiplayer = (e: Event) => {
+    e.stopPropagation();
+    contentGroup.visible = false;
+    mpMenu = new MultiplayerMenu(app, () => {
+      contentGroup.visible = true;
+      mpMenu = null;
+    });
+    titleContainer.addChild(mpMenu.container);
+  };
+  mpButton.bg.on("pointertap", showMultiplayer);
+  mpButton.text.eventMode = "static";
+  mpButton.text.on("pointertap", showMultiplayer);
 
   // Restore content when sub-menus close
   explanationScreen.onClose = () => { contentGroup.visible = true; };
