@@ -241,9 +241,10 @@ export function showTitleScreen(
     contentGroup.visible = false;
     mpMenu = new MultiplayerMenu(app, () => {
       contentGroup.visible = true;
-      mpMenu = null;
+      if (mpMenu) { app.stage.removeChild(mpMenu.container); mpMenu = null; }
     }, cleanupTitle);
-    titleContainer.addChild(mpMenu.container);
+    // Add to app.stage (not titleContainer) so cleanupTitle doesn't destroy it
+    app.stage.addChild(mpMenu.container);
   };
   mpButton.bg.on("pointertap", showMultiplayer);
   mpButton.text.eventMode = "static";

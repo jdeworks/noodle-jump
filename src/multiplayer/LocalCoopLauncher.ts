@@ -142,7 +142,12 @@ export async function launchLocalCoop(
   app.stage.addChild(fpsText);
   let fpsFrames = 0, fpsLast = performance.now();
 
-  // Start countdown
+  // Countdown overlay
+  const countdownText = new Text({ text: "", style: new TextStyle({ fontFamily: "monospace",
+    fontSize: 48, fill: "#ffffff", fontWeight: "bold", stroke: { color: "#000000", width: 4 } }) });
+  countdownText.x = SPLIT_WIDTH / 2; countdownText.y = GAME_HEIGHT * 0.4;
+  countdownText.anchor.set(0.5, 0.5); app.stage.addChild(countdownText);
+
   scene1.startCountdown();
   scene2.startCountdown();
 
@@ -201,6 +206,13 @@ export async function launchLocalCoop(
       p2DeathHeight = scene2.getHeight();
       showToast(`P2 died at ${p2DeathHeight}m!`);
     }
+
+    // Countdown display
+    const cd = scene1.getCountdownSeconds();
+    if (cd !== undefined && cd >= 0) {
+      countdownText.text = cd > 0 ? `${cd}` : "GO!";
+      countdownText.visible = true;
+    } else { countdownText.visible = false; }
 
     // FPS counter
     fpsFrames++;
