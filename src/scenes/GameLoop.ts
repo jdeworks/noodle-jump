@@ -346,17 +346,15 @@ export function tickGameWorld(
         };
         s = { ...s, platforms: [...s.platforms, rescue] };
       }
-      s = {
-        ...s,
-        player: {
-          ...s.player,
+      // Apply height penalty for timed multiplayer deaths
+      const penalizedScore = s.deathPenaltyEnabled
+        ? { ...s.scoreState, height: Math.max(0, Math.floor(s.scoreState.height * 0.9)) }
+        : s.scoreState;
+      if (s.deathPenaltyEnabled) events.push({ type: "died" });
+      s = { ...s, player: { ...s.player,
           x: rescue.x + rescue.width / 2 - s.player.width / 2,
-          y: rescue.y - s.player.height,
-          vy: -12,
-          isJumping: true,
-        },
-        stagnantTicks: 0,
-      };
+          y: rescue.y - s.player.height, vy: -12, isJumping: true,
+        }, stagnantTicks: 0, scoreState: penalizedScore };
     } else {
       s = {
         ...s,

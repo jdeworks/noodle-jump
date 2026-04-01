@@ -47,11 +47,10 @@ export async function launchLocalCoop(
   const scene1 = new GameScene(config);
   const scene2 = new GameScene(config);
 
-  // Enable ghost mode at creation for modes that need it
-  if (mode === "best-height" || mode === "timed-2min") {
-    scene1.enableGhostMode();
-    scene2.enableGhostMode();
-  }
+  // Best-height: ghost mode (frozen scoring after death)
+  if (mode === "best-height") { scene1.enableGhostMode(); scene2.enableGhostMode(); }
+  // Timed: practice mode (instant respawn, scoring continues, + height penalty on death)
+  if (mode === "timed-2min") { scene1.enableTimedRespawn(); scene2.enableTimedRespawn(); }
 
   // Create separate RNG streams for each player's ongoing gameplay.
   // Without this, both scenes share the global RNG and their worlds diverge.

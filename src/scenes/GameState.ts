@@ -122,6 +122,8 @@ export interface GameWorldState {
   isGhost: boolean;
   /** Height at moment of death in ghost mode. */
   ghostDeathHeight: number;
+  /** Apply height penalty on practice-mode rescue (timed multiplayer). */
+  deathPenaltyEnabled: boolean;
 }
 
 /** Create the initial game world state for a new game. */
@@ -216,5 +218,6 @@ export function createInitialState(runConfig?: RunConfig): GameWorldState {
     enemiesKilled: 0,
     isGhost: false,
     ghostDeathHeight: 0,
+    deathPenaltyEnabled: false,
   };
 }

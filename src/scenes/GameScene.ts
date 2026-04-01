@@ -177,10 +177,9 @@ export class GameScene {
   getEnemiesKilled(): number { return this.state.enemiesKilled; }
   togglePause(): void { this.state = togglePause(this.state); }
   startCountdown(): void { this.state = startCountdown(this.state); }
-  /** Enable ghost mode — player respawns after death with frozen scoring. */
-  enableGhostMode(): void {
-    this.state = { ...this.state, isGhost: true };
-  }
+  enableGhostMode(): void { this.state = { ...this.state, isGhost: true }; }
+  /** Timed respawn — practice mode rescue + height penalty on death. Scoring continues. */
+  enableTimedRespawn(): void { this.state = { ...this.state, practiceMode: true, deathPenaltyEnabled: true }; }
 
   getActiveEffectProgress(): number {
     return this.state.activeEffect ? this.state.activeEffect.ticksRemaining / getMaxDuration(this.state.activeEffect.type) : 0;
