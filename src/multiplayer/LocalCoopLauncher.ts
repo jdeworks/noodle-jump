@@ -130,6 +130,18 @@ export async function launchLocalCoop(
   app.stage.addChild(deathToast);
   let toastTimer = 0;
 
+  // FPS counter (always visible during multiplayer testing)
+  const fpsText = new Text({
+    text: "FPS: --",
+    style: new TextStyle({ fontFamily: "monospace", fontSize: 11, fill: "#00ff00",
+      stroke: { color: "#000000", width: 2 } }),
+  });
+  fpsText.x = SPLIT_WIDTH / 2;
+  fpsText.y = GAME_HEIGHT - 16;
+  fpsText.anchor.set(0.5, 0);
+  app.stage.addChild(fpsText);
+  let fpsFrames = 0, fpsLast = performance.now();
+
   // Start countdown
   scene1.startCountdown();
   scene2.startCountdown();
@@ -171,6 +183,15 @@ export async function launchLocalCoop(
       p2Dead = true;
       p2DeathHeight = scene2.getHeight();
       showToast(`P2 died at ${p2DeathHeight}m!`);
+    }
+
+    // FPS counter
+    fpsFrames++;
+    const now = performance.now();
+    if (now - fpsLast >= 500) {
+      fpsText.text = `FPS: ${Math.round(fpsFrames / ((now - fpsLast) / 1000))}`;
+      fpsFrames = 0;
+      fpsLast = now;
     }
 
     // Toast timer
@@ -323,9 +344,14 @@ function cleanupLocalCoop(
 ): void {
   app.ticker.remove(gameLoop);
   input.destroy();
+
+  // Remove scene containers from stage before destroying them
+  if (scene1.container.parent) scene1.container.parent.removeChild(scene1.container);
+  if (scene2.container.parent) scene2.container.parent.removeChild(scene2.container);
   scene1.destroy();
   scene2.destroy();
 
+  // Clear remaining stage children (overlays, masks, labels, results)
   while (app.stage.children.length > 0) {
     const child = app.stage.children[0];
     app.stage.removeChild(child);

@@ -52,6 +52,11 @@ export class OnlineSession {
   private deathToast: Text;
   private toastTimer = 0;
 
+  // FPS counter
+  private fpsText: Text | null = null;
+  private fpsFrames = 0;
+  private fpsLast = performance.now();
+
   constructor(config: OnlineSessionConfig) {
     this.app = config.app;
     this.connection = config.connection;
@@ -86,6 +91,16 @@ export class OnlineSession {
     this.deathToast.anchor.set(0.5, 0.5);
     this.deathToast.visible = false;
     this.app.stage.addChild(this.deathToast);
+
+    // FPS counter for multiplayer testing
+    this.fpsText = new Text({
+      text: "FPS: --",
+      style: new TextStyle({ fontFamily: "monospace", fontSize: 11, fill: "#00ff00",
+        stroke: { color: "#000000", width: 2 } }),
+    });
+    this.fpsText.x = 10;
+    this.fpsText.y = GAME_HEIGHT - 16;
+    this.app.stage.addChild(this.fpsText);
 
     this.setupSync();
   }
@@ -151,6 +166,15 @@ export class OnlineSession {
     if (this.interpolation.isReady) {
       const remoteState = this.interpolation.getState();
       this.remoteRenderer.update(remoteState, state.camera.y);
+    }
+
+    // FPS counter
+    this.fpsFrames++;
+    const now = performance.now();
+    if (now - this.fpsLast >= 500 && this.fpsText) {
+      this.fpsText.text = `FPS: ${Math.round(this.fpsFrames / ((now - this.fpsLast) / 1000))}`;
+      this.fpsFrames = 0;
+      this.fpsLast = now;
     }
 
     // Toast timer
