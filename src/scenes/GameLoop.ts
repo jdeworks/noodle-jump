@@ -144,18 +144,20 @@ export function tickGameWorld(
         const camTop = state.camera.y;
         const camBot = camTop + GAME_HEIGHT;
         const vis = state.platforms.filter((p) => !p.broken && p.y >= camTop && p.y <= camBot);
-        const rescue = vis.length > 0 ? vis.sort((a, b) => a.y - b.y)[0]
+        let rescue = vis.length > 0 ? vis.sort((a, b) => a.y - b.y)[0]
           : state.platforms.filter((p) => !p.broken).sort((a, b) => a.y - b.y)[0];
-        if (rescue) {
-          // Death penalty: reduce height by 10% each ghost death
-          const penaltyHeight = Math.max(0, Math.floor(state.ghostDeathHeight * 0.9));
-          events.push({ type: "died" }); // signal ghost death for UI toast
-          return { state: { ...state, player: { ...state.player,
-            x: rescue.x + rescue.width / 2 - state.player.width / 2,
-            y: rescue.y - state.player.height, vy: -12, isJumping: true,
-          }, isDying: false, dyingTicks: 0, stagnantTicks: 0,
-          ghostDeathHeight: penaltyHeight }, events };
+        let plats = state.platforms;
+        if (!rescue) {
+          rescue = { x: GAME_WIDTH / 2 - 50, y: camTop + GAME_HEIGHT * 0.6, width: 100, height: 15,
+            type: "static" as const, broken: false, id: Date.now(), originX: GAME_WIDTH / 2 - 50, moveDirection: 0 };
+          plats = [...plats, rescue];
         }
+        const ph = Math.max(0, Math.floor(state.ghostDeathHeight * 0.9));
+        events.push({ type: "died" });
+        return { state: { ...state, platforms: plats, player: { ...state.player,
+          x: rescue.x + rescue.width / 2 - state.player.width / 2,
+          y: rescue.y - state.player.height, vy: -12, isJumping: true,
+        }, isDying: false, dyingTicks: 0, stagnantTicks: 0, ghostDeathHeight: ph }, events };
       }
       const isCustom = state.runConfig.seed !== 0 || state.practiceMode;
       const isNewRecord = isCustom ? false : saveHighScore(state.scoreState.points);
@@ -210,7 +212,6 @@ export function tickGameWorld(
     powerUps: updatePowerUpPositions(s.powerUps, s.platforms),
   };
 
-  // Squash hold logic
   const inSquashHold =
     s.squashTicks > SQUASH_TOTAL_FRAMES - SQUASH_HOLD_FRAMES;
   const isSquashTransition = !inSquashHold && s.pendingJumpVy !== 0;
@@ -259,13 +260,11 @@ export function tickGameWorld(
     };
   }
 
-  // Collections and scoring (frozen in ghost mode)
+  // Collections and scoring
   s = tickMeatballCollection(s, events, previousX, previousY);
   s = { ...s, scoreState: tickCombo(s.scoreState) };
   s = tickPowerUpCollection(s, events, previousX, previousY);
-  if (!s.isGhost) {
-    s = { ...s, scoreState: updateHeightScore(s.scoreState, s.player.y) };
-  }
+  if (!s.isGhost) s = { ...s, scoreState: updateHeightScore(s.scoreState, s.player.y) };
 
   // Stagnation and zone transitions
   s = tickStagnation(s, events);

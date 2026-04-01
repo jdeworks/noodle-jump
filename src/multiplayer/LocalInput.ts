@@ -14,7 +14,11 @@ export class LocalInput {
   private onKeyUpBound: (e: KeyboardEvent) => void;
 
   constructor() {
-    this.onKeyDownBound = (e) => this.keysDown.add(e.key);
+    this.onKeyDownBound = (e) => {
+      this.keysDown.add(e.key);
+      // Prevent Space/arrows from scrolling or triggering browser actions
+      if (e.key === " " || e.key.startsWith("Arrow")) e.preventDefault();
+    };
     this.onKeyUpBound = (e) => this.keysDown.delete(e.key);
   }
 
