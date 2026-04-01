@@ -184,6 +184,7 @@ export async function launchLocalCoop(
   };
   window.addEventListener("keydown", midGameEscape);
 
+  let gameEnded = false;
   let p1Dead = false;
   let p2Dead = false;
   let p1DeathHeight = 0;
@@ -211,25 +212,28 @@ export async function launchLocalCoop(
     p1Height.text = `H: ${scene1.getHeight()}`;
     p2Height.text = `H: ${scene2.getHeight()}`;
 
-    // Track deaths + spectate overlay
+    // Track deaths → enable ghost mode
     if (!p1Dead && scene1.getState().isDying) {
       p1Dead = true;
       p1DeathHeight = scene1.getHeight();
       showToast(`P1 died at ${p1DeathHeight}m!`);
+      scene1.enableGhostMode();
     }
     if (!p2Dead && scene2.getState().isDying) {
       p2Dead = true;
       p2DeathHeight = scene2.getHeight();
       showToast(`P2 died at ${p2DeathHeight}m!`);
+      scene2.enableGhostMode();
     }
-    // Show spectate overlay on dead side
-    if (scene1.isGameOver() && !scene2.isGameOver()) {
+    // Show "GHOST" label on dead player's side
+    if (p1Dead && !p2Dead) {
       spectateOverlay.visible = true; spectateOverlay.x = 0;
-      spectateLabel.text = `Spectating P2\nH: ${scene2.getHeight()}`;
-    } else if (scene2.isGameOver() && !scene1.isGameOver()) {
+      spectateLabel.x = GAME_WIDTH / 2;
+      spectateLabel.text = `GHOST\nHeight locked: ${p1DeathHeight}m`;
+    } else if (p2Dead && !p1Dead) {
       spectateOverlay.visible = true; spectateOverlay.x = GAME_WIDTH;
-      spectateLabel.text = `Spectating P1\nH: ${scene1.getHeight()}`;
       spectateLabel.x = GAME_WIDTH + GAME_WIDTH / 2;
+      spectateLabel.text = `GHOST\nHeight locked: ${p2DeathHeight}m`;
     } else { spectateOverlay.visible = false; }
 
     // Countdown display
@@ -256,7 +260,9 @@ export async function launchLocalCoop(
     }
 
     // Both dead → show results
-    if (scene1.isGameOver() && scene2.isGameOver()) {
+    // End when both have died — second death triggers game over
+    if (p1Dead && p2Dead && !gameEnded) {
+      gameEnded = true;
       app.ticker.remove(gameLoop);
       window.removeEventListener("keydown", midGameEscape);
       showResults();

@@ -139,27 +139,31 @@ export function tickGameWorld(
       y: state.player.y + state.player.vy,
     };
     if (dyingTicks >= DEATH_ANIMATION_TICKS) {
-      // Don't save high score for custom/practice runs
+      // Ghost mode: rescue player instead of game over, freeze scoring
+      if (state.isGhost) {
+        const camTop = state.camera.y;
+        const camBot = camTop + GAME_HEIGHT;
+        const vis = state.platforms.filter((p) => !p.broken && p.y >= camTop && p.y <= camBot);
+        const rescue = vis.length > 0 ? vis.sort((a, b) => a.y - b.y)[0]
+          : state.platforms.filter((p) => !p.broken).sort((a, b) => a.y - b.y)[0];
+        if (rescue) {
+          return { state: { ...state, player: { ...state.player,
+            x: rescue.x + rescue.width / 2 - state.player.width / 2,
+            y: rescue.y - state.player.height, vy: -12, isJumping: true,
+          }, isDying: false, dyingTicks: 0, stagnantTicks: 0 }, events };
+        }
+        // No platform to rescue to — end the game
+      }
       const isCustom = state.runConfig.seed !== 0 || state.practiceMode;
       const isNewRecord = isCustom ? false : saveHighScore(state.scoreState.points);
       events.push({ type: "gameOver", isNewRecord });
       return {
-        state: {
-          ...state,
-          player,
-          dyingTicks,
-          gameOver: true,
-          highScore: isNewRecord
-            ? state.scoreState.points
-            : state.highScore,
-        },
+        state: { ...state, player, dyingTicks, gameOver: true,
+          highScore: isNewRecord ? state.scoreState.points : state.highScore },
         events,
       };
     }
-    return {
-      state: { ...state, player, dyingTicks },
-      events,
-    };
+    return { state: { ...state, player, dyingTicks }, events };
   }
 
   // ── Main game tick ────────────────────────────────────────────────────
@@ -252,11 +256,13 @@ export function tickGameWorld(
     };
   }
 
-  // Collections and scoring
+  // Collections and scoring (frozen in ghost mode)
   s = tickMeatballCollection(s, events, previousX, previousY);
   s = { ...s, scoreState: tickCombo(s.scoreState) };
   s = tickPowerUpCollection(s, events, previousX, previousY);
-  s = { ...s, scoreState: updateHeightScore(s.scoreState, s.player.y) };
+  if (!s.isGhost) {
+    s = { ...s, scoreState: updateHeightScore(s.scoreState, s.player.y) };
+  }
 
   // Stagnation and zone transitions
   s = tickStagnation(s, events);

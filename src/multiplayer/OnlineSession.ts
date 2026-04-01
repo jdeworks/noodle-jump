@@ -60,6 +60,7 @@ export class OnlineSession {
   private countdownText: Text | null = null;
   private spectateText: Text | null = null;
   private escapeHandler: ((e: KeyboardEvent) => void) | null = null;
+  private resultsShown = false;
 
   constructor(config: OnlineSessionConfig) {
     this.app = config.app;
@@ -144,14 +145,12 @@ export class OnlineSession {
       this.localDead ? (state.gameOver ? 2 : 1) : 0,
     );
 
-    // Track local death
+    // Track local death → enable ghost mode
     if (!this.localDead && state.isDying) {
       this.localDead = true;
       this.localDeathHeight = state.scoreState.height;
-      this.sync.sendGameEvent({
-        type: "death",
-        payload: { height: this.localDeathHeight },
-      });
+      this.scene.enableGhostMode();
+      this.sync.sendGameEvent({ type: "death", payload: { height: this.localDeathHeight } });
     }
 
     // Render remote player + spectate mode
@@ -199,8 +198,9 @@ export class OnlineSession {
       if (this.toastTimer === 0) this.deathToast.visible = false;
     }
 
-    // Game over check — both dead
-    if (state.gameOver && this.remoteDead) {
+    // Game over — both players have died
+    if (this.localDead && this.remoteDead && !this.resultsShown) {
+      this.resultsShown = true;
       this.showResults();
     }
   }
@@ -304,6 +304,7 @@ export class OnlineSession {
     this.remoteDead = false;
     this.localDeathHeight = 0;
     this.remoteDeathHeight = 0;
+    this.resultsShown = false;
     this.interpolation.reset();
     this.sync = sync;
 

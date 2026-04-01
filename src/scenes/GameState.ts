@@ -118,6 +118,10 @@ export interface GameWorldState {
   inBossFight: boolean;
   /** Enemies killed this game (for achievements). */
   enemiesKilled: number;
+  /** Ghost mode — player keeps playing after death with frozen scoring (multiplayer). */
+  isGhost: boolean;
+  /** Height at moment of death in ghost mode. */
+  ghostDeathHeight: number;
 }
 
 /** Create the initial game world state for a new game. */
@@ -210,5 +214,7 @@ export function createInitialState(runConfig?: RunConfig): GameWorldState {
     pendingTentacles: [],
     inBossFight: false,
     enemiesKilled: 0,
+    isGhost: false,
+    ghostDeathHeight: 0,
   };
 }

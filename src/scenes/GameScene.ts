@@ -177,6 +177,10 @@ export class GameScene {
   getEnemiesKilled(): number { return this.state.enemiesKilled; }
   togglePause(): void { this.state = togglePause(this.state); }
   startCountdown(): void { this.state = startCountdown(this.state); }
+  /** Enable ghost mode — player respawns after death with frozen scoring. */
+  enableGhostMode(): void {
+    this.state = { ...this.state, isGhost: true, ghostDeathHeight: this.state.scoreState.height };
+  }
 
   getActiveEffectProgress(): number {
     return this.state.activeEffect ? this.state.activeEffect.ticksRemaining / getMaxDuration(this.state.activeEffect.type) : 0;
