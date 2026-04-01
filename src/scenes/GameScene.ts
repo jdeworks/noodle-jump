@@ -158,6 +158,7 @@ export class GameScene {
   isGameOver(): boolean { return this.state.gameOver; }
   getScore(): number { return this.state.scoreState.points; }
   getHeight(): number { return this.state.scoreState.height; }
+  getMaxHeight(): number { return this.state.scoreState.highestHeight; }
   getHighScore(): number { return this.state.highScore; }
   getElapsedSeconds(): number { return Math.floor(this.state.elapsedMs / 1000); }
   getActiveEffectName(): string | null { return this.state.activeEffect?.type ?? null; }

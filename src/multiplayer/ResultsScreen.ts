@@ -28,9 +28,9 @@ export function showLocalCoopResults(params: ResultsParams): void {
   overlay.fill({ color: 0x000000, alpha: 0.7 });
   app.stage.addChild(overlay);
 
-  // Use live heights for timed mode
-  const cmpH1 = mode === "timed-2min" ? scene1.getHeight() : h1;
-  const cmpH2 = mode === "timed-2min" ? scene2.getHeight() : h2;
+  // Always use max height for comparison (death penalties reduce current height)
+  const cmpH1 = scene1.getMaxHeight();
+  const cmpH2 = scene2.getMaxHeight();
   let winner: string;
   if (mode === "first-to-die") {
     winner = p1Dead && !p2Dead ? "Player 2 Wins!" : !p1Dead && p2Dead ? "Player 1 Wins!" : "It's a Tie!";
@@ -54,11 +54,8 @@ export function showLocalCoopResults(params: ResultsParams): void {
     fontFamily: "monospace", fontSize: 16, fill: "#ffffff",
     stroke: { color: "#000000", width: 2 },
   });
-  // Use live scene heights for timed mode (death heights may be stale)
-  const dispH1 = mode === "timed-2min" ? scene1.getHeight() : h1;
-  const dispH2 = mode === "timed-2min" ? scene2.getHeight() : h2;
   const lines = [
-    `P1 Height: ${dispH1}m    |    P2 Height: ${dispH2}m`,
+    `P1 Height: ${cmpH1}m    |    P2 Height: ${cmpH2}m`,
     `P1 Score:  ${scene1.getScore()}    |    P2 Score:  ${scene2.getScore()}`,
     `P1 Platforms: ${scene1.getPlatformsPassed()}    |    P2 Platforms: ${scene2.getPlatformsPassed()}`,
   ];

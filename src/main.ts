@@ -1,5 +1,5 @@
 import { Application } from "pixi.js";
-import { GAME_WIDTH, GAME_HEIGHT } from "./config/constants";
+import { GAME_WIDTH, GAME_HEIGHT, DEBUG_MODE } from "./config/constants";
 import { showTitleScreen } from "./ui/TitleScreenView";
 import { launchGame } from "./scenes/GameLauncher";
 import { registerServiceWorker, listenForInstallPrompt } from "./services/PWA";
@@ -29,6 +29,14 @@ async function main() {
   // Canvas fills via CSS (width/height: 100% !important)
 
   showTitleScreen(app, (runConfig) => launchGame(app, runConfig));
+
+  // Debug mode indicator
+  if (DEBUG_MODE) {
+    const badge = document.createElement("div");
+    badge.textContent = "DEBUG";
+    badge.style.cssText = "position:fixed;top:4px;left:4px;padding:2px 6px;font:bold 10px monospace;color:#ff0;background:rgba(0,0,0,0.6);border-radius:4px;z-index:99999;pointer-events:none";
+    document.body.appendChild(badge);
+  }
 }
 
 registerServiceWorker();
