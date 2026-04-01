@@ -13,6 +13,7 @@ import { resetRNG } from "../systems/RNG";
 import { resetRendererState } from "../scenes/EntityRenderer";
 import { createDefaultRunConfig, type RunConfig } from "../systems/CustomRunConfig";
 import { DEBUG_MODE } from "../config/constants";
+import { setDebugConfig, createDebugConfig } from "../config/debug";
 import { showTitleScreen } from "../ui/TitleScreenView";
 import { launchGame } from "../scenes/GameLauncher";
 import { ConnectionManager } from "./ConnectionManager";
@@ -71,9 +72,10 @@ export class OnlineSession {
     this.sync = new GameSync();
 
     // Create game scene with shared seed
+    setDebugConfig(createDebugConfig()); // Reset debug config for multiplayer
     const runConfig: RunConfig = { ...createDefaultRunConfig(), seed: config.seed };
     this.scene = new GameScene(runConfig);
-    this.scene.enableGhostMode(); // Ghost mode always on for online multiplayer
+    this.scene.enableGhostMode();
     this.scene.initInput(this.app.canvas);
     this.app.stage.addChild(this.scene.container);
 

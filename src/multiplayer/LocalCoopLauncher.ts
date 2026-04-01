@@ -18,6 +18,7 @@ import { seededRandom } from "../systems/DailyChallenge";
 import { resetRendererState } from "../scenes/EntityRenderer";
 import { createDefaultRunConfig, type RunConfig } from "../systems/CustomRunConfig";
 import { DEBUG_MODE } from "../config/constants";
+import { setDebugConfig, createDebugConfig } from "../config/debug";
 import { LocalInput } from "./LocalInput";
 import { showTitleScreen } from "../ui/TitleScreenView";
 import { launchGame } from "../scenes/GameLauncher";
@@ -43,6 +44,9 @@ export async function launchLocalCoop(
   input.init();
 
   const config: RunConfig = { ...createDefaultRunConfig(), seed };
+
+  // Reset debug config so multiplayer isn't affected by custom run presets
+  setDebugConfig(createDebugConfig());
 
   const scene1 = new GameScene(config);
   const scene2 = new GameScene(config);
