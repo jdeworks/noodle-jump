@@ -26,9 +26,12 @@ import { showLocalCoopResults } from "./ResultsScreen";
 const SPLIT_WIDTH = GAME_WIDTH * 2;
 const DIVIDER_WIDTH = 2;
 
+export type LocalCoopMode = "best-height" | "first-to-die" | "timed-2min";
+
 export async function launchLocalCoop(
   app: Application,
   seed: number,
+  mode: LocalCoopMode = "best-height",
 ): Promise<void> {
   // Resize canvas for split-screen and override CSS constraints
   app.renderer.resize(SPLIT_WIDTH, GAME_HEIGHT);
@@ -184,6 +187,18 @@ export async function launchLocalCoop(
   };
   window.addEventListener("keydown", midGameEscape);
 
+  // Timer for timed mode (2 min = 7200 ticks at 60fps)
+  let timerCleanup: (() => void) | null = null;
+  let timerText: Text | null = null;
+  let timerTicks = mode === "timed-2min" ? 120 * 60 : -1; // -1 = no timer
+  if (mode === "timed-2min") {
+    timerText = new Text({ text: "2:00", style: new TextStyle({ fontFamily: "monospace",
+      fontSize: 20, fill: "#ffffff", fontWeight: "bold", stroke: { color: "#000000", width: 3 } }) });
+    timerText.x = SPLIT_WIDTH / 2; timerText.y = 22; timerText.anchor.set(0.5, 0.5);
+    app.stage.addChild(timerText);
+    timerCleanup = () => { if (timerText) { timerText.visible = false; } };
+  }
+
   let gameEnded = false;
   let p1Dead = false;
   let p2Dead = false;
@@ -212,18 +227,33 @@ export async function launchLocalCoop(
     p1Height.text = `H: ${scene1.getHeight()}`;
     p2Height.text = `H: ${scene2.getHeight()}`;
 
-    // Track deaths → enable ghost mode
+    // Timed mode countdown
+    if (timerTicks > 0) {
+      timerTicks--;
+      const secs = Math.ceil(timerTicks / 60);
+      const m = Math.floor(secs / 60), s = secs % 60;
+      if (timerText) timerText.text = `${m}:${s.toString().padStart(2, "0")}`;
+      if (timerTicks <= 0 && !gameEnded) {
+        p1DeathHeight = scene1.getHeight(); p2DeathHeight = scene2.getHeight();
+        gameEnded = true; app.ticker.remove(gameLoop);
+        window.removeEventListener("keydown", midGameEscape);
+        if (timerCleanup) timerCleanup();
+        showResults(); return;
+      }
+    }
+
+    // Track deaths — mode determines what happens
     if (!p1Dead && scene1.getState().isDying) {
       p1Dead = true;
       p1DeathHeight = scene1.getHeight();
       showToast(`P1 died at ${p1DeathHeight}m!`);
-      scene1.enableGhostMode();
+      if (mode === "best-height" || mode === "timed-2min") scene1.enableGhostMode();
     }
     if (!p2Dead && scene2.getState().isDying) {
       p2Dead = true;
       p2DeathHeight = scene2.getHeight();
       showToast(`P2 died at ${p2DeathHeight}m!`);
-      scene2.enableGhostMode();
+      if (mode === "best-height" || mode === "timed-2min") scene2.enableGhostMode();
     }
     // Show "GHOST" label on dead player's side
     if (p1Dead && !p2Dead) {
@@ -260,11 +290,15 @@ export async function launchLocalCoop(
     }
 
     // Both dead → show results
-    // End when both have died — second death triggers game over
-    if (p1Dead && p2Dead && !gameEnded) {
+    // End condition depends on mode
+    const shouldEnd = mode === "first-to-die"
+      ? (p1Dead || p2Dead) && !gameEnded
+      : (p1Dead && p2Dead) && !gameEnded;
+    if (shouldEnd) {
       gameEnded = true;
       app.ticker.remove(gameLoop);
       window.removeEventListener("keydown", midGameEscape);
+      if (timerCleanup) timerCleanup();
       showResults();
     }
   };
@@ -278,11 +312,11 @@ export async function launchLocalCoop(
   function showResults(): void {
     showLocalCoopResults({
       app, scene1, scene2,
-      p1DeathHeight, p2DeathHeight,
+      p1DeathHeight, p2DeathHeight, mode, p1Dead, p2Dead,
       cleanupAndReset: () => {
         cleanupLocalCoop(app, scene1, scene2, input, gameLoop);
         const newSeed = Math.floor(Math.random() * 0xffffffff);
-        launchLocalCoop(app, newSeed);
+        launchLocalCoop(app, newSeed, mode);
       },
       cleanupAndGoHome: () => {
         cleanupLocalCoop(app, scene1, scene2, input, gameLoop);

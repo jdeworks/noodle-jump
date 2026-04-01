@@ -11,6 +11,7 @@ import { GameSync } from "./GameSync";
 import { LobbyScreen } from "./LobbyScreen";
 import { OnlineSession } from "./OnlineSession";
 import { launchLocalCoop } from "./LocalCoopLauncher";
+import { showModePicker } from "./ModePickerScreen";
 import {
   MenuContext,
   doQuickCreate,
@@ -61,7 +62,6 @@ export class MultiplayerMenu implements MenuContext {
     this.onBack = onBack;
     this.showMainMenu();
   }
-
   clearView(): void {
     if (this.currentView) {
       this.container.removeChild(this.currentView);
@@ -94,18 +94,15 @@ export class MultiplayerMenu implements MenuContext {
     const btnW = 260, btnH = 44, btnX = (GAME_WIDTH - btnW) / 2;
 
     y = this.addButton(view, "Local Co-op", y, btnW, btnH, btnX, 0x1a3355, () => {
-      const seed = Math.floor(Math.random() * 0xffffffff);
-      this.onLaunch?.();
-      this.container.visible = false;
-      launchLocalCoop(this.app, seed);
+      this.onLaunch?.(); this.container.visible = false;
+      this.app.renderer.resize(GAME_WIDTH * 2, GAME_HEIGHT);
+      this.app.canvas.style.maxWidth = "1000px";
+      this.app.canvas.style.aspectRatio = `${GAME_WIDTH * 2} / ${GAME_HEIGHT}`;
+      showModePicker(this.app, (m) => launchLocalCoop(this.app, Math.floor(Math.random() * 0xffffffff), m));
     });
 
-    const localInfo = new Text({
-      text: "Same PC — Player 1: WASD, Player 2: Arrows",
-      style: INFO_STYLE,
-    });
-    localInfo.x = GAME_WIDTH / 2;
-    localInfo.y = y;
+    const localInfo = new Text({ text: "Same PC — Player 1: WASD, Player 2: Arrows", style: INFO_STYLE });
+    localInfo.x = GAME_WIDTH / 2; localInfo.y = y;
     localInfo.anchor.set(0.5, 0);
     view.addChild(localInfo);
     y += 30;

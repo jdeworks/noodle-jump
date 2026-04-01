@@ -12,21 +12,29 @@ interface ResultsParams {
   scene2: GameScene;
   p1DeathHeight: number;
   p2DeathHeight: number;
+  mode?: string;
+  p1Dead?: boolean;
+  p2Dead?: boolean;
   cleanupAndReset: () => void;
   cleanupAndGoHome: () => void;
 }
 
 export function showLocalCoopResults(params: ResultsParams): void {
   const { app, scene1, scene2, p1DeathHeight: h1, p2DeathHeight: h2,
-    cleanupAndReset, cleanupAndGoHome } = params;
+    mode, p1Dead, p2Dead, cleanupAndReset, cleanupAndGoHome } = params;
 
-  // Dim overlay
   const overlay = new Graphics();
   overlay.rect(0, 0, SPLIT_WIDTH, GAME_HEIGHT);
   overlay.fill({ color: 0x000000, alpha: 0.7 });
   app.stage.addChild(overlay);
 
-  const winner = h1 > h2 ? "Player 1 Wins!" : h2 > h1 ? "Player 2 Wins!" : "It's a Tie!";
+  let winner: string;
+  if (mode === "first-to-die") {
+    // Survivor wins — if both dead simultaneously, use height
+    winner = p1Dead && !p2Dead ? "Player 2 Wins!" : !p1Dead && p2Dead ? "Player 1 Wins!" : "It's a Tie!";
+  } else {
+    winner = h1 > h2 ? "Player 1 Wins!" : h2 > h1 ? "Player 2 Wins!" : "It's a Tie!";
+  }
   const winnerText = new Text({
     text: winner,
     style: new TextStyle({
