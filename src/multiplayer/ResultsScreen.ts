@@ -20,8 +20,8 @@ interface ResultsParams {
 }
 
 export function showLocalCoopResults(params: ResultsParams): void {
-  const { app, scene1, scene2, p1DeathHeight: h1, p2DeathHeight: h2,
-    mode, p1Dead, p2Dead, cleanupAndReset, cleanupAndGoHome } = params;
+  const { app, scene1, scene2, mode, p1Dead, p2Dead,
+    cleanupAndReset, cleanupAndGoHome } = params;
 
   const overlay = new Graphics();
   overlay.rect(0, 0, SPLIT_WIDTH, GAME_HEIGHT);
