@@ -83,3 +83,9 @@ symbols_removed: rigatoni_drill (from POSITIVE_TYPES, ALL_POWER_UP_TYPES), infin
 tests_added: (updated existing: tests/custom-run-config.test.ts, tests/debug-config.test.ts, tests/wiring.test.ts)
 reason: Added debug mode UI with presets/persistence, overhauled all 3 boss fights (grace period, arena locking, tentacle animations, aimed projectiles), removed drill power-up, fixed music overlap and knife rendering.
 health_snapshot: LOC=16124, tests=346, complexity=ok
+
+## [2026-04-01T15:15] session-mp01 | status: started | mode: lean | type: add
+intent: Stage 1 — Multiplayer networking layer (signaling strategies, connection manager, game sync)
+
+- progress: SignalingStrategy interface, ManualSignaling (SDP compression via pako+base62), NostrSignaling (Trystero wrapper), ConnectionManager, GameSync (binary position + events) | src/multiplayer/SignalingStrategy.ts, src/multiplayer/ManualSignaling.ts, src/multiplayer/NostrSignaling.ts, src/multiplayer/ConnectionManager.ts, src/multiplayer/GameSync.ts, src/multiplayer/SDPCompressor.ts, src/multiplayer/index.ts
+- progress: Unit tests for SDP compression round-trip, base62 encoding, position encoding/decoding | tests/multiplayer/sdp-compressor.test.ts, tests/multiplayer/game-sync.test.ts
