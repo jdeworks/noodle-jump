@@ -39,10 +39,12 @@ if [ -n "$warnings" ]; then
 fi
 
 # Inject SESSION_SUMMARY if it has content beyond the template
+has_summary=false
 if [ -f "SESSION_SUMMARY.md" ]; then
   summary_lines=$(wc -l < SESSION_SUMMARY.md | tr -d ' ')
   if [ "$summary_lines" -gt 10 ]; then
     output+="$(cat SESSION_SUMMARY.md)\n\n"
+    has_summary=true
   fi
 fi
 
@@ -50,6 +52,14 @@ fi
 mode="full"
 if [ -f "AGENTS.md" ] && grep -q 'Default: \*\*lean\*\*' AGENTS.md 2>/dev/null; then
   mode="lean"
+fi
+
+# ── Rotate old completed sessions before reading ─────────────────────────────
+if [ -f "scripts/rotate-changes.sh" ] && [ -f "CHANGES.md" ]; then
+  rotation_output=$(bash scripts/rotate-changes.sh 2>&1 || true)
+  if [ -n "$rotation_output" ]; then
+    output+="### Changes rotation\n${rotation_output}\n\n"
+  fi
 fi
 
 # Only look at real entries (after the marker), not template examples
@@ -113,11 +123,14 @@ if [ -f "scripts/analyze-changes.sh" ]; then
   fi
 fi
 
-# Inject recent CHANGES.md entries
+# Inject recent CHANGES.md entries (skip if SESSION_SUMMARY already has them)
 recent=""
+fix_areas=""
 if [ -n "$entries_section" ]; then
-  recent=$(echo "$entries_section" | grep -A7 '^## \[' | tail -30 2>/dev/null || echo "")
-  # Check for fix hotspots
+  if [ "$has_summary" = false ]; then
+    recent=$(echo "$entries_section" | grep -A7 '^## \[' | tail -30 2>/dev/null || echo "")
+  fi
+  # Check for fix hotspots (always, even if summary covers recent entries)
   fix_areas=$(echo "$entries_section" | grep -B1 'type: fix' 2>/dev/null \
     | grep '^files_touched:' \
     | sed 's/files_touched: //' \

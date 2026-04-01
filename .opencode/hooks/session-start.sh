@@ -18,6 +18,12 @@ if [ ! -f "CHANGES.md" ]; then
   exit 0
 fi
 
+# ── Rotate old completed sessions before reading ─────────────────────────────
+if [ -f "scripts/rotate-changes.sh" ]; then
+  rotation_output=$(bash scripts/rotate-changes.sh 2>&1 || true)
+  [ -n "$rotation_output" ] && echo "$rotation_output"
+fi
+
 # Only look at real entries (after the marker), not template examples
 entries_section=$(sed -n '/<!-- Entries below/,$p' CHANGES.md 2>/dev/null || echo "")
 

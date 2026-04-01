@@ -187,7 +187,7 @@ health_snapshot: LOC=4110, tests=289, complexity=ok
 
 ## How hooks use this file
 
-- **session-start.sh** — Detects orphaned "started" entries, injects them into context
+- **session-start.sh** — Rotates old entries, detects orphaned sessions, stale staged changes, dead code
 - **progress-reminder.sh** — Every ~5 user messages, checks for recent progress logging and reminds if needed
 - **stop.sh** — Auto-drafts a completed entry from git diff + progress lines; blocks if nothing written
 - **pre-compact.sh** — Runs `scripts/analyze-changes.sh` to detect dead code from `symbols_removed` and progress lines
@@ -204,3 +204,15 @@ The value degrades fast with vague entries. These are bad:
 - Missing `tests_added` on a fix entry — violates the regression test rule
 
 When in doubt: log too much. Future sessions will thank you.
+
+---
+
+## Rotation
+
+CHANGES.md is automatically trimmed at session start. After 5 completed sessions, older
+completed entries are removed — keeping only the 5 most recent plus any open or abandoned
+sessions. Git history preserves all removed entries (`git log -p -- CHANGES.md`).
+
+This prevents the file from growing unbounded and bloating context injection. The rotation
+is performed by `scripts/rotate-changes.sh`, invoked from `session-start.sh`. You can test
+it with `bash scripts/rotate-changes.sh --dry-run`.
