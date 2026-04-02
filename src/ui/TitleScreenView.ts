@@ -11,7 +11,6 @@ import { requestFullscreen } from "../utils/wakeLock";
 import { ExplanationScreen } from "./ExplanationScreen";
 import { CustomRunScreen } from "./CustomRunScreen";
 import { loadStats } from "./StatsPanel";
-import { drawChef } from "../rendering/sprites";
 import { drawCharacter } from "../rendering/PlayerCharacters";
 import { getSelectedCharacter } from "../systems/CharacterSettings";
 import type { RunConfig } from "../systems/CustomRunConfig";
