@@ -1,7 +1,7 @@
 /** Game-wide constants — tweak here, not in logic files. */
 
 // ── Debug ───────────────────────────────────────────────────────────────────
-export const DEBUG_MODE = true; // set to false for production
+export const DEBUG_MODE = false; // set to true for debug UI/presets
 
 // ── Canvas ──────────────────────────────────────────────────────────────────
 export const GAME_WIDTH = 400;
