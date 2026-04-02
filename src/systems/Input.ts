@@ -3,7 +3,7 @@
  * Outputs a normalized horizontal value from -1 (left) to +1 (right).
  */
 
-import { isTiltInverted } from "./TiltSettings";
+import { isTiltInverted, isTouchControlsForced } from "./TiltSettings";
 
 export type InputMethod = "tilt" | "touch" | "keyboard";
 
@@ -241,26 +241,29 @@ export class InputManager {
   private touchXFromEvent(touch: Touch): number {
     const rect = this.canvasWidth || window.innerWidth;
     const center = rect / 2;
-    const dx = touch.clientX - center;
-    return Math.max(-1, Math.min(1, dx / center));
+    // Binary left/right: left half = -1, right half = +1
+    return touch.clientX < center ? -1 : 1;
+  }
+
+  private get useTouchInput(): boolean {
+    return !this.tiltAvailable || isTouchControlsForced();
   }
 
   private onTouchStart = (e: TouchEvent): void => {
-    if (this.tiltAvailable) return;
+    if (!this.useTouchInput) return;
     this.touchActive = true;
     this._inputX = this.touchXFromEvent(e.touches[0]);
   };
 
   private onTouchMove = (e: TouchEvent): void => {
-    if (!this.touchActive || this.tiltAvailable) return;
+    if (!this.touchActive || !this.useTouchInput) return;
     this._inputX = this.touchXFromEvent(e.touches[0]);
   };
 
   private onTouchEnd = (): void => {
+    if (!this.useTouchInput) return;
     this.touchActive = false;
-    if (!this.tiltAvailable) {
-      this._inputX = 0;
-    }
+    this._inputX = 0;
   };
 
   // ── Keyboard ───────────────────────────────────────────────────────────────

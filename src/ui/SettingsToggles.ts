@@ -11,7 +11,7 @@ import {
   setMusicEnabled,
 } from "../systems/Audio";
 import { isEnemiesEnabled, setEnemiesEnabled } from "../systems/EnemySettings";
-import { isTiltInverted, setTiltInverted } from "../systems/TiltSettings";
+import { isTiltInverted, setTiltInverted, isTouchControlsForced, setTouchControlsForced } from "../systems/TiltSettings";
 
 export function createSettingsToggles(): Container {
   const container = new Container();
@@ -19,7 +19,7 @@ export function createSettingsToggles(): Container {
   const panelW = Math.min(280, GAME_WIDTH - 20);
   const panelX = (GAME_WIDTH - panelW) / 2;
 
-  const panelH = 170;
+  const panelH = 196;
 
   // Background panel — opaque enough for text contrast
   const bg = new Graphics();
@@ -177,9 +177,31 @@ export function createSettingsToggles(): Container {
   });
   container.addChild(tiltHit);
 
+  // Touch Controls toggle (tap left/right half instead of tilt)
+  const touchLabel = new Text({ text: "Touch Controls", style: labelStyle });
+  touchLabel.x = leftX; touchLabel.y = 122;
+  container.addChild(touchLabel);
+  const touchValue = new Text({
+    text: isTouchControlsForced() ? "ON" : "OFF",
+    style: valueStyle(isTouchControlsForced()),
+  });
+  touchValue.x = rightX - 40; touchValue.y = 122; touchValue.anchor.set(0.5, 0);
+  container.addChild(touchValue);
+  const touchHit = new Graphics();
+  touchHit.rect(panelX, 118, panelW, 26);
+  touchHit.fill({ color: 0x000000, alpha: 0.001 });
+  touchHit.eventMode = "static"; touchHit.cursor = "pointer";
+  touchHit.on("pointertap", (e: Event) => {
+    e.stopPropagation();
+    setTouchControlsForced(!isTouchControlsForced());
+    touchValue.text = isTouchControlsForced() ? "ON" : "OFF";
+    touchValue.style = valueStyle(isTouchControlsForced());
+  });
+  container.addChild(touchHit);
+
   // Hint text
   const hint = new Text({
-    text: "Controls reversed? Flip Invert Tilt",
+    text: "Touch: tap left/right half to move",
     style: new TextStyle({
       fontFamily: "monospace",
       fontSize: 11,
@@ -187,7 +209,7 @@ export function createSettingsToggles(): Container {
     }),
   });
   hint.x = GAME_WIDTH / 2;
-  hint.y = 126;
+  hint.y = 152;
   hint.anchor.set(0.5, 0);
   container.addChild(hint);
 
