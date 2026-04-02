@@ -44,6 +44,7 @@ export class OnlineSession {
   private role: OnlineRole;
   private seed: number;
   private touchControls: boolean;
+  private remoteChar: string;
 
   private localDead = false;
   private remoteDead = false;
@@ -74,6 +75,7 @@ export class OnlineSession {
     this.role = config.role;
     this.seed = config.seed;
     this.touchControls = config.touchControls ?? false;
+    this.remoteChar = config.remoteCharacter ?? "chef";
     this.sync = new GameSync();
 
     // Create game scene with shared seed
@@ -90,24 +92,24 @@ export class OnlineSession {
     }
     this.app.stage.addChild(this.scene.container);
 
-    // Remote player overlay — render with opponent's selected character
     this.remoteRenderer = new RemotePlayerRenderer(config.remoteCharacter);
     this.remoteRenderer.hide();
-    this.app.stage.addChild(this.remoteRenderer.container);
 
     this.deathToast = this.makeToast();
-    this.app.stage.addChild(this.deathToast);
     this.fpsText = this.makeFps();
-    if (this.fpsText) this.app.stage.addChild(this.fpsText);
     this.connDot = new Graphics();
     this.connDot.circle(GAME_WIDTH - 15, 15, 6); this.connDot.fill(0x44ff44);
-    this.app.stage.addChild(this.connDot);
     this.makeCountdown();
+
+    // Add overlays in correct z-order: remote player between scene and UI
+    this.app.stage.addChild(this.remoteRenderer.container);
+    this.app.stage.addChild(this.deathToast);
+    if (this.fpsText) this.app.stage.addChild(this.fpsText);
+    this.app.stage.addChild(this.connDot);
     this.setupSync();
   }
 
   private setupSync(): void {
-    // Wire up GameSync callbacks
     this.sync.on({
       onRemotePosition: (state: PlayerSyncState) => {
         this.interpolation.pushUpdate(state.x, state.y, state.vx, state.vy, state.state);
@@ -331,18 +333,17 @@ export class OnlineSession {
     if (this.touchControls) { setTouchControlsForced(true); }
     else if (this.scene.input.needsTiltPermission) { this.scene.input.requestTiltPermission(); }
     this.app.stage.addChild(this.scene.container);
-    this.remoteRenderer = new RemotePlayerRenderer();
+    this.remoteRenderer = new RemotePlayerRenderer(this.remoteChar);
     this.remoteRenderer.hide();
-    this.app.stage.addChild(this.remoteRenderer.container);
-
     this.deathToast = this.makeToast();
-    this.app.stage.addChild(this.deathToast);
     this.fpsText = this.makeFps();
-    if (this.fpsText) this.app.stage.addChild(this.fpsText);
     this.connDot = new Graphics();
     this.connDot.circle(GAME_WIDTH - 15, 15, 6); this.connDot.fill(0x44ff44);
-    this.app.stage.addChild(this.connDot);
     this.makeCountdown();
+    this.app.stage.addChild(this.remoteRenderer.container);
+    this.app.stage.addChild(this.deathToast);
+    if (this.fpsText) this.app.stage.addChild(this.fpsText);
+    this.app.stage.addChild(this.connDot);
     this.setupSync();
     this.start();
   }

@@ -216,7 +216,7 @@ export class LobbyScreen {
 
       this.sync.sendGameEvent({
         type: "ready",
-        payload: { ready: this.isLocalReady(), role: this.role },
+        payload: { ready: this.isLocalReady(), role: this.role, character: this.localChar },
       });
       this.updateUI();
     };
@@ -286,7 +286,14 @@ export class LobbyScreen {
     return this.role === "host" ? this.hostReady : this.guestReady;
   }
 
+  private remoteConnected = false;
+
   private handleRemoteEvent(event: GameSyncEvent): void {
+    // Re-announce our character on first remote event (initial send may have been lost)
+    if (!this.remoteConnected) {
+      this.remoteConnected = true;
+      this.sync.sendGameEvent({ type: "ready", payload: { character: this.localChar } });
+    }
     if (event.type === "ready") {
       if (event.payload.mode) {
         this.mode = event.payload.mode as string;
