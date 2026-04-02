@@ -121,11 +121,11 @@ export function showTitleScreen(
   const arrowStyle = new TextStyle({ fontFamily: "monospace", fontSize: 16, fill: "#777777",
     stroke: { color: "#000000", width: 2 } });
   const leftArrow = new Text({ text: "◀", style: arrowStyle });
-  leftArrow.x = GAME_WIDTH / 2 - 50; leftArrow.y = cursorY + 48; leftArrow.anchor.set(0.5, 0.5);
+  leftArrow.x = GAME_WIDTH / 2 - 50; leftArrow.y = cursorY + 38; leftArrow.anchor.set(0.5, 0.5);
   leftArrow.eventMode = "static"; leftArrow.cursor = "pointer";
   contentGroup.addChild(leftArrow);
   const rightArrow = new Text({ text: "▶", style: arrowStyle });
-  rightArrow.x = GAME_WIDTH / 2 + 50; rightArrow.y = cursorY + 48; rightArrow.anchor.set(0.5, 0.5);
+  rightArrow.x = GAME_WIDTH / 2 + 50; rightArrow.y = cursorY + 38; rightArrow.anchor.set(0.5, 0.5);
   rightArrow.eventMode = "static"; rightArrow.cursor = "pointer";
   contentGroup.addChild(rightArrow);
 

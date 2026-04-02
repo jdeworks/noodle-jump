@@ -209,7 +209,7 @@ export function createSettingsToggles(): Container {
     }),
   });
   hint.x = GAME_WIDTH / 2;
-  hint.y = 152;
+  hint.y = 149;
   hint.anchor.set(0.5, 0);
   container.addChild(hint);
 
