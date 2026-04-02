@@ -289,7 +289,7 @@ export class CustomRunScreen {
       this.totalDragDist = 0;
     });
 
-    overlay.on("pointermove", (e) => {
+    overlay.on("globalpointermove", (e) => {
       if (!this.dragging) return;
       const dy = this.dragLastY - e.globalY;
       this.totalDragDist += Math.abs(dy);

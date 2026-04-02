@@ -30,8 +30,8 @@ export class InertiaScroll {
       this.dragVelocity = 0;
     });
 
-    bg.on("pointermove", (e) => {
-      if (!this.dragging || e.pressure <= 0) return;
+    bg.on("globalpointermove", (e) => {
+      if (!this.dragging) return;
       const dy = this.lastY - e.globalY;
       const now = Date.now();
       const dt = Math.max(1, now - this.lastTime);

@@ -87,43 +87,21 @@ export async function launchLocalCoop(
   app.stage.addChild(divider);
 
   // Player labels
-  const labelStyle = new TextStyle({
-    fontFamily: "monospace",
-    fontSize: 12,
-    fill: "#ffffff",
-    fontWeight: "bold",
-    stroke: { color: "#000000", width: 2 },
-  });
-
+  const labelStyle = new TextStyle({ fontFamily: "monospace", fontSize: 12,
+    fill: "#ffffff", fontWeight: "bold", stroke: { color: "#000000", width: 2 } });
   const p1Label = new Text({ text: "P1 (WASD)", style: labelStyle });
-  p1Label.x = 8;
-  p1Label.y = 4;
-  app.stage.addChild(p1Label);
-
+  p1Label.x = 8; p1Label.y = 4; app.stage.addChild(p1Label);
   const p2Label = new Text({ text: "P2 (Arrows)", style: labelStyle });
-  p2Label.x = GAME_WIDTH + 8;
-  p2Label.y = 4;
-  app.stage.addChild(p2Label);
+  p2Label.x = GAME_WIDTH + 8; p2Label.y = 4; app.stage.addChild(p2Label);
 
   // Height displays
-  const heightStyle = new TextStyle({
-    fontFamily: "monospace",
-    fontSize: 14,
-    fill: "#ffdd44",
-    fontWeight: "bold",
-    stroke: { color: "#000000", width: 2 },
-  });
-
+  const heightStyle = new TextStyle({ fontFamily: "monospace", fontSize: 14,
+    fill: "#ffdd44", fontWeight: "bold", stroke: { color: "#000000", width: 2 } });
   const p1Height = new Text({ text: "H: 0", style: heightStyle });
-  p1Height.x = GAME_WIDTH - 8;
-  p1Height.y = 4;
-  p1Height.anchor.set(1, 0);
+  p1Height.x = GAME_WIDTH - 8; p1Height.y = 4; p1Height.anchor.set(1, 0);
   app.stage.addChild(p1Height);
-
   const p2Height = new Text({ text: "H: 0", style: heightStyle });
-  p2Height.x = SPLIT_WIDTH - 8;
-  p2Height.y = 4;
-  p2Height.anchor.set(1, 0);
+  p2Height.x = SPLIT_WIDTH - 8; p2Height.y = 4; p2Height.anchor.set(1, 0);
   app.stage.addChild(p2Height);
 
   // Death toast
@@ -191,6 +169,19 @@ export async function launchLocalCoop(
     }
   };
   window.addEventListener("keydown", midGameEscape);
+
+  // Pause both scenes when tab/app is hidden (prevent desync)
+  let paused = false;
+  const visHandler = () => {
+    if (document.hidden && !paused && !gameEnded) {
+      paused = true;
+      app.ticker.stop();
+    } else if (!document.hidden && paused) {
+      paused = false;
+      app.ticker.start();
+    }
+  };
+  document.addEventListener("visibilitychange", visHandler);
 
   // Timer for timed mode (2 min = 7200 ticks at 60fps)
   let timerCleanup: (() => void) | null = null;
@@ -336,7 +327,8 @@ export async function launchLocalCoop(
   }
 
   function showResults(): void {
-    // Hide all overlays
+    document.removeEventListener("visibilitychange", visHandler);
+    if (paused) { paused = false; app.ticker.start(); }
     spectateOverlay.visible = false; spectateLabel.visible = false;
     countdownText.visible = false; countdownDim.visible = false;
     deathToast.visible = false;
