@@ -11,8 +11,8 @@ import { requestFullscreen } from "../utils/wakeLock";
 import { ExplanationScreen } from "./ExplanationScreen";
 import { CustomRunScreen } from "./CustomRunScreen";
 import { loadStats } from "./StatsPanel";
-import { drawCharacter } from "../rendering/PlayerCharacters";
-import { getSelectedCharacter } from "../systems/CharacterSettings";
+import { drawCharacter, CHARACTERS } from "../rendering/PlayerCharacters";
+import { getSelectedCharacter, setSelectedCharacter } from "../systems/CharacterSettings";
 import type { RunConfig } from "../systems/CustomRunConfig";
 import { MultiplayerMenu } from "../multiplayer/MultiplayerMenu";
 
@@ -104,14 +104,40 @@ export function showTitleScreen(
     cursorY += 24;
   }
 
-  // Animated chef character
+  // Animated character with left/right arrows to cycle
   const chefGfx = new Graphics();
   chefGfx.x = GAME_WIDTH / 2 - 16;
   chefGfx.y = cursorY;
   drawCharacter(chefGfx, 32, 40, getSelectedCharacter());
   contentGroup.addChild(chefGfx);
   const chefBaseY = cursorY;
-  cursorY += 48;
+
+  const charName = new Text({ text: CHARACTERS.find(c => c.id === getSelectedCharacter())?.name ?? "Chef",
+    style: new TextStyle({ fontFamily: "monospace", fontSize: 11, fill: "#ffcc44",
+      stroke: { color: "#000000", width: 2 } }) });
+  charName.x = GAME_WIDTH / 2; charName.y = cursorY + 42; charName.anchor.set(0.5, 0);
+  contentGroup.addChild(charName);
+
+  const arrowStyle = new TextStyle({ fontFamily: "monospace", fontSize: 22, fill: "#ffffff",
+    fontWeight: "bold", stroke: { color: "#000000", width: 3 } });
+  const leftArrow = new Text({ text: "◀", style: arrowStyle });
+  leftArrow.x = GAME_WIDTH / 2 - 40; leftArrow.y = cursorY + 12; leftArrow.anchor.set(0.5, 0.5);
+  leftArrow.eventMode = "static"; leftArrow.cursor = "pointer";
+  contentGroup.addChild(leftArrow);
+  const rightArrow = new Text({ text: "▶", style: arrowStyle });
+  rightArrow.x = GAME_WIDTH / 2 + 40; rightArrow.y = cursorY + 12; rightArrow.anchor.set(0.5, 0.5);
+  rightArrow.eventMode = "static"; rightArrow.cursor = "pointer";
+  contentGroup.addChild(rightArrow);
+
+  const cycleChar = (dir: number) => {
+    const idx = CHARACTERS.findIndex(c => c.id === getSelectedCharacter());
+    const next = CHARACTERS[(idx + dir + CHARACTERS.length) % CHARACTERS.length];
+    setSelectedCharacter(next.id);
+    charName.text = next.name;
+  };
+  leftArrow.on("pointertap", (e: Event) => { e.stopPropagation(); cycleChar(-1); });
+  rightArrow.on("pointertap", (e: Event) => { e.stopPropagation(); cycleChar(1); });
+  cursorY += 60;
 
   // ── Vertical button stack ─────────────────────────────────────────
   const btnW = Math.min(260, GAME_WIDTH - 40);

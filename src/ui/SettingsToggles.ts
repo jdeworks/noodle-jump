@@ -12,8 +12,6 @@ import {
 } from "../systems/Audio";
 import { isEnemiesEnabled, setEnemiesEnabled } from "../systems/EnemySettings";
 import { isTiltInverted, setTiltInverted, isTouchControlsForced, setTouchControlsForced } from "../systems/TiltSettings";
-import { getSelectedCharacter, setSelectedCharacter } from "../systems/CharacterSettings";
-import { CHARACTERS } from "../rendering/PlayerCharacters";
 
 export function createSettingsToggles(): Container {
   const container = new Container();
@@ -21,7 +19,7 @@ export function createSettingsToggles(): Container {
   const panelW = Math.min(280, GAME_WIDTH - 20);
   const panelX = (GAME_WIDTH - panelW) / 2;
 
-  const panelH = 222;
+  const panelH = 196;
 
   // Background panel — opaque enough for text contrast
   const bg = new Graphics();
@@ -201,37 +199,6 @@ export function createSettingsToggles(): Container {
   });
   container.addChild(touchHit);
 
-  // Character selection row
-  const charLabel = new Text({ text: "Character", style: labelStyle });
-  charLabel.x = leftX; charLabel.y = 148;
-  container.addChild(charLabel);
-
-  function currentCharName(): string {
-    const id = getSelectedCharacter();
-    return CHARACTERS.find((c) => c.id === id)?.name ?? "Chef";
-  }
-
-  const charValueStyle = new TextStyle({
-    fontFamily: "monospace", fontSize: 14, fill: "#ffcc44", fontWeight: "bold",
-  });
-  const charValue = new Text({ text: currentCharName(), style: charValueStyle });
-  charValue.x = rightX - 40; charValue.y = 148; charValue.anchor.set(0.5, 0);
-  container.addChild(charValue);
-
-  const charHit = new Graphics();
-  charHit.rect(panelX, 144, panelW, 26);
-  charHit.fill({ color: 0x000000, alpha: 0.001 });
-  charHit.eventMode = "static"; charHit.cursor = "pointer";
-  charHit.on("pointertap", (e: Event) => {
-    e.stopPropagation();
-    const curId = getSelectedCharacter();
-    const idx = CHARACTERS.findIndex((c) => c.id === curId);
-    const next = CHARACTERS[(idx + 1) % CHARACTERS.length];
-    setSelectedCharacter(next.id);
-    charValue.text = next.name;
-  });
-  container.addChild(charHit);
-
   // Hint text
   const hint = new Text({
     text: "Touch: tap left/right half to move",
@@ -242,7 +209,7 @@ export function createSettingsToggles(): Container {
     }),
   });
   hint.x = GAME_WIDTH / 2;
-  hint.y = 178;
+  hint.y = 152;
   hint.anchor.set(0.5, 0);
   container.addChild(hint);
 
