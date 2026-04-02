@@ -5,6 +5,8 @@
 
 import { Application, Container, Graphics, Text, TextStyle } from "pixi.js";
 import { GAME_WIDTH, GAME_HEIGHT } from "../config/constants";
+import { CHARACTERS, drawCharacter } from "../rendering/PlayerCharacters";
+import { getSelectedCharacter, setSelectedCharacter } from "../systems/CharacterSettings";
 import type { LocalCoopMode } from "./LocalCoopLauncher";
 
 const MODES: LocalCoopMode[] = ["best-height", "first-to-die", "timed-2min"];
@@ -23,7 +25,7 @@ const SPLIT_WIDTH = GAME_WIDTH * 2;
 
 export function showModePicker(
   app: Application,
-  onSelect: (mode: LocalCoopMode) => void,
+  onSelect: (mode: LocalCoopMode, p1Char: string, p2Char: string) => void,
 ): void {
   const view = new Container();
   let selectedIdx = 0;
@@ -42,8 +44,8 @@ export function showModePicker(
   view.addChild(title);
 
   const hint = new Text({
-    text: "P1: W/S to select, Enter to confirm",
-    style: new TextStyle({ fontFamily: "monospace", fontSize: 13,
+    text: "W/S: mode  A/D: P1 char  ←/→: P2 char  Enter: start",
+    style: new TextStyle({ fontFamily: "monospace", fontSize: 11,
       fill: "#888888", stroke: { color: "#000000", width: 2 } }),
   });
   hint.x = SPLIT_WIDTH / 2; hint.y = 120; hint.anchor.set(0.5, 0.5);
@@ -55,8 +57,48 @@ export function showModePicker(
     style: new TextStyle({ fontFamily: "monospace", fontSize: 14,
       fill: "#aaaaaa", align: "center", stroke: { color: "#000000", width: 2 } }),
   });
-  descText.x = SPLIT_WIDTH / 2; descText.y = 400; descText.anchor.set(0.5, 0.5);
+  descText.x = SPLIT_WIDTH / 2; descText.y = 380; descText.anchor.set(0.5, 0.5);
   view.addChild(descText);
+
+  // Character pickers for P1 and P2
+  let p1CharIdx = CHARACTERS.findIndex(c => c.id === getSelectedCharacter());
+  if (p1CharIdx < 0) p1CharIdx = 0;
+  let p2CharIdx = (p1CharIdx + 1) % CHARACTERS.length; // default to different char
+
+  const charLabelStyle = new TextStyle({ fontFamily: "monospace", fontSize: 13,
+    fill: "#ffffff", fontWeight: "bold", stroke: { color: "#000000", width: 2 } });
+  const charNameStyle = new TextStyle({ fontFamily: "monospace", fontSize: 11,
+    fill: "#ffcc44", stroke: { color: "#000000", width: 2 } });
+
+  // P1 character (left side)
+  const p1Title = new Text({ text: "P1 (A/D)", style: charLabelStyle });
+  p1Title.x = SPLIT_WIDTH / 2 - 100; p1Title.y = 440; p1Title.anchor.set(0.5, 0.5);
+  view.addChild(p1Title);
+  const p1Gfx = new Graphics();
+  p1Gfx.x = SPLIT_WIDTH / 2 - 100 - 12; p1Gfx.y = 455;
+  view.addChild(p1Gfx);
+  const p1Name = new Text({ text: "", style: charNameStyle });
+  p1Name.x = SPLIT_WIDTH / 2 - 100; p1Name.y = 488; p1Name.anchor.set(0.5, 0.5);
+  view.addChild(p1Name);
+
+  // P2 character (right side)
+  const p2Title = new Text({ text: "P2 (←/→)", style: charLabelStyle });
+  p2Title.x = SPLIT_WIDTH / 2 + 100; p2Title.y = 440; p2Title.anchor.set(0.5, 0.5);
+  view.addChild(p2Title);
+  const p2Gfx = new Graphics();
+  p2Gfx.x = SPLIT_WIDTH / 2 + 100 - 12; p2Gfx.y = 455;
+  view.addChild(p2Gfx);
+  const p2Name = new Text({ text: "", style: charNameStyle });
+  p2Name.x = SPLIT_WIDTH / 2 + 100; p2Name.y = 488; p2Name.anchor.set(0.5, 0.5);
+  view.addChild(p2Name);
+
+  const updateChars = () => {
+    p1Gfx.clear(); drawCharacter(p1Gfx, 24, 30, CHARACTERS[p1CharIdx].id);
+    p1Name.text = CHARACTERS[p1CharIdx].name;
+    p2Gfx.clear(); drawCharacter(p2Gfx, 24, 30, CHARACTERS[p2CharIdx].id);
+    p2Name.text = CHARACTERS[p2CharIdx].name;
+  };
+  updateChars();
 
   for (let i = 0; i < MODES.length; i++) {
     const t = new Text({
@@ -79,17 +121,32 @@ export function showModePicker(
   };
 
   const keyHandler = (e: KeyboardEvent) => {
-    if (e.key === "w" || e.key === "W" || e.key === "ArrowUp") {
+    if (e.key === "w" || e.key === "W") {
       selectedIdx = (selectedIdx - 1 + MODES.length) % MODES.length;
       updateSelection();
-    } else if (e.key === "s" || e.key === "S" || e.key === "ArrowDown") {
+    } else if (e.key === "s" || e.key === "S") {
       selectedIdx = (selectedIdx + 1) % MODES.length;
       updateSelection();
+    } else if (e.key === "a" || e.key === "A") {
+      p1CharIdx = (p1CharIdx - 1 + CHARACTERS.length) % CHARACTERS.length;
+      updateChars();
+    } else if (e.key === "d" || e.key === "D") {
+      p1CharIdx = (p1CharIdx + 1) % CHARACTERS.length;
+      updateChars();
+    } else if (e.key === "ArrowLeft") {
+      e.preventDefault();
+      p2CharIdx = (p2CharIdx - 1 + CHARACTERS.length) % CHARACTERS.length;
+      updateChars();
+    } else if (e.key === "ArrowRight") {
+      e.preventDefault();
+      p2CharIdx = (p2CharIdx + 1) % CHARACTERS.length;
+      updateChars();
     } else if (e.key === "Enter") {
       window.removeEventListener("keydown", keyHandler);
+      setSelectedCharacter(CHARACTERS[p1CharIdx].id);
       app.stage.removeChild(view);
       view.destroy({ children: true });
-      onSelect(MODES[selectedIdx]);
+      onSelect(MODES[selectedIdx], CHARACTERS[p1CharIdx].id, CHARACTERS[p2CharIdx].id);
     }
   };
   window.addEventListener("keydown", keyHandler);

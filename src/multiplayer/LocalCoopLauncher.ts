@@ -24,6 +24,7 @@ import { showTitleScreen } from "../ui/TitleScreenView";
 import { launchGame } from "../scenes/GameLauncher";
 import { showLocalCoopResults } from "./ResultsScreen";
 import { CountdownAnim } from "./CountdownAnim";
+import { setSelectedCharacter } from "../systems/CharacterSettings";
 
 const SPLIT_WIDTH = GAME_WIDTH * 2;
 const DIVIDER_WIDTH = 2;
@@ -34,6 +35,8 @@ export async function launchLocalCoop(
   app: Application,
   seed: number,
   mode: LocalCoopMode = "best-height",
+  p1Char = "chef",
+  p2Char = "chef",
 ): Promise<void> {
   // Resize canvas for split-screen and override CSS constraints
   app.renderer.resize(SPLIT_WIDTH, GAME_HEIGHT);
@@ -221,14 +224,16 @@ export async function launchLocalCoop(
     if (gameEnded) return;
     input.update();
 
-    // Tick scenes with split keyboard input and separate RNG streams
+    // Tick scenes with split keyboard input, separate RNG streams and characters
     if (!scene1.isGameOver()) {
+      setSelectedCharacter(p1Char);
       setRNGFunction(p1Rng);
       if (input.p1Fire) scene1.autoAimThrow();
       scene1.updateWithInput(input.p1InputX);
       p1Rng = getRNGFunction();
     }
     if (!scene2.isGameOver()) {
+      setSelectedCharacter(p2Char);
       setRNGFunction(p2Rng);
       if (input.p2Fire) scene2.autoAimThrow();
       scene2.updateWithInput(input.p2InputX);
@@ -338,7 +343,7 @@ export async function launchLocalCoop(
       cleanupAndReset: () => {
         cleanupLocalCoop(app, scene1, scene2, input, gameLoop);
         const newSeed = Math.floor(Math.random() * 0xffffffff);
-        launchLocalCoop(app, newSeed, mode);
+        launchLocalCoop(app, newSeed, mode, p1Char, p2Char);
       },
       cleanupAndGoHome: () => {
         cleanupLocalCoop(app, scene1, scene2, input, gameLoop);

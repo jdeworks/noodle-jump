@@ -118,14 +118,14 @@ export function showTitleScreen(
   charName.x = GAME_WIDTH / 2; charName.y = cursorY + 42; charName.anchor.set(0.5, 0);
   contentGroup.addChild(charName);
 
-  const arrowStyle = new TextStyle({ fontFamily: "monospace", fontSize: 22, fill: "#ffffff",
-    fontWeight: "bold", stroke: { color: "#000000", width: 3 } });
+  const arrowStyle = new TextStyle({ fontFamily: "monospace", fontSize: 16, fill: "#777777",
+    stroke: { color: "#000000", width: 2 } });
   const leftArrow = new Text({ text: "◀", style: arrowStyle });
-  leftArrow.x = GAME_WIDTH / 2 - 40; leftArrow.y = cursorY + 12; leftArrow.anchor.set(0.5, 0.5);
+  leftArrow.x = GAME_WIDTH / 2 - 50; leftArrow.y = cursorY + 48; leftArrow.anchor.set(0.5, 0.5);
   leftArrow.eventMode = "static"; leftArrow.cursor = "pointer";
   contentGroup.addChild(leftArrow);
   const rightArrow = new Text({ text: "▶", style: arrowStyle });
-  rightArrow.x = GAME_WIDTH / 2 + 40; rightArrow.y = cursorY + 12; rightArrow.anchor.set(0.5, 0.5);
+  rightArrow.x = GAME_WIDTH / 2 + 50; rightArrow.y = cursorY + 48; rightArrow.anchor.set(0.5, 0.5);
   rightArrow.eventMode = "static"; rightArrow.cursor = "pointer";
   contentGroup.addChild(rightArrow);
 
@@ -181,11 +181,9 @@ export function showTitleScreen(
   const promptText = playButton.text;
   cursorY += btnH + btnSpacing;
 
-  // 2. Multiplayer — local co-op requires a physical keyboard, hide on touch-only devices
-  const isTouchOnly = "ontouchstart" in window && !window.matchMedia("(pointer: fine)").matches;
+  // 2. Multiplayer
   const mpButton = makeButton("Multiplayer", cursorY, 0x2a3355, "#ffccaa", 16);
-  if (isTouchOnly) { mpButton.bg.visible = false; mpButton.text.visible = false; }
-  else { cursorY += btnH + btnSpacing; }
+  cursorY += btnH + btnSpacing;
 
   // 3. How to Play
   const howButton = makeButton("How to Play", cursorY, 0x222244, "#aaccff", 15);
@@ -208,7 +206,7 @@ export function showTitleScreen(
 
   // Input hint — device-appropriate
   const kbHint = new Text({
-    text: isTouchOnly ? "Tilt your device to move" : "Arrow keys / WASD to move",
+    text: "ontouchstart" in window ? "Tilt or tap left/right to move" : "Arrow keys / WASD to move",
     style: new TextStyle({
       fontFamily: "monospace",
       fontSize: 12,
