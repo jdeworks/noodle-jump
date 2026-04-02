@@ -74,9 +74,9 @@ export class Tutorial {
       child.destroy();
     }
 
-    // Dim overlay
+    // Dim overlay — extend beyond canvas bounds to cover any offset
     const dim = new Graphics();
-    dim.rect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+    dim.rect(-50, -50, GAME_WIDTH + 100, GAME_HEIGHT + 100);
     dim.fill({ color: 0x000000, alpha: 0.6 });
     dim.eventMode = "static";
     this.container.addChild(dim);
