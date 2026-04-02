@@ -19,6 +19,9 @@ function loadSettings(): void {
     const stored = localStorage.getItem(SETTINGS_KEY);
     if (stored) settings = { ...settings, ...JSON.parse(stored) };
   } catch { /* defaults */ }
+  // Ensure enabled flags match volume (fix stale saved state)
+  settings.sfxEnabled = settings.sfxVolume > 0;
+  settings.musicEnabled = settings.musicVolume > 0;
 }
 
 function saveSettings(): void {
@@ -42,8 +45,8 @@ export function ensureContext(): AudioContext | null {
   return ctx;
 }
 
-export function isSfxEnabled(): boolean { return settings.sfxEnabled; }
-export function isMusicEnabled(): boolean { return settings.musicEnabled; }
+export function isSfxEnabled(): boolean { return settings.sfxVolume > 0; }
+export function isMusicEnabled(): boolean { return settings.musicVolume > 0; }
 export function setSfxEnabled(v: boolean): void { settings.sfxEnabled = v; saveSettings(); }
 export function setMusicEnabled(v: boolean): void {
   settings.musicEnabled = v;
@@ -51,10 +54,15 @@ export function setMusicEnabled(v: boolean): void {
   saveSettings();
 }
 export function getSfxVolume(): number { return settings.sfxVolume; }
-export function setSfxVolume(v: number): void { settings.sfxVolume = Math.max(0, Math.min(100, v)); saveSettings(); }
+export function setSfxVolume(v: number): void {
+  settings.sfxVolume = Math.max(0, Math.min(100, v));
+  settings.sfxEnabled = v > 0;
+  saveSettings();
+}
 export function getMusicVolume(): number { return settings.musicVolume; }
 export function setMusicVolume(v: number): void {
   settings.musicVolume = Math.max(0, Math.min(100, v));
+  settings.musicEnabled = v > 0;
   import("./MusicPlayer").then((m) => m.applyMusicVolume());
   saveSettings();
 }

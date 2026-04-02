@@ -2,14 +2,7 @@
 
 import { Container, Graphics, Text, TextStyle } from "pixi.js";
 import { GAME_WIDTH } from "../config/constants";
-import {
-  getSfxVolume,
-  setSfxVolume,
-  getMusicVolume,
-  setMusicVolume,
-  setSfxEnabled,
-  setMusicEnabled,
-} from "../systems/Audio";
+import { getSfxVolume, setSfxVolume, getMusicVolume, setMusicVolume } from "../systems/Audio";
 import { isEnemiesEnabled, setEnemiesEnabled } from "../systems/EnemySettings";
 import { isTiltInverted, setTiltInverted, isTouchControlsForced, setTouchControlsForced } from "../systems/TiltSettings";
 
@@ -116,16 +109,10 @@ export function createSettingsToggles(): Container {
   }
 
   // SFX volume
-  addVolumeRow(20, "SFX", getSfxVolume, (v) => {
-    setSfxVolume(v);
-    setSfxEnabled(v > 0);
-  });
+  addVolumeRow(20, "SFX", getSfxVolume, setSfxVolume);
 
   // Music volume
-  addVolumeRow(44, "Music", getMusicVolume, (v) => {
-    setMusicVolume(v);
-    setMusicEnabled(v > 0);
-  });
+  addVolumeRow(44, "Music", getMusicVolume, setMusicVolume);
 
   // Enemies toggle
   const enemyLabel = new Text({ text: "Enemies", style: labelStyle });
