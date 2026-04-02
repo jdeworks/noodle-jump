@@ -264,7 +264,6 @@ export function showGameOver(
     if (fireworkTicker) app.ticker.remove(fireworkTicker);
     if (fireworks) { fireworks.destroy(); fireworks = null; }
     app.canvas.removeEventListener("click", handleRestart);
-    app.canvas.removeEventListener("touchstart", handleRestart);
     window.removeEventListener("keydown", handleRestart);
   };
 
@@ -286,7 +285,6 @@ export function showGameOver(
   setTimeout(
     () => {
       app.canvas.addEventListener("click", handleRestart);
-      app.canvas.addEventListener("touchstart", handleRestart);
       window.addEventListener("keydown", handleRestart);
       restartBg.on("pointertap", handleRestart);
       restartText.on("pointertap", handleRestart);

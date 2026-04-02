@@ -154,9 +154,11 @@ export function showTitleScreen(
   const promptText = playButton.text;
   cursorY += btnH + btnSpacing;
 
-  // 2. Multiplayer
+  // 2. Multiplayer — local co-op requires a physical keyboard, hide on touch-only devices
+  const isTouchOnly = "ontouchstart" in window && !window.matchMedia("(pointer: fine)").matches;
   const mpButton = makeButton("Multiplayer", cursorY, 0x2a3355, "#ffccaa", 16);
-  cursorY += btnH + btnSpacing;
+  if (isTouchOnly) { mpButton.bg.visible = false; mpButton.text.visible = false; }
+  else { cursorY += btnH + btnSpacing; }
 
   // 3. How to Play
   const howButton = makeButton("How to Play", cursorY, 0x222244, "#aaccff", 15);
@@ -177,9 +179,9 @@ export function showTitleScreen(
   fsButton.text.on("pointertap", (e: Event) => { e.stopPropagation(); requestFullscreen(); });
   cursorY += btnH + btnSpacing + 4;
 
-  // Keyboard hint
+  // Input hint — device-appropriate
   const kbHint = new Text({
-    text: "Arrow keys / WASD to move",
+    text: isTouchOnly ? "Tilt your device to move" : "Arrow keys / WASD to move",
     style: new TextStyle({
       fontFamily: "monospace",
       fontSize: 12,

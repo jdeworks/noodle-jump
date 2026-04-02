@@ -77,6 +77,9 @@ export class OnlineSession {
     this.scene = new GameScene(runConfig);
     this.scene.enableGhostMode();
     this.scene.initInput(this.app.canvas);
+    if (this.scene.input.needsTiltPermission) {
+      this.scene.input.requestTiltPermission();
+    }
     this.app.stage.addChild(this.scene.container);
 
     // Remote player overlay
@@ -122,11 +125,7 @@ export class OnlineSession {
     this.sync.startSending();
     playMusic(0);
 
-    // Re-add FPS text on top of everything
-    if (this.fpsText) {
-      this.app.stage.removeChild(this.fpsText);
-      this.app.stage.addChild(this.fpsText);
-    }
+    if (this.fpsText) { this.app.stage.removeChild(this.fpsText); this.app.stage.addChild(this.fpsText); }
 
     // Escape to forfeit
     this.escapeHandler = (e: KeyboardEvent) => {
@@ -326,6 +325,9 @@ export class OnlineSession {
     this.scene = new GameScene(runConfig);
     this.scene.enableGhostMode();
     this.scene.initInput(this.app.canvas);
+    if (this.scene.input.needsTiltPermission) {
+      this.scene.input.requestTiltPermission();
+    }
     this.app.stage.addChild(this.scene.container);
 
     this.remoteRenderer = new RemotePlayerRenderer();

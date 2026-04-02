@@ -3,6 +3,8 @@
  * Outputs a normalized horizontal value from -1 (left) to +1 (right).
  */
 
+import { isTiltInverted } from "./TiltSettings";
+
 export type InputMethod = "tilt" | "touch" | "keyboard";
 
 const TILT_SENSITIVITY = 5; // m/s² from rest for full input (~30° tilt)
@@ -170,8 +172,10 @@ export class InputManager {
     // ── Use accelerometer for input ────────────────────────────────────
     // accel.x sign varies by device. On most Android phones in portrait,
     // tilting right gives negative x. We negate to match expectations:
-    // positive = right, negative = left.
-    const tiltValue = -accel.x;
+    // positive = right, negative = left. Some devices (e.g. certain iPhones)
+    // report the opposite sign — users can flip via the "Invert Tilt" setting.
+    const invertSign = isTiltInverted() ? 1 : -1;
+    const tiltValue = invertSign * accel.x;
 
     if (!this.calibrated) {
       this.calibrationReadings.push(tiltValue);

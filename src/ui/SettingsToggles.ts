@@ -11,6 +11,7 @@ import {
   setMusicEnabled,
 } from "../systems/Audio";
 import { isEnemiesEnabled, setEnemiesEnabled } from "../systems/EnemySettings";
+import { isTiltInverted, setTiltInverted } from "../systems/TiltSettings";
 
 export function createSettingsToggles(): Container {
   const container = new Container();
@@ -18,11 +19,14 @@ export function createSettingsToggles(): Container {
   const panelW = Math.min(280, GAME_WIDTH - 20);
   const panelX = (GAME_WIDTH - panelW) / 2;
 
+  const isTouchDevice = "ontouchstart" in window;
+  const panelH = isTouchDevice ? 170 : 140;
+
   // Background panel — opaque enough for text contrast
   const bg = new Graphics();
-  bg.roundRect(panelX, -8, panelW, 140, 10);
+  bg.roundRect(panelX, -8, panelW, panelH, 10);
   bg.fill({ color: 0x1a1008, alpha: 0.85 });
-  bg.roundRect(panelX, -8, panelW, 140, 10);
+  bg.roundRect(panelX, -8, panelW, panelH, 10);
   bg.stroke({ width: 1, color: 0x665544, alpha: 0.6 });
   container.addChild(bg);
 
@@ -152,9 +156,39 @@ export function createSettingsToggles(): Container {
   });
   container.addChild(enemyHit);
 
+  // Invert Tilt toggle (only on touch devices)
+  if (isTouchDevice) {
+    const tiltLabel = new Text({ text: "Invert Tilt", style: labelStyle });
+    tiltLabel.x = leftX;
+    tiltLabel.y = 96;
+    container.addChild(tiltLabel);
+
+    const tiltValue = new Text({
+      text: isTiltInverted() ? "ON" : "OFF",
+      style: valueStyle(isTiltInverted()),
+    });
+    tiltValue.x = rightX - 40;
+    tiltValue.y = 96;
+    tiltValue.anchor.set(0.5, 0);
+    container.addChild(tiltValue);
+
+    const tiltHit = new Graphics();
+    tiltHit.rect(panelX, 92, panelW, 26);
+    tiltHit.fill({ color: 0x000000, alpha: 0.001 });
+    tiltHit.eventMode = "static";
+    tiltHit.cursor = "pointer";
+    tiltHit.on("pointertap", (e: Event) => {
+      e.stopPropagation();
+      setTiltInverted(!isTiltInverted());
+      tiltValue.text = isTiltInverted() ? "ON" : "OFF";
+      tiltValue.style = valueStyle(isTiltInverted());
+    });
+    container.addChild(tiltHit);
+  }
+
   // Hint text
   const hint = new Text({
-    text: "Tap enemies row to toggle",
+    text: isTouchDevice ? "Controls feel reversed? Flip Invert Tilt" : "Tap rows to toggle",
     style: new TextStyle({
       fontFamily: "monospace",
       fontSize: 11,
@@ -162,7 +196,7 @@ export function createSettingsToggles(): Container {
     }),
   });
   hint.x = GAME_WIDTH / 2;
-  hint.y = 100;
+  hint.y = isTouchDevice ? 126 : 100;
   hint.anchor.set(0.5, 0);
   container.addChild(hint);
 
