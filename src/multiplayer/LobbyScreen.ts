@@ -46,7 +46,7 @@ export class LobbyScreen {
 
   private hostReady = false;
   private guestReady = false;
-  private mode = "best-height";
+  private mode = (() => { try { return localStorage.getItem("nj-lobby-mode") ?? "best-height"; } catch { return "best-height"; } })();
   private touchControls = false;
   private localChar = getSelectedCharacter();
   private remoteChar = "chef";
@@ -146,6 +146,7 @@ export class LobbyScreen {
       modeLabel.on("pointertap", () => {
         const idx = MODES.indexOf(this.mode as typeof MODES[number]);
         this.mode = MODES[(idx + 1) % MODES.length];
+        try { localStorage.setItem("nj-lobby-mode", this.mode); } catch { /* */ }
         modeLabel.text = `Mode: ${MODE_LABELS[this.mode]} (tap to change)`;
         this.sync.sendGameEvent({ type: "ready", payload: { mode: this.mode } });
       });
