@@ -188,6 +188,9 @@ export class HUD {
   /** Set pause callback. */
   set onPause(fn: () => void) { this._onPause = fn; }
 
+  /** Get FPS text element so it can be reparented to top of stage. */
+  getFpsContainer(): Text { return this.fpsText; }
+
   /** Update all HUD elements from game state. */
   update(state: GameWorldState, elapsedSeconds: number): void {
     // Timer

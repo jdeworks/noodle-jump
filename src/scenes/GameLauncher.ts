@@ -323,4 +323,11 @@ export async function launchGame(app: Application, runConfig?: RunConfig): Promi
   );
   activeGameTicker = gameLoopTicker;
   app.ticker.add(gameLoopTicker);
+
+  // Ensure FPS counter is always the topmost element on stage
+  const fpsContainer = hud.getFpsContainer();
+  if (fpsContainer) {
+    hud.container.removeChild(fpsContainer);
+    app.stage.addChild(fpsContainer);
+  }
 }

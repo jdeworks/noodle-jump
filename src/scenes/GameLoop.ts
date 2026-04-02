@@ -36,8 +36,6 @@ import {
   SQUASH_TOTAL_FRAMES,
   GAME_HEIGHT,
   GAME_WIDTH,
-  CAMERA_GRACE_PLATFORMS,
-  PLATFORM_GAP_MAX,
 } from "../config/constants";
 import { maybeSpawnBoss, tickBoss, tickKnifeAmmo } from "./GameLoopBoss";
 import { tickEnemies } from "./GameLoopEnemies";
@@ -332,11 +330,8 @@ export function tickGameWorld(
     s = { ...s, projectiles: updateProjectiles(s.projectiles) };
   }
 
-  // Death check — practice/timed mode uses current camera bottom (not all-time high)
-  // so players who bounce off low platforms aren't penalized unfairly
-  const deathCheck = (s.practiceMode || s.debugConfig.invincible)
-    ? s.player.y > s.camera.y + GAME_HEIGHT + CAMERA_GRACE_PLATFORMS * PLATFORM_GAP_MAX
-    : isPlayerDead(s.camera, s.player.y);
+  // Death check — always uses camera.highestY (fixed reference point)
+  const deathCheck = isPlayerDead(s.camera, s.player.y);
   if (deathCheck) {
     if (s.practiceMode || s.debugConfig.invincible) {
       s = rescuePlayer(s);
