@@ -1,7 +1,7 @@
 /** Custom run configuration screen — PixiJS modal with scrolling, persistence, and debug presets. */
 
 import { Container, Graphics, Text, TextStyle } from "pixi.js";
-import { GAME_WIDTH, GAME_HEIGHT, DEBUG_MODE } from "../config/constants";
+import { GAME_WIDTH, GAME_HEIGHT } from "../config/constants";
 import {
   createDefaultRunConfig,
   ALL_POWER_UP_TYPES,
@@ -102,7 +102,7 @@ export class CustomRunScreen {
 
   private persist(): void {
     saveRunConfigToStorage(this.config);
-    if (DEBUG_MODE) saveDebugConfigToStorage(this.debugCfg);
+    saveDebugConfigToStorage(this.debugCfg);
   }
 
   // ── Hit testing ─────────────────────────────────────────────────────────
@@ -206,9 +206,9 @@ export class CustomRunScreen {
     );
 
     // ─── Debug section ──────────────────────────────────────────
-    if (DEBUG_MODE) {
+    {
       y += 4;
-      y = addSectionHeader(this.scrollContent, GAME_WIDTH,"DEBUG OPTIONS", "#ff8844", y);
+      y = addSectionHeader(this.scrollContent, GAME_WIDTH, "ADVANCED OPTIONS", "#ff8844", y);
       y = addPresetRow(
         this.scrollContent, this.tapRegions, GAME_WIDTH,
         buildPresets(
@@ -328,10 +328,8 @@ export class CustomRunScreen {
     createBottomBar(this.container, GAME_WIDTH, GAME_HEIGHT, CustomRunScreen.BOTTOM_H, {
       onStart: () => {
         this.persist();
-        if (DEBUG_MODE) {
-          this.debugCfg.invincible = this.config.practiceMode;
-          setDebugConfig(this.debugCfg);
-        }
+        this.debugCfg.invincible = this.config.practiceMode;
+        setDebugConfig(this.debugCfg);
         if (this.onStart) this.onStart(this.config);
         this.hide();
       },
