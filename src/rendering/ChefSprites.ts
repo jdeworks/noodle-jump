@@ -1,6 +1,8 @@
 /** Chef character sprites — player avatar and rocket variant. */
 
 import { Graphics } from "pixi.js";
+import { drawCharacter } from "./PlayerCharacters";
+import { getSelectedCharacter } from "../systems/CharacterSettings";
 
 /** Draw chef riding a ravioli rocket. */
 export function drawChefOnRocket(
@@ -114,7 +116,9 @@ export function drawChefOnRocket(
   gfx.fill({ color: 0xffffff, alpha: 0.8 });
 }
 
-/** Draw a simple pixel-art chef character with optional effect visuals. */
+/** Draw a simple pixel-art chef character with optional effect visuals.
+ *  Delegates base drawing to the selected character from PlayerCharacters,
+ *  then applies power-up effect overlays on top. */
 export function drawChef(
   gfx: Graphics,
   width: number,
@@ -125,8 +129,40 @@ export function drawChef(
   gfx.clear();
   const w = width;
   const h = height;
+  const charId = getSelectedCharacter();
 
-  // ── Effect-specific body modifications ──
+  // When there's an active effect, the chef (default) character gets custom
+  // colors/decorations. Non-chef characters just get a tint overlay instead.
+  if (effectType && charId !== "chef") {
+    drawCharacter(gfx, w, h, charId);
+    // Effect tint overlay for non-chef characters
+    const effectTints: Record<string, number> = {
+      soggy_noodle: 0x6699cc,
+      burnt_toast: 0x665544,
+      garlic_breath: 0x88cc44,
+      chili_pepper: 0xff4422,
+      fusilli_tornado: 0xffdd44,
+      lasagna_layers: 0xff8c00,
+      pepper_sneeze: 0xff4444,
+      meatball_magnet: 0xff66aa,
+      pasta_shield: 0xaaeeff,
+      gnocchi_bounce: 0xffeedd,
+      minestrone_soup: 0xffaa88,
+    };
+    const eTint = effectTints[effectType];
+    if (eTint != null) {
+      gfx.roundRect(0, 0, w, h, 4);
+      gfx.fill({ color: eTint, alpha: 0.25 });
+    }
+    if (tint != null) {
+      gfx.roundRect(0, 0, w, h, 4);
+      gfx.fill({ color: tint, alpha: 0.2 });
+    }
+    return;
+  }
+
+  // ── Chef character with full effect-specific visuals ──
+
   const bodyColor =
     effectType === "soggy_noodle"
       ? 0x99ccee
@@ -172,34 +208,29 @@ export function drawChef(
 
   // ── Effect-specific hat decorations ──
   if (effectType === "fusilli_tornado") {
-    // Swirl on hat
     for (let a = 0; a < Math.PI * 2; a += 0.5) {
       const r = 2 + a * 0.8;
       gfx.circle(w * 0.5 + Math.cos(a) * r, h * 0.1 + Math.sin(a) * r * 0.5, 1);
     }
     gfx.fill({ color: 0xaa8800, alpha: 0.4 });
   } else if (effectType === "lasagna_layers") {
-    // Cheese drip from hat
     const cols = [0xff8c00, 0xffcc44, 0xff4444];
     for (let i = 0; i < 3; i++) {
       gfx.roundRect(w * 0.2, h * 0.02 + i * h * 0.06, w * 0.6, h * 0.05, 1);
       gfx.fill(cols[i]);
     }
   } else if (effectType === "pepper_sneeze") {
-    // Pepper on hat
     gfx.moveTo(w * 0.45, h * 0.02);
     gfx.quadraticCurveTo(w * 0.6, h * 0.05, w * 0.55, h * 0.15);
     gfx.quadraticCurveTo(w * 0.45, h * 0.12, w * 0.45, h * 0.02);
     gfx.fill(0xcc0000);
   } else if (effectType === "meatball_magnet") {
-    // Magnet icon on hat
     gfx.moveTo(w * 0.35, h * 0.03);
     gfx.lineTo(w * 0.35, h * 0.1);
     gfx.quadraticCurveTo(w * 0.5, h * 0.16, w * 0.65, h * 0.1);
     gfx.lineTo(w * 0.65, h * 0.03);
     gfx.stroke({ width: 2, color: 0xff3366 });
   } else if (effectType === "chili_pepper") {
-    // Flame wisps on hat
     gfx.moveTo(w * 0.3, h * 0.04);
     gfx.lineTo(w * 0.35, h * -0.04);
     gfx.lineTo(w * 0.4, h * 0.04);
@@ -209,13 +240,11 @@ export function drawChef(
     gfx.lineTo(w * 0.65, h * 0.04);
     gfx.fill(0xff8800);
   } else if (effectType === "garlic_breath") {
-    // Stink cloud above hat
     gfx.circle(w * 0.35, h * -0.04, 3);
     gfx.circle(w * 0.55, h * -0.06, 2.5);
     gfx.circle(w * 0.7, h * -0.02, 2);
     gfx.fill({ color: 0x88ee44, alpha: 0.5 });
   } else if (effectType === "burnt_toast") {
-    // Smoke from hat
     gfx.circle(w * 0.4, h * -0.04, 2.5);
     gfx.circle(w * 0.55, h * -0.08, 3);
     gfx.circle(w * 0.65, h * -0.03, 2);
@@ -224,55 +253,36 @@ export function drawChef(
 
   // Eyes — expression changes per effect
   if (effectType === "chili_pepper") {
-    // Angry X eyes
-    gfx.moveTo(w * 0.3, h * 0.3);
-    gfx.lineTo(w * 0.4, h * 0.36);
-    gfx.moveTo(w * 0.4, h * 0.3);
-    gfx.lineTo(w * 0.3, h * 0.36);
-    gfx.moveTo(w * 0.6, h * 0.3);
-    gfx.lineTo(w * 0.7, h * 0.36);
-    gfx.moveTo(w * 0.7, h * 0.3);
-    gfx.lineTo(w * 0.6, h * 0.36);
+    gfx.moveTo(w * 0.3, h * 0.3); gfx.lineTo(w * 0.4, h * 0.36);
+    gfx.moveTo(w * 0.4, h * 0.3); gfx.lineTo(w * 0.3, h * 0.36);
+    gfx.moveTo(w * 0.6, h * 0.3); gfx.lineTo(w * 0.7, h * 0.36);
+    gfx.moveTo(w * 0.7, h * 0.3); gfx.lineTo(w * 0.6, h * 0.36);
     gfx.stroke({ width: 1.5, color: 0xff0000 });
   } else if (effectType === "soggy_noodle") {
-    // Droopy sad eyes
     gfx.circle(w * 0.35, h * 0.34, 2);
-    gfx.circle(w * 0.65, h * 0.34, 2);
-    gfx.fill(0x222222);
-    // Tear drops
+    gfx.circle(w * 0.65, h * 0.34, 2); gfx.fill(0x222222);
     gfx.circle(w * 0.35, h * 0.39, 1.2);
-    gfx.circle(w * 0.65, h * 0.39, 1.2);
-    gfx.fill(0x4499ee);
+    gfx.circle(w * 0.65, h * 0.39, 1.2); gfx.fill(0x4499ee);
   } else if (effectType === "garlic_breath") {
-    // Dizzy spiral eyes
     gfx.circle(w * 0.35, h * 0.33, 2.5);
     gfx.circle(w * 0.65, h * 0.33, 2.5);
     gfx.stroke({ width: 1, color: 0x228822 });
   } else if (effectType === "burnt_toast") {
-    // Dazed dots
     gfx.circle(w * 0.35, h * 0.33, 1.5);
-    gfx.circle(w * 0.65, h * 0.33, 1.5);
-    gfx.fill(0x444444);
+    gfx.circle(w * 0.65, h * 0.33, 1.5); gfx.fill(0x444444);
   } else {
-    // Normal eyes
-    gfx.circle(w * 0.35, h * 0.33, 2);
-    gfx.fill(0x222222);
-    gfx.circle(w * 0.65, h * 0.33, 2);
-    gfx.fill(0x222222);
+    gfx.circle(w * 0.35, h * 0.33, 2); gfx.fill(0x222222);
+    gfx.circle(w * 0.65, h * 0.33, 2); gfx.fill(0x222222);
   }
 
-  // Mouth — expression changes per effect
+  // Mouth
   if (effectType === "chili_pepper") {
-    // Open screaming mouth
-    gfx.circle(w * 0.5, h * 0.41, 3);
-    gfx.fill(0x220000);
+    gfx.circle(w * 0.5, h * 0.41, 3); gfx.fill(0x220000);
   } else if (effectType === "soggy_noodle" || effectType === "garlic_breath") {
-    // Frown
     gfx.moveTo(w * 0.35, h * 0.42);
     gfx.quadraticCurveTo(w * 0.5, h * 0.38, w * 0.65, h * 0.42);
     gfx.stroke({ width: 1, color: 0x333333 });
   } else if (effectType === "burnt_toast") {
-    // Wavy distressed mouth
     gfx.moveTo(w * 0.3, h * 0.4);
     gfx.quadraticCurveTo(w * 0.4, h * 0.43, w * 0.5, h * 0.39);
     gfx.quadraticCurveTo(w * 0.6, h * 0.43, w * 0.7, h * 0.4);
@@ -283,12 +293,10 @@ export function drawChef(
     effectType === "pepper_sneeze" ||
     effectType === "meatball_magnet"
   ) {
-    // Big grin
     gfx.moveTo(w * 0.3, h * 0.38);
     gfx.quadraticCurveTo(w * 0.5, h * 0.48, w * 0.7, h * 0.38);
     gfx.stroke({ width: 1.5, color: 0x333333 });
   } else {
-    // Normal smile
     gfx.moveTo(w * 0.35, h * 0.38);
     gfx.quadraticCurveTo(w * 0.5, h * 0.45, w * 0.65, h * 0.38);
     gfx.stroke({ width: 1, color: 0x333333 });
@@ -305,10 +313,8 @@ export function drawChef(
   gfx.fill(apronColor);
 
   // Feet
-  gfx.roundRect(w * 0.15, h * 0.88, w * 0.25, h * 0.12, 3);
-  gfx.fill(0x333333);
-  gfx.roundRect(w * 0.6, h * 0.88, w * 0.25, h * 0.12, 3);
-  gfx.fill(0x333333);
+  gfx.roundRect(w * 0.15, h * 0.88, w * 0.25, h * 0.12, 3); gfx.fill(0x333333);
+  gfx.roundRect(w * 0.6, h * 0.88, w * 0.25, h * 0.12, 3); gfx.fill(0x333333);
 
   // Power-up tint overlay
   if (tint != null) {

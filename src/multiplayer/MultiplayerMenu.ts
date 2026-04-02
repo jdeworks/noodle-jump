@@ -252,7 +252,7 @@ export class MultiplayerMenu implements MenuContext {
     }
 
     const lobby = new LobbyScreen(role, sync, {
-      onStart: (seed, _mode, touchControls) => {
+      onStart: (seed, _mode, touchControls, remoteChar) => {
         this.container.removeChild(lobby.container);
         lobby.destroy();
         this.onLaunch?.();
@@ -264,6 +264,7 @@ export class MultiplayerMenu implements MenuContext {
           seed,
           role,
           touchControls,
+          remoteCharacter: remoteChar,
         });
         session.start();
       },

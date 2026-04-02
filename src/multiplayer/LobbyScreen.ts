@@ -7,11 +7,13 @@
 import { Container, Graphics, Text, TextStyle } from "pixi.js";
 import { GAME_WIDTH, GAME_HEIGHT } from "../config/constants";
 import type { GameSync, GameSyncEvent } from "./GameSync";
+import { CHARACTERS, drawCharacter } from "../rendering/PlayerCharacters";
+import { getSelectedCharacter, setSelectedCharacter } from "../systems/CharacterSettings";
 
 export type LobbyRole = "host" | "guest";
 
 export interface LobbyCallbacks {
-  onStart: (seed: number, mode: string, touchControls: boolean) => void;
+  onStart: (seed: number, mode: string, touchControls: boolean, remoteChar?: string) => void;
 }
 
 const HEADER_STYLE = new TextStyle({
@@ -46,6 +48,8 @@ export class LobbyScreen {
   private guestReady = false;
   private mode = "best-height";
   private touchControls = false;
+  private localChar = getSelectedCharacter();
+  private remoteChar = "chef";
 
   private p1StatusText: Text;
   private p2StatusText: Text;
@@ -53,6 +57,7 @@ export class LobbyScreen {
   private startText: Text;
   private waitingText: Text;
   private onTouchControlsChanged: (() => void) | null = null;
+  private onCharacterChanged: (() => void) | null = null;
 
   constructor(role: LobbyRole, sync: GameSync, callbacks: LobbyCallbacks) {
     this.role = role;
@@ -82,31 +87,51 @@ export class LobbyScreen {
     roleText.anchor.set(0.5, 0.5);
     this.container.addChild(roleText);
 
-    // Player 1 (Host)
-    const p1Label = new Text({ text: "Player 1 (Host)", style: LABEL_STYLE });
-    p1Label.x = GAME_WIDTH / 2;
-    p1Label.y = 150;
-    p1Label.anchor.set(0.5, 0.5);
+    // Player 1 (Host) — sprite + status side by side
+    const p1Gfx = new Graphics(); p1Gfx.x = GAME_WIDTH / 2 - 60; p1Gfx.y = 130;
+    drawCharacter(p1Gfx, 24, 30, role === "host" ? this.localChar : this.remoteChar);
+    this.container.addChild(p1Gfx);
+    const p1Label = new Text({ text: "P1 (Host)", style: LABEL_STYLE });
+    p1Label.x = GAME_WIDTH / 2 + 10; p1Label.y = 138; p1Label.anchor.set(0.5, 0.5);
     this.container.addChild(p1Label);
-
     this.p1StatusText = new Text({ text: "Not Ready", style: STATUS_STYLE });
-    this.p1StatusText.x = GAME_WIDTH / 2;
-    this.p1StatusText.y = 175;
-    this.p1StatusText.anchor.set(0.5, 0.5);
+    this.p1StatusText.x = GAME_WIDTH / 2 + 10; this.p1StatusText.y = 158; this.p1StatusText.anchor.set(0.5, 0.5);
     this.container.addChild(this.p1StatusText);
 
-    // Player 2 (Guest)
-    const p2Label = new Text({ text: "Player 2 (Guest)", style: LABEL_STYLE });
-    p2Label.x = GAME_WIDTH / 2;
-    p2Label.y = 220;
-    p2Label.anchor.set(0.5, 0.5);
+    // Player 2 (Guest) — sprite + status
+    const p2Gfx = new Graphics(); p2Gfx.x = GAME_WIDTH / 2 - 60; p2Gfx.y = 185;
+    drawCharacter(p2Gfx, 24, 30, role === "guest" ? this.localChar : this.remoteChar);
+    this.container.addChild(p2Gfx);
+    const p2Label = new Text({ text: "P2 (Guest)", style: LABEL_STYLE });
+    p2Label.x = GAME_WIDTH / 2 + 10; p2Label.y = 193; p2Label.anchor.set(0.5, 0.5);
     this.container.addChild(p2Label);
-
     this.p2StatusText = new Text({ text: "Not Ready", style: STATUS_STYLE });
-    this.p2StatusText.x = GAME_WIDTH / 2;
-    this.p2StatusText.y = 245;
-    this.p2StatusText.anchor.set(0.5, 0.5);
+    this.p2StatusText.x = GAME_WIDTH / 2 + 10; this.p2StatusText.y = 213; this.p2StatusText.anchor.set(0.5, 0.5);
     this.container.addChild(this.p2StatusText);
+
+    // Character picker — tap to cycle through characters
+    const charPickLabel = new Text({
+      text: `Your Character: ${CHARACTERS.find(c => c.id === this.localChar)?.name ?? "Chef"} (tap)`,
+      style: new TextStyle({ fontFamily: "monospace", fontSize: 13, fill: "#ffcc44", stroke: { color: "#000000", width: 2 } }),
+    });
+    charPickLabel.x = GAME_WIDTH / 2; charPickLabel.y = 250; charPickLabel.anchor.set(0.5, 0.5);
+    charPickLabel.eventMode = "static"; charPickLabel.cursor = "pointer";
+    this.container.addChild(charPickLabel);
+    const updateCharPreviews = () => {
+      const hostChar = role === "host" ? this.localChar : this.remoteChar;
+      const guestChar = role === "guest" ? this.localChar : this.remoteChar;
+      p1Gfx.clear(); drawCharacter(p1Gfx, 24, 30, hostChar);
+      p2Gfx.clear(); drawCharacter(p2Gfx, 24, 30, guestChar);
+      charPickLabel.text = `Your Character: ${CHARACTERS.find(c => c.id === this.localChar)?.name ?? "Chef"} (tap)`;
+    };
+    charPickLabel.on("pointertap", () => {
+      const idx = CHARACTERS.findIndex(c => c.id === this.localChar);
+      this.localChar = CHARACTERS[(idx + 1) % CHARACTERS.length].id;
+      setSelectedCharacter(this.localChar);
+      updateCharPreviews();
+      this.sync.sendGameEvent({ type: "ready", payload: { character: this.localChar } });
+    });
+    this.onCharacterChanged = () => updateCharPreviews();
 
     // Mode selection (host can cycle, guest sees current)
     const MODES = ["best-height", "first-to-die", "timed-2min"] as const;
@@ -227,9 +252,9 @@ export class LobbyScreen {
         const seed = Math.floor(Math.random() * 0xffffffff);
         this.sync.sendGameEvent({
           type: "start",
-          payload: { seed, mode: this.mode, touchControls: this.touchControls },
+          payload: { seed, mode: this.mode, touchControls: this.touchControls, character: this.localChar },
         });
-        this.callbacks.onStart(seed, this.mode, this.touchControls);
+        this.callbacks.onStart(seed, this.mode, this.touchControls, this.remoteChar);
       };
       this.startBtn.on("pointertap", startGame);
       this.startText.on("pointertap", startGame);
@@ -253,6 +278,8 @@ export class LobbyScreen {
     });
 
     this.updateUI();
+    // Announce our character to the remote player
+    this.sync.sendGameEvent({ type: "ready", payload: { character: this.localChar } });
   }
 
   private isLocalReady(): boolean {
@@ -268,6 +295,10 @@ export class LobbyScreen {
         this.touchControls = event.payload.touchControls as boolean;
         this.onTouchControlsChanged?.();
       }
+      if (event.payload.character) {
+        this.remoteChar = event.payload.character as string;
+        this.onCharacterChanged?.();
+      }
       if (event.payload.role) {
         const isHost = event.payload.role === "host";
         if (isHost) this.hostReady = event.payload.ready as boolean;
@@ -280,7 +311,8 @@ export class LobbyScreen {
       const seed = event.payload.seed as number;
       const mode = (event.payload.mode as string) || "best-height";
       const tc = (event.payload.touchControls as boolean) ?? this.touchControls;
-      this.callbacks.onStart(seed, mode, tc);
+      const rc = (event.payload.character as string) ?? this.remoteChar;
+      this.callbacks.onStart(seed, mode, tc, rc);
     }
   }
 

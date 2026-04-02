@@ -5,7 +5,7 @@
  */
 
 import { Container, Graphics, Text, TextStyle } from "pixi.js";
-import { drawChef } from "../rendering/ChefSprites";
+import { drawCharacter } from "../rendering/PlayerCharacters";
 import { worldToScreen } from "../systems/Camera";
 import { GAME_WIDTH, GAME_HEIGHT, PLAYER_WIDTH, PLAYER_HEIGHT } from "../config/constants";
 import type { InterpolatedState } from "./InterpolationBuffer";
@@ -25,8 +25,10 @@ export class RemotePlayerRenderer {
   private chefGfx = new Graphics();
   private arrowGfx = new Graphics();
   private distanceText: Text;
+  private characterId = "chef";
 
-  constructor() {
+  constructor(characterId = "chef") {
+    this.characterId = characterId;
     this.chefGfx.alpha = GHOST_ALPHA;
     this.container.addChild(this.chefGfx);
 
@@ -47,7 +49,7 @@ export class RemotePlayerRenderer {
     this.distanceText.visible = false;
     this.container.addChild(this.distanceText);
 
-    drawChef(this.chefGfx, PLAYER_WIDTH, PLAYER_HEIGHT);
+    drawCharacter(this.chefGfx, PLAYER_WIDTH, PLAYER_HEIGHT, this.characterId);
   }
 
   /** Update the remote player position each frame. */

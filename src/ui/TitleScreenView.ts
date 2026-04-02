@@ -12,6 +12,8 @@ import { ExplanationScreen } from "./ExplanationScreen";
 import { CustomRunScreen } from "./CustomRunScreen";
 import { loadStats } from "./StatsPanel";
 import { drawChef } from "../rendering/sprites";
+import { drawCharacter } from "../rendering/PlayerCharacters";
+import { getSelectedCharacter } from "../systems/CharacterSettings";
 import type { RunConfig } from "../systems/CustomRunConfig";
 import { MultiplayerMenu } from "../multiplayer/MultiplayerMenu";
 
@@ -107,7 +109,7 @@ export function showTitleScreen(
   const chefGfx = new Graphics();
   chefGfx.x = GAME_WIDTH / 2 - 16;
   chefGfx.y = cursorY;
-  drawChef(chefGfx, 32, 40);
+  drawCharacter(chefGfx, 32, 40, getSelectedCharacter());
   contentGroup.addChild(chefGfx);
   const chefBaseY = cursorY;
   cursorY += 48;
@@ -296,7 +298,7 @@ export function showTitleScreen(
     promptText.alpha = pulse;
     animTick++;
     chefGfx.clear();
-    drawChef(chefGfx, 32, 40);
+    drawCharacter(chefGfx, 32, 40, getSelectedCharacter());
     chefGfx.y = chefBaseY + Math.sin(animTick * 0.05) * 4;
     explanationScreen.update();
   };

@@ -1,6 +1,8 @@
 /** Barrel file — re-exports all sprite drawing functions from split modules. */
 
 export { drawChef, drawChefOnRocket } from "./ChefSprites";
+export { drawCharacter, CHARACTERS } from "./PlayerCharacters";
+export type { CharacterDef } from "./PlayerCharacters";
 export {
   drawMagnetSprite,
   drawTornadoSprite,

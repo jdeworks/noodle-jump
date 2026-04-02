@@ -31,6 +31,7 @@ interface OnlineSessionConfig {
   seed: number;
   role: OnlineRole;
   touchControls?: boolean;
+  remoteCharacter?: string;
 }
 
 export class OnlineSession {
@@ -89,8 +90,8 @@ export class OnlineSession {
     }
     this.app.stage.addChild(this.scene.container);
 
-    // Remote player overlay
-    this.remoteRenderer = new RemotePlayerRenderer();
+    // Remote player overlay — render with opponent's selected character
+    this.remoteRenderer = new RemotePlayerRenderer(config.remoteCharacter);
     this.remoteRenderer.hide();
     this.app.stage.addChild(this.remoteRenderer.container);
 

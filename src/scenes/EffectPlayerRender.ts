@@ -166,14 +166,21 @@ export function renderPlayerForEffect(
     particles.clearSpringParticles();
     particles.clearSneezeParticles();
   } else if (activeType === "pasta_shield") {
-    drawChef(playerGfx, player.width, player.height);
+    drawChef(playerGfx, player.width, player.height, undefined, "pasta_shield");
+    // Draw shield bubble around character
+    const cx = player.width / 2, cy = player.height / 2;
+    const shieldR = Math.max(player.width, player.height) * 0.7;
+    const pulse = 1 + Math.sin(animTick * 0.1) * 0.08;
+    playerGfx.circle(cx, cy, shieldR * pulse);
+    playerGfx.stroke({ width: 2, color: 0x44ddff, alpha: 0.6 + Math.sin(animTick * 0.15) * 0.2 });
+    playerGfx.circle(cx, cy, shieldR * pulse * 0.85);
+    playerGfx.fill({ color: 0xaaeeff, alpha: 0.12 });
     playerGfx.pivot.set(player.width / 2, 0);
     playerGfx.rotation = 0;
     playerGfx.x = player.x + player.width / 2;
     playerGfx.y = worldToScreen(player.y, camY);
-    const shieldPulse = 1.0 + Math.sin(animTick * 0.1) * 0.05;
-    playerGfx.scale.set(shieldPulse);
-    playerGfx.tint = 0xaaeeff;
+    playerGfx.scale.set(1);
+    playerGfx.tint = 0xffffff;
     ensureEffectEmitter(particles, "pasta_shield", player.x, player.y, player.width, player.height);
     particles.updateEffectEmitter(player.x, player.y, player.width, player.height, camY);
     particles.clearTornadoParticles();
