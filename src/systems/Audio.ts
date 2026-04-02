@@ -111,5 +111,5 @@ export {
 
 export {
   playMusic, playTitleMusic, stopMusic, crossfadeToZone,
-  playBossMusic, stopBossMusic, killBossMusic,
+  playBossMusic, stopBossMusic, killBossMusic, applyMusicVolume,
 } from "./MusicPlayer";

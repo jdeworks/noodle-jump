@@ -5,7 +5,7 @@ import { GAME_WIDTH, GAME_HEIGHT } from "../config/constants";
 import { loadHighScore } from "../systems/Score";
 import { ParallaxBackground } from "../systems/Parallax";
 import { createZoneState, getInterpolatedTheme } from "../systems/Zone";
-import { initAudio, playMusic, playTitleMusic, stopMusic } from "../systems/Audio";
+import { initAudio, playMusic, playTitleMusic, stopMusic, applyMusicVolume } from "../systems/Audio";
 import { createSettingsToggles } from "./SettingsToggles";
 import { requestFullscreen } from "../utils/wakeLock";
 import { ExplanationScreen } from "./ExplanationScreen";
@@ -197,11 +197,21 @@ export function showTitleScreen(
   const customBtn = customButton.text;
   cursorY += btnH + btnSpacing;
 
-  // 4. Fullscreen
-  const fsButton = makeButton("Fullscreen", cursorY, 0x222233, "#aaaaaa", 13);
-  fsButton.bg.on("pointertap", (e: Event) => { e.stopPropagation(); requestFullscreen(); });
+  // 4. Fullscreen (iOS doesn't support Fullscreen API — suggest PWA install)
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  const isPWA = window.matchMedia("(display-mode: standalone)").matches;
+  const fsLabel = isIOS && !isPWA ? "Add to Home Screen for fullscreen" : "Fullscreen";
+  const fsButton = makeButton(fsLabel, cursorY, 0x222233, "#aaaaaa", isIOS ? 11 : 13);
+  const handleFs = (e: Event) => {
+    e.stopPropagation();
+    if (isIOS && !isPWA) {
+      fsButton.text.text = "Safari → Share → Add to Home Screen";
+      fsButton.text.style.fill = "#ffcc44";
+    } else { requestFullscreen(); }
+  };
+  fsButton.bg.on("pointertap", handleFs);
   fsButton.text.eventMode = "static";
-  fsButton.text.on("pointertap", (e: Event) => { e.stopPropagation(); requestFullscreen(); });
+  fsButton.text.on("pointertap", handleFs);
   cursorY += btnH + btnSpacing + 4;
 
   // Input hint — device-appropriate
@@ -340,6 +350,7 @@ export function showTitleScreen(
     initAudio();
     stopMusic();
     playMusic(0);
+    applyMusicVolume();
 
     app.ticker.remove(titleTicker);
     parallax.destroy();
