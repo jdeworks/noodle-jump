@@ -115,6 +115,12 @@ export class InputManager {
   }
 
   update(): void {
+    // Touch controls forced: only accept touch input, ignore tilt and keyboard
+    if (isTouchControlsForced()) {
+      if (this.touchActive) this._activeMethod = "touch";
+      return;
+    }
+
     if (this.tiltAvailable) return;
 
     if (this.touchActive) {
@@ -159,6 +165,7 @@ export class InputManager {
   }
 
   private onMotion = (e: DeviceMotionEvent): void => {
+    if (isTouchControlsForced()) return; // touch controls override tilt completely
     const accel = e.accelerationIncludingGravity;
     if (accel?.x == null) return;
 
