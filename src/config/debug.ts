@@ -57,7 +57,7 @@ export function createDebugConfig(): DebugConfig {
     invincible: false,
     infiniteKnives: false,
     showHitboxes: false,
-    showFPS: false,
+    showFPS: true,
     disableWeather: false,
     disableParallax: false,
     disableEffectParticles: false,
