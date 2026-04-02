@@ -265,6 +265,7 @@ export class MultiplayerMenu implements MenuContext {
           role,
           touchControls,
           remoteCharacter: remoteChar,
+          sync,
         });
         session.start();
       },

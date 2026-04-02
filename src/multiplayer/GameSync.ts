@@ -39,6 +39,17 @@ export interface GameSyncCallbacks {
 /** Binary format: 4 floats (x, y, vx, vy) + 1 uint8 (state) + 1 uint16 (seq) = 19 bytes */
 const POSITION_BUFFER_SIZE = 19;
 
+/** Convert any binary-like data to ArrayBuffer (handles Uint8Array, ArrayBuffer, Blob-free). */
+function toArrayBuffer(data: unknown): ArrayBuffer | null {
+  if (data instanceof ArrayBuffer) return data;
+  if (ArrayBuffer.isView(data)) {
+    const copy = new ArrayBuffer(data.byteLength);
+    new Uint8Array(copy).set(new Uint8Array(data.buffer, data.byteOffset, data.byteLength));
+    return copy;
+  }
+  return null;
+}
+
 const SEND_INTERVAL_MS = 50; // 20Hz
 
 export function encodePosition(state: PlayerSyncState): ArrayBuffer {
@@ -96,10 +107,11 @@ export class GameSync {
     channel.binaryType = "arraybuffer";
     channel.onmessage = (event) => {
       const data = event.data;
-      if (data instanceof ArrayBuffer && data.byteLength === POSITION_BUFFER_SIZE) {
-        this.handleRemotePosition(data);
-      } else if (typeof data === "string") {
+      if (typeof data === "string") {
         this.handleRemoteEvent(data);
+      } else {
+        const buf = toArrayBuffer(data);
+        if (buf && buf.byteLength === POSITION_BUFFER_SIZE) this.handleRemotePosition(buf);
       }
     };
   }
@@ -113,9 +125,8 @@ export class GameSync {
     this.sendEventAction = sendEvent;
 
     onPos((data) => {
-      if (data instanceof ArrayBuffer && data.byteLength === POSITION_BUFFER_SIZE) {
-        this.handleRemotePosition(data);
-      }
+      const buf = toArrayBuffer(data);
+      if (buf && buf.byteLength === POSITION_BUFFER_SIZE) this.handleRemotePosition(buf);
     });
 
     onEvent((data) => {

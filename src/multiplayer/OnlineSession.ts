@@ -32,6 +32,7 @@ interface OnlineSessionConfig {
   role: OnlineRole;
   touchControls?: boolean;
   remoteCharacter?: string;
+  sync?: GameSync;
 }
 
 export class OnlineSession {
@@ -76,7 +77,7 @@ export class OnlineSession {
     this.seed = config.seed;
     this.touchControls = config.touchControls ?? false;
     this.remoteChar = config.remoteCharacter ?? "chef";
-    this.sync = new GameSync();
+    this.sync = config.sync ?? new GameSync();
 
     // Create game scene with shared seed
     setDebugConfig(createDebugConfig()); // Reset debug config for multiplayer
@@ -110,6 +111,7 @@ export class OnlineSession {
   }
 
   private setupSync(): void {
+    // Re-wire callbacks to this session (may have been wired to the lobby before)
     this.sync.on({
       onRemotePosition: (state: PlayerSyncState) => {
         this.interpolation.pushUpdate(state.x, state.y, state.vx, state.vy, state.state);
@@ -118,16 +120,6 @@ export class OnlineSession {
         this.handleRemoteEvent(event);
       },
     });
-
-    // Initialize sync based on connection mode
-    const mode = this.connection.getMode();
-    if (mode === "nostr") {
-      const room = this.connection.getRoom();
-      if (room) this.sync.initWithRoom(room);
-    } else {
-      const channel = this.connection.getChannel();
-      if (channel) this.sync.initWithChannel(channel);
-    }
   }
 
   start(): void {
