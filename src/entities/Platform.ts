@@ -156,8 +156,8 @@ function rollType(difficulty?: DifficultyParams): PlatformType {
   const springChance = PLATFORM_SPRING_CHANCE * t;
   const iceChance = PLATFORM_ICE_CHANCE * t;
   const crumblingChance = PLATFORM_CRUMBLING_CHANCE * t;
-  const teleportChance = PLATFORM_TELEPORT_CHANCE * Math.max(0, t - 0.3); // only after 30% difficulty
-  const weightedChance = PLATFORM_WEIGHTED_CHANCE * Math.max(0, t - 0.2); // only after 20% difficulty
+  const teleportChance = PLATFORM_TELEPORT_CHANCE * Math.max(0, t - 0.15); // after 15% difficulty
+  const weightedChance = PLATFORM_WEIGHTED_CHANCE * Math.max(0, t - 0.1); // after 10% difficulty
 
   const roll = random();
   let cumulative = 0;

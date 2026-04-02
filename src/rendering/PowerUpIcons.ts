@@ -162,9 +162,6 @@ export function drawPowerUpIcon(
     case "pasta_shield":
       drawPastaShieldIcon(gfx, s);
       break;
-    case "penne_cannon":
-      drawPenneCannonIcon(gfx, s);
-      break;
     case "gnocchi_bounce":
       drawGnocchiBounceIcon(gfx, s);
       break;
@@ -265,15 +262,6 @@ function drawPastaShieldIcon(gfx: Graphics, s: number): void {
   gfx.moveTo(s - 3, s);
   gfx.lineTo(s + 3, s);
   gfx.stroke({ width: 1.5, color: 0xffffff, alpha: 0.6 });
-}
-
-function drawPenneCannonIcon(gfx: Graphics, s: number): void {
-  gfx.roundRect(s - 2, s - 7, 4, 10, 1);
-  gfx.fill(0xffcc33);
-  gfx.roundRect(s - 4, s + 2, 8, 4, 2);
-  gfx.fill(0xddaa22);
-  gfx.star(s, s - 8, 3, 2, 0.8, 0);
-  gfx.fill({ color: 0xffffff, alpha: 0.6 });
 }
 
 function drawGnocchiBounceIcon(gfx: Graphics, s: number): void {

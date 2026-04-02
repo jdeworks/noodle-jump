@@ -11,7 +11,6 @@ export {
   SNEEZE_PARTICLES,
   MAGNET_PARTICLES,
   SHIELD_PARTICLES,
-  CANNON_PARTICLES,
   GNOCCHI_PARTICLES,
   MINESTRONE_PARTICLES,
 } from "./particlesPositive";
@@ -34,7 +33,6 @@ import {
   SNEEZE_PARTICLES,
   MAGNET_PARTICLES,
   SHIELD_PARTICLES,
-  CANNON_PARTICLES,
   GNOCCHI_PARTICLES,
   MINESTRONE_PARTICLES,
 } from "./particlesPositive";
@@ -59,8 +57,6 @@ export const POWER_UP_PARTICLE_CONFIGS: Record<string, ParticleConfig> = {
   garlic_breath: GARLIC_PARTICLES,
   burnt_toast: BURNT_PARTICLES,
   pasta_shield: SHIELD_PARTICLES,
-
-  penne_cannon: CANNON_PARTICLES,
   gnocchi_bounce: GNOCCHI_PARTICLES,
   minestrone_soup: MINESTRONE_PARTICLES,
 };

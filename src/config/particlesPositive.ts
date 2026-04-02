@@ -168,29 +168,6 @@ export const SHIELD_PARTICLES: ParticleConfig = {
 };
 
 
-/** Penne Cannon — golden projectile trail shooting upward. */
-export const CANNON_PARTICLES: ParticleConfig = {
-  count: 10,
-  lifetime: 15,
-  lifetimeVariance: 5,
-  speed: 2,
-  speedVariance: 1,
-  angle: UP,
-  angleSpread: 0.3,
-  gravity: 0,
-  fadeRate: 0.04,
-  scaleRate: 0.97,
-  rotationSpeed: 0,
-  colors: [0xffcc33, 0xffdd66, 0xffaa00],
-  alpha: 0.7,
-  alphaVariance: 0.1,
-  shape: "circle",
-  size: [2, 4],
-  spawnRate: 1,
-  burst: false,
-  drag: 1.0,
-};
-
 /** Gnocchi Bounce — soft white/beige puff on each bounce. */
 export const GNOCCHI_PARTICLES: ParticleConfig = {
   count: 6,

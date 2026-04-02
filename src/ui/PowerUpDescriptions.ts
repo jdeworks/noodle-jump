@@ -51,12 +51,6 @@ export const POWER_UP_INFO: Record<string, PowerUpInfo> = {
     positive: true,
   },
 
-  penne_cannon: {
-    name: "Penne Cannon",
-    description: "Shoots platforms upward for you to jump on.",
-    shortDesc: "CANNON FIRE!",
-    positive: true,
-  },
   gnocchi_bounce: {
     name: "Gnocchi Bounce",
     description: "Super bouncy! All platforms give 2x jump height.",
@@ -67,7 +61,7 @@ export const POWER_UP_INFO: Record<string, PowerUpInfo> = {
     name: "Minestrone Soup",
     description: "Rising soup from below! Climb fast or get souped!",
     shortDesc: "SOUP RISING!",
-    positive: true,
+    positive: false,
   },
   chili_pepper: {
     name: "Chili Pepper",

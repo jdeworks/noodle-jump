@@ -63,8 +63,8 @@ describe("CustomRunConfig", () => {
     expect(deserializeRunConfig("not json")).toBeNull();
   });
 
-  test("ALL_POWER_UP_TYPES has all 14 types", () => {
-    expect(ALL_POWER_UP_TYPES).toHaveLength(14);
+  test("ALL_POWER_UP_TYPES has all 13 types", () => {
+    expect(ALL_POWER_UP_TYPES).toHaveLength(13);
     expect(ALL_POWER_UP_TYPES).toContain("pasta_shield");
     expect(ALL_POWER_UP_TYPES).toContain("burnt_toast");
   });

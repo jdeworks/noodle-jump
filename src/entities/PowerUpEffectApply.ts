@@ -12,8 +12,6 @@ import {
   NEGATIVE_EFFECT_DURATION,
   MEATBALL_MAGNET_DURATION,
   PASTA_SHIELD_DURATION,
-
-  PENNE_CANNON_DURATION,
   GNOCCHI_BOUNCE_DURATION,
   MINESTRONE_SOUP_DURATION,
 } from "../config/constants";
@@ -86,12 +84,6 @@ export function applyPowerUp(
       return {
         player,
         effect: { type: "pasta_shield", ticksRemaining: PASTA_SHIELD_DURATION },
-      };
-
-    case "penne_cannon":
-      return {
-        player: { ...player, vy: -12, isJumping: true },
-        effect: { type: "penne_cannon", ticksRemaining: PENNE_CANNON_DURATION },
       };
 
     case "gnocchi_bounce":
@@ -198,11 +190,6 @@ export function tickEffect(
       effect: updatedEffect,
       spawnPlatform: shouldSpawn,
     };
-  }
-
-  if (effect.type === "penne_cannon") {
-    const shouldSpawnCannon = remaining % 30 === 0;
-    return { player, effect: updatedEffect, spawnPlatform: shouldSpawnCannon };
   }
 
   // Remaining effects — just count down, behavior handled by caller

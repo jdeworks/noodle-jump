@@ -22,15 +22,13 @@ export type PositivePowerUpType =
   | "pepper_sneeze"
   | "meatball_magnet"
   | "pasta_shield"
-
-  | "penne_cannon"
-  | "gnocchi_bounce"
-  | "minestrone_soup";
+  | "gnocchi_bounce";
 export type NegativePowerUpType =
   | "chili_pepper"
   | "soggy_noodle"
   | "garlic_breath"
-  | "burnt_toast";
+  | "burnt_toast"
+  | "minestrone_soup";
 export type PowerUpType = PositivePowerUpType | NegativePowerUpType;
 
 const POSITIVE_TYPES: PositivePowerUpType[] = [
@@ -41,15 +39,14 @@ const POSITIVE_TYPES: PositivePowerUpType[] = [
   "pepper_sneeze",
   "meatball_magnet",
   "pasta_shield",
-  "penne_cannon",
   "gnocchi_bounce",
-  "minestrone_soup",
 ];
 const NEGATIVE_TYPES: NegativePowerUpType[] = [
   "chili_pepper",
   "soggy_noodle",
   "garlic_breath",
   "burnt_toast",
+  "minestrone_soup",
 ];
 
 const NEGATIVE_SPAWN_CHANCE = 0.3; // 30% chance a power-up spawn is negative

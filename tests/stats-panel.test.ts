@@ -56,7 +56,7 @@ describe("PowerUpDescriptions", () => {
     const expected = [
       "spaghetti_spring", "fusilli_tornado", "ravioli_rocket",
       "lasagna_layers", "pepper_sneeze", "meatball_magnet",
-      "pasta_shield", "penne_cannon",
+      "pasta_shield",
       "gnocchi_bounce", "minestrone_soup",
       "chili_pepper", "soggy_noodle", "garlic_breath", "burnt_toast",
     ];

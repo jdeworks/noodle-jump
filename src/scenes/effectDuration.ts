@@ -14,8 +14,6 @@ export function getMaxDuration(type: string): number {
       return 300;
     case "pasta_shield":
       return 600;
-    case "penne_cannon":
-      return 360;
     case "gnocchi_bounce":
       return 360;
     case "minestrone_soup":

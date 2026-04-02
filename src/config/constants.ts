@@ -33,16 +33,16 @@ export const PLATFORM_MOVING_SPEED = 1.5;
 export const PLATFORM_MOVING_RANGE = 60; // pixels each direction from start
 
 // New platform types
-export const PLATFORM_CONVEYOR_CHANCE = 0.06; // 6% base chance
+export const PLATFORM_CONVEYOR_CHANCE = 0.08; // 8% base chance
 export const PLATFORM_CONVEYOR_SPEED = 2.5; // horizontal push speed
-export const PLATFORM_SPRING_CHANCE = 0.05; // 5% base chance
+export const PLATFORM_SPRING_CHANCE = 0.07; // 7% base chance
 export const PLATFORM_SPRING_VELOCITY_MULTIPLIER = 1.8; // bounce height multiplier
-export const PLATFORM_ICE_CHANCE = 0.05; // 5% base chance
+export const PLATFORM_ICE_CHANCE = 0.07; // 7% base chance
 export const PLATFORM_ICE_FRICTION = 0.015; // very low friction (normal ~0.3)
-export const PLATFORM_CRUMBLING_CHANCE = 0.04; // 4% base chance
+export const PLATFORM_CRUMBLING_CHANCE = 0.06; // 6% base chance
 export const PLATFORM_CRUMBLE_TIMER_TICKS = 90; // 1.5 seconds after landing
-export const PLATFORM_TELEPORT_CHANCE = 0.03; // 3% base chance
-export const PLATFORM_WEIGHTED_CHANCE = 0.04; // 4% base chance
+export const PLATFORM_TELEPORT_CHANCE = 0.05; // 5% base chance
+export const PLATFORM_WEIGHTED_CHANCE = 0.06; // 6% base chance
 export const PLATFORM_WEIGHTED_TILT_RATE = 0.02; // tilt speed per tick
 export const PLATFORM_WEIGHTED_MAX_TILT = 0.5; // max tilt in radians (~28 degrees)
 export const PLATFORM_WEIGHTED_SLIDE_SPEED = 0.8; // player slide speed at max tilt
@@ -93,9 +93,6 @@ export const MEATBALL_MAGNET_RADIUS = 800;
 
 // Pasta Shield: absorbs one negative hit
 export const PASTA_SHIELD_DURATION = 600; // 10 seconds
-// Penne Cannon: shoots platforms upward
-export const PENNE_CANNON_DURATION = 360; // 6 seconds
-export const PENNE_CANNON_INTERVAL = 30; // spawn a platform every 0.5s
 // Gnocchi Bounce: all platforms give 2x jump height
 export const GNOCCHI_BOUNCE_DURATION = 360; // 6 seconds
 export const GNOCCHI_BOUNCE_MULTIPLIER = 1.8; // jump velocity multiplier
@@ -192,8 +189,6 @@ export const COLORS = {
     burnt_toast: 0x3d2b1f, // charred dark brown
     // New positive power-ups
     pasta_shield: 0x44ddff, // light blue shield
-
-    penne_cannon: 0xffcc33, // golden penne
     gnocchi_bounce: 0xffe4c4, // bisque/potato
     minestrone_soup: 0xcc4422, // tomato soup red
   } as Record<string, number>,

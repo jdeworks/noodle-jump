@@ -7,7 +7,7 @@ A pasta-themed endless jumper built with PixiJS and TypeScript.
 ## Features
 
 ### Gameplay
-- **14 power-ups** — 10 positive (spring, tornado, rocket, lasagna layers, sneeze, magnet, pasta shield, penne cannon, gnocchi bounce, minestrone soup) and 4 negative (chili pepper, soggy noodle, garlic breath, burnt toast)
+- **13 power-ups** — 8 positive (spring, tornado, rocket, lasagna layers, sneeze, magnet, pasta shield, gnocchi bounce) and 5 negative (chili pepper, soggy noodle, garlic breath, burnt toast, minestrone soup)
 - **11 platform types** — static, breaking, brittle, moving, conveyor, spring, ice, crumbling, teleport, weighted, lasagna
 - **3 boss types** — Chef Rival (jumps on platforms), Kraken (steals platform chunks), UFO (shoots projectiles)
 - **Enemies** (opt-in) — rats, fish, aliens per zone. Throw knives to defeat them (3 ammo, regenerating)
@@ -29,7 +29,7 @@ A pasta-themed endless jumper built with PixiJS and TypeScript.
 ### Audio
 - Unique music track per zone with smooth crossfade transitions
 - Boss battle music
-- Per-power-up SFX (14 unique sounds)
+- Per-power-up SFX (13 unique sounds)
 - Per-platform landing SFX
 - Procedural ambient audio per zone (Web Audio API)
 - Volume sliders for SFX and music
