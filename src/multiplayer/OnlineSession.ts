@@ -234,6 +234,7 @@ export class OnlineSession {
 
   private showResults(): void {
     if (this.gameLoop) { this.app.ticker.remove(this.gameLoop); this.gameLoop = null; }
+    this.scene.forceStop();
     this.sync.stopSending();
     const h1 = this.localDeathHeight, h2 = this.remoteDeathHeight;
     const label = this.role === "host" ? "You (Host)" : "You (Guest)";

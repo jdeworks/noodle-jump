@@ -23,6 +23,7 @@ import { LocalInput } from "./LocalInput";
 import { showTitleScreen } from "../ui/TitleScreenView";
 import { launchGame } from "../scenes/GameLauncher";
 import { showLocalCoopResults } from "./ResultsScreen";
+import { CountdownAnim } from "./CountdownAnim";
 
 const SPLIT_WIDTH = GAME_WIDTH * 2;
 const DIVIDER_WIDTH = 2;
@@ -51,8 +52,8 @@ export async function launchLocalCoop(
   const scene1 = new GameScene(config);
   const scene2 = new GameScene(config);
 
-  // Best-height: ghost mode (frozen scoring after death)
-  if (mode === "best-height") { scene1.enableGhostMode(); scene2.enableGhostMode(); }
+  // Best-height: ghost mode is enabled on the FIRST player to die (not both upfront),
+  // so the surviving player continues normally and their death ends the game.
   // Timed: practice mode (instant respawn, scoring continues, + height penalty on death)
   if (mode === "timed-2min") { scene1.enableTimedRespawn(); scene2.enableTimedRespawn(); }
 
@@ -126,18 +127,10 @@ export async function launchLocalCoop(
   app.stage.addChild(p2Height);
 
   // Death toast
-  const toastStyle = new TextStyle({
-    fontFamily: "monospace",
-    fontSize: 16,
-    fill: "#ff6666",
-    fontWeight: "bold",
-    stroke: { color: "#000000", width: 3 },
-  });
-  const deathToast = new Text({ text: "", style: toastStyle });
-  deathToast.x = SPLIT_WIDTH / 2;
-  deathToast.y = GAME_HEIGHT * 0.15;
-  deathToast.anchor.set(0.5, 0.5);
-  deathToast.visible = false;
+  const deathToast = new Text({ text: "", style: new TextStyle({ fontFamily: "monospace",
+    fontSize: 16, fill: "#ff6666", fontWeight: "bold", stroke: { color: "#000000", width: 3 } }) });
+  deathToast.x = SPLIT_WIDTH / 2; deathToast.y = GAME_HEIGHT * 0.15;
+  deathToast.anchor.set(0.5, 0.5); deathToast.visible = false;
   app.stage.addChild(deathToast);
   let toastTimer = 0;
 
@@ -161,6 +154,8 @@ export async function launchLocalCoop(
     app.stage.addChild(fpsText);
   }
 
+  const countdownAnim = new CountdownAnim();
+
   // Countdown overlay with dim background
   const countdownDim = new Graphics();
   countdownDim.rect(0, 0, SPLIT_WIDTH, GAME_HEIGHT);
@@ -181,6 +176,10 @@ export async function launchLocalCoop(
   const midGameEscape = (e: KeyboardEvent) => {
     if (e.key === "Escape" && !quitRequested) {
       quitRequested = true;
+      gameEnded = true;
+      scene1.forceStop();
+      scene2.forceStop();
+      app.ticker.remove(gameLoop);
       window.removeEventListener("keydown", midGameEscape);
       setTimeout(() => {
         cleanupLocalCoop(app, scene1, scene2, input, gameLoop);
@@ -210,13 +209,28 @@ export async function launchLocalCoop(
   let p2Dead = false;
   let p1DeathHeight = 0;
   let p2DeathHeight = 0;
+  let p1LastHeight = 0;
+  let p2LastHeight = 0;
 
   // Game loop
+  const endGame = () => {
+    if (gameEnded) return;
+    gameEnded = true;
+    scene1.forceStop();
+    scene2.forceStop();
+    app.ticker.remove(gameLoop);
+    window.removeEventListener("keydown", midGameEscape);
+    stopMusic();
+    killBossMusic();
+    if (timerCleanup) timerCleanup();
+    showResults();
+  };
+
   const gameLoop = () => {
+    if (gameEnded) return;
     input.update();
 
     // Tick scenes with split keyboard input and separate RNG streams
-    if (gameEnded) return;
     if (!scene1.isGameOver()) {
       setRNGFunction(p1Rng);
       if (input.p1Fire) scene1.autoAimThrow();
@@ -242,10 +256,7 @@ export async function launchLocalCoop(
       if (timerText) timerText.text = `${m}:${s.toString().padStart(2, "0")}`;
       if (timerTicks <= 0 && !gameEnded) {
         p1DeathHeight = scene1.getHeight(); p2DeathHeight = scene2.getHeight();
-        gameEnded = true; app.ticker.remove(gameLoop);
-        window.removeEventListener("keydown", midGameEscape);
-        if (timerCleanup) timerCleanup();
-        showResults(); return;
+        endGame(); return;
       }
     }
 
@@ -255,34 +266,44 @@ export async function launchLocalCoop(
         p1Dead = true;
         p1DeathHeight = scene1.getHeight();
         showToast(`P1 died at ${p1DeathHeight}m!`);
+        // Best-height: first to die becomes ghost, second player continues normally
+        if (mode === "best-height" && !p2Dead) scene1.enableGhostMode();
       }
       if (!p2Dead && scene2.getState().isDying) {
         p2Dead = true;
         p2DeathHeight = scene2.getHeight();
         showToast(`P2 died at ${p2DeathHeight}m!`);
+        // Best-height: first to die becomes ghost, second player continues normally
+        if (mode === "best-height" && !p1Dead) scene2.enableGhostMode();
       }
     } else {
-      // Timed mode: just show death toasts, ghost respawn handles the rest
-      if (scene1.getState().isDying && !scene1.getState().gameOver) showToast("P1 died! -10% height");
-      if (scene2.getState().isDying && !scene2.getState().gameOver) showToast("P2 died! -10% height");
+      // Timed mode: detect death by height penalty (practice mode rescue is instant, isDying is never set)
+      const h1Now = scene1.getMaxHeight();
+      const h2Now = scene2.getMaxHeight();
+      if (h1Now < p1LastHeight) showToast(`P1 died! Height: ${h1Now}m (-10%)`);
+      if (h2Now < p2LastHeight) showToast(`P2 died! Height: ${h2Now}m (-10%)`);
+      p1LastHeight = h1Now;
+      p2LastHeight = h2Now;
     }
-    // Show "GHOST" label on dead player's side (not for timed mode)
-    if (mode !== "timed-2min" && p1Dead && !p2Dead) {
-      spectateOverlay.visible = true; spectateOverlay.x = 0;
+    // Show ghost indicator on dead player's side (not for timed mode)
+    // Best-height: ghost player keeps playing, so only show a small label (no dark overlay)
+    // First-to-die: game ends immediately, no spectate needed
+    if (mode === "best-height" && p1Dead && !p2Dead) {
+      spectateOverlay.visible = false;
+      spectateLabel.visible = true;
       spectateLabel.x = GAME_WIDTH / 2;
-      spectateLabel.text = `GHOST\nHeight locked: ${p1DeathHeight}m`;
-    } else if (mode !== "timed-2min" && p2Dead && !p1Dead) {
-      spectateOverlay.visible = true; spectateOverlay.x = GAME_WIDTH;
+      spectateLabel.y = 22;
+      spectateLabel.text = `GHOST · ${p1DeathHeight}m`;
+    } else if (mode === "best-height" && p2Dead && !p1Dead) {
+      spectateOverlay.visible = false;
+      spectateLabel.visible = true;
       spectateLabel.x = GAME_WIDTH + GAME_WIDTH / 2;
-      spectateLabel.text = `GHOST\nHeight locked: ${p2DeathHeight}m`;
-    } else { spectateOverlay.visible = false; }
+      spectateLabel.y = 22;
+      spectateLabel.text = `GHOST · ${p2DeathHeight}m`;
+    } else { spectateOverlay.visible = false; spectateLabel.visible = false; }
 
-    // Countdown display
-    const cd = scene1.getCountdownSeconds();
-    if (cd !== undefined && cd >= 0) {
-      countdownText.text = cd > 0 ? `${cd}` : "GO!";
-      countdownText.visible = true; countdownDim.visible = true;
-    } else { countdownText.visible = false; countdownDim.visible = false; }
+    // Countdown display with animated "GO!"
+    countdownAnim.update(scene1.getCountdownSeconds(), countdownText, countdownDim);
 
     // FPS counter (debug only)
     if (fpsText) {
@@ -305,13 +326,7 @@ export async function launchLocalCoop(
     if (mode === "first-to-die") shouldEnd = (p1Dead || p2Dead);
     else if (mode === "best-height") shouldEnd = (p1Dead && p2Dead);
     // timed-2min: shouldEnd stays false — timer handles it above
-    if (shouldEnd && !gameEnded) {
-      gameEnded = true;
-      app.ticker.remove(gameLoop);
-      window.removeEventListener("keydown", midGameEscape);
-      if (timerCleanup) timerCleanup();
-      showResults();
-    }
+    if (shouldEnd) endGame();
   };
 
   function showToast(msg: string): void {

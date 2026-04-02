@@ -1,4 +1,4 @@
-/** Platform generation and pruning helpers extracted from GameLoop. */
+/** Platform generation, pruning, and rescue helpers extracted from GameLoop. */
 
 import { random } from "../systems/RNG";
 import type { GameWorldState } from "./GameState";
@@ -112,4 +112,37 @@ export function prune(state: GameWorldState): GameWorldState {
   const powerUps = prunePowerUps(state.powerUps, activeIds);
 
   return { ...state, platforms, meatballs, powerUps };
+}
+
+/** Rescue player to a safe platform (practice/timed mode). */
+export function rescuePlayer(s: GameWorldState): GameWorldState {
+  const camTop = s.camera.y;
+  const camBot = camTop + GAME_HEIGHT;
+  const camMid = camTop + GAME_HEIGHT * 0.5;
+  const safe = s.platforms.filter((p) =>
+    !p.broken && p.type !== "breaking" &&
+    !(p.crumbleTimer !== undefined && p.crumbleTimer < 120) &&
+    p.y >= camTop && p.y <= camBot,
+  );
+  let rescue = safe.length > 0
+    ? safe.sort((a, b) => Math.abs(a.y - camMid) - Math.abs(b.y - camMid))[0]
+    : s.platforms.filter((p) => !p.broken).sort((a, b) => Math.abs(a.y - camMid) - Math.abs(b.y - camMid))[0];
+  if (!rescue) {
+    rescue = {
+      x: GAME_WIDTH / 2 - 50, y: camTop + GAME_HEIGHT * 0.6,
+      width: 100, height: 15, type: "static" as const,
+      broken: false, id: Date.now(), originX: GAME_WIDTH / 2 - 50, moveDirection: 0,
+    };
+    s = { ...s, platforms: [...s.platforms, rescue] };
+  }
+  const penalizedScore = s.deathPenaltyEnabled
+    ? { ...s.scoreState,
+        height: Math.max(0, Math.floor(s.scoreState.height * 0.9)),
+        highestHeight: Math.max(0, Math.floor(s.scoreState.highestHeight * 0.9)),
+      }
+    : s.scoreState;
+  return { ...s, player: { ...s.player,
+      x: rescue.x + rescue.width / 2 - s.player.width / 2,
+      y: rescue.y - s.player.height, vy: -8, isJumping: true,
+    }, stagnantTicks: 0, scoreState: penalizedScore };
 }

@@ -182,6 +182,8 @@ export class GameScene {
   enableGhostMode(): void { this.state = { ...this.state, isGhost: true }; }
   /** Timed respawn — practice mode rescue + height penalty on death. Scoring continues. */
   enableTimedRespawn(): void { this.state = { ...this.state, practiceMode: true, deathPenaltyEnabled: true }; }
+  /** Force the scene into a stopped state — no further updates will run. */
+  forceStop(): void { this.state = { ...this.state, gameOver: true, isDying: false }; }
 
   getActiveEffectProgress(): number {
     return this.state.activeEffect ? this.state.activeEffect.ticksRemaining / getMaxDuration(this.state.activeEffect.type) : 0;
@@ -244,7 +246,6 @@ export class GameScene {
         );
       },
     });
-
 
     // Sync all entity graphics every frame (cheap — just skips existing)
     this.gfxSync.syncAll(

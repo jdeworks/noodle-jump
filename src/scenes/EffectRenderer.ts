@@ -81,6 +81,12 @@ export class EffectRenderer {
         playerGfx.y += PLAYER_HEIGHT * (1 - scaleY);
       }
     }
+
+    // Ghost mode: desaturate to gray, slightly transparent
+    if (state.isGhost && state.ghostDeathHeight > 0) {
+      playerGfx.tint = 0x888899;
+      playerGfx.alpha = 0.8;
+    }
   }
 
   /** Start config-driven emitter if not already running for this type. */

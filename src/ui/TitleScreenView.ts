@@ -232,6 +232,9 @@ export function showTitleScreen(
   let mpMenu: MultiplayerMenu | null = null;
   const cleanupTitle = () => {
     app.ticker.remove(titleTicker);
+    // Remove the Enter/Space keyboard listener that starts a single-player game —
+    // without this, pressing Enter in multiplayer menus launches a hidden solo game.
+    window.removeEventListener("keydown", handleKey);
     parallax.destroy();
     app.stage.removeChild(titleContainer);
     titleContainer.destroy({ children: true });

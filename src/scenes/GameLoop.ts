@@ -36,6 +36,8 @@ import {
   SQUASH_TOTAL_FRAMES,
   GAME_HEIGHT,
   GAME_WIDTH,
+  CAMERA_GRACE_PLATFORMS,
+  PLATFORM_GAP_MAX,
 } from "../config/constants";
 import { maybeSpawnBoss, tickBoss, tickKnifeAmmo } from "./GameLoopBoss";
 import { tickEnemies } from "./GameLoopEnemies";
@@ -45,6 +47,7 @@ import {
   expireLasagnaPlatforms,
   maybeGeneratePlatforms,
   prune,
+  rescuePlayer,
 } from "./GameLoopHelpers";
 import {
   tickPlatformCollisions,
@@ -329,35 +332,14 @@ export function tickGameWorld(
     s = { ...s, projectiles: updateProjectiles(s.projectiles) };
   }
 
-  // Death check
-  if (isPlayerDead(s.camera, s.player.y)) {
+  // Death check — practice/timed mode uses current camera bottom (not all-time high)
+  // so players who bounce off low platforms aren't penalized unfairly
+  const deathCheck = (s.practiceMode || s.debugConfig.invincible)
+    ? s.player.y > s.camera.y + GAME_HEIGHT + CAMERA_GRACE_PLATFORMS * PLATFORM_GAP_MAX
+    : isPlayerDead(s.camera, s.player.y);
+  if (deathCheck) {
     if (s.practiceMode || s.debugConfig.invincible) {
-      // Rescue: teleport to a visible non-broken platform (prefer near player)
-      const camTop = s.camera.y;
-      const camBot = camTop + GAME_HEIGHT;
-      const visible = s.platforms
-        .filter((p) => !p.broken && p.y >= camTop && p.y <= camBot);
-      let rescue = visible.length > 0
-        ? visible.sort((a, b) => a.y - b.y)[0]
-        : s.platforms.filter((p) => !p.broken).sort((a, b) => a.y - b.y)[0];
-      // If no platforms exist at all (e.g. post-boss), create an emergency one
-      if (!rescue) {
-        rescue = {
-          x: GAME_WIDTH / 2 - 50, y: camTop + GAME_HEIGHT * 0.6,
-          width: 100, height: 15, type: "static" as const,
-          broken: false, id: Date.now(), originX: GAME_WIDTH / 2 - 50, moveDirection: 0,
-        };
-        s = { ...s, platforms: [...s.platforms, rescue] };
-      }
-      // Apply height penalty for timed multiplayer deaths
-      const penalizedScore = s.deathPenaltyEnabled
-        ? { ...s.scoreState, height: Math.max(0, Math.floor(s.scoreState.height * 0.9)) }
-        : s.scoreState;
-      // Timed mode: silent rescue, no death sound
-      s = { ...s, player: { ...s.player,
-          x: rescue.x + rescue.width / 2 - s.player.width / 2,
-          y: rescue.y - s.player.height, vy: -12, isJumping: true,
-        }, stagnantTicks: 0, scoreState: penalizedScore };
+      s = rescuePlayer(s);
     } else {
       s = { ...s, isDying: true, squashTicks: 0, pendingJumpVy: 0,
         ghostDeathHeight: s.ghostDeathHeight || s.scoreState.height };
