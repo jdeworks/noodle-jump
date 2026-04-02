@@ -22,6 +22,7 @@ import { InterpolationBuffer } from "./InterpolationBuffer";
 import { RemotePlayerRenderer } from "./RemotePlayerRenderer";
 import { LobbyScreen } from "./LobbyScreen";
 import { setTouchControlsForced } from "../systems/TiltSettings";
+import { CountdownAnim } from "./CountdownAnim";
 
 export type OnlineRole = "host" | "guest";
 
@@ -30,6 +31,7 @@ interface OnlineSessionConfig {
   connection: ConnectionManager;
   seed: number;
   role: OnlineRole;
+  mode?: string;
   touchControls?: boolean;
   remoteCharacter?: string;
   sync?: GameSync;
@@ -46,6 +48,10 @@ export class OnlineSession {
   private seed: number;
   private touchControls: boolean;
   private remoteChar: string;
+  private mode: string;
+  private timerTicks = -1;
+  private timerText: Text | null = null;
+  private countdownAnim = new CountdownAnim();
 
   private localDead = false;
   private remoteDead = false;
@@ -53,11 +59,8 @@ export class OnlineSession {
   private remoteDeathHeight = 0;
   private gameLoop: (() => void) | null = null;
 
-  // Toast
   private deathToast: Text;
   private toastTimer = 0;
-
-  // FPS counter
   private fpsText: Text | null = null;
   private fpsFrames = 0;
   private fpsLast = performance.now();
@@ -67,8 +70,7 @@ export class OnlineSession {
   private countdownText: Text | null = null;
   private spectateText: Text | null = null;
   private escapeHandler: ((e: KeyboardEvent) => void) | null = null;
-  private resultsShown = false;
-  private connDot: Graphics | null = null;
+  private resultsShown = false; private connDot: Graphics | null = null;
 
   constructor(config: OnlineSessionConfig) {
     this.app = config.app;
@@ -77,18 +79,19 @@ export class OnlineSession {
     this.seed = config.seed;
     this.touchControls = config.touchControls ?? false;
     this.remoteChar = config.remoteCharacter ?? "chef";
+    this.mode = config.mode ?? "best-height";
     this.sync = config.sync ?? new GameSync();
 
     // Create game scene with shared seed
-    setDebugConfig(createDebugConfig()); // Reset debug config for multiplayer
+    setDebugConfig(createDebugConfig());
     const runConfig: RunConfig = { ...createDefaultRunConfig(), seed: config.seed };
     this.scene = new GameScene(runConfig);
-    this.scene.enableGhostMode();
+    if (this.mode === "timed-2min") this.scene.enableTimedRespawn();
+    else this.scene.enableGhostMode();
     this.scene.initInput(this.app.canvas);
-    if (this.touchControls) {
-      // Forced touch controls — skip tilt for fairness
-      setTouchControlsForced(true);
-    } else if (this.scene.input.needsTiltPermission) {
+    // Reset touch controls to lobby's choice (not the settings toggle)
+    setTouchControlsForced(this.touchControls);
+    if (!this.touchControls && this.scene.input.needsTiltPermission) {
       this.scene.input.requestTiltPermission();
     }
     this.app.stage.addChild(this.scene.container);
@@ -127,6 +130,15 @@ export class OnlineSession {
     this.sync.startSending();
     playMusic(0);
     if (this.touchControls) this.showToast("Touch controls enabled for fairness");
+
+    // Timer for timed mode
+    if (this.mode === "timed-2min") {
+      this.timerTicks = 120 * 60;
+      this.timerText = new Text({ text: "2:00", style: new TextStyle({ fontFamily: "monospace",
+        fontSize: 18, fill: "#ffffff", fontWeight: "bold", stroke: { color: "#000000", width: 3 } }) });
+      this.timerText.x = GAME_WIDTH / 2; this.timerText.y = 20; this.timerText.anchor.set(0.5, 0.5);
+      this.app.stage.addChild(this.timerText);
+    }
 
     if (this.fpsText) { this.app.stage.removeChild(this.fpsText); this.app.stage.addChild(this.fpsText); }
 
@@ -181,14 +193,22 @@ export class OnlineSession {
       }
     }
 
-    // Countdown overlay
-    const cd = this.scene.getCountdownSeconds();
-    if (cd !== undefined && cd >= 0 && this.countdownText && this.countdownDim) {
-      this.countdownText.text = cd > 0 ? `${cd}` : "GO!";
-      this.countdownText.visible = true; this.countdownDim.visible = true;
-    } else if (this.countdownText) {
-      this.countdownText.visible = false;
-      if (this.countdownDim) this.countdownDim.visible = false;
+    // Countdown overlay with animated GO
+    if (this.countdownText && this.countdownDim) {
+      this.countdownAnim.update(this.scene.getCountdownSeconds(), this.countdownText, this.countdownDim);
+    }
+
+    // Timed mode countdown
+    if (this.timerTicks > 0) {
+      this.timerTicks--;
+      const secs = Math.ceil(this.timerTicks / 60);
+      const m = Math.floor(secs / 60), s = secs % 60;
+      if (this.timerText) this.timerText.text = `${m}:${s.toString().padStart(2, "0")}`;
+      if (this.timerTicks <= 0 && !this.resultsShown) {
+        this.resultsShown = true;
+        this.showResults();
+        return;
+      }
     }
 
     // Connection quality dot (green < 200ms, yellow < 500ms, red > 500ms)
@@ -198,23 +218,17 @@ export class OnlineSession {
       this.connDot.clear(); this.connDot.circle(GAME_WIDTH - 15, 15, 6); this.connDot.fill(color);
     }
 
-    // FPS counter
+    // FPS + toast
     this.fpsFrames++;
     const now = performance.now();
     if (now - this.fpsLast >= 500 && this.fpsText) {
       this.fpsText.text = `FPS: ${Math.round(this.fpsFrames / ((now - this.fpsLast) / 1000))}`;
-      this.fpsFrames = 0;
-      this.fpsLast = now;
+      this.fpsFrames = 0; this.fpsLast = now;
     }
+    if (this.toastTimer > 0 && --this.toastTimer === 0) this.deathToast.visible = false;
 
-    // Toast timer
-    if (this.toastTimer > 0) {
-      this.toastTimer--;
-      if (this.toastTimer === 0) this.deathToast.visible = false;
-    }
-
-    // Game over — both players have died
-    if (this.localDead && this.remoteDead && !this.resultsShown) {
+    // Game over — both dead (skip for timed mode, timer handles it)
+    if (this.mode !== "timed-2min" && this.localDead && this.remoteDead && !this.resultsShown) {
       this.resultsShown = true;
       this.showResults();
     }
@@ -242,23 +256,18 @@ export class OnlineSession {
     const label = this.role === "host" ? "You (Host)" : "You (Guest)";
     const winner = h1 > h2 ? "You Win!" : h2 > h1 ? "You Lose!" : "It's a Tie!";
     const cx = GAME_WIDTH / 2;
-
     const bg = new Graphics();
     bg.rect(0, 0, GAME_WIDTH, GAME_HEIGHT); bg.fill({ color: 0x000000, alpha: 0.7 });
     this.app.stage.addChild(bg);
-
     const wt = new Text({ text: winner, style: new TextStyle({ fontFamily: "monospace",
       fontSize: 28, fill: h1 > h2 ? "#44ff44" : h2 > h1 ? "#ff6666" : "#ffdd44",
       fontWeight: "bold", stroke: { color: "#000000", width: 4 } }) });
     wt.x = cx; wt.y = GAME_HEIGHT * 0.25; wt.anchor.set(0.5, 0.5);
     this.app.stage.addChild(wt);
-
-    const cs = new TextStyle({ fontFamily: "monospace", fontSize: 14,
-      fill: "#ffffff", stroke: { color: "#000000", width: 2 } });
+    const cs = new TextStyle({ fontFamily: "monospace", fontSize: 14, fill: "#ffffff", stroke: { color: "#000000", width: 2 } });
     [`${label}: ${h1}m  |  Opponent: ${h2}m`, `Score: ${this.scene.getScore()}`].forEach((ln, i) => {
       const t = new Text({ text: ln, style: cs });
-      t.x = cx; t.y = GAME_HEIGHT * 0.36 + i * 22; t.anchor.set(0.5, 0.5);
-      this.app.stage.addChild(t);
+      t.x = cx; t.y = GAME_HEIGHT * 0.36 + i * 22; t.anchor.set(0.5, 0.5); this.app.stage.addChild(t);
     });
 
     // Rematch button
@@ -273,7 +282,6 @@ export class OnlineSession {
     const doHome = () => setTimeout(() => this.goHome(), 0);
     hbg.on("pointertap", doHome); htx.on("pointertap", doHome);
   }
-
   private makeButton(x: number, y: number, w: number, h: number, color: number, stroke: boolean): Graphics {
     const g = new Graphics();
     g.roundRect(x - w / 2, y - h / 2, w, h, 10); g.fill({ color, alpha: 0.9 });
@@ -287,8 +295,6 @@ export class OnlineSession {
     t.x = x; t.y = y; t.anchor.set(0.5, 0.5); t.eventMode = "static"; t.cursor = "pointer";
     this.app.stage.addChild(t); return t;
   }
-
-  /** Return to lobby for rematch — reuses existing connection. */
   private returnToLobby(): void {
     this.cleanup();
 
