@@ -11,7 +11,7 @@ import type { GameSync, GameSyncEvent } from "./GameSync";
 export type LobbyRole = "host" | "guest";
 
 export interface LobbyCallbacks {
-  onStart: (seed: number, mode: string) => void;
+  onStart: (seed: number, mode: string, touchControls: boolean) => void;
 }
 
 const HEADER_STYLE = new TextStyle({
@@ -45,12 +45,14 @@ export class LobbyScreen {
   private hostReady = false;
   private guestReady = false;
   private mode = "best-height";
+  private touchControls = false;
 
   private p1StatusText: Text;
   private p2StatusText: Text;
   private startBtn: Graphics;
   private startText: Text;
   private waitingText: Text;
+  private onTouchControlsChanged: (() => void) | null = null;
 
   constructor(role: LobbyRole, sync: GameSync, callbacks: LobbyCallbacks) {
     this.role = role;
@@ -125,8 +127,29 @@ export class LobbyScreen {
       modeLabel.text = `Mode: ${MODE_LABELS[this.mode]} (tap to change)`;
     }
 
+    // Touch controls toggle (either player can toggle, synced for fairness)
+    const touchLabel = new Text({
+      text: "Touch Controls: OFF",
+      style: new TextStyle({ fontFamily: "monospace", fontSize: 14,
+        fill: "#aaaaaa", stroke: { color: "#000000", width: 2 } }),
+    });
+    touchLabel.x = GAME_WIDTH / 2; touchLabel.y = 335; touchLabel.anchor.set(0.5, 0.5);
+    touchLabel.eventMode = "static"; touchLabel.cursor = "pointer";
+    this.container.addChild(touchLabel);
+    const updateTouchLabel = () => {
+      touchLabel.text = `Touch Controls: ${this.touchControls ? "ON" : "OFF"} (tap to toggle)`;
+      touchLabel.style.fill = this.touchControls ? "#44ff44" : "#aaaaaa";
+    };
+    updateTouchLabel();
+    touchLabel.on("pointertap", () => {
+      this.touchControls = !this.touchControls;
+      updateTouchLabel();
+      this.sync.sendGameEvent({ type: "ready", payload: { touchControls: this.touchControls } });
+    });
+    this.onTouchControlsChanged = () => updateTouchLabel();
+
     // Ready button
-    const readyBtnY = 370;
+    const readyBtnY = 390;
     const readyBg = new Graphics();
     readyBg.roundRect(GAME_WIDTH / 2 - 100, readyBtnY - 20, 200, 40, 10);
     readyBg.fill({ color: 0x2a6e3f, alpha: 0.9 });
@@ -176,7 +199,7 @@ export class LobbyScreen {
     readyText.on("pointertap", toggleReady);
 
     // Start button (host only)
-    const startBtnY = 440;
+    const startBtnY = 460;
     this.startBtn = new Graphics();
     this.startText = new Text({
       text: "Start Game",
@@ -204,9 +227,9 @@ export class LobbyScreen {
         const seed = Math.floor(Math.random() * 0xffffffff);
         this.sync.sendGameEvent({
           type: "start",
-          payload: { seed, mode: this.mode },
+          payload: { seed, mode: this.mode, touchControls: this.touchControls },
         });
-        this.callbacks.onStart(seed, this.mode);
+        this.callbacks.onStart(seed, this.mode, this.touchControls);
       };
       this.startBtn.on("pointertap", startGame);
       this.startText.on("pointertap", startGame);
@@ -241,6 +264,10 @@ export class LobbyScreen {
       if (event.payload.mode) {
         this.mode = event.payload.mode as string;
       }
+      if (event.payload.touchControls !== undefined) {
+        this.touchControls = event.payload.touchControls as boolean;
+        this.onTouchControlsChanged?.();
+      }
       if (event.payload.role) {
         const isHost = event.payload.role === "host";
         if (isHost) this.hostReady = event.payload.ready as boolean;
@@ -252,7 +279,8 @@ export class LobbyScreen {
     if (event.type === "start" && this.role === "guest") {
       const seed = event.payload.seed as number;
       const mode = (event.payload.mode as string) || "best-height";
-      this.callbacks.onStart(seed, mode);
+      const tc = (event.payload.touchControls as boolean) ?? this.touchControls;
+      this.callbacks.onStart(seed, mode, tc);
     }
   }
 
@@ -265,7 +293,7 @@ export class LobbyScreen {
 
     if (this.role === "host") {
       const canStart = this.hostReady && this.guestReady;
-      this.renderStartButton(440, canStart);
+      this.renderStartButton(460, canStart);
       this.startText.alpha = canStart ? 1 : 0.4;
     }
   }

@@ -21,6 +21,7 @@ import { GameSync, type PlayerSyncState, type GameSyncEvent } from "./GameSync";
 import { InterpolationBuffer } from "./InterpolationBuffer";
 import { RemotePlayerRenderer } from "./RemotePlayerRenderer";
 import { LobbyScreen } from "./LobbyScreen";
+import { setTouchControlsForced } from "../systems/TiltSettings";
 
 export type OnlineRole = "host" | "guest";
 
@@ -29,6 +30,7 @@ interface OnlineSessionConfig {
   connection: ConnectionManager;
   seed: number;
   role: OnlineRole;
+  touchControls?: boolean;
 }
 
 export class OnlineSession {
@@ -40,6 +42,7 @@ export class OnlineSession {
   private interpolation = new InterpolationBuffer();
   private role: OnlineRole;
   private seed: number;
+  private touchControls: boolean;
 
   private localDead = false;
   private remoteDead = false;
@@ -69,6 +72,7 @@ export class OnlineSession {
     this.connection = config.connection;
     this.role = config.role;
     this.seed = config.seed;
+    this.touchControls = config.touchControls ?? false;
     this.sync = new GameSync();
 
     // Create game scene with shared seed
@@ -77,7 +81,10 @@ export class OnlineSession {
     this.scene = new GameScene(runConfig);
     this.scene.enableGhostMode();
     this.scene.initInput(this.app.canvas);
-    if (this.scene.input.needsTiltPermission) {
+    if (this.touchControls) {
+      // Forced touch controls — skip tilt for fairness
+      setTouchControlsForced(true);
+    } else if (this.scene.input.needsTiltPermission) {
       this.scene.input.requestTiltPermission();
     }
     this.app.stage.addChild(this.scene.container);
@@ -124,6 +131,7 @@ export class OnlineSession {
     this.scene.startCountdown();
     this.sync.startSending();
     playMusic(0);
+    if (this.touchControls) this.showToast("Touch controls enabled for fairness");
 
     if (this.fpsText) { this.app.stage.removeChild(this.fpsText); this.app.stage.addChild(this.fpsText); }
 
@@ -310,26 +318,18 @@ export class OnlineSession {
     this.app.stage.addChild(lobby.container);
   }
 
-  /** Start a new game after lobby ready-up. */
   private startNewGame(newSeed: number, sync: GameSync): void {
     this.seed = newSeed;
-    this.localDead = false;
-    this.remoteDead = false;
-    this.localDeathHeight = 0;
-    this.remoteDeathHeight = 0;
-    this.resultsShown = false;
-    this.interpolation.reset();
-    this.sync = sync;
-
+    this.localDead = false; this.remoteDead = false;
+    this.localDeathHeight = 0; this.remoteDeathHeight = 0;
+    this.resultsShown = false; this.interpolation.reset(); this.sync = sync;
     const runConfig: RunConfig = { ...createDefaultRunConfig(), seed: newSeed };
     this.scene = new GameScene(runConfig);
     this.scene.enableGhostMode();
     this.scene.initInput(this.app.canvas);
-    if (this.scene.input.needsTiltPermission) {
-      this.scene.input.requestTiltPermission();
-    }
+    if (this.touchControls) { setTouchControlsForced(true); }
+    else if (this.scene.input.needsTiltPermission) { this.scene.input.requestTiltPermission(); }
     this.app.stage.addChild(this.scene.container);
-
     this.remoteRenderer = new RemotePlayerRenderer();
     this.remoteRenderer.hide();
     this.app.stage.addChild(this.remoteRenderer.container);
@@ -389,6 +389,7 @@ export class OnlineSession {
 
   private goHome(): void {
     if (this.escapeHandler) { window.removeEventListener("keydown", this.escapeHandler); this.escapeHandler = null; }
+    if (this.touchControls) setTouchControlsForced(false); // restore user's own setting
     this.cleanup(); this.sync.destroy(); this.connection.disconnect();
     stopMusic(); killBossMusic();
     showTitleScreen(this.app, (rc) => launchGame(this.app, rc));
