@@ -155,8 +155,22 @@ export async function launchGame(app: Application, runConfig?: RunConfig): Promi
     }
   };
   orientationQuery.addEventListener("change", checkOrientation);
+  // Pause when app/tab is hidden (prevent dying while away)
+  let pausedByVisibility = false;
+  const visHandler = () => {
+    if (document.hidden && !pausedByVisibility && !scene.isGameOver()) {
+      pausedByVisibility = true;
+      if (!scene.isPaused()) scene.togglePause();
+    } else if (!document.hidden && pausedByVisibility) {
+      pausedByVisibility = false;
+      // Leave paused — player can unpause manually when ready
+    }
+  };
+  document.addEventListener("visibilitychange", visHandler);
+
   activeOrientationCleanup = () => {
     orientationQuery.removeEventListener("change", checkOrientation);
+    document.removeEventListener("visibilitychange", visHandler);
   };
   checkOrientation();
 

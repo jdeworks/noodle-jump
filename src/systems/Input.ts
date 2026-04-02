@@ -170,11 +170,12 @@ export class InputManager {
     this._accelX = accel.x;
 
     // ── Use accelerometer for input ────────────────────────────────────
-    // accel.x sign varies by device. On most Android phones in portrait,
-    // tilting right gives negative x. We negate to match expectations:
-    // positive = right, negative = left. Some devices (e.g. certain iPhones)
-    // report the opposite sign — users can flip via the "Invert Tilt" setting.
-    const invertSign = isTiltInverted() ? 1 : -1;
+    // iOS and Android report opposite signs for accel.x. iOS: tilt right → negative x.
+    // Android: tilt right → positive x. Auto-detect via requestPermission (iOS-only API).
+    // Users can override via "Invert Tilt" setting.
+    const isIOS = typeof (DeviceMotionEvent as unknown as { requestPermission?: unknown }).requestPermission === "function";
+    const defaultSign = isIOS ? 1 : -1;
+    const invertSign = isTiltInverted() ? -defaultSign : defaultSign;
     const tiltValue = invertSign * accel.x;
 
     if (!this.calibrated) {
