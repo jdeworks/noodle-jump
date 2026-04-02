@@ -131,33 +131,11 @@ export function drawChef(
   const h = height;
   const charId = getSelectedCharacter();
 
-  // When there's an active effect, the chef (default) character gets custom
-  // colors/decorations. Non-chef characters just get a tint overlay instead.
-  if (effectType && charId !== "chef") {
+  // Non-chef characters: draw character, then add universal effect overlays
+  if (charId !== "chef") {
     drawCharacter(gfx, w, h, charId);
-    // Effect tint overlay for non-chef characters
-    const effectTints: Record<string, number> = {
-      soggy_noodle: 0x6699cc,
-      burnt_toast: 0x665544,
-      garlic_breath: 0x88cc44,
-      chili_pepper: 0xff4422,
-      fusilli_tornado: 0xffdd44,
-      lasagna_layers: 0xff8c00,
-      pepper_sneeze: 0xff4444,
-      meatball_magnet: 0xff66aa,
-      pasta_shield: 0xaaeeff,
-      gnocchi_bounce: 0xffeedd,
-      minestrone_soup: 0xffaa88,
-    };
-    const eTint = effectTints[effectType];
-    if (eTint != null) {
-      gfx.roundRect(0, 0, w, h, 4);
-      gfx.fill({ color: eTint, alpha: 0.25 });
-    }
-    if (tint != null) {
-      gfx.roundRect(0, 0, w, h, 4);
-      gfx.fill({ color: tint, alpha: 0.2 });
-    }
+    if (effectType) drawEffectOverlays(gfx, w, h, effectType);
+    if (tint != null) { gfx.roundRect(0, 0, w, h, 4); gfx.fill({ color: tint, alpha: 0.2 }); }
     return;
   }
 
@@ -320,5 +298,51 @@ export function drawChef(
   if (tint != null) {
     gfx.roundRect(0, 0, w, h, 4);
     gfx.fill({ color: tint, alpha: 0.2 });
+  }
+}
+
+/** Draw character-agnostic effect overlays (works on any character sprite). */
+function drawEffectOverlays(gfx: Graphics, w: number, h: number, effect: string): void {
+  const cx = w / 2, cy = h / 2;
+  if (effect === "soggy_noodle") {
+    // Blue drips from top
+    gfx.roundRect(0, 0, w, h, 4); gfx.fill({ color: 0x6699cc, alpha: 0.25 });
+    for (let i = 0; i < 3; i++) { gfx.circle(w * 0.2 + i * w * 0.3, h * 0.9, 2); gfx.fill({ color: 0x4488cc, alpha: 0.6 }); }
+  } else if (effect === "burnt_toast") {
+    // Smoke wisps + dark overlay
+    gfx.roundRect(0, 0, w, h, 4); gfx.fill({ color: 0x332211, alpha: 0.3 });
+    for (let i = 0; i < 3; i++) { gfx.circle(w * 0.2 + i * w * 0.3, -2 - i * 3, 3); gfx.fill({ color: 0x666666, alpha: 0.4 }); }
+  } else if (effect === "garlic_breath") {
+    // Green stink clouds
+    gfx.roundRect(0, 0, w, h, 4); gfx.fill({ color: 0x88cc44, alpha: 0.2 });
+    gfx.circle(w + 4, cy - 4, 4); gfx.fill({ color: 0xaadd66, alpha: 0.5 });
+    gfx.circle(w + 2, cy + 6, 3); gfx.fill({ color: 0x99cc55, alpha: 0.4 });
+  } else if (effect === "chili_pepper") {
+    // Red glow + flame wisps on top
+    gfx.roundRect(0, 0, w, h, 4); gfx.fill({ color: 0xff4422, alpha: 0.25 });
+    gfx.moveTo(cx - 4, -2); gfx.lineTo(cx - 2, -8); gfx.lineTo(cx, -2); gfx.fill({ color: 0xff6622, alpha: 0.7 });
+    gfx.moveTo(cx + 2, -1); gfx.lineTo(cx + 4, -6); gfx.lineTo(cx + 6, -1); gfx.fill({ color: 0xff8833, alpha: 0.5 });
+  } else if (effect === "fusilli_tornado") {
+    gfx.roundRect(0, 0, w, h, 4); gfx.fill({ color: 0xffdd44, alpha: 0.2 });
+  } else if (effect === "lasagna_layers") {
+    gfx.roundRect(0, 0, w, h, 4); gfx.fill({ color: 0xff8c00, alpha: 0.2 });
+    // Cheese drip
+    gfx.circle(cx, h + 2, 3); gfx.fill({ color: 0xffcc00, alpha: 0.5 });
+  } else if (effect === "pepper_sneeze") {
+    gfx.roundRect(0, 0, w, h, 4); gfx.fill({ color: 0xff4444, alpha: 0.2 });
+  } else if (effect === "meatball_magnet") {
+    // Pink magnetic glow
+    gfx.roundRect(0, 0, w, h, 4); gfx.fill({ color: 0xff66aa, alpha: 0.2 });
+    gfx.circle(-3, cy, 3); gfx.fill({ color: 0xff88cc, alpha: 0.4 });
+    gfx.circle(w + 3, cy, 3); gfx.fill({ color: 0xff88cc, alpha: 0.4 });
+  } else if (effect === "pasta_shield") {
+    gfx.roundRect(0, 0, w, h, 4); gfx.fill({ color: 0xaaeeff, alpha: 0.15 });
+  } else if (effect === "gnocchi_bounce") {
+    gfx.roundRect(0, 0, w, h, 4); gfx.fill({ color: 0xffeedd, alpha: 0.2 });
+  } else if (effect === "minestrone_soup") {
+    gfx.roundRect(0, 0, w, h, 4); gfx.fill({ color: 0xffaa88, alpha: 0.2 });
+    // Soup splashes at feet
+    gfx.circle(cx - 5, h + 1, 2); gfx.fill({ color: 0xcc4422, alpha: 0.5 });
+    gfx.circle(cx + 5, h + 2, 2.5); gfx.fill({ color: 0xdd5533, alpha: 0.4 });
   }
 }
