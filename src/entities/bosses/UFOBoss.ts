@@ -41,9 +41,11 @@ export const ufoBehavior: BossBehavior = {
     const targetX = player.x - boss.width / 2;
     const moveSpeed = 0.8 + boss.phase * 0.3;
     x += Math.sign(targetX - x) * Math.min(Math.abs(targetX - x), moveSpeed);
-    // Stay near player vertically (above), with bobbing
+    // Stay near player vertically — slower upward (stompable), normal downward
     const targetY = player.y - 180;
-    y += (targetY - y) * 0.04;
+    const diff = targetY - y;
+    const lerpRate = diff < 0 ? 0.01 : 0.04; // up = slow, down = normal
+    y += diff * lerpRate;
     y += Math.sin(animTick * 0.03) * 0.5;
 
     const attacks: BossTickResult["attacks"] = [];
@@ -93,7 +95,12 @@ export const ufoBehavior: BossBehavior = {
     };
   },
 
-  checkPlayerContact(): boolean {
-    return false; // UFO doesn't do contact damage, only projectiles
+  checkPlayerContact(boss: BossState, player: PlayerState): boolean {
+    if (!boss.alive) return false;
+    // Player hitting from below = damage
+    const pad = 4;
+    const overlapX = player.x + player.width - pad > boss.x && player.x + pad < boss.x + boss.width;
+    const playerBottom = player.y + player.height;
+    return overlapX && playerBottom > boss.y + pad && player.y < boss.y + boss.height * 0.5;
   },
 };

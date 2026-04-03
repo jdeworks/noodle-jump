@@ -62,12 +62,12 @@ export class GraphicsSync {
     }
   }
 
-  syncProjectiles(projectiles: ProjectileState[], parent: Container): void {
+  syncProjectiles(projectiles: ProjectileState[], parent: Container, characterId?: string): void {
     for (const proj of projectiles) {
       if (!proj.alive) continue;
       if (this.projectileGfxMap.has(proj.id)) continue;
       const gfx = new Graphics();
-      drawProjectile(gfx, proj.size);
+      drawProjectile(gfx, proj.size, characterId);
       parent.addChild(gfx);
       this.projectileGfxMap.set(proj.id, gfx);
     }
@@ -80,12 +80,13 @@ export class GraphicsSync {
     parent: Container,
     enemies?: EnemyState[],
     projectiles?: ProjectileState[],
+    characterId?: string,
   ): void {
     this.syncPlatforms(platforms, parent);
     this.syncMeatballs(meatballs, parent);
     this.syncPowerUps(powerUps, parent);
     if (enemies) this.syncEnemies(enemies, parent);
-    if (projectiles) this.syncProjectiles(projectiles, parent);
+    if (projectiles) this.syncProjectiles(projectiles, parent, characterId);
   }
 
   /** Remove graphics for entities no longer in the active set. */

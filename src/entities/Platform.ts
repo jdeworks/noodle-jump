@@ -72,6 +72,8 @@ export interface PlatformState {
   tiltAngle?: number;
   /** Teleport target platform ID (paired teleport). */
   teleportTargetId?: number;
+  /** Original width at creation (used by tentacle attacks). */
+  initialWidth?: number;
 }
 
 let nextPlatformId = 0;

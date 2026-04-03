@@ -123,8 +123,9 @@ export function tickPlatformCollisions(
         streak: s.scoreState.landingStreak,
       });
     }
-    if (collision.edgeLanding && s.stagnantTicks < 300) {
-      s = { ...s, scoreState: addCloseCallBonus(s.scoreState) };
+    const landedId = collision.landedPlatform?.id ?? null;
+    if (collision.edgeLanding && s.stagnantTicks < 300 && landedId !== s.lastCloseCallPlatformId) {
+      s = { ...s, scoreState: addCloseCallBonus(s.scoreState), lastCloseCallPlatformId: landedId };
     }
   }
 

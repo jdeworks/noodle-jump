@@ -4,6 +4,9 @@ import { Container, Graphics, Text } from "pixi.js";
 import { worldToScreen } from "../systems/Camera";
 import { GAME_HEIGHT, BURNT_TOAST_SHRINK } from "../config/constants";
 import type { GameWorldState } from "./GameState";
+import { drawProjectile } from "../rendering/sprites";
+import { getSelectedCharacter } from "../systems/CharacterSettings";
+import { getTentacleChunkSize } from "../entities/bosses/KrakenBoss";
 
 /**
  * Render tentacle grab animations from the kraken boss to platforms.
@@ -68,13 +71,12 @@ export function renderTentacles(
 
     // Red flashing overlay on the platform edge being grabbed — during hold phase
     if (!extending) {
-      const chunkW = Math.min(30, plat.width * 0.4);
+      const chunkW = getTentacleChunkSize(plat);
       const flashAlpha = 0.5 + Math.sin(tick * 0.25) * 0.35;
       const platScreenY = worldToScreen(plat.y, camY);
       const rx = tent.side === "left" ? plat.x : plat.x + plat.width - chunkW;
       gfx.rect(rx, platScreenY, chunkW, 15);
       gfx.fill({ color: 0xff2222, alpha: flashAlpha });
-      // Outline for extra visibility
       gfx.rect(rx, platScreenY, chunkW, 15);
       gfx.stroke({ width: 1.5, color: 0xff0000, alpha: flashAlpha * 0.8 });
     }
@@ -100,42 +102,72 @@ export function renderKnifeAmmo(
     // Position container so icons are right-aligned
     icons.x = gameWidth - 10 - totalW;
 
-    // Rebuild icons only when max changes
-    if (icons.children.length !== max) {
+    const charId = getSelectedCharacter();
+    // Rebuild icons when max changes or character changes
+    // Icons stored in a sub-container so regen bar doesn't interfere with indexing
+    const cacheKey = `${max}:${charId}`;
+    type IconsExt = { _cacheKey?: string; _iconContainer?: Container; _regenBar?: Graphics };
+    const ext = icons as unknown as IconsExt;
+    if (ext._cacheKey !== cacheKey) {
+      ext._cacheKey = cacheKey;
       while (icons.children.length > 0) {
         icons.removeChildAt(0);
       }
+      // Regen bar behind icons
+      const regenBar = new Graphics();
+      icons.addChild(regenBar);
+      ext._regenBar = regenBar;
+      // Icon container on top
+      const iconContainer = new Container();
+      icons.addChild(iconContainer);
+      ext._iconContainer = iconContainer;
       for (let i = 0; i < max; i++) {
         const icon = new Graphics();
+        drawProjectile(icon, 12, charId);
+        icon.scale.set(0.7);
         icon.x = i * iconSpacing;
-        icons.addChild(icon);
+        iconContainer.addChild(icon);
       }
     }
-    // Update each icon
+    const iconContainer = ext._iconContainer!;
+    const regenBar = ext._regenBar!;
+
+    // Regen progress
+    const regenMax = 90; // KNIFE_REGEN_TICKS
+    const regenProgress = knives < max && state.knifeRegenTimer > 0
+      ? 1 - state.knifeRegenTimer / regenMax
+      : 0;
+
+    // Update each icon's opacity
     for (let i = 0; i < max; i++) {
-      const icon = icons.children[i] as Graphics;
-      icon.clear();
-      const has = i < knives;
-      // Blade
-      icon.moveTo(0, -12);       // tip
-      icon.lineTo(3, -9);
-      icon.lineTo(3.5, -3);
-      icon.lineTo(3.5, 0);
-      icon.lineTo(-1.5, 0);
-      icon.lineTo(-1.5, -10);
-      icon.closePath();
-      if (has) {
-        icon.fill(0xccccdd);
+      const icon = iconContainer.children[i] as Graphics;
+      if (i < knives) {
+        icon.alpha = 1;
+      } else if (i === knives && regenProgress > 0) {
+        icon.alpha = 0.25 + regenProgress * 0.75;
       } else {
-        icon.stroke({ width: 1, color: 0x666666, alpha: 0.6 });
+        icon.alpha = 0.25;
       }
-      // Handle
-      icon.roundRect(-1.5, 1, 5, 8, 1.5);
-      if (has) {
-        icon.fill(0x553322);
-      } else {
-        icon.stroke({ width: 1, color: 0x554433, alpha: 0.4 });
-      }
+    }
+
+    // Draw fill bar sized to match the actual icon bounds
+    regenBar.clear();
+    if (knives < max && regenProgress > 0) {
+      const regenIcon = iconContainer.children[knives] as Graphics;
+      const bounds = regenIcon.getLocalBounds();
+      const scale = regenIcon.scale.x;
+      const pad = 3;
+      const fullW = bounds.width * scale + pad * 2;
+      const fullH = bounds.height * scale + pad * 2;
+      const barX = regenIcon.x + bounds.x * scale - pad;
+      const barY = bounds.y * scale - pad;
+      const barW = fullW * regenProgress;
+      // Background track
+      regenBar.roundRect(barX, barY, fullW, fullH, 3);
+      regenBar.fill({ color: 0x000000, alpha: 0.4 });
+      // Fill bar — grows left to right
+      regenBar.roundRect(barX, barY, barW, fullH, 3);
+      regenBar.fill({ color: 0x44ccff, alpha: 0.4 });
     }
     icons.visible = true;
     text.visible = false;
@@ -192,10 +224,11 @@ export function renderDebugHitboxes(
     gfx.rect(mb.x, sy, mb.size, mb.size);
     gfx.stroke({ width: 1, color: 0xffaa00, alpha: 0.8 });
   }
-  // Enemy hitboxes
+  // Enemy hitboxes (shifted up to match collision logic)
+  const enemyYShift = -16;
   for (const e of s.enemies) {
     if (!e.alive) continue;
-    gfx.rect(e.x, worldToScreen(e.y, camY), e.width, e.height);
+    gfx.rect(e.x, worldToScreen(e.y + enemyYShift, camY), e.width, e.height);
     gfx.stroke({ width: 1, color: 0xff0000, alpha: 0.8 });
   }
   // Boss hitbox

@@ -232,7 +232,7 @@ export function showTitleScreen(
 
   // Settings toggles
   const settingsContainer = createSettingsToggles();
-  settingsContainer.y = cursorY;
+  settingsContainer.y = cursorY - 5;
   contentGroup.addChild(settingsContainer);
 
   // Explanation screen

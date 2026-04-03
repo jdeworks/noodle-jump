@@ -13,7 +13,6 @@ import {
   playSfxEnemyKill,
   playSfxShieldAbsorb,
   playSfxThrow,
-  playSfxWindGust,
   crossfadeToZone,
   playBossMusic,
   stopBossMusic,
@@ -114,17 +113,6 @@ export function handleEvents(events: GameEvent[], deps: EventHandlerDeps): void 
         playSfxThrow();
         break;
 
-      case "windGust":
-        playSfxWindGust();
-        deps.spawnFloatingText(
-          event.direction > 0 ? "WIND >>>" : "<<< WIND",
-          0xaaddff,
-          16,
-          60,
-          true,
-        );
-        break;
-
       case "bossSpawned":
         stopMusic(); // Kill any zone music crossfade before starting boss music
         playBossMusic();
@@ -138,6 +126,10 @@ export function handleEvents(events: GameEvent[], deps: EventHandlerDeps): void 
       case "bossKilled":
         stopBossMusic();
         deps.spawnFloatingText("BOSS DEFEATED!", 0x44ff44, 24, 120, true);
+        break;
+
+      case "skillKill":
+        deps.spawnFloatingText("SKILL KILL! +5000", 0xffdd44, 28, 300, true);
         break;
 
       case "bossAttack":

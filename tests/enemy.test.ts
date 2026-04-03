@@ -57,7 +57,8 @@ describe("Enemy entity", () => {
 
   test("checkEnemyPlayerCollision detects overlap", () => {
     const enemies = [createEnemy(100, 200, "rat", true)];
-    const hit = checkEnemyPlayerCollision(105, 205, 32, 40, enemies);
+    // Player overlaps with shifted-up enemy hitbox
+    const hit = checkEnemyPlayerCollision(105, 185, 32, 40, enemies);
     expect(hit).not.toBeNull();
   });
 

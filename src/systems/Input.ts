@@ -3,7 +3,7 @@
  * Outputs a normalized horizontal value from -1 (left) to +1 (right).
  */
 
-import { isTiltInverted, isTouchControlsForced } from "./TiltSettings";
+import { isTiltInverted, isTouchControlsForced, getControlMode } from "./TiltSettings";
 
 export type InputMethod = "tilt" | "touch" | "keyboard";
 
@@ -22,6 +22,11 @@ export class InputManager {
   // Touch state
   private touchActive = false;
   private canvasWidth = 0;
+
+  // Mouse state (emulates touch when touch controls forced on PC)
+  private mouseActive = false;
+  private _mouseEnabled = true; // disabled for split-screen co-op
+  private canvas: HTMLCanvasElement | null = null;
 
   // Keyboard state
   private keysDown = new Set<string>();
@@ -79,9 +84,16 @@ export class InputManager {
     );
   }
 
+  /** Disable mouse-as-touch input (for split-screen co-op). */
+  set mouseEnabled(v: boolean) {
+    this._mouseEnabled = v;
+  }
+
   init(canvas: HTMLCanvasElement): void {
+    this.canvas = canvas;
     this.setupKeyboard();
     this.setupTouch(canvas);
+    this.setupMouse(canvas);
     this.tryTilt();
   }
 
@@ -115,9 +127,9 @@ export class InputManager {
   }
 
   update(): void {
-    // Touch controls forced: only accept touch input, ignore tilt and keyboard
+    // Touch controls forced: accept touch or mouse input, ignore tilt and keyboard
     if (isTouchControlsForced()) {
-      if (this.touchActive) this._activeMethod = "touch";
+      if (this.touchActive || this.mouseActive) this._activeMethod = "touch";
       return;
     }
 
@@ -129,9 +141,16 @@ export class InputManager {
     }
 
     this._activeMethod = "keyboard";
+    const mode = getControlMode();
     let x = 0;
-    if (this.keysDown.has("ArrowLeft") || this.keysDown.has("a")) x -= 1;
-    if (this.keysDown.has("ArrowRight") || this.keysDown.has("d")) x += 1;
+    if (mode === "wasd") {
+      if (this.keysDown.has("a")) x -= 1;
+      if (this.keysDown.has("d")) x += 1;
+    } else {
+      // "arrows" mode (or any non-touch PC mode fallback)
+      if (this.keysDown.has("ArrowLeft")) x -= 1;
+      if (this.keysDown.has("ArrowRight")) x += 1;
+    }
     this._inputX = x;
   }
 
@@ -140,6 +159,7 @@ export class InputManager {
     window.removeEventListener("devicemotion", this.onMotion);
     window.removeEventListener("keydown", this.onKeyDown);
     window.removeEventListener("keyup", this.onKeyUp);
+    window.removeEventListener("blur", this.onBlur);
   }
 
   // ── Tilt ───────────────────────────────────────────────────────────────────
@@ -273,11 +293,44 @@ export class InputManager {
     this._inputX = 0;
   };
 
+  // ── Mouse (emulates touch on PC when touch controls forced) ────────────────
+
+  private setupMouse(canvas: HTMLCanvasElement): void {
+    canvas.addEventListener("mousedown", this.onMouseDown);
+    canvas.addEventListener("mousemove", this.onMouseMove);
+    canvas.addEventListener("mouseup", this.onMouseUp);
+  }
+
+  private mouseXFromEvent(e: MouseEvent): number {
+    if (!this.canvas) return 1;
+    const rect = this.canvas.getBoundingClientRect();
+    const localX = e.clientX - rect.left;
+    return localX < rect.width / 2 ? -1 : 1;
+  }
+
+  private onMouseDown = (e: MouseEvent): void => {
+    if (!this._mouseEnabled || !isTouchControlsForced()) return;
+    this.mouseActive = true;
+    this._inputX = this.mouseXFromEvent(e);
+  };
+
+  private onMouseMove = (e: MouseEvent): void => {
+    if (!this.mouseActive || !this._mouseEnabled || !isTouchControlsForced()) return;
+    this._inputX = this.mouseXFromEvent(e);
+  };
+
+  private onMouseUp = (): void => {
+    if (!this._mouseEnabled || !isTouchControlsForced()) return;
+    this.mouseActive = false;
+    this._inputX = 0;
+  };
+
   // ── Keyboard ───────────────────────────────────────────────────────────────
 
   private setupKeyboard(): void {
     window.addEventListener("keydown", this.onKeyDown);
     window.addEventListener("keyup", this.onKeyUp);
+    window.addEventListener("blur", this.onBlur);
   }
 
   private onKeyDown = (e: KeyboardEvent): void => {
@@ -286,5 +339,10 @@ export class InputManager {
 
   private onKeyUp = (e: KeyboardEvent): void => {
     this.keysDown.delete(e.key);
+  };
+
+  private onBlur = (): void => {
+    this.keysDown.clear();
+    this._inputX = 0;
   };
 }

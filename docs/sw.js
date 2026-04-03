@@ -1,6 +1,6 @@
 /** Service Worker — cache-first for assets, network-first for API. */
 
-const CACHE_NAME = "noodle-jump-1775145228";
+const CACHE_NAME = "noodle-jump-1775240711";
 const ASSETS_TO_CACHE = [
   "./",
   "./index.html",

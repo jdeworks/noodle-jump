@@ -38,6 +38,7 @@ import {
   GAME_WIDTH,
 } from "../config/constants";
 import { maybeSpawnBoss, tickBoss, tickKnifeAmmo } from "./GameLoopBoss";
+import { getBossForZone } from "../entities/Boss";
 import { tickEnemies } from "./GameLoopEnemies";
 import { updateProjectiles } from "../entities/Projectile";
 import {
@@ -85,11 +86,14 @@ export function throwProjectile(
   const playerCX = state.player.x + state.player.width / 2;
   const playerCY = state.player.y + state.player.height / 2;
   const proj = createProjectile(playerCX, playerCY, targetX, targetY);
+  const newAmmo = infinite ? state.knifeAmmo : state.knifeAmmo - 1;
   return {
     ...state,
     projectiles: [...state.projectiles, proj],
-    knifeAmmo: infinite ? state.knifeAmmo : state.knifeAmmo - 1,
-    knifeRegenTimer: infinite ? 0 : KNIFE_REGEN_TICKS,
+    knifeAmmo: newAmmo,
+    // Start regen if not already running — never reset existing progress
+    knifeRegenTimer: infinite ? 0
+      : state.knifeRegenTimer > 0 ? state.knifeRegenTimer : KNIFE_REGEN_TICKS,
   };
 }
 
@@ -284,18 +288,26 @@ export function tickGameWorld(
   } else {
     zoneResult = updateZone(s.zoneState, s.platformsPassed);
   }
+  // Suppress zone changes during boss fights or pending boss spawn
+  if (s.inBossFight || s.pendingBossZone !== null) {
+    zoneResult = { state: s.zoneState, changed: false };
+  }
   s = { ...s, zoneState: zoneResult.state };
   if (zoneResult.changed) {
-    events.push({
-      type: "zoneChanged",
-      from: prevZone,
-      to: s.zoneState.currentZone,
-    });
+    // Don't show zone transition cinematic if a boss is about to spawn for this zone
+    const hasBoss = getBossForZone(s.zoneState.currentZone) != null;
+    if (!hasBoss) {
+      events.push({
+        type: "zoneChanged",
+        from: prevZone,
+        to: s.zoneState.currentZone,
+      });
+    }
     s = { ...s, weather: changeWeatherZone(s.weather, s.zoneState.currentZone) };
   }
 
-  // Boss spawning + tick
-  s = maybeSpawnBoss(s, zoneResult.changed, events);
+  // Boss spawning (deferred until zone transition ends) + tick
+  s = maybeSpawnBoss(s, zoneResult.changed);
   s = tickBoss(s, events);
   s = tickKnifeAmmo(s);
 

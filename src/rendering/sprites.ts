@@ -15,5 +15,6 @@ export {
 } from "./EffectSprites";
 export { type PlatformStyle, drawPlatform } from "./PlatformSprites";
 export { drawMeatball, drawMeatballVariant, drawPowerUp } from "./ItemSprites";
-export { drawEnemy, drawProjectile } from "./EnemySprites";
+export { drawEnemy, drawProjectile, getProjectileVisual, projectileSpins } from "./EnemySprites";
+export type { ProjectileVisual } from "./EnemySprites";
 export { drawBoss, drawBossHealthBar } from "./BossSprites";

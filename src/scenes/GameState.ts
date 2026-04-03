@@ -36,7 +36,7 @@ import type { RunConfig } from "../systems/CustomRunConfig";
 import { createDefaultRunConfig } from "../systems/CustomRunConfig";
 import { initRNG } from "../systems/RNG";
 import type { DebugConfig } from "../config/debug";
-import { createDebugConfig, getDebugConfig, isDebugMode } from "../config/debug";
+import { getDebugConfig } from "../config/debug";
 import type { BossState } from "../entities/Boss";
 import {
   GAME_WIDTH,
@@ -65,6 +65,8 @@ export interface GameWorldState {
   platformsPassed: number;
   highestPlayerY: number;
   stagnantTicks: number;
+  /** Last platform that gave a close call bonus (prevent farming). */
+  lastCloseCallPlatformId: number | null;
   isDying: boolean;
   dyingTicks: number;
   gameOver: boolean;
@@ -116,6 +118,8 @@ export interface GameWorldState {
   pendingTentacles: { platformId: number; x: number; targetY: number; ticksLeft: number; totalTicks: number; side: "left" | "right" }[];
   /** Whether boss fight is active (disables stagnant timer). */
   inBossFight: boolean;
+  /** Deferred boss spawn — waits for zone transition to finish. */
+  pendingBossZone: number | null;
   /** Enemies killed this game (for achievements). */
   enemiesKilled: number;
   /** Ghost mode — player keeps playing after death with frozen scoring (multiplayer). */
@@ -183,6 +187,7 @@ export function createInitialState(runConfig?: RunConfig): GameWorldState {
     platformsPassed: 0,
     highestPlayerY: Infinity,
     stagnantTicks: 0,
+    lastCloseCallPlatformId: null,
     isDying: false,
     dyingTicks: 0,
     gameOver: false,
@@ -215,6 +220,7 @@ export function createInitialState(runConfig?: RunConfig): GameWorldState {
     bossAttacks: [],
     pendingTentacles: [],
     inBossFight: false,
+    pendingBossZone: null,
     enemiesKilled: 0,
     isGhost: false,
     ghostDeathHeight: 0,

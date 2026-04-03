@@ -222,6 +222,7 @@ export function renderProjectiles(
   state: GameWorldState,
   gfxSync: GraphicsSync,
   camY: number,
+  spins: boolean,
 ): void {
   const t = state.animTick;
   for (const proj of state.projectiles) {
@@ -235,9 +236,14 @@ export function renderProjectiles(
 
     gfx.x = proj.x;
     gfx.y = worldToScreen(proj.y, camY);
-    // Point blade in travel direction + slight tumble spin
-    gfx.rotation = Math.atan2(proj.vy, proj.vx) + Math.PI / 2
-      + Math.sin(t * 0.3 + proj.id * 5) * 0.15;
+    if (spins) {
+      // Continuous fast spin (shurikens, axes, orbs)
+      gfx.rotation = t * 0.25 + proj.id * 3;
+    } else {
+      // Point in travel direction + subtle wobble
+      gfx.rotation = Math.atan2(proj.vy, proj.vx) + Math.PI / 2
+        + Math.sin(t * 0.3 + proj.id * 5) * 0.06;
+    }
     gfx.visible = gfx.y > -30 && gfx.y < GAME_HEIGHT + 30;
   }
 }

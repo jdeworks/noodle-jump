@@ -29,12 +29,25 @@ export interface BossState {
   currentPlatformId: number | null;
   jumpCooldown: number;
   vy: number;
+  /** Platform IDs already visited — boss cycles through all before revisiting. */
+  visitedPlatformIds?: number[];
+  /** Death animation countdown — boss is dying but still visible. */
+  deathTicks?: number;
+  /** Jump arc: start position, target position, progress (0-1). */
+  jumpArc?: {
+    startX: number; startY: number;
+    targetX: number; targetY: number;
+    progress: number; duration: number;
+    targetPlatformId?: number;
+  };
 }
 
 /** Result of a boss tick. */
 export interface BossTickResult {
   boss: BossState;
   attacks: BossAttack[];
+  /** Platform IDs to break (e.g. crumbling platforms the boss jumped away from). */
+  breakPlatformIds?: number[];
 }
 
 /**

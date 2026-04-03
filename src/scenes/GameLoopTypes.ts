@@ -33,13 +33,13 @@ export type GameEvent =
   | { type: "enemyKilled"; enemyId: number; x: number; y: number }
   | { type: "enemyHitPlayer" }
   | { type: "projectileThrown" }
-  | { type: "windGust"; direction: -1 | 1 }
   | { type: "bossSpawned"; bossType: string }
   | { type: "bossDamaged"; health: number; maxHealth: number }
   | { type: "bossKilled"; bossType: string }
   | { type: "bossAttack" }
   | { type: "tentacleGrab"; platformId: number }
-  | { type: "comboActive"; multiplier: number };
+  | { type: "comboActive"; multiplier: number }
+  | { type: "skillKill" };
 
 export interface TickResult {
   state: GameWorldState;

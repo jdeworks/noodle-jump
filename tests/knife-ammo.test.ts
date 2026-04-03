@@ -1,6 +1,7 @@
 import { describe, test, expect, beforeEach } from "vitest";
 import { createInitialState } from "../src/scenes/GameState";
 import { throwProjectile } from "../src/scenes/GameLoop";
+import { tickKnifeAmmo } from "../src/scenes/GameLoopBoss";
 import { resetPlatformIds } from "../src/entities/Platform";
 import { resetPowerUpIds } from "../src/entities/PowerUp";
 import { resetCollectibleIds } from "../src/entities/Collectible";
@@ -49,16 +50,30 @@ describe("Knife ammo system", () => {
     expect(after.knifeAmmo).toBe(3); // unchanged
   });
 
-  test("can throw exactly 3 times then stops", () => {
+  test("can throw 3 times rapidly and regen progress is preserved", () => {
     let state = createInitialState();
     state = { ...state, enemiesEnabled: true, countdownTicks: 0 };
+
+    // Fire all 3 rapidly
     state = throwProjectile(state, 200, -100);
+    expect(state.knifeAmmo).toBe(2);
+    expect(state.knifeRegenTimer).toBe(90);
+
+    // Tick halfway through regen
+    for (let i = 0; i < 45; i++) state = tickKnifeAmmo(state);
+    expect(state.knifeRegenTimer).toBe(45);
+
+    // Second throw — regen timer must NOT reset
     state = throwProjectile(state, 200, -100);
+    expect(state.knifeAmmo).toBe(1);
+    expect(state.knifeRegenTimer).toBe(45); // preserved
+
+    // Third throw
     state = throwProjectile(state, 200, -100);
     expect(state.knifeAmmo).toBe(0);
     expect(state.projectiles.length).toBe(3);
 
-    // 4th throw fails
+    // 4th throw fails — no ammo
     const after = throwProjectile(state, 200, -100);
     expect(after.projectiles.length).toBe(3);
   });

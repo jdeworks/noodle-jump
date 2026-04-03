@@ -50,11 +50,11 @@ describe("ChefRivalBoss behavior", () => {
     expect(boss.alive).toBe(true);
   });
 
-  test("tick applies gravity", () => {
+  test("tick increments patternTick", () => {
     const boss = chefRivalBehavior.create(-500);
     const player = createPlayer(100, -400);
     const result = chefRivalBehavior.tick(boss, player, [], 0);
-    expect(result.boss.vy).toBeGreaterThan(0);
+    expect(result.boss.patternTick).toBe(boss.patternTick + 1);
   });
 
   test("tick generates no projectile attacks", () => {
@@ -92,10 +92,16 @@ describe("KrakenBoss behavior", () => {
     expect(attacks).toBeGreaterThan(0);
   });
 
-  test("checkPlayerContact always false", () => {
+  test("checkPlayerContact false when player is far away", () => {
     const boss = krakenBehavior.create(-500);
-    const player = { ...createPlayer(boss.x, boss.y), width: 32, height: 40 };
+    const player = { ...createPlayer(boss.x + 200, boss.y + 200), width: 32, height: 40 };
     expect(krakenBehavior.checkPlayerContact(boss, player)).toBe(false);
+  });
+
+  test("checkPlayerContact true when player hits from below", () => {
+    const boss = krakenBehavior.create(-500);
+    const player = { ...createPlayer(boss.x + 10, boss.y + 10), width: 32, height: 40 };
+    expect(krakenBehavior.checkPlayerContact(boss, player)).toBe(true);
   });
 
   test("applyTentacleAttack shrinks platform", () => {
@@ -124,9 +130,15 @@ describe("UFOBoss behavior", () => {
     expect(attacks).toBeGreaterThan(0);
   });
 
-  test("checkPlayerContact always false", () => {
+  test("checkPlayerContact false when player is far away", () => {
     const boss = ufoBehavior.create(-500);
-    const player = createPlayer(boss.x, boss.y);
+    const player = createPlayer(boss.x + 200, boss.y + 200);
     expect(ufoBehavior.checkPlayerContact(boss, player)).toBe(false);
+  });
+
+  test("checkPlayerContact true when player hits from below", () => {
+    const boss = ufoBehavior.create(-500);
+    const player = { ...createPlayer(boss.x + 10, boss.y + 10), width: 32, height: 40 };
+    expect(ufoBehavior.checkPlayerContact(boss, player)).toBe(true);
   });
 });

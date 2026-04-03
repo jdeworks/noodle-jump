@@ -8,52 +8,39 @@ import {
   isPlayerInLava,
 } from "../src/systems/Hazards";
 import { createPlayer } from "../src/entities/Player";
-import { WIND_GUST_DURATION } from "../src/config/constants";
 
 describe("Wind system", () => {
-  test("createWindSystem starts with no gust", () => {
+  test("createWindSystem starts with no zones", () => {
     const system = createWindSystem();
-    expect(system.activeGust).toBeNull();
-    expect(system.ticksSinceLastGust).toBe(0);
+    expect(system.zones).toEqual([]);
   });
 
-  test("tickWind increments counter without gust", () => {
+  test("tickWind spawns zones ahead of camera", () => {
     const system = createWindSystem();
-    const ticked = tickWind(system);
-    expect(ticked.ticksSinceLastGust).toBe(1);
-    expect(ticked.activeGust).toBeNull();
+    // Camera at Y=-3000 should trigger zone spawning
+    const ticked = tickWind(system, -3000);
+    expect(ticked.zones.length).toBeGreaterThan(0);
   });
 
-  test("active gust decrements remaining ticks", () => {
-    const system = {
-      activeGust: { direction: 1 as const, strength: 2, ticksRemaining: 10 },
-      ticksSinceLastGust: 0,
-    };
-    const ticked = tickWind(system);
-    expect(ticked.activeGust!.ticksRemaining).toBe(9);
-  });
-
-  test("gust ends when ticks reach 0", () => {
-    const system = {
-      activeGust: { direction: 1 as const, strength: 2, ticksRemaining: 1 },
-      ticksSinceLastGust: 0,
-    };
-    const ticked = tickWind(system);
-    expect(ticked.activeGust).toBeNull();
-  });
-
-  test("applyWindForce pushes player", () => {
+  test("applyWindForce pushes player inside zone", () => {
     const player = createPlayer(100, 200);
-    const gust = { direction: 1 as const, strength: 2.5, ticksRemaining: 50 };
-    const result = applyWindForce(player, gust);
+    const zones = [{ direction: 1 as const, strength: 2.5, y: 150, height: 300 }];
+    const result = applyWindForce(player, zones);
     expect(result.x).toBeGreaterThan(100);
   });
 
   test("applyWindForce pushes left for negative direction", () => {
     const player = createPlayer(100, 200);
-    const gust = { direction: -1 as const, strength: 2.5, ticksRemaining: 50 };
-    const result = applyWindForce(player, gust);
+    const zones = [{ direction: -1 as const, strength: 2.5, y: 150, height: 300 }];
+    const result = applyWindForce(player, zones);
     expect(result.x).toBeLessThan(100);
+  });
+
+  test("applyWindForce does not affect player outside zone", () => {
+    const player = createPlayer(100, 200);
+    const zones = [{ direction: 1 as const, strength: 2.5, y: 500, height: 100 }];
+    const result = applyWindForce(player, zones);
+    expect(result.x).toBe(100);
   });
 });
 

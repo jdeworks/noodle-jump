@@ -4,7 +4,7 @@ import { Container, Graphics, Text, TextStyle } from "pixi.js";
 import { GAME_WIDTH } from "../config/constants";
 import { getSfxVolume, setSfxVolume, getMusicVolume, setMusicVolume } from "../systems/Audio";
 import { isEnemiesEnabled, setEnemiesEnabled } from "../systems/EnemySettings";
-import { isTiltInverted, setTiltInverted, isTouchControlsForced, setTouchControlsForced } from "../systems/TiltSettings";
+import { isTiltInverted, setTiltInverted, getControlMode, cycleControlMode, isMobileDevice } from "../systems/TiltSettings";
 
 export function createSettingsToggles(): Container {
   const container = new Container();
@@ -12,7 +12,9 @@ export function createSettingsToggles(): Container {
   const panelW = Math.min(280, GAME_WIDTH - 20);
   const panelX = (GAME_WIDTH - panelW) / 2;
 
-  const panelH = 196;
+  const mobile = isMobileDevice();
+  // On PC: no "Invert Tilt" row, so panel is shorter
+  const panelH = mobile ? 196 : 170;
 
   // Background panel — opaque enough for text contrast
   const bg = new Graphics();
@@ -142,18 +144,33 @@ export function createSettingsToggles(): Container {
   });
   container.addChild(enemyHit);
 
-  // Invert Tilt toggle
+  // Controls mode cycler
+  const controlsLabel = new Text({ text: "Controls", style: labelStyle });
+  controlsLabel.x = leftX; controlsLabel.y = 96;
+  container.addChild(controlsLabel);
+
+  const modeStyle = new TextStyle({
+    fontFamily: "monospace",
+    fontSize: 14,
+    fill: "#44ccff",
+    fontWeight: "bold",
+  });
+  const controlsValue = new Text({ text: getControlMode(), style: modeStyle });
+  controlsValue.x = rightX - 40; controlsValue.y = 96; controlsValue.anchor.set(0.5, 0);
+  container.addChild(controlsValue);
+
+  // Invert Tilt toggle — only visible on mobile when motion is selected
   const tiltLabel = new Text({ text: "Invert Tilt", style: labelStyle });
-  tiltLabel.x = leftX; tiltLabel.y = 96;
+  tiltLabel.x = leftX; tiltLabel.y = 122;
   container.addChild(tiltLabel);
   const tiltValue = new Text({
     text: isTiltInverted() ? "ON" : "OFF",
     style: valueStyle(isTiltInverted()),
   });
-  tiltValue.x = rightX - 40; tiltValue.y = 96; tiltValue.anchor.set(0.5, 0);
+  tiltValue.x = rightX - 40; tiltValue.y = 122; tiltValue.anchor.set(0.5, 0);
   container.addChild(tiltValue);
   const tiltHit = new Graphics();
-  tiltHit.rect(panelX, 92, panelW, 26);
+  tiltHit.rect(panelX, 118, panelW, 26);
   tiltHit.fill({ color: 0x000000, alpha: 0.001 });
   tiltHit.eventMode = "static"; tiltHit.cursor = "pointer";
   tiltHit.on("pointertap", (e: Event) => {
@@ -164,31 +181,24 @@ export function createSettingsToggles(): Container {
   });
   container.addChild(tiltHit);
 
-  // Touch Controls toggle (tap left/right half instead of tilt)
-  const touchLabel = new Text({ text: "Touch Controls", style: labelStyle });
-  touchLabel.x = leftX; touchLabel.y = 122;
-  container.addChild(touchLabel);
-  const touchValue = new Text({
-    text: isTouchControlsForced() ? "ON" : "OFF",
-    style: valueStyle(isTouchControlsForced()),
-  });
-  touchValue.x = rightX - 40; touchValue.y = 122; touchValue.anchor.set(0.5, 0);
-  container.addChild(touchValue);
-  const touchHit = new Graphics();
-  touchHit.rect(panelX, 118, panelW, 26);
-  touchHit.fill({ color: 0x000000, alpha: 0.001 });
-  touchHit.eventMode = "static"; touchHit.cursor = "pointer";
-  touchHit.on("pointertap", (e: Event) => {
-    e.stopPropagation();
-    setTouchControlsForced(!isTouchControlsForced());
-    touchValue.text = isTouchControlsForced() ? "ON" : "OFF";
-    touchValue.style = valueStyle(isTouchControlsForced());
-  });
-  container.addChild(touchHit);
+  const updateTiltVisibility = () => {
+    const show = isMobileDevice() && getControlMode() === "motion";
+    tiltLabel.visible = show;
+    tiltValue.visible = show;
+    tiltHit.visible = show;
+  };
+  updateTiltVisibility();
 
-  // Hint text
+  // Hint text showing what the current mode does
+  const hintTexts: Record<string, string> = {
+    arrows: "Use \u2190 \u2192 arrow keys to move",
+    wasd: "Use A / D keys to move",
+    click: "Click left/right half to move",
+    motion: "Tilt your device to move",
+    touch: "Tap left/right half to move",
+  };
   const hint = new Text({
-    text: "Touch: tap left/right half to move",
+    text: hintTexts[getControlMode()] ?? "",
     style: new TextStyle({
       fontFamily: "monospace",
       fontSize: 11,
@@ -196,9 +206,23 @@ export function createSettingsToggles(): Container {
     }),
   });
   hint.x = GAME_WIDTH / 2;
-  hint.y = 149;
+  hint.y = mobile ? 149 : 122;
   hint.anchor.set(0.5, 0);
   container.addChild(hint);
+
+  // Hit area for controls cycler
+  const controlsHit = new Graphics();
+  controlsHit.rect(panelX, 92, panelW, 26);
+  controlsHit.fill({ color: 0x000000, alpha: 0.001 });
+  controlsHit.eventMode = "static"; controlsHit.cursor = "pointer";
+  controlsHit.on("pointertap", (e: Event) => {
+    e.stopPropagation();
+    const next = cycleControlMode();
+    controlsValue.text = next;
+    hint.text = hintTexts[next] ?? "";
+    updateTiltVisibility();
+  });
+  container.addChild(controlsHit);
 
   // Make panel interactive so taps don't start the game
   bg.eventMode = "static";

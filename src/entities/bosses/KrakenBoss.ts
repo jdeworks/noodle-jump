@@ -40,9 +40,11 @@ export const krakenBehavior: BossBehavior = {
     // Drift toward player horizontally
     const targetX = player.x - boss.width / 2;
     x += Math.sign(targetX - x) * Math.min(Math.abs(targetX - x), 0.6);
-    // Stay near player vertically (above), with bobbing
+    // Stay near player vertically — slow upward (stompable), normal downward
     const targetY = player.y - 200;
-    y += (targetY - y) * 0.03;
+    const diff = targetY - y;
+    const lerpRate = diff < 0 ? 0.005 : 0.03; // up = slow, down = normal
+    y += diff * lerpRate;
     y += Math.sin(patternTick * 0.02) * 0.3;
 
     const attacks: BossTickResult["attacks"] = [];
@@ -88,27 +90,39 @@ export const krakenBehavior: BossBehavior = {
     };
   },
 
-  checkPlayerContact(): boolean {
-    return false; // Kraken doesn't do contact damage
+  checkPlayerContact(boss: BossState, player: PlayerState): boolean {
+    if (!boss.alive) return false;
+    // Player hitting from below = damage to player
+    const pad = 4;
+    const overlapX = player.x + player.width - pad > boss.x && player.x + pad < boss.x + boss.width;
+    const playerBottom = player.y + player.height;
+    // Only kill player if they hit from below (moving upward into the kraken)
+    const hitsFromBelow = overlapX && playerBottom > boss.y + pad && player.y < boss.y + boss.height * 0.5;
+    return hitsFromBelow;
   },
 };
 
-/** Apply tentacle attack — shrink platform from specified side.
- *  Wide platforms are shrunk but never below MIN_PLATFORM_WIDTH.
- *  Slivers (already at minimum) are fully destroyed. */
+/** Apply tentacle attack — remove one third of the platform's INITIAL width.
+ *  After 3 chunks the platform is destroyed. */
 export function applyTentacleAttack(platform: PlatformState, side?: "left" | "right"): PlatformState {
-  // Already a sliver — destroy it
-  if (platform.width <= MIN_PLATFORM_WIDTH + 15) {
+  const initW = platform.initialWidth ?? platform.width;
+  const chunkSize = Math.floor(initW / 3);
+
+  // If removing this chunk would leave less than MIN_PLATFORM_WIDTH, destroy
+  if (platform.width - chunkSize < MIN_PLATFORM_WIDTH) {
     return { ...platform, broken: true };
   }
-  // Shrink but keep at least a sliver
-  const maxChunk = platform.width - MIN_PLATFORM_WIDTH;
-  const chunkSize = Math.min(20 + random() * 15, maxChunk);
-  const newWidth = platform.width - chunkSize;
 
+  const newWidth = platform.width - chunkSize;
   const removeSide = side ?? (random() > 0.5 ? "left" : "right");
   if (removeSide === "left") {
-    return { ...platform, x: platform.x + chunkSize, width: newWidth };
+    return { ...platform, x: platform.x + chunkSize, width: newWidth, initialWidth: initW };
   }
-  return { ...platform, width: newWidth };
+  return { ...platform, width: newWidth, initialWidth: initW };
+}
+
+/** Get the chunk size a tentacle would remove from a platform. */
+export function getTentacleChunkSize(platform: PlatformState): number {
+  const initW = platform.initialWidth ?? platform.width;
+  return Math.floor(initW / 3);
 }

@@ -52,7 +52,9 @@ export class FloatingTextManager {
       const ft = this.entries[i];
       ft.text.y -= 1;
       ft.life--;
-      ft.text.alpha = Math.max(0, ft.life / ft.maxLife);
+      // Full opacity for first half, then fade out during second half
+      const progress = 1 - ft.life / ft.maxLife; // 0 → 1
+      ft.text.alpha = progress < 0.5 ? 1 : Math.max(0, 1 - (progress - 0.5) * 2);
       if (ft.life <= 0) {
         ft.text.parent?.removeChild(ft.text);
         ft.text.destroy();

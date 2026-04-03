@@ -15,6 +15,7 @@ import {
   togglePause,
   throwProjectile,
 } from "./GameLoop";
+import { spawnPendingBoss } from "./GameLoopBoss";
 import { isEnemiesEnabled } from "../systems/EnemySettings";
 import { ZoneTransition } from "./ZoneTransition";
 import { ParticleManager } from "./ParticleManager";
@@ -28,10 +29,12 @@ import {
   renderProjectiles,
 } from "./EntityRenderer";
 import { handleEvents } from "./GameSceneEvents";
-import { renderBoss, renderWeather } from "./GameSceneRender";
+import { renderBoss, renderBossArc, renderWeather, renderWindOverlay } from "./GameSceneRender";
 import { getMaxDuration } from "./effectDuration";
 import { TrailRenderer } from "../rendering/TrailRenderer";
 import { loadCosmetics } from "../systems/Cosmetics";
+import { getSelectedCharacter } from "../systems/CharacterSettings";
+import { getProjectileVisual, projectileSpins } from "../rendering/sprites";
 import { FloatingTextManager } from "./FloatingText";
 import { renderTentacles, renderKnifeAmmo, renderDebugHitboxes } from "./BossArenaRenderer";
 
@@ -50,7 +53,9 @@ export class GameScene {
   private zoneTransition: ZoneTransition;
   private weatherContainer = new Container();
   private weatherGfx: Graphics[] = [];
+  private windGfx = new Graphics();
   private bossGfx = new Graphics();
+  private bossArcGfx = new Graphics();
   private bossHealthGfx = new Graphics();
   private bossAttackGfx: Graphics[] = [];
   private knifeAmmoText: Text;
@@ -100,8 +105,14 @@ export class GameScene {
     // Effect overlay (on top of game objects, below HUD)
     this.container.addChild(this.effectRenderer.overlay);
 
+    // Wind overlay — on top of effects so arrows are clearly visible
+    this.windGfx.visible = false;
+    this.container.addChild(this.windGfx);
+
     // Boss rendering
     this.bossGfx.visible = false;
+    this.bossArcGfx.visible = false;
+    this.gameContainer.addChild(this.bossArcGfx);
     this.gameContainer.addChild(this.bossGfx);
     this.bossHealthGfx.visible = false;
     this.container.addChild(this.bossHealthGfx);
@@ -200,6 +211,7 @@ export class GameScene {
   }
   handleThrow(screenX: number, screenY: number): void {
     if (!this.state.enemiesEnabled && !this.state.inBossFight) return;
+    if (this.state.countdownTicks > 0) return; // don't throw during countdown
     this.state = throwProjectile(this.state, screenX, screenY + this.state.camera.y);
   }
 
@@ -230,22 +242,7 @@ export class GameScene {
     this.state = result.state;
 
     // Dispatch events to audio/visual side effects
-    handleEvents(result.events, {
-      state: this.state,
-      particles: this.particles,
-      effectRenderer: this.effectRenderer,
-      zoneTransition: this.zoneTransition,
-      gfxSync: this.gfxSync,
-      container: this.container,
-      gameContainer: this.gameContainer,
-      spawnFloatingText: (msg: string, color: number, size?: number, duration?: number, centered?: boolean) => {
-        this.floatingTextMgr.spawn(
-          this.container, msg, color,
-          this.state.player.x, this.state.player.y, this.state.player.width,
-          this.state.camera.y, size, duration, centered,
-        );
-      },
-    });
+    handleEvents(result.events, this.eventDeps());
 
     // Sync all entity graphics every frame (cheap — just skips existing)
     this.gfxSync.syncAll(
@@ -255,6 +252,7 @@ export class GameScene {
       this.gameContainer,
       this.state.enemies,
       this.state.projectiles,
+      getSelectedCharacter(),
     );
     this.gfxSync.cleanup(
       this.state.platforms,
@@ -265,40 +263,28 @@ export class GameScene {
     );
 
     // Screen shake
-    if (!this.gameContainer.parent) return; // scene was destroyed
+    if (!this.gameContainer.parent) return;
     if (this.state.shakeState) {
-      const shakeResult = tickShake(this.state.shakeState);
-      this.gameContainer.x = shakeResult.offsetX;
-      this.gameContainer.y = shakeResult.offsetY;
-    } else {
-      this.gameContainer.x = 0;
-      this.gameContainer.y = 0;
-    }
+      const sr = tickShake(this.state.shakeState);
+      this.gameContainer.x = sr.offsetX; this.gameContainer.y = sr.offsetY;
+    } else { this.gameContainer.x = 0; this.gameContainer.y = 0; }
 
-    // Death animation rendering
+    // Death animation
     if (this.state.isDying) {
       const t = this.state.dyingTicks / DEATH_ANIMATION_TICKS;
-      // Accelerating spin
       this.playerGfx.rotation += 0.1 + t * 0.3;
-      // Squash/stretch during fall
       this.playerGfx.scale.x = (1 - t * 0.6) * (1 + Math.sin(t * 20) * 0.15);
       this.playerGfx.scale.y = 1 - t * 0.8;
-      // Alpha fade in the last 30%
       this.playerGfx.alpha = t > 0.7 ? 1 - (t - 0.7) / 0.3 : 1;
-      this.playerGfx.y = worldToScreen(
-        this.state.player.y,
-        this.state.camera.y,
-      );
+      this.playerGfx.y = worldToScreen(this.state.player.y, this.state.camera.y);
       this.floatingTextMgr.update();
       this.particles.updateCrumbleParticles();
       return;
     }
 
-    // Render
     const theme = getInterpolatedTheme(this.state.platformsPassed);
     this.parallax.applyTheme(theme, this.state.zoneState.currentZone);
     this.parallax.update(this.state.camera.y);
-
     const camY = this.state.camera.y;
 
     this.effectRenderer.renderPlayer(this.state, this.playerGfx, camY, this.particles, this.input.inputX);
@@ -306,7 +292,10 @@ export class GameScene {
     renderMeatballs(this.state, this.gfxSync, camY);
     renderPowerUps(this.state, this.gfxSync, camY);
     if (this.state.enemiesEnabled) renderEnemies(this.state, this.gfxSync, camY);
-    if (this.state.enemiesEnabled || this.state.inBossFight) renderProjectiles(this.state, this.gfxSync, camY);
+    if (this.state.enemiesEnabled || this.state.inBossFight) {
+      const charVisual = getProjectileVisual(getSelectedCharacter());
+      renderProjectiles(this.state, this.gfxSync, camY, projectileSpins(charVisual));
+    }
     renderDebugHitboxes(this.hitboxGfx, this.state, camY);
 
     // Particles and floating text
@@ -314,28 +303,18 @@ export class GameScene {
     this.particles.updateCrumbleParticles();
     this.floatingTextMgr.update();
 
-    // Boss rendering
-    this.bossAttackGfx = renderBoss(
-      this.state,
-      this.bossGfx,
-      this.bossHealthGfx,
-      this.bossAttackGfx,
-      this.gameContainer,
-      camY,
-    );
-
-    // Tentacle grab animations — driven by pendingTentacles state
+    // Boss + tentacles + ammo
+    this.bossAttackGfx = renderBoss(this.state, this.bossGfx, this.bossHealthGfx, this.bossAttackGfx, this.gameContainer, camY);
+    renderBossArc(this.bossArcGfx, this.state, camY);
     renderTentacles(this.tentacleGfx, this.state, camY);
-
-    // Knife ammo display — knife icons at bottom-right
     renderKnifeAmmo(this.knifeAmmoIcons, this.knifeAmmoText, this.state, GAME_WIDTH);
 
-    // Weather particles
-    this.weatherGfx = renderWeather(
-      this.state,
-      this.weatherGfx,
-      this.weatherContainer,
-    );
+    // Weather
+    this.weatherGfx = renderWeather(this.state, this.weatherGfx, this.weatherContainer);
+
+    // Wind (hidden during boss fights)
+    if (this.state.inBossFight) { this.windGfx.clear(); this.windGfx.visible = false; }
+    else renderWindOverlay(this.windGfx, this.state, camY);
 
     // Trail — speed effects override cosmetic trail
     const speedEffect = this.state.activeEffect?.type;
@@ -354,8 +333,8 @@ export class GameScene {
     );
     this.trail.update(camY);
 
-    // Zone transition
-    this.zoneTransition.update();
+    // Zone transition — spawn deferred boss when transition ends
+    this.tickBossTransition();
 
     // Effect overlays
     this.effectRenderer.renderEffectOverlay(this.state);
@@ -364,19 +343,39 @@ export class GameScene {
     this.comboGlowGfx.clear();
     const combo = this.state.scoreState.comboMultiplier;
     if (combo >= 2) {
-      const intensity = Math.min(combo / 5, 1);
-      const pulse = 0.3 + Math.sin(this.state.animTick * 0.1) * 0.2;
-      const alpha = intensity * pulse;
+      const a = Math.min(combo / 5, 1) * (0.3 + Math.sin(this.state.animTick * 0.1) * 0.2);
       const gw = 4 + combo;
-      this.comboGlowGfx.rect(0, 0, GAME_WIDTH, gw);
-      this.comboGlowGfx.rect(0, GAME_HEIGHT - gw, GAME_WIDTH, gw);
-      this.comboGlowGfx.rect(0, 0, gw, GAME_HEIGHT);
-      this.comboGlowGfx.rect(GAME_WIDTH - gw, 0, gw, GAME_HEIGHT);
-      this.comboGlowGfx.fill({ color: 0xff8800, alpha });
+      this.comboGlowGfx.rect(0, 0, GAME_WIDTH, gw); this.comboGlowGfx.rect(0, GAME_HEIGHT - gw, GAME_WIDTH, gw);
+      this.comboGlowGfx.rect(0, 0, gw, GAME_HEIGHT); this.comboGlowGfx.rect(GAME_WIDTH - gw, 0, gw, GAME_HEIGHT);
+      this.comboGlowGfx.fill({ color: 0xff8800, alpha: a });
     }
   }
 
-  // ── Cleanup ────────────────────────────────────────────────────────────
+  private eventDeps(): import("./GameSceneEvents").EventHandlerDeps {
+    return {
+      state: this.state, particles: this.particles,
+      effectRenderer: this.effectRenderer, zoneTransition: this.zoneTransition,
+      gfxSync: this.gfxSync, container: this.container, gameContainer: this.gameContainer,
+      spawnFloatingText: (msg, color, size?, duration?, centered?) => {
+        this.floatingTextMgr.spawn(this.container, msg, color,
+          this.state.player.x, this.state.player.y, this.state.player.width,
+          this.state.camera.y, size, duration, centered);
+      },
+    };
+  }
+
+  private tickBossTransition(): void {
+    const wasActive = this.zoneTransition.isActive();
+    if (!wasActive && this.state.pendingBossZone !== null) {
+      this.zoneTransition.playBoss();
+    }
+    this.zoneTransition.update();
+    if (wasActive && !this.zoneTransition.isActive() && this.state.pendingBossZone !== null) {
+      const ev: import("./GameLoopTypes").GameEvent[] = [];
+      this.state = spawnPendingBoss(this.state, ev);
+      handleEvents(ev, this.eventDeps());
+    }
+  }
 
   destroy(): void {
     this.destroyed = true;

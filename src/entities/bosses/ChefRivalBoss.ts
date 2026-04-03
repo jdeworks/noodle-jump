@@ -1,7 +1,7 @@
 /** Chef Rival — jumps between platforms chasing the player. Contact kills. */
 
 import { random } from "../../systems/RNG";
-import { GAME_WIDTH } from "../../config/constants";
+import { GAME_WIDTH, GAME_HEIGHT } from "../../config/constants";
 import type { PlayerState } from "../Player";
 import type { PlatformState } from "../Platform";
 import type { BossBehavior, BossState, BossTickResult } from "./BossInterface";
@@ -9,10 +9,11 @@ import type { BossBehavior, BossState, BossTickResult } from "./BossInterface";
 const WIDTH = 36;
 const HEIGHT = 44;
 const HEALTH = 3;
-const GRAVITY = 0.4;
-const BASE_JUMP_COOLDOWN = 60;
-const MIN_JUMP_COOLDOWN = 30;
-const MAX_SAME_PLATFORM_JUMPS = 2; // force variety after landing here N times
+const PREVIEW_TICKS = 120; // 2 seconds of arc preview before jumping
+const BASE_JUMP_COOLDOWN = PREVIEW_TICKS + 30; // total cooldown includes preview
+const MIN_JUMP_COOLDOWN = PREVIEW_TICKS + 15;
+const ARC_HEIGHT = 120;
+const ARC_DURATION = 40;
 
 export const chefRivalBehavior: BossBehavior = {
   create(cameraY: number, platforms?: PlatformState[]): BossState {
@@ -21,11 +22,12 @@ export const chefRivalBehavior: BossBehavior = {
     let currentPlatformId: number | null = null;
 
     if (platforms && platforms.length > 0) {
+      // Pick the topmost (lowest Y) non-broken platform in the visible arena
       const visible = platforms
-        .filter((p) => !p.broken && p.y > cameraY && p.y < cameraY + 400)
+        .filter((p) => !p.broken && p.y >= cameraY && p.y < cameraY + GAME_HEIGHT)
         .sort((a, b) => a.y - b.y);
       if (visible.length > 0) {
-        const plat = visible[Math.floor(visible.length / 2)];
+        const plat = visible[0]; // topmost
         x = plat.x + plat.width / 2 - WIDTH / 2;
         y = plat.y - HEIGHT;
         currentPlatformId = plat.id;
@@ -48,67 +50,141 @@ export const chefRivalBehavior: BossBehavior = {
   ): BossTickResult {
     if (!boss.alive) return { boss, attacks: [] };
 
-    let { x, y, vy, jumpCooldown, currentPlatformId, patternTick } = boss;
+    let { x, y, vy, jumpCooldown, currentPlatformId, patternTick, jumpArc, visitedPlatformIds } = boss;
+    const visited = visitedPlatformIds ?? [];
+    const breakIds: number[] = [];
     patternTick++;
 
-    vy += GRAVITY;
-    y += vy;
+    // ── Move with current platform (moving platforms) — while standing or previewing ──
+    const isInPreview = jumpArc != null && jumpArc.progress < 0;
+    if (currentPlatformId != null && (!jumpArc || isInPreview)) {
+      const curPlat = platforms.find((p) => p.id === currentPlatformId);
+      if (curPlat && !curPlat.broken && curPlat.type === "moving") {
+        x = curPlat.x + curPlat.width / 2 - boss.width / 2;
+        y = curPlat.y - boss.height;
+      }
+    }
 
-    // Land on platforms
-    if (vy > 0) {
-      for (const p of platforms) {
-        if (p.broken) continue;
-        const bossBottom = y + boss.height;
-        if (
-          bossBottom >= p.y && bossBottom <= p.y + 10 &&
-          x + boss.width > p.x && x < p.x + p.width
-        ) {
-          y = p.y - boss.height;
-          vy = 0;
-          currentPlatformId = p.id;
-          break;
+    // ── Arc movement: boss follows a parabolic curve ──
+    const isJumping = jumpArc != null && jumpArc.progress >= 0 && jumpArc.progress < 1;
+    if (isJumping) {
+      const t = jumpArc!.progress;
+      // For moving platform targets, update target position in real-time
+      const targetPlat = platforms.find((p) => p.id === jumpArc!.targetPlatformId);
+      let tgtX = jumpArc!.targetX;
+      let tgtY = jumpArc!.targetY;
+      if (targetPlat && !targetPlat.broken) {
+        tgtX = targetPlat.x + targetPlat.width / 2 - boss.width / 2;
+        tgtY = targetPlat.y - boss.height;
+      }
+
+      x = jumpArc!.startX + (tgtX - jumpArc!.startX) * t;
+      const midY = (jumpArc!.startY + tgtY) / 2;
+      const peakY = midY - ARC_HEIGHT;
+      const invT = 1 - t;
+      y = invT * invT * jumpArc!.startY + 2 * invT * t * peakY + t * t * tgtY;
+      jumpArc = { ...jumpArc!, targetX: tgtX, targetY: tgtY, progress: t + 1 / jumpArc!.duration };
+      vy = 0;
+
+      if (jumpArc!.progress >= 1) {
+        x = tgtX;
+        y = tgtY;
+        vy = 0;
+        jumpArc = undefined;
+      }
+    }
+
+    // ── Update preview arc start + target for moving platforms ──
+    if (jumpArc && jumpArc.progress < 0) {
+      // Keep arc start at boss's current position (follows moving platform)
+      jumpArc = { ...jumpArc, startX: x, startY: y };
+      if (jumpArc.targetPlatformId != null) {
+        const tpId = jumpArc.targetPlatformId;
+        const targetPlat = platforms.find((p) => p.id === tpId);
+        if (targetPlat && !targetPlat.broken) {
+          jumpArc = {
+            ...jumpArc,
+            targetX: targetPlat.x + targetPlat.width / 2 - boss.width / 2,
+            targetY: targetPlat.y - boss.height,
+          };
         }
       }
     }
 
-    // Jump toward player — with variety so boss doesn't camp one platform
-    jumpCooldown = Math.max(0, jumpCooldown - 1);
-    if (jumpCooldown === 0 && vy === 0) {
-      // Only consider non-broken platforms (broken = off-screen during boss fights)
-      const visiblePlatforms = platforms.filter((p) =>
-        !p.broken && p.id !== currentPlatformId,
-      );
-      const targets = visiblePlatforms.sort((a, b) => {
-        const da = Math.abs(a.x + a.width / 2 - player.x) + Math.abs(a.y - player.y);
-        const db = Math.abs(b.x + b.width / 2 - player.x) + Math.abs(b.y - player.y);
-        return da - db;
-      });
+    // ── Cooldown and jump planning ──
+    const cooldown = jumpCooldown & 0xffff;
+    const jumpCount = jumpCooldown >> 16;
+    const newCooldown = Math.max(0, cooldown - 1);
+    const onGround = !isJumping;
+    if (onGround) {
+      // At PREVIEW_TICKS: pick target, show preview arc
+      if (newCooldown === PREVIEW_TICKS && !jumpArc) {
+        const allValid = platforms.filter((p) =>
+          !p.broken && p.id !== currentPlatformId && p.id !== jumpArc?.targetPlatformId,
+        );
 
-      if (targets.length > 0) {
-        // Mix up targeting: sometimes pick a random platform instead of nearest
-        const useRandom = patternTick % (MAX_SAME_PLATFORM_JUMPS + 1) === 0 && targets.length > 2;
-        let target: PlatformState;
-        if (useRandom) {
-          // Pick from top 4 candidates randomly for variety
-          const pool = targets.slice(0, Math.min(4, targets.length));
-          target = pool[Math.floor(random() * pool.length)];
-        } else {
-          const nearby = targets.filter((p) => Math.abs(p.y - y) < 200);
-          target = nearby.length > 0 ? nearby[0] : targets[0];
+        let candidates = allValid.filter((p) => !visited.includes(p.id));
+        let newVisited = visited;
+        if (candidates.length === 0) {
+          candidates = allValid;
+          newVisited = [];
         }
-        const dx = (target.x + target.width / 2) - (x + boss.width / 2);
-        const dy = target.y - y;
-        // Clamp jump strength — never launch off-screen
-        vy = Math.max(-14, Math.min(-6, dy * 0.12 - 6));
-        x += Math.sign(dx) * Math.min(Math.abs(dx) * 0.3, 5);
-        jumpCooldown = Math.max(MIN_JUMP_COOLDOWN, BASE_JUMP_COOLDOWN - boss.phase * 10);
+
+        if (candidates.length > 0) {
+          const newJumpCount = jumpCount + 1;
+          let target: PlatformState;
+
+          if (random() < 0.25) {
+            const byPlayer = [...candidates].sort((a, b) => {
+              const da = Math.abs(a.x + a.width / 2 - player.x) + Math.abs(a.y - player.y);
+              const db = Math.abs(b.x + b.width / 2 - player.x) + Math.abs(b.y - player.y);
+              return da - db;
+            });
+            target = byPlayer[0];
+          } else {
+            target = candidates[Math.floor(random() * candidates.length)];
+          }
+
+          const targetX = target.x + target.width / 2 - boss.width / 2;
+          const targetY = target.y - boss.height;
+          jumpArc = {
+            startX: x, startY: y,
+            targetX, targetY,
+            progress: -1, duration: ARC_DURATION,
+            targetPlatformId: target.id,
+          };
+          visitedPlatformIds = [...newVisited, target.id];
+          jumpCooldown = (newJumpCount << 16) | newCooldown;
+        } else {
+          jumpCooldown = (jumpCount << 16) | newCooldown;
+        }
+      }
+      // At 0: start the actual jump — break crumbling/brittle platform on departure
+      else if (newCooldown === 0 && jumpArc && jumpArc.progress < 0) {
+        // Break the platform the boss is leaving if it's breakable
+        if (currentPlatformId != null) {
+          const leavingPlat = platforms.find((p) => p.id === currentPlatformId);
+          if (leavingPlat && (leavingPlat.type === "breaking" || leavingPlat.type === "brittle" || leavingPlat.type === "crumbling")) {
+            breakIds.push(currentPlatformId);
+          }
+        }
+        // Now transfer to the target platform
+        currentPlatformId = jumpArc.targetPlatformId ?? null;
+        jumpArc = { ...jumpArc, startX: x, startY: y, progress: 0 };
+        const cd = Math.max(MIN_JUMP_COOLDOWN, BASE_JUMP_COOLDOWN - boss.phase * 10);
+        jumpCooldown = (jumpCount << 16) | cd;
+      } else {
+        jumpCooldown = (jumpCount << 16) | newCooldown;
       }
     }
 
     x = Math.max(0, Math.min(GAME_WIDTH - boss.width, x));
 
-    // Safety: if boss fell way off screen, teleport to a visible platform
-    if (y > player.y + 400) {
+    // Safety: if boss is off screen and not on a valid platform, teleport
+    const arenaBottom = player.y + GAME_HEIGHT * 0.5 + 50;
+    const onValidPlatform = currentPlatformId != null &&
+      platforms.some((p) => p.id === currentPlatformId && !p.broken);
+    if (!jumpArc && !onValidPlatform && y > arenaBottom) {
       const rescue = platforms
         .filter((p) => !p.broken && Math.abs(p.y - player.y) < 200)
         .sort((a, b) => a.y - b.y);
@@ -122,8 +198,9 @@ export const chefRivalBehavior: BossBehavior = {
     }
 
     return {
-      boss: { ...boss, x, y, vy, jumpCooldown, currentPlatformId, patternTick },
+      boss: { ...boss, x, y, vy, jumpCooldown, currentPlatformId, patternTick, jumpArc, visitedPlatformIds },
       attacks: [],
+      breakPlatformIds: breakIds.length > 0 ? breakIds : undefined,
     };
   },
 

@@ -7,6 +7,7 @@ export default defineConfig({
     outDir: "docs",
   },
   server: {
+    port: 3333,
     open: true,
     allowedHosts: true,
   },

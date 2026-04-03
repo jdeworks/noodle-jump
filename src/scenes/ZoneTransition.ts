@@ -14,12 +14,14 @@ const ZONE_NAMES = [
 ];
 
 const TRANSITION_TICKS = 90; // 1.5 seconds
+const BOSS_TRANSITION_TICKS = 180; // 3 seconds
 
 export class ZoneTransition {
   readonly container = new Container();
   private flash = new Graphics();
   private label: Text;
   private ticks = 0;
+  private totalTicks = TRANSITION_TICKS;
   private active = false;
 
   constructor() {
@@ -49,8 +51,18 @@ export class ZoneTransition {
   /** Start a zone transition cinematic. */
   play(toZone: number): void {
     this.active = true;
+    this.totalTicks = TRANSITION_TICKS;
     this.ticks = TRANSITION_TICKS;
     this.label.text = ZONE_NAMES[Math.min(toZone, ZONE_NAMES.length - 1)];
+    this.container.visible = true;
+  }
+
+  /** Start a boss fight transition cinematic (3 seconds). */
+  playBoss(): void {
+    this.active = true;
+    this.totalTicks = BOSS_TRANSITION_TICKS;
+    this.ticks = BOSS_TRANSITION_TICKS;
+    this.label.text = "BOSS FIGHT";
     this.container.visible = true;
   }
 
@@ -59,7 +71,7 @@ export class ZoneTransition {
     if (!this.active) return false;
 
     this.ticks--;
-    const progress = 1 - this.ticks / TRANSITION_TICKS;
+    const progress = 1 - this.ticks / this.totalTicks;
 
     // Flash fades out quickly
     this.flash.alpha = Math.max(0, 1 - progress * 3);

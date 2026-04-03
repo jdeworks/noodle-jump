@@ -95,13 +95,16 @@ export function checkEnemyPlayerCollision(
   playerH: number,
   enemies: EnemyState[],
 ): EnemyState | null {
-  const pad = 4;
+  const padX = 6;
+  const padY = 6;
+  const yShift = -16; // shift hitbox up by 2/3 of enemy size to align with sprite
   for (const e of enemies) {
     if (!e.alive) continue;
+    const ey = e.y + yShift;
     const overlapX =
-      playerX + playerW - pad > e.x && playerX + pad < e.x + e.width;
+      playerX + playerW - padX > e.x && playerX + padX < e.x + e.width;
     const overlapY =
-      playerY + playerH - pad > e.y && playerY + pad < e.y + e.height;
+      playerY + playerH - padY > ey && playerY + padY < ey + e.height;
     if (overlapX && overlapY) return e;
   }
   return null;

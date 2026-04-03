@@ -16,7 +16,7 @@ import { createMeatball } from "../entities/Collectible";
 import { trySpawnEnemy } from "../systems/EnemySpawner";
 import { tickWind, applyWindForce } from "../systems/Hazards";
 import { tryShieldAbsorb } from "../systems/PowerUpEffects";
-import { GAME_HEIGHT, WIND_GUST_DURATION } from "../config/constants";
+import { GAME_HEIGHT } from "../config/constants";
 
 /** Tick enemies, projectiles, wind, and enemy-player interactions. */
 export function tickEnemies(
@@ -24,6 +24,11 @@ export function tickEnemies(
   events: GameEvent[],
 ): GameWorldState {
   if (!s.enemiesEnabled) return s;
+  if (s.inBossFight) {
+    // During boss fights: still tick projectiles (knives need to fly), skip enemies/wind
+    s = { ...s, projectiles: updateProjectiles(s.projectiles) };
+    return s;
+  }
 
   // Spawn enemies
   const spawnResult = trySpawnEnemy(
@@ -102,7 +107,7 @@ export function tickEnemies(
         activeEffect: shield.effect,
         enemies: killEnemy(s.enemies, hitEnemy.id),
       };
-    } else {
+    } else if (!s.practiceMode && !s.debugConfig.invincible) {
       // Player dies
       events.push({ type: "enemyHitPlayer" });
       s = { ...s, isDying: true, squashTicks: 0, pendingJumpVy: 0,
@@ -117,17 +122,12 @@ export function tickEnemies(
     enemies: pruneEnemies(s.enemies, s.camera.y + GAME_HEIGHT + 400),
   };
 
-  // Wind gusts
-  const windResult = tickWind(s.windSystem);
-  s = { ...s, windSystem: windResult };
-  if (windResult.activeGust && !s.isDying) {
-    s = { ...s, player: applyWindForce(s.player, windResult.activeGust) };
-    // Notify on gust start
-    if (windResult.activeGust.ticksRemaining === WIND_GUST_DURATION - 1) {
-      events.push({
-        type: "windGust",
-        direction: windResult.activeGust.direction,
-      });
+  // Wind zones — persistent spatial areas (disabled during boss fights)
+  if (!s.inBossFight) {
+    const windResult = tickWind(s.windSystem, s.camera.y);
+    s = { ...s, windSystem: windResult };
+    if (windResult.zones.length > 0 && !s.isDying) {
+      s = { ...s, player: applyWindForce(s.player, windResult.zones) };
     }
   }
 
