@@ -218,9 +218,9 @@ export async function launchGame(app: Application, runConfig?: RunConfig): Promi
   // Resume button
   const resumeBg = new Graphics();
   resumeBg.roundRect(GAME_WIDTH / 2 - 100, GAME_HEIGHT * 0.42 - 18, 200, 36, 8);
-  resumeBg.fill({ color: 0x1a3355, alpha: 0.8 });
+  resumeBg.fill({ color: uiT.buttonBg, alpha: 0.8 });
   resumeBg.roundRect(GAME_WIDTH / 2 - 100, GAME_HEIGHT * 0.42 - 18, 200, 36, 8);
-  resumeBg.stroke({ width: 1, color: 0x6688bb, alpha: 0.5 });
+  resumeBg.stroke({ width: 1, color: uiT.buttonBorder, alpha: 0.5 });
   resumeBg.eventMode = "static";
   resumeBg.cursor = "pointer";
   pauseOverlay.addChild(resumeBg);
@@ -229,7 +229,7 @@ export async function launchGame(app: Application, runConfig?: RunConfig): Promi
     text: "Resume",
     style: new TextStyle({
       fontFamily: "monospace", fontSize: 18,
-      fill: "#ffffff", fontWeight: "bold",
+      fill: uiT.text, fontWeight: "bold",
       stroke: { color: "#000000", width: 2 },
     }),
   });

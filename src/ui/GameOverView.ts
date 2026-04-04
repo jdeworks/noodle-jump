@@ -67,7 +67,7 @@ export function showGameOver(
     style: new TextStyle({
       fontFamily: "monospace",
       fontSize: isNewRecord ? 22 : 24,
-      fill: isNewRecord ? "#ffdd44" : "#ffffff",
+      fill: isNewRecord ? uiT.accent : uiT.text,
       fontWeight: "bold",
       stroke: { color: "#000000", width: 3 },
     }),

@@ -131,9 +131,9 @@ export class TrailRenderer {
     gfx.clear(); gfx.visible = true;
 
     const colors = TRAIL_COLORS.trail_rainbow;
-    const bandH = 4;
-    const totalH = colors.length * bandH;
     const charW = 32;
+    const bandW = Math.floor(charW / colors.length); // width per color band
+    const segH = 4; // height of each trail segment
 
     // Age all points, remove fully faded
     let len = this.points.length;
@@ -143,15 +143,15 @@ export class TrailRenderer {
     }
     if (len < this.points.length) this.points.length = len;
 
-    // Draw rainbow stripes at each point, fading with age
+    // Draw vertical color bands (left-to-right rainbow) at each trail position
     for (const p of this.points) {
       const screenY = p.y - camY;
-      if (screenY < -totalH || screenY > 750) continue;
+      if (screenY < -segH || screenY > 750) continue;
       const alpha = Math.max(0, 0.85 * (1 - p.age / RAINBOW_MAX));
       if (alpha < 0.01) continue;
-      const cx = p.x + charW / 2;
+      const left = p.x;
       for (let s = 0; s < colors.length; s++) {
-        gfx.rect(cx - charW / 2, screenY + s * bandH, charW, bandH);
+        gfx.rect(left + s * bandW, screenY, bandW, segH);
         gfx.fill({ color: colors[s], alpha });
       }
     }

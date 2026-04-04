@@ -55,7 +55,7 @@ export function showTitleScreen(
     style: new TextStyle({
       fontFamily: "monospace",
       fontSize: 48,
-      fill: "#e94560",
+      fill: uiTheme.accent,
       fontWeight: "bold",
       align: "center",
       lineHeight: 52,
@@ -74,7 +74,7 @@ export function showTitleScreen(
     style: new TextStyle({
       fontFamily: "monospace",
       fontSize: 13,
-      fill: "#ffddbb",
+      fill: uiTheme.text,
       fontWeight: "bold",
       align: "center",
       stroke: { color: "#000000", width: 2 },
@@ -94,7 +94,7 @@ export function showTitleScreen(
       style: new TextStyle({
         fontFamily: "monospace",
         fontSize: 18,
-        fill: "#ffdd44",
+        fill: uiTheme.accent,
         fontWeight: "bold",
         stroke: { color: "#000000", width: 3 },
       }),
@@ -115,7 +115,7 @@ export function showTitleScreen(
   const chefBaseY = cursorY;
 
   const charName = new Text({ text: CHARACTERS.find(c => c.id === getSelectedCharacter())?.name ?? "Chef",
-    style: new TextStyle({ fontFamily: "monospace", fontSize: 11, fill: "#ffcc44",
+    style: new TextStyle({ fontFamily: "monospace", fontSize: 11, fill: uiTheme.accent,
       stroke: { color: "#000000", width: 2 } }) });
   charName.x = GAME_WIDTH / 2; charName.y = cursorY + 42; charName.anchor.set(0.5, 0);
   contentGroup.addChild(charName);
@@ -156,7 +156,7 @@ export function showTitleScreen(
     bg.roundRect(btnX, y, btnW, btnH, 10);
     bg.fill({ color: fillColor, alpha: 0.7 });
     bg.roundRect(btnX, y, btnW, btnH, 10);
-    bg.stroke({ width: 1.5, color: 0x6688bb, alpha: 0.5 });
+    bg.stroke({ width: 1.5, color: uiTheme.buttonBorder, alpha: 0.6 });
     bg.eventMode = "static";
     bg.cursor = "pointer";
     contentGroup.addChild(bg);
@@ -178,36 +178,27 @@ export function showTitleScreen(
     return { bg, text };
   }
 
-  // 1. Tap to Play (primary)
-  const playButton = makeButton("Tap to Play", cursorY, 0x1a3355, "#ffffff", 20);
+  const playButton = makeButton("Tap to Play", cursorY, uiTheme.buttonBg, uiTheme.text, 20);
   const promptText = playButton.text;
   cursorY += btnH + btnSpacing;
-
-  // 2. Multiplayer
-  const mpButton = makeButton("Multiplayer", cursorY, 0x2a3355, "#ffccaa", 16);
+  const mpButton = makeButton("Multiplayer", cursorY, uiTheme.buttonBg, uiTheme.accent, 16);
   cursorY += btnH + btnSpacing;
-
-  // 3. How to Play
-  const howButton = makeButton("How to Play", cursorY, 0x222244, "#aaccff", 15);
+  const howButton = makeButton("How to Play", cursorY, uiTheme.buttonBg, uiTheme.text, 15);
   const howBtnBg = howButton.bg;
   const howBtn = howButton.text;
   cursorY += btnH + btnSpacing;
-
-  // 3. Custom Run
-  const customButton = makeButton("Custom Run", cursorY, 0x222244, "#aaccff", 15);
+  const customButton = makeButton("Custom Run", cursorY, uiTheme.buttonBg, uiTheme.text, 15);
   const customBtnBg = customButton.bg;
   const customBtn = customButton.text;
   cursorY += btnH + btnSpacing;
-
-  // 3b. Customize
-  const custButton = makeButton("Customize", cursorY, 0x222233, "#ffcc88", 15);
+  const custButton = makeButton("Customize", cursorY, uiTheme.buttonBg, uiTheme.accent, 15);
   cursorY += btnH + btnSpacing;
 
   // 4. Fullscreen (iOS doesn't support Fullscreen API — suggest PWA install)
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
   const isPWA = window.matchMedia("(display-mode: standalone)").matches;
   const fsLabel = isIOS && !isPWA ? "Add to Home Screen for fullscreen" : "Fullscreen";
-  const fsButton = makeButton(fsLabel, cursorY, 0x222233, "#aaaaaa", isIOS ? 11 : 13);
+  const fsButton = makeButton(fsLabel, cursorY, uiTheme.buttonBg, uiTheme.textDim, isIOS ? 11 : 13);
   const handleFs = (e: Event) => {
     e.stopPropagation();
     if (isIOS && !isPWA) {
