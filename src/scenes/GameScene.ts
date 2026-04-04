@@ -240,7 +240,7 @@ export class GameScene {
     // Dispatch events to audio/visual side effects
     handleEvents(result.events, this.eventDeps());
 
-    // Sync all entity graphics every frame (cheap — just skips existing)
+    if (this.state.animTick % 120 === 0) console.log(`[perf] t=${this.state.animTick} p=${this.state.platforms.length} gc=${this.gameContainer.children.length} gfx=${this.gfxSync.platformGfxMap.size}`);
     this.gfxSync.syncAll(
       this.state.platforms,
       this.state.meatballs,

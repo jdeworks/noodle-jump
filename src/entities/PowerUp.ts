@@ -104,6 +104,7 @@ export function spawnPowerUps(
   platforms: PlatformState[],
   negativeChance?: number,
   forcedType?: string,
+  enabledTypes?: Set<string>,
 ): PowerUpState[] {
   const powerUps: PowerUpState[] = [];
   let cooldown = 0;
@@ -111,16 +112,16 @@ export function spawnPowerUps(
   for (let i = 0; i < platforms.length; i++) {
     const platform = platforms[i];
     if (i < POWERUP_SKIP_FIRST) continue;
-    if (cooldown > 0) {
-      cooldown--;
-      continue;
-    }
+    if (cooldown > 0) { cooldown--; continue; }
     if (platform.type !== "static" && platform.type !== "moving") continue;
     if (platform.width > 200) continue;
 
     if (random() < POWERUP_SPAWN_CHANCE) {
       const type = forcedType as PowerUpType | undefined;
-      powerUps.push(createPowerUp(platform, type, negativeChance));
+      const pu = createPowerUp(platform, type, negativeChance);
+      // Filter by enabled types if specified
+      if (enabledTypes && enabledTypes.size > 0 && !enabledTypes.has(pu.type)) continue;
+      powerUps.push(pu);
       cooldown = POWERUP_COOLDOWN;
     }
   }

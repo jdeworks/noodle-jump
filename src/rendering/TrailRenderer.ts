@@ -147,6 +147,9 @@ export class TrailRenderer {
     const charW = 32;
     const bandW = charW / colors.length;
 
+    // Debug: check for point accumulation
+    if (this.points.length > 30) console.warn(`[trail] rainbow points: ${this.points.length}`);
+
     // Age and prune from front (oldest first — preserves chronological order)
     for (const p of this.points) p.age++;
     while (this.points.length > 0 && this.points[0].age > RAINBOW_MAX) this.points.shift();
