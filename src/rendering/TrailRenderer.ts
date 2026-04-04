@@ -82,39 +82,42 @@ export class TrailRenderer {
       const alpha = 1 - p.age / MAX_AGE;
       const gfx = this.getFromPool(i);
       gfx.clear();
-      // Spread shapes horizontally based on point index for wider visual
-      const spread = Math.sin(i * 2.7 + p.age * 0.1) * 14;
-      gfx.x = p.x + spread; gfx.y = p.y - camY;
+      // Fixed spread per point — stays where spawned, doesn't drift
+      const hash = Math.sin(p.y * 0.37 + p.x * 0.13) * 16;
+      gfx.x = p.x + hash; gfx.y = p.y - camY;
+      const t = 1 - p.age / MAX_AGE; // 1 at spawn, 0 at death
+      const c = colors[Math.abs(Math.floor(p.y * 0.7)) % colors.length];
 
       if (shape === "heart") {
-        const s = 3 + (1 - p.age / MAX_AGE) * 4;
-        const c = colors[i % colors.length];
+        // Spawn full size, shrink as they fade
+        const s = 2 + t * 5;
         gfx.circle(-s * 0.3, -s * 0.2, s * 0.5); gfx.fill({ color: c, alpha: alpha * 0.7 });
         gfx.circle(s * 0.3, -s * 0.2, s * 0.5); gfx.fill({ color: c, alpha: alpha * 0.7 });
         gfx.moveTo(0, s * 0.5); gfx.lineTo(-s * 0.6, -s * 0.1);
         gfx.lineTo(s * 0.6, -s * 0.1); gfx.closePath(); gfx.fill({ color: c, alpha: alpha * 0.7 });
       } else if (shape === "star") {
-        const s = 3 + (1 - p.age / MAX_AGE) * 4;
-        const c = colors[i % colors.length];
-        gfx.moveTo(0, -s); gfx.lineTo(s * 0.3, -s * 0.3); gfx.lineTo(s, 0);
-        gfx.lineTo(s * 0.3, s * 0.3); gfx.lineTo(0, s);
-        gfx.lineTo(-s * 0.3, s * 0.3); gfx.lineTo(-s, 0);
-        gfx.lineTo(-s * 0.3, -s * 0.3); gfx.closePath();
-        gfx.fill({ color: c, alpha: alpha * 0.7 });
+        const s = 2 + t * 5;
+        const rot = p.age * 0.05; // slow spin
+        gfx.moveTo(Math.sin(rot) * s, -Math.cos(rot) * s);
+        for (let a = 1; a < 8; a++) {
+          const r = a % 2 === 0 ? s : s * 0.4;
+          const angle = rot + (a / 8) * Math.PI * 2;
+          gfx.lineTo(Math.sin(angle) * r, -Math.cos(angle) * r);
+        }
+        gfx.closePath(); gfx.fill({ color: c, alpha: alpha * 0.7 });
       } else if (shape === "snowflake") {
-        // Snowflakes: larger, spread wide, shrink + fade over time
-        const s = 3 + (1 - p.age / MAX_AGE) * 4;
-        const c = colors[i % colors.length];
+        const s = 2 + t * 5;
+        const drift = Math.sin(p.age * 0.08 + p.y * 0.05) * 3; // gentle side drift
+        gfx.x += drift;
         for (let a = 0; a < 6; a++) {
-          const angle = (a / 6) * Math.PI * 2 + p.age * 0.02;
+          const angle = (a / 6) * Math.PI * 2;
           gfx.moveTo(0, 0); gfx.lineTo(Math.cos(angle) * s, Math.sin(angle) * s);
           gfx.stroke({ width: 1.2, color: c, alpha: alpha * 0.7 });
         }
-        gfx.circle(0, 0, s * 0.35); gfx.fill({ color: 0xffffff, alpha: alpha * 0.3 });
+        gfx.circle(0, 0, s * 0.3); gfx.fill({ color: 0xffffff, alpha: alpha * 0.3 });
       } else {
-        // Fire/sparkle/neon: larger glow circles
-        const size = 3 + (1 - p.age / MAX_AGE) * 4;
-        const c = colors[i % colors.length];
+        // Fire/sparkle/neon: glow particles that spawn and fade in place
+        const size = 2 + t * 5;
         if (this.trailType === "trail_fire" || this.trailType === "trail_sparkle" || this.trailType === "trail_neon") {
           gfx.circle(0, 0, size + 4); gfx.fill({ color: c, alpha: alpha * 0.08 });
           gfx.circle(0, 0, size + 2); gfx.fill({ color: c, alpha: alpha * 0.15 });
