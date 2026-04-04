@@ -85,10 +85,10 @@ export const valStyle = (on: boolean) => {
   return new TextStyle({ fontFamily: "monospace", fontSize: BTN_FONT,
     fill: on ? "#44ff44" : t.textDim, fontWeight: "bold" });
 };
-export const btnTextStyle = new TextStyle({
-  fontFamily: "monospace", fontSize: BTN_FONT,
-  fill: "#88aaff", fontWeight: "bold",
-});
+export function btnTextStyleFn() {
+  return new TextStyle({ fontFamily: "monospace", fontSize: BTN_FONT,
+    fill: getUITheme().accent, fontWeight: "bold" });
+}
 
 // ── Tap region: a rectangle + callback ──────────────────────────────────
 export interface TapRegion {
@@ -121,7 +121,7 @@ export function addRow(
   lbl.y = y;
   scrollContent.addChild(lbl);
 
-  const btn = new Text({ text: action, style: btnTextStyle });
+  const btn = new Text({ text: action, style: btnTextStyleFn() });
   btn.x = gameWidth - 20;
   btn.y = y;
   btn.anchor.set(1, 0);

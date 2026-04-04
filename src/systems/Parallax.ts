@@ -222,7 +222,12 @@ export class ParallaxBackground {
       const sizes = [110, 95, 100, 90, 105];
       for (let i = 0; i < this.features.length; i++) {
         const f = this.features[i];
-        f.gfx.alpha = 0.25 * this.featureFadeIn;
+        const featureAlpha = this.cosmeticTheme === "theme_dark" ? 0.12 : 0.25;
+        f.gfx.alpha = featureAlpha * this.featureFadeIn;
+        const featureTints: Record<string, number> = {
+          theme_neon: 0x00ffff, theme_candy: 0xffaacc, theme_dark: 0x8866aa,
+        };
+        f.gfx.tint = featureTints[this.cosmeticTheme] ?? 0xffffff;
         const screenY = f.baseY - cameraY * f.speed;
         const wrappedY =
           (((screenY % (GAME_HEIGHT * 2)) + GAME_HEIGHT * 2) %

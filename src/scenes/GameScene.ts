@@ -77,7 +77,7 @@ export class GameScene {
     this.gfxSync = new GraphicsSync();
     this.trail = new TrailRenderer();
     const cosmetics = loadCosmetics();
-    this.cosmeticTrail = cosmetics.equipped.trail;
+    this.cosmeticTrail = getSelectedCharacter() === "nyan_cat" ? "trail_rainbow" : cosmetics.equipped.trail;
     this.trail.setTrailType(this.cosmeticTrail);
     this.cosmeticTint = TINT_COLORS[cosmetics.equipped.tint ?? "tint_none"] ?? 0xffffff;
     this.cosmeticTheme = cosmetics.equipped.theme ?? "theme_default";

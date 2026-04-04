@@ -7,7 +7,7 @@ A pasta-themed endless jumper built with PixiJS and TypeScript.
 ## Features
 
 ### Gameplay
-- **10 playable characters** — Chef, Goblin, Grandma, Robot, Ninja, Princess, Alien, Viking, Pirate, Wizard — each with a unique projectile (knife, club, rolling pin, laser, shuriken, crown, flying saucer, axe, skull bomb, magic orb)
+- **13 playable characters** — 10 base (Chef, Goblin, Grandma, Robot, Ninja, Princess, Alien, Viking, Pirate, Wizard) + 3 unlockable (Neon Chef, Nyan Cat, Skeleton) — each with a unique projectile
 - **13 power-ups** — 8 positive (spring, tornado, rocket, lasagna layers, sneeze, magnet, pasta shield, gnocchi bounce) and 5 negative (chili pepper, soggy noodle, garlic breath, burnt toast, minestrone soup)
 - **11 platform types** — static, breaking, brittle, moving, conveyor, spring, ice, crumbling, teleport, weighted, lasagna
 - **3 boss fights** — Chef Rival (jumps between platforms), Kraken (tentacles steal platform chunks), UFO (aimed projectile spreads)
@@ -39,8 +39,10 @@ A pasta-themed endless jumper built with PixiJS and TypeScript.
 - Tutorial overlay for first play
 - How to Play screen with all mechanics explained
 - Custom runs — configurable seed, enemies, power-ups, difficulty, practice mode
-- 22 achievements with persistent cross-session stats
-- 17 unlockable cosmetics (7 outfits, 3 platform skins, 4 trails, 3 meatball variants) — earned through achievements
+- **35 achievements** with persistent cross-session stats
+- **21 unlockable cosmetics** — 8 trails (rainbow/fire/sparkle/neon/stars/hearts/snow), 8 tints, 5 themes (neon/pixel/candy/dark)
+- **4 visual themes** — Neon (glowing outlines + bloom), Pixel (retro 8-bit), Candy (pastel), Dark (shadowy) — reskin all game elements + menus
+- **Customize screen** with character/trail/tint/theme selection, achievements, unlock codes, progress export/import
 - Local leaderboard with tamper detection
 - Share score via clipboard/Web Share API
 - Debug mode with presets for testing specific features
@@ -51,7 +53,7 @@ A pasta-themed endless jumper built with PixiJS and TypeScript.
 - PWA — installable, works offline via service worker
 - Haptic feedback on mobile (impacts, power-ups, death)
 - Seeded RNG for deterministic/reproducible runs
-- 406 tests across 53 test files
+- 420 tests across 57 test files
 - Modular architecture — pure logic separated from PixiJS rendering
 
 ## Development
