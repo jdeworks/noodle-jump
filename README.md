@@ -7,17 +7,18 @@ A pasta-themed endless jumper built with PixiJS and TypeScript.
 ## Features
 
 ### Gameplay
+- **10 playable characters** — Chef, Goblin, Grandma, Robot, Ninja, Princess, Alien, Viking, Pirate, Wizard — each with a unique projectile (knife, club, rolling pin, laser, shuriken, crown, flying saucer, axe, skull bomb, magic orb)
 - **13 power-ups** — 8 positive (spring, tornado, rocket, lasagna layers, sneeze, magnet, pasta shield, gnocchi bounce) and 5 negative (chili pepper, soggy noodle, garlic breath, burnt toast, minestrone soup)
 - **11 platform types** — static, breaking, brittle, moving, conveyor, spring, ice, crumbling, teleport, weighted, lasagna
-- **3 boss types** — Chef Rival (jumps on platforms), Kraken (steals platform chunks), UFO (shoots projectiles)
-- **Enemies** (opt-in) — rats, fish, aliens per zone. Throw knives to defeat them (3 ammo, regenerating)
-- **7 themed zones** — Kitchen, Ocean, Space, Freezer, Volcano, Candy World, Final Kitchen
+- **3 boss fights** — Chef Rival (jumps between platforms), Kraken (tentacles steal platform chunks), UFO (aimed projectile spreads)
+- **Enemies** (opt-in) — rats, fish, aliens per zone. Throw projectiles to defeat them (3 ammo, regenerating)
+- **7 themed zones** — Kitchen, Boiling Pot, Space, Freezer, Volcano, Candy World, Final Kitchen
 - Combo system, close-call bonuses, landing streaks
-- Wind gusts, day/night cycle, weather effects per zone
+- Wind zones, day/night cycle, weather effects per zone
 - Progressive difficulty scaling with zone-specific mechanics
 
 ### Multiplayer
-- **Local co-op** — split-screen on one PC (P1: WASD, P2: Arrow keys)
+- **Local co-op** — split-screen on one device (P1: WASD, P2: Arrow keys)
   - Best Height — both play until dead, ghost mode after first death, highest height wins
   - First to Die — first player to die loses, fast rounds
   - Timed (2 min) — both play for 2 minutes with respawn and -10% height penalty on death
@@ -36,17 +37,15 @@ A pasta-themed endless jumper built with PixiJS and TypeScript.
 
 ### UI & Meta
 - Tutorial overlay for first play
-- How to Play encyclopedia with all mechanics explained
-- Power-up encyclopedia tracking collected types
-- Custom runs — configurable seed, enemies, power-ups, difficulty, starting zone, practice mode
+- How to Play screen with all mechanics explained
+- Custom runs — configurable seed, enemies, power-ups, difficulty, practice mode
 - 22 achievements with persistent cross-session stats
-- 18 unlockable cosmetics (outfits, trails, platform skins)
+- 17 unlockable cosmetics (7 outfits, 3 platform skins, 4 trails, 3 meatball variants) — earned through achievements
 - Local leaderboard with tamper detection
 - Share score via clipboard/Web Share API
 - Debug mode with presets for testing specific features
 
 ### Technical
-- 10 playable characters with unique projectile visuals
 - Tilt controls on mobile, keyboard (arrow keys / WASD) on desktop
 - Touch controls (tap left/right half) as tilt alternative
 - PWA — installable, works offline via service worker
@@ -59,7 +58,7 @@ A pasta-themed endless jumper built with PixiJS and TypeScript.
 
 ```bash
 npm install
-npx vite --host 0.0.0.0
+npm run dev
 ```
 
 ### Build
