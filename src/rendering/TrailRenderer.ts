@@ -129,7 +129,7 @@ export class TrailRenderer {
     this.activeCount = this.points.length;
   }
 
-  /** Nyan Cat rainbow — independent color blocks at each position, tall enough to fill gaps. */
+  /** Nyan Cat rainbow — smooth curved color bands in chronological order. */
   private updateRainbow(camY: number): void {
     if (!this.ribbonGfx) {
       this.ribbonGfx = new Graphics();
@@ -142,53 +142,46 @@ export class TrailRenderer {
     const charW = 32;
     const bandW = charW / colors.length;
 
-    // Age and prune
-    let len = this.points.length;
-    for (let i = len - 1; i >= 0; i--) {
-      this.points[i].age++;
-      if (this.points[i].age > RAINBOW_MAX) { this.points[i] = this.points[len - 1]; len--; }
-    }
-    if (len < this.points.length) this.points.length = len;
+    // Age and prune from front (oldest first — preserves chronological order)
+    for (const p of this.points) p.age++;
+    while (this.points.length > 0 && this.points[0].age > RAINBOW_MAX) this.points.shift();
 
-    // Sort by Y ascending (highest point first = newest at top)
-    const sorted = this.points.filter((p) => {
+    // Filter to on-screen points (keep order)
+    const visible: TrailPoint[] = [];
+    for (const p of this.points) {
       const sy = p.y - camY;
-      return sy > -10 && sy < 760 && p.age < RAINBOW_MAX;
-    }).sort((a, b) => a.y - b.y);
+      if (sy > -10 && sy < 760) visible.push(p);
+    }
 
-    // Draw smooth curved color bands between consecutive points.
-    // Each color band is a filled shape with bezier curves on left/right edges.
-    for (let i = 0; i < sorted.length - 1; i++) {
-      const cur = sorted[i];
-      const nxt = sorted[i + 1];
+    // Draw curved bands between consecutive chronological points
+    for (let i = 0; i < visible.length - 1; i++) {
+      const cur = visible[i]; // older
+      const nxt = visible[i + 1]; // newer (higher on screen)
       const sy1 = cur.y - camY;
       const sy2 = nxt.y - camY;
       const alpha = Math.max(0, 0.85 * (1 - cur.age / RAINBOW_MAX));
       if (alpha < 0.01) continue;
-      const cx1 = cur.x;
-      const cx2 = nxt.x;
+      // Smooth control point: average X at midpoint Y
+      const midX = (cur.x + nxt.x) / 2;
       const midY = (sy1 + sy2) / 2;
       for (let s = 0; s < colors.length; s++) {
         const off = (s - colors.length / 2) * bandW;
-        // Left edge: bezier from cur to next with midpoint control
-        gfx.moveTo(cx1 + off, sy1);
-        gfx.quadraticCurveTo(cx1 + off, midY, cx2 + off, sy2);
-        // Right edge: bezier back from next to cur
-        gfx.lineTo(cx2 + off + bandW, sy2);
-        gfx.quadraticCurveTo(cx1 + off + bandW, midY, cx1 + off + bandW, sy1);
+        gfx.moveTo(cur.x + off, sy1);
+        gfx.quadraticCurveTo(midX + off, midY, nxt.x + off, sy2);
+        gfx.lineTo(nxt.x + off + bandW, sy2);
+        gfx.quadraticCurveTo(midX + off + bandW, midY, cur.x + off + bandW, sy1);
         gfx.closePath();
         gfx.fill({ color: colors[s], alpha });
       }
-      // Sparkle stars every ~8th segment
+      // Sparkle stars
       if (i % 8 === 0 && alpha > 0.2) {
-        const sx = cx1 + Math.sin(cur.y * 0.17) * charW * 0.6;
-        const ssy = sy1 + (sy2 - sy1) / 2;
+        const sx = midX + Math.sin(cur.y * 0.17) * charW * 0.6;
         const ss = 3 + Math.sin(cur.age * 0.2) * 1.5;
         const sa = alpha * (0.5 + Math.sin(cur.age * 0.3) * 0.4);
-        gfx.moveTo(sx, ssy - ss); gfx.lineTo(sx + ss * 0.3, ssy - ss * 0.3);
-        gfx.lineTo(sx + ss, ssy); gfx.lineTo(sx + ss * 0.3, ssy + ss * 0.3);
-        gfx.lineTo(sx, ssy + ss); gfx.lineTo(sx - ss * 0.3, ssy + ss * 0.3);
-        gfx.lineTo(sx - ss, ssy); gfx.lineTo(sx - ss * 0.3, ssy - ss * 0.3);
+        gfx.moveTo(sx, midY - ss); gfx.lineTo(sx + ss * 0.3, midY - ss * 0.3);
+        gfx.lineTo(sx + ss, midY); gfx.lineTo(sx + ss * 0.3, midY + ss * 0.3);
+        gfx.lineTo(sx, midY + ss); gfx.lineTo(sx - ss * 0.3, midY + ss * 0.3);
+        gfx.lineTo(sx - ss, midY); gfx.lineTo(sx - ss * 0.3, midY - ss * 0.3);
         gfx.closePath(); gfx.fill({ color: 0xffffff, alpha: sa });
       }
     }
