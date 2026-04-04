@@ -1,6 +1,7 @@
 /** Entity rendering — position and style platforms, meatballs, power-ups. */
 
-import { drawPlatform, type PlatformStyle } from "../rendering/sprites";
+import { type PlatformStyle } from "../rendering/sprites";
+import { drawThemedPlatform } from "../rendering/ThemeSprites";
 import { worldToScreen } from "../systems/Camera";
 import { isNegativePowerUp } from "../entities/PowerUp";
 import { GAME_HEIGHT } from "../config/constants";
@@ -29,6 +30,7 @@ export function renderPlatforms(
   gfxSync: GraphicsSync,
   theme: ZoneTheme,
   camY: number,
+  cosmeticTheme = "theme_default",
 ): void {
   const isBurnt = state.activeEffect?.type === "burnt_toast";
   const shrink = isBurnt ? 0.5 : 1;
@@ -70,7 +72,7 @@ export function renderPlatforms(
       case "weighted":  color = blendColor(0x997744, zoneBase, 0.3); break;
     }
 
-    drawPlatform(gfx, platform.width * shrink, platform.height, color, style);
+    drawThemedPlatform(gfx, platform.width * shrink, platform.height, color, style, cosmeticTheme);
     gfx.x = platform.x + (platform.width * (1 - shrink)) / 2;
     gfx.y = worldToScreen(platform.y, camY);
     gfx.visible = gfx.y > -20 && gfx.y < GAME_HEIGHT + 20;

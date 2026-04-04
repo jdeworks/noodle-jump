@@ -2,7 +2,8 @@
 
 import { Container, Graphics } from "pixi.js";
 import { worldToScreen } from "../systems/Camera";
-import { drawBoss, drawBossHealthBar } from "../rendering/sprites";
+import { drawBossHealthBar } from "../rendering/sprites";
+import { drawThemedBoss } from "../rendering/ThemeSprites";
 import { GAME_WIDTH, GAME_HEIGHT } from "../config/constants";
 import type { GameWorldState } from "./GameState";
 
@@ -13,6 +14,7 @@ export function renderBoss(
   bossAttackGfx: Graphics[],
   gameContainer: Container,
   camY: number,
+  cosmeticTheme = "theme_default",
 ): Graphics[] {
   const boss = state.activeBoss;
   if (!boss) {
@@ -26,13 +28,14 @@ export function renderBoss(
   }
 
   // Draw boss
-  drawBoss(
+  drawThemedBoss(
     bossGfx,
     boss.width,
     boss.height,
     boss.type,
     boss.phase,
     state.animTick,
+    cosmeticTheme,
   );
   bossGfx.x = boss.x;
   bossGfx.y = worldToScreen(boss.y, camY);

@@ -1,7 +1,8 @@
 /** Graphics lifecycle — sync entity arrays with PixiJS Graphics maps. */
 
 import { Container, Graphics } from "pixi.js";
-import { drawPlatform, drawMeatball, drawMeatballVariant, drawPowerUp, drawEnemy, drawProjectile } from "../rendering/sprites";
+import { drawMeatball, drawMeatballVariant, drawPowerUp, drawProjectile } from "../rendering/sprites";
+import { drawThemedEnemy, drawThemedPlatform } from "../rendering/ThemeSprites";
 import { COLORS } from "../config/constants";
 import type { PlatformState } from "../entities/Platform";
 import type { CollectibleState } from "../entities/Collectible";
@@ -10,6 +11,8 @@ import type { EnemyState } from "../entities/Enemy";
 import type { ProjectileState } from "../entities/Projectile";
 
 export class GraphicsSync {
+  private theme = "theme_default";
+  setTheme(theme: string): void { this.theme = theme; }
   readonly platformGfxMap = new Map<number, Graphics>();
   readonly meatballGfxMap = new Map<number, Graphics>();
   readonly powerUpGfxMap = new Map<number, Graphics>();
@@ -20,7 +23,7 @@ export class GraphicsSync {
     for (const platform of platforms) {
       if (this.platformGfxMap.has(platform.id)) continue;
       const gfx = new Graphics();
-      drawPlatform(gfx, platform.width, platform.height, COLORS.platform[0]);
+      drawThemedPlatform(gfx, platform.width, platform.height, COLORS.platform[0], "normal", this.theme);
       parent.addChild(gfx);
       this.platformGfxMap.set(platform.id, gfx);
     }
@@ -56,7 +59,7 @@ export class GraphicsSync {
       if (!enemy.alive) continue;
       if (this.enemyGfxMap.has(enemy.id)) continue;
       const gfx = new Graphics();
-      drawEnemy(gfx, enemy.width, enemy.type);
+      drawThemedEnemy(gfx, enemy.width, enemy.type, this.theme);
       parent.addChild(gfx);
       this.enemyGfxMap.set(enemy.id, gfx);
     }

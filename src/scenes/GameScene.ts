@@ -75,14 +75,13 @@ export class GameScene {
     this.particles = new ParticleManager();
     this.effectRenderer = new EffectRenderer();
     this.gfxSync = new GraphicsSync();
-
-    // Trail renderer (cosmetic)
     this.trail = new TrailRenderer();
     const cosmetics = loadCosmetics();
     this.cosmeticTrail = cosmetics.equipped.trail;
     this.trail.setTrailType(this.cosmeticTrail);
     this.cosmeticTint = TINT_COLORS[cosmetics.equipped.tint ?? "tint_none"] ?? 0xffffff;
     this.cosmeticTheme = cosmetics.equipped.theme ?? "theme_default";
+    this.gfxSync.setTheme(this.cosmeticTheme);
 
     this.parallax = new ParallaxBackground();
     this.container.addChild(this.parallax.container);
@@ -289,7 +288,7 @@ export class GameScene {
     const camY = this.state.camera.y;
 
     this.effectRenderer.renderPlayer(this.state, this.playerGfx, camY, this.particles, this.input.inputX, this.cosmeticTint);
-    renderPlatforms(this.state, this.gfxSync, theme, camY);
+    renderPlatforms(this.state, this.gfxSync, theme, camY, this.cosmeticTheme);
     renderMeatballs(this.state, this.gfxSync, camY);
     renderPowerUps(this.state, this.gfxSync, camY);
     if (this.state.enemiesEnabled) renderEnemies(this.state, this.gfxSync, camY);
@@ -305,7 +304,7 @@ export class GameScene {
     this.floatingTextMgr.update();
 
     // Boss + tentacles + ammo
-    this.bossAttackGfx = renderBoss(this.state, this.bossGfx, this.bossHealthGfx, this.bossAttackGfx, this.gameContainer, camY);
+    this.bossAttackGfx = renderBoss(this.state, this.bossGfx, this.bossHealthGfx, this.bossAttackGfx, this.gameContainer, camY, this.cosmeticTheme);
     renderBossArc(this.bossArcGfx, this.state, camY);
     renderTentacles(this.tentacleGfx, this.state, camY);
     renderKnifeAmmo(this.knifeAmmoIcons, this.knifeAmmoText, this.state, GAME_WIDTH);

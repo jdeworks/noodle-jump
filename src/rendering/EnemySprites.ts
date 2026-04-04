@@ -274,10 +274,37 @@ function drawMagicOrb(gfx: Graphics): void {
   gfx.circle(-2, 4, 0.6); gfx.fill({ color: 0xffdd44, alpha: 0.4 });
 }
 
+/** Neon Chef — glowing neon knife. */
+function drawNeonKnife(gfx: Graphics): void {
+  gfx.roundRect(-2, -8, 4, 12, 1);
+  gfx.stroke({ width: 2, color: 0x00ffff }); gfx.fill({ color: 0x00ffff, alpha: 0.15 });
+  gfx.moveTo(0, -8); gfx.lineTo(3, -12); gfx.lineTo(-3, -12); gfx.closePath();
+  gfx.stroke({ width: 1.5, color: 0x00ffff }); gfx.fill({ color: 0x00ffff, alpha: 0.1 });
+  gfx.circle(0, 0, 1.5); gfx.fill(0x00ffff); // center glow
+}
+
+/** Nyan Cat — pixel toast. */
+function drawPixelToast(gfx: Graphics): void {
+  gfx.roundRect(-6, -5, 12, 10, 2); gfx.fill(0xffcc88); // toast body
+  gfx.roundRect(-4, -3, 8, 6, 1); gfx.fill(0xff88aa); // pink frosting
+  gfx.rect(-2, -1, 2, 2); gfx.fill(0xff4444); // sprinkle
+  gfx.rect(1, 1, 2, 2); gfx.fill(0x44ff44); // sprinkle
+}
+
+/** Skeleton — thrown bone. */
+function drawBone(gfx: Graphics): void {
+  gfx.roundRect(-1.5, -8, 3, 16, 1); gfx.fill(0xeeeeee); // shaft
+  gfx.circle(-3, -7, 3); gfx.fill(0xdddddd); // top knobs
+  gfx.circle(3, -7, 3); gfx.fill(0xdddddd);
+  gfx.circle(-3, 7, 3); gfx.fill(0xdddddd); // bottom knobs
+  gfx.circle(3, 7, 3); gfx.fill(0xdddddd);
+}
+
 // ── Projectile type per character ─────────────────────────────────────────
 
 export type ProjectileVisual = "knife" | "shuriken" | "club" | "rolling-pin"
-  | "laser" | "crown" | "plasma" | "axe" | "cannonball" | "magic-orb";
+  | "laser" | "crown" | "plasma" | "axe" | "cannonball" | "magic-orb"
+  | "neon-knife" | "pixel-toast" | "bone";
 
 const characterProjectileMap: Record<string, ProjectileVisual> = {
   chef: "knife",
@@ -290,6 +317,9 @@ const characterProjectileMap: Record<string, ProjectileVisual> = {
   viking: "axe",
   pirate: "cannonball",
   wizard: "magic-orb",
+  neon_chef: "neon-knife",
+  nyan_cat: "pixel-toast",
+  skeleton: "bone",
 };
 
 const drawFns: Record<ProjectileVisual, (gfx: Graphics) => void> = {
@@ -303,6 +333,9 @@ const drawFns: Record<ProjectileVisual, (gfx: Graphics) => void> = {
   "axe": drawThrowingAxe,
   "cannonball": drawCannonball,
   "magic-orb": drawMagicOrb,
+  "neon-knife": drawNeonKnife,
+  "pixel-toast": drawPixelToast,
+  "bone": drawBone,
 };
 
 /** Get the projectile visual type for a character. */
@@ -313,7 +346,8 @@ export function getProjectileVisual(characterId: string): ProjectileVisual {
 /** Whether this projectile type should spin continuously (vs tumble). */
 export function projectileSpins(visual: ProjectileVisual): boolean {
   return visual === "shuriken" || visual === "axe" || visual === "cannonball"
-    || visual === "plasma" || visual === "magic-orb" || visual === "crown";
+    || visual === "plasma" || visual === "magic-orb" || visual === "crown"
+    || visual === "bone";
 }
 
 /** Draw the projectile for a given character. */
