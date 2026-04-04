@@ -72,7 +72,12 @@ export function renderPlatforms(
       case "weighted":  color = blendColor(0x997744, zoneBase, 0.3); break;
     }
 
-    drawThemedPlatform(gfx, platform.width * shrink, platform.height, color, style, cosmeticTheme);
+    // Only redraw platform when color/shrink changes (gfx.clear() every frame leaks GPU buffers)
+    const cacheKey = `${color}_${shrink}`;
+    if ((gfx as any)._cacheKey !== cacheKey) {
+      drawThemedPlatform(gfx, platform.width * shrink, platform.height, color, style, cosmeticTheme);
+      (gfx as any)._cacheKey = cacheKey;
+    }
     gfx.x = platform.x + (platform.width * (1 - shrink)) / 2;
     gfx.y = worldToScreen(platform.y, camY);
     gfx.visible = gfx.y > -20 && gfx.y < GAME_HEIGHT + 20;
