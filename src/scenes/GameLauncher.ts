@@ -19,6 +19,7 @@ import { resetRendererState } from "./EntityRenderer";
 import { stopMusic, killBossMusic } from "../systems/Audio";
 import { showTitleScreen } from "../ui/TitleScreenView";
 import { createGameLoopTicker } from "./GameLoopTicker";
+import { resetDebugConfig } from "../config/debug";
 
 // ── Active session tracking ──────────────────────────────────────────────
 
@@ -91,6 +92,8 @@ export function cleanupAndGoHome(app: Application): void {
 // ── Game Launch ──────────────────────────────────────────────────────────
 
 export async function launchGame(app: Application, runConfig?: RunConfig): Promise<void> {
+  // Reset debug config for normal play so custom run presets don't leak
+  if (!runConfig) resetDebugConfig();
   requestWakeLock();
   const scene = new GameScene(runConfig);
   activeScene = scene;

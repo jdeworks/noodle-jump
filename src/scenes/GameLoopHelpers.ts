@@ -110,8 +110,9 @@ export function prune(state: GameWorldState): GameWorldState {
   const activeIds = new Set(platforms.map((p) => p.id));
   const meatballs = pruneMeatballs(state.meatballs, activeIds);
   const powerUps = prunePowerUps(state.powerUps, activeIds);
+  const closeCallPlatformIds = state.closeCallPlatformIds.filter((id) => activeIds.has(id));
 
-  return { ...state, platforms, meatballs, powerUps };
+  return { ...state, platforms, meatballs, powerUps, closeCallPlatformIds };
 }
 
 /** Rescue player to a safe platform (practice/timed mode). */

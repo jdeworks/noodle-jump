@@ -58,7 +58,9 @@ export class FloatingTextManager {
       if (ft.life <= 0) {
         ft.text.parent?.removeChild(ft.text);
         ft.text.destroy();
-        this.entries.splice(i, 1);
+        // Swap-and-pop for O(1) removal
+        this.entries[i] = this.entries[this.entries.length - 1];
+        this.entries.pop();
       }
     }
   }

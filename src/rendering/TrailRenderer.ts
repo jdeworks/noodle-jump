@@ -23,7 +23,8 @@ const TRAIL_COLORS: Record<string, number[]> = {
 export class TrailRenderer {
   readonly container = new Container();
   private points: TrailPoint[] = [];
-  private graphics: Graphics[] = [];
+  private pool: Graphics[] = [];
+  private activeCount = 0;
   private trailType: string | null = null;
 
   setTrailType(type: string | null): void {
@@ -43,54 +44,66 @@ export class TrailRenderer {
     }
   }
 
+  private getFromPool(index: number): Graphics {
+    if (index < this.pool.length) return this.pool[index];
+    const gfx = new Graphics();
+    this.container.addChild(gfx);
+    this.pool.push(gfx);
+    return gfx;
+  }
+
   update(camY: number): void {
-    // Clean old graphics
-    for (const gfx of this.graphics) {
-      this.container.removeChild(gfx);
-      gfx.destroy();
+    // Hide all previously active graphics
+    for (let i = 0; i < this.activeCount; i++) {
+      this.pool[i].visible = false;
     }
-    this.graphics = [];
+    this.activeCount = 0;
 
     if (!this.trailType || this.points.length === 0) return;
 
     const colors = TRAIL_COLORS[this.trailType] ?? [0xffffff];
 
-    // Age and prune
-    for (let i = this.points.length - 1; i >= 0; i--) {
+    // Age and prune — iterate backward, swap-and-pop for removal
+    let len = this.points.length;
+    for (let i = len - 1; i >= 0; i--) {
       this.points[i].age++;
       if (this.points[i].age > MAX_AGE) {
-        this.points.splice(i, 1);
+        this.points[i] = this.points[len - 1];
+        len--;
       }
     }
+    if (len < this.points.length) this.points.length = len;
 
-    // Render trail points
+    // Render trail points using pooled graphics
     for (let i = 0; i < this.points.length; i++) {
       const p = this.points[i];
       const alpha = 1 - p.age / MAX_AGE;
       const size = 2 + (1 - p.age / MAX_AGE) * 2;
       const color = colors[i % colors.length];
 
-      const gfx = new Graphics();
+      const gfx = this.getFromPool(i);
+      gfx.clear();
       gfx.circle(0, 0, size);
       gfx.fill({ color, alpha: alpha * 0.6 });
       gfx.x = p.x;
       gfx.y = p.y - camY;
-      this.container.addChild(gfx);
-      this.graphics.push(gfx);
+      gfx.visible = true;
     }
+    this.activeCount = this.points.length;
   }
 
   clear(): void {
     this.points = [];
-    for (const gfx of this.graphics) {
-      this.container.removeChild(gfx);
-      gfx.destroy();
+    for (let i = 0; i < this.activeCount; i++) {
+      this.pool[i].visible = false;
     }
-    this.graphics = [];
+    this.activeCount = 0;
   }
 
   destroy(): void {
     this.clear();
+    for (const gfx of this.pool) gfx.destroy();
+    this.pool = [];
     this.container.destroy({ children: true });
   }
 }

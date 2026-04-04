@@ -69,7 +69,8 @@ export class GameScene {
 
   constructor(runConfig?: RunConfig) {
     this.state = createInitialState(runConfig);
-    this.state = { ...this.state, enemiesEnabled: isEnemiesEnabled() };
+    // For custom runs, use the config's enemiesEnabled; for normal play, use global setting
+    this.state = { ...this.state, enemiesEnabled: runConfig ? runConfig.enemiesEnabled : isEnemiesEnabled() };
     this.particles = new ParticleManager();
     this.effectRenderer = new EffectRenderer();
     this.gfxSync = new GraphicsSync();

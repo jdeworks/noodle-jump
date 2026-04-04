@@ -132,10 +132,11 @@ export function pruneMeatballs(
 export function updateMeatballPositions(
   meatballs: CollectibleState[],
   platforms: PlatformState[],
+  platformMap?: Map<number, PlatformState>,
 ): CollectibleState[] {
-  const platformMap = new Map(platforms.map((p) => [p.id, p]));
+  const map = platformMap ?? new Map(platforms.map((p) => [p.id, p]));
   return meatballs.map((m) => {
-    const platform = platformMap.get(m.platformId);
+    const platform = map.get(m.platformId);
     if (!platform) return m;
     return {
       ...m,

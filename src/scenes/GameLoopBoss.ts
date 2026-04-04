@@ -37,12 +37,12 @@ export function spawnPendingBoss(
   const behavior = bossType ? getBossBehavior(bossType) : undefined;
   if (!bossType || !behavior) return { ...s, pendingBossZone: null };
 
-  // Lock camera around the player, but only if close to the current camera.
+  // Compute the ideal boss-arena camera position, then smoothly transition.
   const distFromCamera = Math.abs(s.player.y - (s.camera.y + GAME_HEIGHT * 0.5));
   const lockedCameraY = distFromCamera < GAME_HEIGHT
     ? s.player.y - GAME_HEIGHT * 0.5
     : s.camera.y;
-  const camera = { ...s.camera, y: lockedCameraY };
+  const camera = { ...s.camera, bossTargetY: lockedCameraY };
 
   // Spawn boss away from the player (opposite side of screen)
   const boss = behavior.create(lockedCameraY, s.platforms);
@@ -111,6 +111,8 @@ function finishBossKill(s: GameWorldState, events: GameEvent[]): GameWorldState 
     bossAttacks: [],
     pendingTentacles: [],
     highestPlatformY: resumeY,
+    // Reset highestPlayerY so arena platforms don't get counted as "passed"
+    highestPlayerY: s.player.y,
     meatballs: s.meatballs.filter((m) => m.collected || survivingPlatIds.has(m.platformId)),
     powerUps: s.powerUps.filter((pu) => pu.collected || survivingPlatIds.has(pu.platformId)),
   };
@@ -137,8 +139,10 @@ export function tickBoss(
   if (!behavior) return s;
 
   // Break platforms outside the playable boss arena (50px inset from screen edges)
-  const arenaTop = s.camera.y + 50;
-  const arenaBottom = s.camera.y + GAME_HEIGHT - 50;
+  // Use the final target position if camera is still transitioning
+  const arenaCamY = s.camera.bossTargetY ?? s.camera.y;
+  const arenaTop = arenaCamY + 50;
+  const arenaBottom = arenaCamY + GAME_HEIGHT - 50;
   s = {
     ...s,
     platforms: s.platforms.map((p) =>

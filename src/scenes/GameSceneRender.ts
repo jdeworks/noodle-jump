@@ -70,32 +70,28 @@ export function renderBoss(
   );
   bossHealthGfx.visible = true;
 
-  // Boss attack projectiles
-  const updatedAttackGfx = [...bossAttackGfx];
-  // Remove excess
-  while (updatedAttackGfx.length > state.bossAttacks.length) {
-    const g = updatedAttackGfx.pop()!;
+  // Boss attack projectiles — mutate in place
+  while (bossAttackGfx.length > state.bossAttacks.length) {
+    const g = bossAttackGfx.pop()!;
     gameContainer.removeChild(g);
     g.destroy();
   }
-  // Add new
-  while (updatedAttackGfx.length < state.bossAttacks.length) {
+  while (bossAttackGfx.length < state.bossAttacks.length) {
     const g = new Graphics();
     g.circle(0, 0, 4);
     g.fill(0xff4444);
     gameContainer.addChild(g);
-    updatedAttackGfx.push(g);
+    bossAttackGfx.push(g);
   }
-  // Update positions
   for (let i = 0; i < state.bossAttacks.length; i++) {
     const atk = state.bossAttacks[i];
-    const g = updatedAttackGfx[i];
+    const g = bossAttackGfx[i];
     g.x = atk.x;
     g.y = worldToScreen(atk.y, camY);
     g.visible = atk.alive;
   }
 
-  return updatedAttackGfx;
+  return bossAttackGfx;
 }
 
 /** Render the boss jump arc — dotted parabola preview + landing target X. */
@@ -158,34 +154,36 @@ export function renderWeather(
   weatherContainer: Container,
 ): Graphics[] {
   const { particles } = state.weather;
-  const updatedGfx = [...weatherGfx];
 
-  // Remove excess
-  while (updatedGfx.length > particles.length) {
-    const gfx = updatedGfx.pop()!;
+  // Remove excess — mutate in place instead of spreading
+  while (weatherGfx.length > particles.length) {
+    const gfx = weatherGfx.pop()!;
+    gfx.visible = false;
     weatherContainer.removeChild(gfx);
     gfx.destroy();
   }
 
   // Add new
-  while (updatedGfx.length < particles.length) {
+  while (weatherGfx.length < particles.length) {
     const gfx = new Graphics();
+    // Pre-draw a unit circle; we'll scale per-particle
+    gfx.circle(0, 0, 1);
+    gfx.fill(0xffffff);
     weatherContainer.addChild(gfx);
-    updatedGfx.push(gfx);
+    weatherGfx.push(gfx);
   }
 
-  // Update
+  // Update positions — skip clear/redraw, just move and scale
   for (let i = 0; i < particles.length; i++) {
     const p = particles[i];
-    const gfx = updatedGfx[i];
-    gfx.clear();
-    gfx.circle(0, 0, p.size);
-    gfx.fill({ color: 0xffffff, alpha: p.alpha });
+    const gfx = weatherGfx[i];
     gfx.x = p.x;
     gfx.y = p.y;
+    gfx.scale.set(p.size);
+    gfx.alpha = p.alpha;
   }
 
-  return updatedGfx;
+  return weatherGfx;
 }
 
 /** Number of large arrows per zone. */

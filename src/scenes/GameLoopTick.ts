@@ -124,8 +124,8 @@ export function tickPlatformCollisions(
       });
     }
     const landedId = collision.landedPlatform?.id ?? null;
-    if (collision.edgeLanding && s.stagnantTicks < 300 && landedId !== s.lastCloseCallPlatformId) {
-      s = { ...s, scoreState: addCloseCallBonus(s.scoreState), lastCloseCallPlatformId: landedId };
+    if (collision.edgeLanding && s.stagnantTicks < 300 && landedId !== null && !s.closeCallPlatformIds.includes(landedId)) {
+      s = { ...s, scoreState: addCloseCallBonus(s.scoreState), closeCallPlatformIds: [...s.closeCallPlatformIds, landedId] };
     }
   }
 
@@ -320,9 +320,11 @@ export function tickStagnation(
   s: GameWorldState,
   events: GameEvent[],
 ): GameWorldState {
+  if (s.inBossFight || s.pendingBossZone !== null) return s;
+
   if (s.player.y < s.highestPlayerY) {
     const newlyPassed = s.platforms.filter(
-      (p) => p.y > s.player.y && p.y <= s.highestPlayerY,
+      (p) => !p.broken && p.y > s.player.y && p.y <= s.highestPlayerY,
     ).length;
     return {
       ...s,
@@ -331,8 +333,6 @@ export function tickStagnation(
       stagnantTicks: 0,
     };
   }
-
-  if (s.inBossFight) return s;
 
   s = { ...s, stagnantTicks: s.stagnantTicks + 1 };
 

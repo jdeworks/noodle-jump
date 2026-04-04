@@ -118,8 +118,9 @@ export function tickGameWorld(
       state.platforms,
       difficulty.movingSpeedMultiplier,
     );
-    const powerUps = updatePowerUpPositions(state.powerUps, platforms);
-    const meatballs = updateMeatballPositions(state.meatballs, platforms);
+    const platMap = new Map(platforms.map((p) => [p.id, p]));
+    const powerUps = updatePowerUpPositions(state.powerUps, platforms, platMap);
+    const meatballs = updateMeatballPositions(state.meatballs, platforms, platMap);
     const camera = updateCamera(state.camera, state.player.y);
     return {
       state: {
@@ -208,15 +209,16 @@ export function tickGameWorld(
   };
 
   // Sync positions to platforms (skip meatballs when magnet active)
+  const platMap = new Map(s.platforms.map((p) => [p.id, p]));
   if (s.activeEffect?.type !== "meatball_magnet") {
     s = {
       ...s,
-      meatballs: updateMeatballPositions(s.meatballs, s.platforms),
+      meatballs: updateMeatballPositions(s.meatballs, s.platforms, platMap),
     };
   }
   s = {
     ...s,
-    powerUps: updatePowerUpPositions(s.powerUps, s.platforms),
+    powerUps: updatePowerUpPositions(s.powerUps, s.platforms, platMap),
   };
 
   const inSquashHold =

@@ -10,6 +10,12 @@ export interface Particle {
   life: number;
 }
 
+/** Remove dead particle at index using swap-and-pop (O(1) instead of O(n) splice). */
+function removeFast<T>(arr: T[], i: number): void {
+  arr[i] = arr[arr.length - 1];
+  arr.pop();
+}
+
 // ── Dust puff ──────────────────────────────────────────────────────────
 
 export function spawnDustPuff(
@@ -50,7 +56,7 @@ export function updateDustParticles(
     if (p.life <= 0) {
       dustContainer.removeChild(p.gfx);
       p.gfx.destroy();
-      dustParticles.splice(i, 1);
+      removeFast(dustParticles, i);
     }
   }
 }
@@ -97,7 +103,7 @@ export function updateCrumbleParticles(
     if (p.life <= 0) {
       crumbleContainer.removeChild(p.gfx);
       p.gfx.destroy();
-      crumbleParticles.splice(i, 1);
+      removeFast(crumbleParticles, i);
     }
   }
 }
@@ -146,7 +152,7 @@ export function updateTornadoParticles(
     if (p.alpha <= 0) {
       tornadoContainer.removeChild(p);
       p.destroy();
-      tornadoParticles.splice(i, 1);
+      removeFast(tornadoParticles, i);
     }
   }
 }
@@ -200,7 +206,7 @@ export function updateRocketParticles(
     if (p.alpha <= 0) {
       rocketContainer.removeChild(p);
       p.destroy();
-      rocketParticles.splice(i, 1);
+      removeFast(rocketParticles, i);
     }
   }
 }
@@ -241,7 +247,7 @@ export function updateSneezeParticles(
     if (p.alpha <= 0) {
       sneezeContainer.removeChild(p);
       p.destroy();
-      sneezeParticles.splice(i, 1);
+      removeFast(sneezeParticles, i);
     }
   }
 }
@@ -284,7 +290,7 @@ export function updateSpringParticles(
     if (p.alpha <= 0) {
       springContainer.removeChild(p);
       p.destroy();
-      springParticles.splice(i, 1);
+      removeFast(springParticles, i);
     }
   }
 }
@@ -326,7 +332,7 @@ export function updateLasagnaParticles(
     if (p.alpha <= 0) {
       lasagnaContainer.removeChild(p);
       p.destroy();
-      lasagnaParticles.splice(i, 1);
+      removeFast(lasagnaParticles, i);
     }
   }
 }

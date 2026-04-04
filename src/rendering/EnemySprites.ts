@@ -170,33 +170,52 @@ function drawLaserBolt(gfx: Graphics): void {
 }
 
 /** Princess — magic wand bolt (sparkle). */
-function drawSparkle(gfx: Graphics): void {
-  // 4-point sparkle star
-  const r = 8, ri = 3;
-  gfx.moveTo(0, -r);
-  gfx.lineTo(ri * 0.5, -ri * 0.5); gfx.lineTo(r, 0);
-  gfx.lineTo(ri * 0.5, ri * 0.5); gfx.lineTo(0, r);
-  gfx.lineTo(-ri * 0.5, ri * 0.5); gfx.lineTo(-r, 0);
-  gfx.lineTo(-ri * 0.5, -ri * 0.5);
+/** Princess — golden crown. */
+function drawCrown(gfx: Graphics): void {
+  // Crown base band
+  gfx.roundRect(-7, 0, 14, 5, 1);
+  gfx.fill(0xffcc00);
+  gfx.roundRect(-7, 0, 14, 5, 1);
+  gfx.stroke({ width: 0.8, color: 0xcc9900 });
+  // Three crown points
+  gfx.moveTo(-7, 0);
+  gfx.lineTo(-6, -7); gfx.lineTo(-3, -2);
+  gfx.lineTo(0, -9);
+  gfx.lineTo(3, -2); gfx.lineTo(6, -7);
+  gfx.lineTo(7, 0);
   gfx.closePath();
-  gfx.fill(0xff88cc);
-  // Center glow
-  gfx.circle(0, 0, 2.5); gfx.fill(0xffffff);
-  // Tiny accent sparkles
-  gfx.circle(3, -4, 1); gfx.fill({ color: 0xffffff, alpha: 0.6 });
-  gfx.circle(-3, 3, 0.8); gfx.fill({ color: 0xffffff, alpha: 0.5 });
+  gfx.fill(0xffcc00);
+  gfx.moveTo(-7, 0);
+  gfx.lineTo(-6, -7); gfx.lineTo(-3, -2);
+  gfx.lineTo(0, -9);
+  gfx.lineTo(3, -2); gfx.lineTo(6, -7);
+  gfx.lineTo(7, 0);
+  gfx.stroke({ width: 0.8, color: 0xcc9900 });
+  // Jewel accents on points
+  gfx.circle(0, -7, 1.3); gfx.fill(0xff4488);
+  gfx.circle(-5, -5, 1); gfx.fill(0x44ccff);
+  gfx.circle(5, -5, 1); gfx.fill(0x44ccff);
+  // Shimmer highlight
+  gfx.roundRect(-4, 1, 3, 2, 0.5); gfx.fill({ color: 0xffffff, alpha: 0.4 });
 }
 
-/** Alien — plasma orb. */
+/** Alien — mini flying saucer disc. */
 function drawPlasmaOrb(gfx: Graphics): void {
-  // Outer glow
-  gfx.circle(0, 0, 8); gfx.fill({ color: 0x88ff66, alpha: 0.3 });
-  // Mid ring
-  gfx.circle(0, 0, 5.5); gfx.fill({ color: 0x66ee44, alpha: 0.5 });
-  // Core
-  gfx.circle(0, 0, 3); gfx.fill(0xccff88);
-  // Bright center
-  gfx.circle(-1, -1, 1.2); gfx.fill({ color: 0xffffff, alpha: 0.7 });
+  // Beam glow underneath
+  gfx.ellipse(0, 4, 5, 3); gfx.fill({ color: 0x66ff44, alpha: 0.25 });
+  // Saucer body — metallic disc
+  gfx.ellipse(0, 0, 9, 4); gfx.fill(0x88aa99);
+  gfx.ellipse(0, 0, 9, 4); gfx.stroke({ width: 0.6, color: 0x556655 });
+  // Dome on top
+  gfx.ellipse(0, -2, 4, 3); gfx.fill({ color: 0x66ff88, alpha: 0.7 });
+  gfx.ellipse(0, -2, 4, 3); gfx.stroke({ width: 0.5, color: 0x44cc66 });
+  // Alien eye inside dome
+  gfx.circle(0, -2.5, 1.5); gfx.fill(0x111111);
+  gfx.circle(0.5, -3, 0.6); gfx.fill({ color: 0xffffff, alpha: 0.8 });
+  // Running lights on rim
+  gfx.circle(-6, 0, 1); gfx.fill({ color: 0xff4444, alpha: 0.8 });
+  gfx.circle(0, 1.5, 1); gfx.fill({ color: 0xffff44, alpha: 0.8 });
+  gfx.circle(6, 0, 1); gfx.fill({ color: 0xff4444, alpha: 0.8 });
 }
 
 /** Viking — throwing axe. */
@@ -215,17 +234,29 @@ function drawThrowingAxe(gfx: Graphics): void {
   gfx.roundRect(-2, 4, 4, 3, 0.5); gfx.fill(0x664422);
 }
 
-/** Pirate — cannonball. */
+/** Pirate — bomb with lit fuse. */
 function drawCannonball(gfx: Graphics): void {
-  // Ball
-  gfx.circle(0, 0, 6); gfx.fill(0x333333);
-  // Highlight
-  gfx.circle(-2, -2, 2); gfx.fill({ color: 0x666666, alpha: 0.6 });
-  // Bright spot
-  gfx.circle(-1.5, -1.5, 0.8); gfx.fill({ color: 0xaaaaaa, alpha: 0.5 });
-  // Fuse spark trail (small dots behind)
-  gfx.circle(3, 5, 1.2); gfx.fill({ color: 0xff8800, alpha: 0.7 });
-  gfx.circle(4, 7, 0.8); gfx.fill({ color: 0xffcc00, alpha: 0.5 });
+  // Bomb body
+  gfx.circle(0, 1, 7); gfx.fill(0x222222);
+  gfx.circle(0, 1, 7); gfx.stroke({ width: 0.8, color: 0x444444 });
+  // Metallic highlight
+  gfx.circle(-2, -1, 3); gfx.fill({ color: 0x555555, alpha: 0.4 });
+  gfx.circle(-1.5, -1.5, 1); gfx.fill({ color: 0x888888, alpha: 0.3 });
+  // Skull face
+  gfx.circle(-2, 1, 1.5); gfx.fill({ color: 0xcccccc, alpha: 0.7 }); // left eye
+  gfx.circle(2, 1, 1.5); gfx.fill({ color: 0xcccccc, alpha: 0.7 }); // right eye
+  gfx.circle(-2, 1, 0.7); gfx.fill(0x111111); // left pupil
+  gfx.circle(2, 1, 0.7); gfx.fill(0x111111); // right pupil
+  gfx.ellipse(0, 3.5, 1.5, 0.8); gfx.fill({ color: 0xcccccc, alpha: 0.5 }); // mouth
+  // Fuse nub on top
+  gfx.roundRect(-1.5, -8, 3, 3, 1); gfx.fill(0x555544);
+  // Fuse rope
+  gfx.moveTo(0, -8); gfx.bezierCurveTo(3, -11, 5, -9, 4, -12);
+  gfx.stroke({ width: 1.2, color: 0x887744 });
+  // Spark at fuse tip
+  gfx.circle(4, -12, 2.5); gfx.fill({ color: 0xff6600, alpha: 0.7 });
+  gfx.circle(4, -12, 1.5); gfx.fill({ color: 0xffcc00, alpha: 0.9 });
+  gfx.circle(4, -12.5, 0.6); gfx.fill(0xffffff);
 }
 
 /** Wizard — magic orb. */
@@ -246,7 +277,7 @@ function drawMagicOrb(gfx: Graphics): void {
 // ── Projectile type per character ─────────────────────────────────────────
 
 export type ProjectileVisual = "knife" | "shuriken" | "club" | "rolling-pin"
-  | "laser" | "sparkle" | "plasma" | "axe" | "cannonball" | "magic-orb";
+  | "laser" | "crown" | "plasma" | "axe" | "cannonball" | "magic-orb";
 
 const characterProjectileMap: Record<string, ProjectileVisual> = {
   chef: "knife",
@@ -254,7 +285,7 @@ const characterProjectileMap: Record<string, ProjectileVisual> = {
   grandma: "rolling-pin",
   robot: "laser",
   ninja: "shuriken",
-  princess: "sparkle",
+  princess: "crown",
   alien: "plasma",
   viking: "axe",
   pirate: "cannonball",
@@ -267,7 +298,7 @@ const drawFns: Record<ProjectileVisual, (gfx: Graphics) => void> = {
   "club": drawClub,
   "rolling-pin": drawRollingPin,
   "laser": drawLaserBolt,
-  "sparkle": drawSparkle,
+  "crown": drawCrown,
   "plasma": drawPlasmaOrb,
   "axe": drawThrowingAxe,
   "cannonball": drawCannonball,
@@ -282,7 +313,7 @@ export function getProjectileVisual(characterId: string): ProjectileVisual {
 /** Whether this projectile type should spin continuously (vs tumble). */
 export function projectileSpins(visual: ProjectileVisual): boolean {
   return visual === "shuriken" || visual === "axe" || visual === "cannonball"
-    || visual === "plasma" || visual === "magic-orb";
+    || visual === "plasma" || visual === "magic-orb" || visual === "crown";
 }
 
 /** Draw the projectile for a given character. */

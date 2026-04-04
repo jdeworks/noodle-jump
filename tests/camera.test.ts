@@ -42,20 +42,20 @@ describe("Camera", () => {
   });
 
   test("player is dead when far below camera", () => {
-    const cam = { y: -1000, highestY: -1000 };
+    const cam = { y: -1000, highestY: -1000, bossTargetY: null };
     const graceDistance = CAMERA_GRACE_PLATFORMS * PLATFORM_GAP_MAX;
     const deadY = cam.y + GAME_HEIGHT + graceDistance + 1;
     expect(isPlayerDead(cam, deadY)).toBe(true);
   });
 
   test("player is alive within grace area", () => {
-    const cam = { y: -1000, highestY: -1000 };
+    const cam = { y: -1000, highestY: -1000, bossTargetY: null };
     const aliveY = cam.y + GAME_HEIGHT + 50;
     expect(isPlayerDead(cam, aliveY)).toBe(false);
   });
 
   test("camera locks during boss fight", () => {
-    const cam = { y: -1000, highestY: -1000 };
+    const cam = { y: -1000, highestY: -1000, bossTargetY: null };
     const updated = updateCamera(cam, -1500, true);
     expect(updated.y).toBe(cam.y);
     expect(updated.highestY).toBe(cam.highestY);

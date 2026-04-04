@@ -10,10 +10,12 @@ import {
 export interface CameraState {
   y: number; // world-space Y of the camera's top edge
   highestY: number; // highest Y the camera has ever reached (lowest value = highest)
+  /** When set, camera smoothly lerps to this Y before locking for boss fight. */
+  bossTargetY: number | null;
 }
 
 export function createCamera(): CameraState {
-  return { y: 0, highestY: 0 };
+  return { y: 0, highestY: 0, bossTargetY: null };
 }
 
 /**
@@ -26,8 +28,21 @@ export function updateCamera(
   playerY: number,
   inBossFight = false,
 ): CameraState {
+  // Smooth transition toward boss arena position (even during boss fight)
+  if (camera.bossTargetY !== null) {
+    const BOSS_LERP = 0.06;
+    const y = camera.y + (camera.bossTargetY - camera.y) * BOSS_LERP;
+    const highestY = Math.min(camera.highestY, y);
+    // Snap when close enough
+    if (Math.abs(y - camera.bossTargetY) < 0.5) {
+      return { y: camera.bossTargetY, highestY, bossTargetY: null };
+    }
+    return { y, highestY, bossTargetY: camera.bossTargetY };
+  }
+
   // Lock the camera during boss fights so the arena stays fixed
   if (inBossFight) return camera;
+
   const targetY = playerY - GAME_HEIGHT * 0.4;
   const viewportBottom = camera.y + GAME_HEIGHT;
 
@@ -42,7 +57,7 @@ export function updateCamera(
   // Track the highest point reached
   const highestY = Math.min(camera.highestY, y);
 
-  return { y, highestY };
+  return { y, highestY, bossTargetY: null };
 }
 
 /**

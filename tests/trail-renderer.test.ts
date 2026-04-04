@@ -5,9 +5,11 @@ vi.mock("pixi.js", () => {
   class MockGraphics {
     x = 0;
     y = 0;
+    visible = true;
     children: unknown[] = [];
     circle = vi.fn().mockReturnThis();
     fill = vi.fn().mockReturnThis();
+    clear = vi.fn().mockReturnThis();
     destroy = vi.fn();
   }
   class MockContainer {
@@ -60,8 +62,13 @@ describe("TrailRenderer", () => {
     trail.setTrailType("trail_fire");
     trail.addPoint(100, 200);
     trail.update(0);
+    const countBefore = trail.container.children.length;
+    expect(countBefore).toBeGreaterThan(0);
     trail.clear();
-    expect(trail.container.children.length).toBe(0);
+    // Pooled graphics are hidden, not removed — verify no visible points
+    const visible = (trail.container.children as Array<{ visible: boolean }>)
+      .filter((c) => c.visible);
+    expect(visible.length).toBe(0);
   });
 
   it("supports speed trail types", () => {

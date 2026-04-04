@@ -171,10 +171,11 @@ export function collectPowerUps(
 export function updatePowerUpPositions(
   powerUps: PowerUpState[],
   platforms: PlatformState[],
+  platformMap?: Map<number, PlatformState>,
 ): PowerUpState[] {
-  const platformMap = new Map(platforms.map((p) => [p.id, p]));
+  const map = platformMap ?? new Map(platforms.map((p) => [p.id, p]));
   return powerUps.map((pu) => {
-    const platform = platformMap.get(pu.platformId);
+    const platform = map.get(pu.platformId);
     if (!platform) return pu;
     return {
       ...pu,

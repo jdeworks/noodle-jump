@@ -65,8 +65,8 @@ export interface GameWorldState {
   platformsPassed: number;
   highestPlayerY: number;
   stagnantTicks: number;
-  /** Last platform that gave a close call bonus (prevent farming). */
-  lastCloseCallPlatformId: number | null;
+  /** Platforms that already gave a close call bonus (prevent farming). */
+  closeCallPlatformIds: number[];
   isDying: boolean;
   dyingTicks: number;
   gameOver: boolean;
@@ -187,7 +187,7 @@ export function createInitialState(runConfig?: RunConfig): GameWorldState {
     platformsPassed: 0,
     highestPlayerY: Infinity,
     stagnantTicks: 0,
-    lastCloseCallPlatformId: null,
+    closeCallPlatformIds: [],
     isDying: false,
     dyingTicks: 0,
     gameOver: false,
