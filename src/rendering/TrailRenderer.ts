@@ -6,6 +6,7 @@ interface TrailPoint { x: number; y: number; age: number }
 
 const MAX_TRAIL_LENGTH = 14;
 const MAX_AGE = 18;
+const RAINBOW_MAX = 200; // rainbow points persist much longer
 
 const TRAIL_COLORS: Record<string, number[]> = {
   trail_sparkle: [0xffdd44, 0xffeeaa, 0xffffff],
@@ -20,9 +21,7 @@ const TRAIL_COLORS: Record<string, number[]> = {
   speed_sneeze: [0xffff44, 0xffdd00, 0xffffff],
 };
 
-// Trails that render as horizontal bands instead of dots
-const BAND_TRAILS = new Set(["trail_rainbow", "trail_neon"]);
-// Trails that render as special shapes
+const RAINBOW_TRAILS = new Set(["trail_rainbow"]);
 const SHAPE_TRAILS: Record<string, string> = {
   trail_hearts: "heart", trail_stars: "star", trail_snow: "snowflake",
 };
@@ -33,6 +32,8 @@ export class TrailRenderer {
   private pool: Graphics[] = [];
   private activeCount = 0;
   private trailType: string | null = null;
+  // Rainbow uses a single Graphics for the whole ribbon
+  private ribbonGfx: Graphics | null = null;
 
   setTrailType(type: string | null): void {
     if (type === "trail_none" || type === null) {
@@ -44,7 +45,8 @@ export class TrailRenderer {
   addPoint(x: number, y: number): void {
     if (!this.trailType) return;
     this.points.push({ x, y, age: 0 });
-    if (this.points.length > MAX_TRAIL_LENGTH) this.points.shift();
+    const max = RAINBOW_TRAILS.has(this.trailType) ? RAINBOW_MAX : MAX_TRAIL_LENGTH;
+    if (this.points.length > max) this.points.shift();
   }
 
   private getFromPool(index: number): Graphics {
@@ -58,9 +60,14 @@ export class TrailRenderer {
   update(camY: number): void {
     for (let i = 0; i < this.activeCount; i++) this.pool[i].visible = false;
     this.activeCount = 0;
+    if (this.ribbonGfx) { this.ribbonGfx.clear(); this.ribbonGfx.visible = false; }
     if (!this.trailType || this.points.length === 0) return;
 
+    const isRainbow = RAINBOW_TRAILS.has(this.trailType);
+    if (isRainbow) { this.updateRainbow(camY); return; }
+
     const colors = TRAIL_COLORS[this.trailType] ?? [0xffffff];
+    const shape = SHAPE_TRAILS[this.trailType];
 
     // Age and prune
     let len = this.points.length;
@@ -70,44 +77,13 @@ export class TrailRenderer {
     }
     if (len < this.points.length) this.points.length = len;
 
-    const isBand = BAND_TRAILS.has(this.trailType);
-    const shape = SHAPE_TRAILS[this.trailType];
-
     for (let i = 0; i < this.points.length; i++) {
       const p = this.points[i];
       const alpha = 1 - p.age / MAX_AGE;
       const gfx = this.getFromPool(i);
-      gfx.clear();
-      gfx.x = p.x; gfx.y = p.y - camY;
+      gfx.clear(); gfx.x = p.x; gfx.y = p.y - camY;
 
-      if (isBand) {
-        // Rainbow/neon: wide horizontal ribbon segments connecting consecutive points
-        const t = 1 - p.age / MAX_AGE;
-        const bandH = 3 + t * 5; // thicker when fresh
-        const c = colors[i % colors.length];
-        // Draw a fat line segment to the previous point (or just a dot for the first)
-        if (i > 0 && i - 1 < this.points.length) {
-          const prev = this.points[i - 1];
-          const dx = prev.x - p.x, dy = (prev.y - p.y);
-          const len = Math.sqrt(dx * dx + dy * dy);
-          if (len > 0.5) {
-            // Perpendicular for ribbon width
-            const nx = -dy / len * bandH / 2, ny = dx / len * bandH / 2;
-            gfx.x = 0; gfx.y = -camY;
-            gfx.moveTo(p.x + nx, p.y + ny); gfx.lineTo(prev.x + nx, prev.y + ny);
-            gfx.lineTo(prev.x - nx, prev.y - ny); gfx.lineTo(p.x - nx, p.y - ny);
-            gfx.closePath(); gfx.fill({ color: c, alpha: alpha * 0.7 });
-            // Glow layer
-            const gx = nx * 1.6, gy = ny * 1.6;
-            gfx.moveTo(p.x + gx, p.y + gy); gfx.lineTo(prev.x + gx, prev.y + gy);
-            gfx.lineTo(prev.x - gx, prev.y - gy); gfx.lineTo(p.x - gx, p.y - gy);
-            gfx.closePath(); gfx.fill({ color: c, alpha: alpha * 0.12 });
-          }
-        } else {
-          gfx.x = p.x; gfx.y = p.y - camY;
-          gfx.circle(0, 0, bandH / 2); gfx.fill({ color: c, alpha: alpha * 0.7 });
-        }
-      } else if (shape === "heart") {
+      if (shape === "heart") {
         const s = 2 + (1 - p.age / MAX_AGE) * 3;
         const c = colors[i % colors.length];
         gfx.circle(-s * 0.3, -s * 0.2, s * 0.5); gfx.fill({ color: c, alpha: alpha * 0.7 });
@@ -117,7 +93,6 @@ export class TrailRenderer {
       } else if (shape === "star") {
         const s = 2 + (1 - p.age / MAX_AGE) * 3;
         const c = colors[i % colors.length];
-        // 4-point star
         gfx.moveTo(0, -s); gfx.lineTo(s * 0.3, -s * 0.3); gfx.lineTo(s, 0);
         gfx.lineTo(s * 0.3, s * 0.3); gfx.lineTo(0, s);
         gfx.lineTo(-s * 0.3, s * 0.3); gfx.lineTo(-s, 0);
@@ -128,17 +103,16 @@ export class TrailRenderer {
         const c = colors[i % colors.length];
         for (let a = 0; a < 6; a++) {
           const angle = (a / 6) * Math.PI * 2;
-          gfx.moveTo(0, 0);
-          gfx.lineTo(Math.cos(angle) * s, Math.sin(angle) * s);
+          gfx.moveTo(0, 0); gfx.lineTo(Math.cos(angle) * s, Math.sin(angle) * s);
           gfx.stroke({ width: 1, color: c, alpha: alpha * 0.7 });
         }
         gfx.circle(0, 0, s * 0.3); gfx.fill({ color: c, alpha: alpha * 0.5 });
       } else {
-        // Default: circles with glow for fire/sparkle
         const size = 2 + (1 - p.age / MAX_AGE) * 3;
         const c = colors[i % colors.length];
-        if (this.trailType === "trail_fire" || this.trailType === "trail_sparkle") {
-          gfx.circle(0, 0, size + 2); gfx.fill({ color: c, alpha: alpha * 0.12 });
+        if (this.trailType === "trail_fire" || this.trailType === "trail_sparkle" || this.trailType === "trail_neon") {
+          gfx.circle(0, 0, size + 3); gfx.fill({ color: c, alpha: alpha * 0.1 });
+          gfx.circle(0, 0, size + 1); gfx.fill({ color: c, alpha: alpha * 0.15 });
         }
         gfx.circle(0, 0, size); gfx.fill({ color: c, alpha: alpha * 0.6 });
       }
@@ -147,16 +121,54 @@ export class TrailRenderer {
     this.activeCount = this.points.length;
   }
 
+  /** Nyan Cat style rainbow — full-width horizontal color bands that fade over time. */
+  private updateRainbow(camY: number): void {
+    if (!this.ribbonGfx) {
+      this.ribbonGfx = new Graphics();
+      this.container.addChild(this.ribbonGfx);
+    }
+    const gfx = this.ribbonGfx;
+    gfx.clear(); gfx.visible = true;
+
+    const colors = TRAIL_COLORS.trail_rainbow;
+    const bandH = 4;
+    const totalH = colors.length * bandH;
+    const charW = 32;
+
+    // Age all points, remove fully faded
+    let len = this.points.length;
+    for (let i = len - 1; i >= 0; i--) {
+      this.points[i].age++;
+      if (this.points[i].age > RAINBOW_MAX) { this.points[i] = this.points[len - 1]; len--; }
+    }
+    if (len < this.points.length) this.points.length = len;
+
+    // Draw rainbow stripes at each point, fading with age
+    for (const p of this.points) {
+      const screenY = p.y - camY;
+      if (screenY < -totalH || screenY > 750) continue;
+      const alpha = Math.max(0, 0.85 * (1 - p.age / RAINBOW_MAX));
+      if (alpha < 0.01) continue;
+      const cx = p.x + charW / 2;
+      for (let s = 0; s < colors.length; s++) {
+        gfx.rect(cx - charW / 2, screenY + s * bandH, charW, bandH);
+        gfx.fill({ color: colors[s], alpha });
+      }
+    }
+  }
+
   clear(): void {
     this.points = [];
     for (let i = 0; i < this.activeCount; i++) this.pool[i].visible = false;
     this.activeCount = 0;
+    if (this.ribbonGfx) { this.ribbonGfx.clear(); this.ribbonGfx.visible = false; }
   }
 
   destroy(): void {
     this.clear();
     for (const gfx of this.pool) gfx.destroy();
     this.pool = [];
+    if (this.ribbonGfx) { this.ribbonGfx.destroy(); this.ribbonGfx = null; }
     this.container.destroy({ children: true });
   }
 }

@@ -2,6 +2,7 @@
 
 import { Container, Graphics, Text, TextStyle } from "pixi.js";
 import { GAME_WIDTH, GAME_HEIGHT } from "../config/constants";
+import { getUITheme } from "./ThemeUI";
 import {
   createDefaultRunConfig,
   ALL_POWER_UP_TYPES,
@@ -131,7 +132,8 @@ export class CustomRunScreen {
     // ── Background ──────────────────────────────────────────────
     const bg = new Graphics();
     bg.rect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-    bg.fill({ color: 0x000000, alpha: 0.9 });
+    const uiT = getUITheme();
+    bg.fill({ color: uiT.bg, alpha: 0.95 });
     bg.eventMode = "static";
     bg.on("pointertap", (e: Event) => e.stopPropagation());
     this.container.addChild(bg);

@@ -3,6 +3,7 @@
 import { Application, Graphics, Text, TextStyle } from "pixi.js";
 import { GAME_WIDTH, GAME_HEIGHT } from "../config/constants";
 import { FireworkDisplay } from "../rendering/fireworks";
+import { getUITheme } from "./ThemeUI";
 import { releaseWakeLock } from "../utils/wakeLock";
 import { formatTime } from "../utils/format";
 
@@ -33,7 +34,8 @@ export function showGameOver(
 
   const dim = new Graphics();
   dim.rect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-  dim.fill({ color: 0x000000, alpha: 0.5 });
+  const uiT = getUITheme();
+  dim.fill({ color: uiT.bg, alpha: 0.6 });
   dim.eventMode = "static";
   app.stage.addChild(dim);
 

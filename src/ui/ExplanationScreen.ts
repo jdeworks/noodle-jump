@@ -6,6 +6,7 @@ import { POWER_UP_INFO } from "./PowerUpDescriptions";
 import { drawPlatform, type PlatformStyle } from "../rendering/PlatformSprites";
 import { drawPowerUp } from "../rendering/ItemSprites";
 import { InertiaScroll } from "./InertiaScroll";
+import { getUITheme } from "./ThemeUI";
 
 interface Section {
   title: string;
@@ -186,10 +187,10 @@ export class ExplanationScreen {
       child.destroy();
     }
 
-    // Background — dark with slight warmth
+    const uiT = getUITheme();
     const bg = new Graphics();
     bg.rect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-    bg.fill({ color: 0x1a1410, alpha: 0.97 });
+    bg.fill({ color: uiT.bg, alpha: 0.97 });
     bg.eventMode = "static";
     this.container.addChild(bg);
 

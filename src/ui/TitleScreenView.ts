@@ -16,6 +16,7 @@ import { drawCharacter, CHARACTERS } from "../rendering/PlayerCharacters";
 import { getSelectedCharacter, setSelectedCharacter } from "../systems/CharacterSettings";
 import type { RunConfig } from "../systems/CustomRunConfig";
 import { MultiplayerMenu } from "../multiplayer/MultiplayerMenu";
+import { getUITheme } from "./ThemeUI";
 
 export function showTitleScreen(
   app: Application,
@@ -35,10 +36,10 @@ export function showTitleScreen(
   const bgHex = "#" + theme.background.toString(16).padStart(6, "0");
   document.body.style.backgroundColor = bgHex;
 
-  // Dim overlay — dark enough for white/colored text to read (4.5:1+)
+  const uiTheme = getUITheme();
   const dimOverlay = new Graphics();
   dimOverlay.rect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-  dimOverlay.fill({ color: 0x1a1008, alpha: 0.55 });
+  dimOverlay.fill({ color: uiTheme.bg, alpha: 0.6 });
   titleContainer.addChild(dimOverlay);
 
   // Content group — hidden when sub-menus (How to Play / Custom Run) open

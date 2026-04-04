@@ -19,6 +19,7 @@ import { resetRendererState } from "./EntityRenderer";
 import { stopMusic, killBossMusic } from "../systems/Audio";
 import { showTitleScreen } from "../ui/TitleScreenView";
 import { createGameLoopTicker } from "./GameLoopTicker";
+import { getUITheme } from "../ui/ThemeUI";
 import { resetDebugConfig } from "../config/debug";
 
 // ── Active session tracking ──────────────────────────────────────────────
@@ -197,7 +198,8 @@ export async function launchGame(app: Application, runConfig?: RunConfig): Promi
   pauseOverlay.visible = false;
   const pauseDim = new Graphics();
   pauseDim.rect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-  pauseDim.fill({ color: 0x000000, alpha: 0.6 });
+  const uiT = getUITheme();
+  pauseDim.fill({ color: uiT.bg, alpha: 0.7 });
   pauseOverlay.addChild(pauseDim);
 
   const pauseTitle = new Text({
