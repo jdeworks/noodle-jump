@@ -84,6 +84,7 @@ export class GameScene {
     this.gfxSync.setTheme(this.cosmeticTheme);
 
     this.parallax = new ParallaxBackground();
+    this.parallax.setCosmeticTheme(this.cosmeticTheme);
     this.container.addChild(this.parallax.container);
     this.container.addChild(this.gameContainer);
     this.gameContainer.addChild(this.particles.crumbleContainer);
@@ -185,9 +186,7 @@ export class GameScene {
   togglePause(): void { this.state = togglePause(this.state); }
   startCountdown(): void { this.state = startCountdown(this.state); }
   enableGhostMode(): void { this.state = { ...this.state, isGhost: true }; }
-  /** Timed respawn — practice mode rescue + height penalty on death. Scoring continues. */
   enableTimedRespawn(): void { this.state = { ...this.state, practiceMode: true, deathPenaltyEnabled: true }; }
-  /** Force the scene into a stopped state — no further updates will run. */
   forceStop(): void { this.state = { ...this.state, gameOver: true, isDying: false }; }
 
   getActiveEffectProgress(): number {

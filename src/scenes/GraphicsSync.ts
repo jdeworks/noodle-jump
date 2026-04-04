@@ -2,7 +2,7 @@
 
 import { Container, Graphics } from "pixi.js";
 import { drawMeatball, drawMeatballVariant, drawPowerUp, drawProjectile } from "../rendering/sprites";
-import { drawThemedEnemy, drawThemedPlatform } from "../rendering/ThemeSprites";
+import { drawThemedEnemy, drawThemedPlatform, drawThemedMeatball, hasThemedMeatball } from "../rendering/ThemeSprites";
 import { COLORS } from "../config/constants";
 import type { PlatformState } from "../entities/Platform";
 import type { CollectibleState } from "../entities/Collectible";
@@ -33,7 +33,9 @@ export class GraphicsSync {
     for (const meatball of meatballs) {
       if (this.meatballGfxMap.has(meatball.id)) continue;
       const gfx = new Graphics();
-      if (meatball.variant && meatball.variant !== "meatball") {
+      if (hasThemedMeatball(this.theme)) {
+        drawThemedMeatball(gfx, meatball.size, this.theme);
+      } else if (meatball.variant && meatball.variant !== "meatball") {
         drawMeatballVariant(gfx, meatball.size, meatball.variant);
       } else {
         drawMeatball(gfx, meatball.size);

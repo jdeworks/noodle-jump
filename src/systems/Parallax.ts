@@ -151,10 +151,21 @@ export class ParallaxBackground {
     this.featureFadeIn = 0;
   }
 
+  private cosmeticTheme = "theme_default";
+  setCosmeticTheme(theme: string): void { this.cosmeticTheme = theme; }
+
   private drawGhostPlatform(gfx: Graphics, width: number): void {
     gfx.clear();
-    gfx.roundRect(0, 0, width, PLATFORM_HEIGHT, 4);
-    gfx.fill(this.lastPlatformColor);
+    if (this.cosmeticTheme === "theme_neon") {
+      gfx.roundRect(0, 0, width, PLATFORM_HEIGHT, 4);
+      gfx.stroke({ width: 1.5, color: 0x00ffff, alpha: 0.3 });
+    } else if (this.cosmeticTheme === "theme_dark") {
+      gfx.roundRect(0, 0, width, PLATFORM_HEIGHT, 4);
+      gfx.fill({ color: 0x221133, alpha: 0.5 });
+    } else {
+      gfx.roundRect(0, 0, width, PLATFORM_HEIGHT, 4);
+      gfx.fill(this.lastPlatformColor);
+    }
   }
 
   update(cameraY: number): void {

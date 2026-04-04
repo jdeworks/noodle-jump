@@ -103,18 +103,41 @@ function drawNeonBoss(gfx: Graphics, w: number, h: number, type: string, animTic
   const c = colors[type] ?? 0xff0044;
   const cx = w / 2, cy = h / 2;
   const pulse = 1 + Math.sin(animTick * 0.08) * 0.05;
-  // Outer glow
+  // Wide glow
+  gfx.ellipse(cx, cy, w * 0.46 * pulse, h * 0.42 * pulse);
+  gfx.fill({ color: c, alpha: 0.06 });
   gfx.ellipse(cx, cy, w * 0.42 * pulse, h * 0.38 * pulse);
   gfx.fill({ color: c, alpha: 0.1 });
-  // Neon outline body
-  gfx.ellipse(cx, cy, w * 0.38 * pulse, h * 0.34 * pulse);
-  gfx.stroke({ width: 3, color: c });
-  // Inner details
-  gfx.ellipse(cx, cy, w * 0.2, h * 0.18);
-  gfx.fill({ color: c, alpha: 0.25 });
+  if (type === "chef_rival") {
+    // Neon chef — body + hat outline
+    gfx.roundRect(cx - 12, cy - 5, 24, 22, 4); gfx.stroke({ width: 2.5, color: c });
+    gfx.circle(cx, cy - 12, 10); gfx.stroke({ width: 2.5, color: c });
+    gfx.roundRect(cx - 10, cy - 28, 20, 14, 3); gfx.stroke({ width: 2, color: c });
+    gfx.fill({ color: c, alpha: 0.08 });
+  } else if (type === "kraken") {
+    // Neon kraken — dome + tentacles
+    gfx.ellipse(cx, cy - 6, w * 0.35, h * 0.25); gfx.stroke({ width: 2.5, color: c });
+    gfx.fill({ color: c, alpha: 0.08 });
+    for (let i = 0; i < 5; i++) {
+      const tx = cx - 20 + i * 10;
+      const wave = Math.sin(animTick * 0.06 + i) * 4;
+      gfx.moveTo(tx, cy + 4); gfx.lineTo(tx + wave, cy + h * 0.4);
+      gfx.stroke({ width: 2, color: c, alpha: 0.7 });
+    }
+  } else {
+    // Neon UFO — disc + dome
+    gfx.ellipse(cx, cy + 4, w * 0.4, h * 0.15); gfx.stroke({ width: 2.5, color: c });
+    gfx.ellipse(cx, cy - 4, w * 0.2, h * 0.2); gfx.stroke({ width: 2, color: c });
+    gfx.fill({ color: c, alpha: 0.1 });
+    // Running lights
+    for (let i = 0; i < 3; i++) {
+      gfx.circle(cx - 12 + i * 12, cy + 4, 2);
+      gfx.fill({ color: 0xffffff, alpha: 0.5 + Math.sin(animTick * 0.15 + i) * 0.4 });
+    }
+  }
   // Neon eyes
-  gfx.circle(cx - 8, cy - 4, 3); gfx.fill(0xffffff);
-  gfx.circle(cx + 8, cy - 4, 3); gfx.fill(0xffffff);
+  gfx.circle(cx - 6, cy - 4, 2.5); gfx.fill(0xffffff);
+  gfx.circle(cx + 6, cy - 4, 2.5); gfx.fill(0xffffff);
 }
 
 function drawPixelBoss(gfx: Graphics, w: number, h: number, type: string): void {
@@ -243,6 +266,37 @@ function drawDarkPlatform(gfx: Graphics, w: number, h: number, style: PlatformSt
   gfx.roundRect(0, 0, w, h, 4); gfx.fill(c);
   gfx.roundRect(0, 0, w, h, 4);
   gfx.stroke({ width: 1, color: 0x6644aa, alpha: 0.4 });
+}
+
+// ── Themed meatball drawing ───────────────────────────────────────────
+
+export function drawThemedMeatball(gfx: Graphics, size: number, theme: string): void {
+  const r = size / 2;
+  gfx.clear();
+  if (theme === "theme_neon") {
+    gfx.circle(r, r, r + 2); gfx.fill({ color: 0x00ffff, alpha: 0.1 });
+    gfx.circle(r, r, r); gfx.stroke({ width: 2, color: 0x00ffff });
+    gfx.circle(r, r, r * 0.4); gfx.fill({ color: 0x00ffff, alpha: 0.3 });
+  } else if (theme === "theme_pixel") {
+    const px = Math.max(3, Math.floor(size / 4));
+    for (let x = 0; x < 4; x++) for (let y = 0; y < 4; y++) {
+      if ((x === 0 || x === 3) && (y === 0 || y === 3)) continue;
+      gfx.rect(x * px, y * px, px - 1, px - 1); gfx.fill(0xcc8844);
+    }
+  } else if (theme === "theme_candy") {
+    gfx.circle(r, r, r); gfx.fill(0xff88cc);
+    gfx.circle(r, r, r); gfx.stroke({ width: 1.5, color: 0xffaadd });
+    gfx.circle(r * 0.7, r * 0.7, r * 0.25); gfx.fill({ color: 0xffffff, alpha: 0.4 });
+  } else if (theme === "theme_dark") {
+    gfx.circle(r, r, r); gfx.fill(0x332244);
+    gfx.circle(r, r, r); gfx.stroke({ width: 1.5, color: 0x6644aa, alpha: 0.5 });
+    gfx.circle(r * 0.6, r * 0.6, r * 0.2); gfx.fill({ color: 0xff4466, alpha: 0.4 });
+  }
+}
+
+/** Whether a theme should override default meatball rendering. */
+export function hasThemedMeatball(theme: string): boolean {
+  return theme !== "theme_default";
 }
 
 /** Boost a color to neon brightness — increase each channel toward max. */
