@@ -156,39 +156,40 @@ export class TrailRenderer {
       return sy > -10 && sy < 760 && p.age < RAINBOW_MAX;
     }).sort((a, b) => a.y - b.y);
 
-    // Draw each point as an independent block of vertical color bands.
-    // Block height stretches to reach the next point below, eliminating gaps.
-    for (let i = 0; i < sorted.length; i++) {
-      const p = sorted[i];
-      const sy = p.y - camY;
-      const alpha = Math.max(0, 0.85 * (1 - p.age / RAINBOW_MAX));
+    // Draw smooth curved color bands between consecutive points.
+    // Each color band is a filled shape with bezier curves on left/right edges.
+    for (let i = 0; i < sorted.length - 1; i++) {
+      const cur = sorted[i];
+      const nxt = sorted[i + 1];
+      const sy1 = cur.y - camY;
+      const sy2 = nxt.y - camY;
+      const alpha = Math.max(0, 0.85 * (1 - cur.age / RAINBOW_MAX));
       if (alpha < 0.01) continue;
-      // Height: distance to next point below (or minimum 4px for the last one)
-      const nextY = i < sorted.length - 1 ? sorted[i + 1].y - camY : sy + 4;
-      const blockH = Math.max(4, nextY - sy + 1);
-      // Subtle jiggle
-      const jig = Math.sin(p.y * 0.03) * 1.2;
-      const left = p.x - charW / 2 + jig;
+      const cx1 = cur.x;
+      const cx2 = nxt.x;
+      const midY = (sy1 + sy2) / 2;
       for (let s = 0; s < colors.length; s++) {
-        gfx.rect(left + s * bandW, sy, bandW, blockH);
+        const off = (s - colors.length / 2) * bandW;
+        // Left edge: bezier from cur to next with midpoint control
+        gfx.moveTo(cx1 + off, sy1);
+        gfx.quadraticCurveTo(cx1 + off, midY, cx2 + off, sy2);
+        // Right edge: bezier back from next to cur
+        gfx.lineTo(cx2 + off + bandW, sy2);
+        gfx.quadraticCurveTo(cx1 + off + bandW, midY, cx1 + off + bandW, sy1);
+        gfx.closePath();
         gfx.fill({ color: colors[s], alpha });
       }
-      // Sparkle stars on every ~8th point
+      // Sparkle stars every ~8th segment
       if (i % 8 === 0 && alpha > 0.2) {
-        const starX = left + Math.sin(p.y * 0.17) * charW * 0.6 + charW / 2;
-        const starY = sy + blockH / 2;
-        const starSize = 3 + Math.sin(p.age * 0.2) * 1.5;
-        const starAlpha = alpha * (0.5 + Math.sin(p.age * 0.3) * 0.4);
-        gfx.moveTo(starX, starY - starSize);
-        gfx.lineTo(starX + starSize * 0.3, starY - starSize * 0.3);
-        gfx.lineTo(starX + starSize, starY);
-        gfx.lineTo(starX + starSize * 0.3, starY + starSize * 0.3);
-        gfx.lineTo(starX, starY + starSize);
-        gfx.lineTo(starX - starSize * 0.3, starY + starSize * 0.3);
-        gfx.lineTo(starX - starSize, starY);
-        gfx.lineTo(starX - starSize * 0.3, starY - starSize * 0.3);
-        gfx.closePath();
-        gfx.fill({ color: 0xffffff, alpha: starAlpha });
+        const sx = cx1 + Math.sin(cur.y * 0.17) * charW * 0.6;
+        const ssy = sy1 + (sy2 - sy1) / 2;
+        const ss = 3 + Math.sin(cur.age * 0.2) * 1.5;
+        const sa = alpha * (0.5 + Math.sin(cur.age * 0.3) * 0.4);
+        gfx.moveTo(sx, ssy - ss); gfx.lineTo(sx + ss * 0.3, ssy - ss * 0.3);
+        gfx.lineTo(sx + ss, ssy); gfx.lineTo(sx + ss * 0.3, ssy + ss * 0.3);
+        gfx.lineTo(sx, ssy + ss); gfx.lineTo(sx - ss * 0.3, ssy + ss * 0.3);
+        gfx.lineTo(sx - ss, ssy); gfx.lineTo(sx - ss * 0.3, ssy - ss * 0.3);
+        gfx.closePath(); gfx.fill({ color: 0xffffff, alpha: sa });
       }
     }
   }
