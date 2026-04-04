@@ -297,7 +297,14 @@ export function showTitleScreen(
   // Restore content when sub-menus close
   explanationScreen.onClose = () => { contentGroup.visible = true; };
   customRunScreen.onClose = () => { contentGroup.visible = true; };
-  customizeScreen.onClose = () => { contentGroup.visible = true; };
+  customizeScreen.onClose = () => {
+    // Rebuild entire title screen to pick up theme changes
+    app.ticker.remove(titleTicker);
+    parallax.destroy();
+    app.stage.removeChild(titleContainer);
+    titleContainer.destroy({ children: true });
+    showTitleScreen(app, onStartGame);
+  };
 
   titleContainer.addChild(explanationScreen.container);
   titleContainer.addChild(customRunScreen.container);

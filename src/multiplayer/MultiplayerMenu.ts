@@ -6,6 +6,7 @@
 
 import { Application, Container, Graphics, Text, TextStyle } from "pixi.js";
 import { GAME_WIDTH, GAME_HEIGHT } from "../config/constants";
+import { getUITheme } from "../ui/ThemeUI";
 import { ConnectionManager } from "./ConnectionManager";
 import { GameSync } from "./GameSync";
 import { LobbyScreen } from "./LobbyScreen";
@@ -373,14 +374,14 @@ export class MultiplayerMenu implements MenuContext {
   ): number {
     const bg = new Graphics();
     bg.roundRect(x, y, w, h, 8);
-    bg.fill({ color, alpha: 0.85 });
+    const uiT = getUITheme();
+    bg.fill({ color: uiT.buttonBg, alpha: 0.85 });
     bg.roundRect(x, y, w, h, 8);
-    bg.stroke({ width: 1, color: 0x6688bb, alpha: 0.3 });
+    bg.stroke({ width: 1, color: uiT.buttonBorder, alpha: 0.4 });
     bg.eventMode = "static";
     bg.cursor = "pointer";
     bg.on("pointertap", onClick);
     parent.addChild(bg);
-
     const text = new Text({ text: label, style: BTN_STYLE });
     text.x = x + w / 2;
     text.y = y + h / 2;
@@ -392,8 +393,5 @@ export class MultiplayerMenu implements MenuContext {
 
     return y + h + 8;
   }
-  destroy(): void {
-    this.connection?.disconnect();
-    this.container.destroy({ children: true });
-  }
+  destroy(): void { this.connection?.disconnect(); this.container.destroy({ children: true }); }
 }

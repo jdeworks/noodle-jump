@@ -5,6 +5,7 @@ import { GAME_WIDTH } from "../config/constants";
 import { getSfxVolume, setSfxVolume, getMusicVolume, setMusicVolume } from "../systems/Audio";
 import { isEnemiesEnabled, setEnemiesEnabled } from "../systems/EnemySettings";
 import { isTiltInverted, setTiltInverted, getControlMode, cycleControlMode, isMobileDevice } from "../systems/TiltSettings";
+import { getUITheme } from "./ThemeUI";
 
 export function createSettingsToggles(): Container {
   const container = new Container();
@@ -19,15 +20,16 @@ export function createSettingsToggles(): Container {
   // Background panel — opaque enough for text contrast
   const bg = new Graphics();
   bg.roundRect(panelX, -8, panelW, panelH, 10);
-  bg.fill({ color: 0x1a1008, alpha: 0.85 });
+  const uiT = getUITheme();
+  bg.fill({ color: uiT.buttonBg, alpha: 0.85 });
   bg.roundRect(panelX, -8, panelW, panelH, 10);
-  bg.stroke({ width: 1, color: 0x665544, alpha: 0.6 });
+  bg.stroke({ width: 1, color: uiT.buttonBorder, alpha: 0.6 });
   container.addChild(bg);
 
   const headerStyle = new TextStyle({
     fontFamily: "monospace",
     fontSize: 13,
-    fill: "#ffaa33",
+    fill: uiT.sectionText,
     fontWeight: "bold",
   });
   const header = new Text({ text: "SETTINGS", style: headerStyle });

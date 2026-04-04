@@ -121,7 +121,7 @@ export class TrailRenderer {
     this.activeCount = this.points.length;
   }
 
-  /** Nyan Cat style rainbow — full-width horizontal color bands that fade over time. */
+  /** Nyan Cat style rainbow — connected left-to-right color bands with jiggle. */
   private updateRainbow(camY: number): void {
     if (!this.ribbonGfx) {
       this.ribbonGfx = new Graphics();
@@ -132,10 +132,9 @@ export class TrailRenderer {
 
     const colors = TRAIL_COLORS.trail_rainbow;
     const charW = 32;
-    const bandW = Math.floor(charW / colors.length); // width per color band
-    const segH = 4; // height of each trail segment
+    const bandW = charW / colors.length;
 
-    // Age all points, remove fully faded
+    // Age and prune
     let len = this.points.length;
     for (let i = len - 1; i >= 0; i--) {
       this.points[i].age++;
@@ -143,15 +142,36 @@ export class TrailRenderer {
     }
     if (len < this.points.length) this.points.length = len;
 
-    // Draw vertical color bands (left-to-right rainbow) at each trail position
-    for (const p of this.points) {
-      const screenY = p.y - camY;
-      if (screenY < -segH || screenY > 750) continue;
-      const alpha = Math.max(0, 0.85 * (1 - p.age / RAINBOW_MAX));
+    // Sort by Y descending (bottom of screen first = oldest trail)
+    const sorted = this.points.filter((p) => {
+      const sy = p.y - camY;
+      return sy > -10 && sy < 760 && p.age < RAINBOW_MAX;
+    }).sort((a, b) => b.y - a.y);
+
+    // Draw connected quads between consecutive points for each color band
+    for (let i = 0; i < sorted.length - 1; i++) {
+      const cur = sorted[i];
+      const nxt = sorted[i + 1];
+      const sy1 = cur.y - camY;
+      const sy2 = nxt.y - camY;
+      const alpha1 = Math.max(0, 0.85 * (1 - cur.age / RAINBOW_MAX));
+      const alpha2 = Math.max(0, 0.85 * (1 - nxt.age / RAINBOW_MAX));
+      const alpha = (alpha1 + alpha2) / 2;
       if (alpha < 0.01) continue;
-      const left = p.x;
+      // Jiggle: slight horizontal wobble based on age
+      const jig1 = Math.sin(cur.age * 0.3 + cur.y * 0.02) * 1.5;
+      const jig2 = Math.sin(nxt.age * 0.3 + nxt.y * 0.02) * 1.5;
+      // Center on character (p.x is left edge of character)
+      const cx1 = cur.x + charW / 2 + jig1;
+      const cx2 = nxt.x + charW / 2 + jig2;
       for (let s = 0; s < colors.length; s++) {
-        gfx.rect(left + s * bandW, screenY, bandW, segH);
+        const lOff = (s - colors.length / 2) * bandW;
+        const rOff = lOff + bandW;
+        gfx.moveTo(cx1 + lOff, sy1);
+        gfx.lineTo(cx1 + rOff, sy1);
+        gfx.lineTo(cx2 + rOff, sy2);
+        gfx.lineTo(cx2 + lOff, sy2);
+        gfx.closePath();
         gfx.fill({ color: colors[s], alpha });
       }
     }
