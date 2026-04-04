@@ -90,7 +90,7 @@ export class GameScene {
     if (this.cosmeticTheme === "theme_neon") {
       // Neon bloom: gentle blur on the entire scene — bright neon colors
       // bleed against the dark background for a glow effect
-      this.container.filters = [new BlurFilter({ strength: 0.8, quality: 2 })];
+      this.container.filters = [new BlurFilter({ strength: 1.5, quality: 3 })];
     }
     this.gameContainer.addChild(this.particles.crumbleContainer);
     this.gameContainer.addChild(this.particles.dustContainer);

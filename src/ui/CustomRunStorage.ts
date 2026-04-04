@@ -71,6 +71,7 @@ export const ROW_H = 28;
 export const SECTION_GAP = 10;
 export const TAP_THRESHOLD = 8; // px — less movement than this counts as a tap
 
+import { getUITheme } from "./ThemeUI";
 export const labelStyle = new TextStyle({
   fontFamily: "monospace", fontSize: LABEL_FONT,
   fill: "#ffffff", fontWeight: "bold",
@@ -79,10 +80,11 @@ export const sectionStyle = (color: string) => new TextStyle({
   fontFamily: "monospace", fontSize: 13,
   fill: color, fontWeight: "bold",
 });
-export const valStyle = (on: boolean) => new TextStyle({
-  fontFamily: "monospace", fontSize: BTN_FONT,
-  fill: on ? "#44ff44" : "#aa8877", fontWeight: "bold",
-});
+export const valStyle = (on: boolean) => {
+  const t = getUITheme();
+  return new TextStyle({ fontFamily: "monospace", fontSize: BTN_FONT,
+    fill: on ? "#44ff44" : t.textDim, fontWeight: "bold" });
+};
 export const btnTextStyle = new TextStyle({
   fontFamily: "monospace", fontSize: BTN_FONT,
   fill: "#88aaff", fontWeight: "bold",
@@ -163,15 +165,16 @@ export function addPresetRow(
 
     const pbg = new Graphics();
     pbg.roundRect(bx, y, btnW, 24, 5);
-    pbg.fill({ color: 0x443322, alpha: 0.8 });
-    pbg.stroke({ width: 1, color: 0x886644, alpha: 0.5 });
+    const t = getUITheme();
+    pbg.fill({ color: t.buttonBg, alpha: 0.8 });
+    pbg.stroke({ width: 1, color: t.buttonBorder, alpha: 0.5 });
     scrollContent.addChild(pbg);
 
     const ptxt = new Text({
       text: preset.label,
       style: new TextStyle({
         fontFamily: "monospace", fontSize: 11,
-        fill: "#ffcc88", fontWeight: "bold",
+        fill: getUITheme().accent, fontWeight: "bold",
       }),
     });
     ptxt.x = bx + btnW / 2;
@@ -300,7 +303,7 @@ export function createBottomBar(
 ): void {
   const bottomBg = new Graphics();
   bottomBg.rect(0, gameHeight - bottomH, gameWidth, bottomH);
-  bottomBg.fill({ color: 0x000000, alpha: 0.95 });
+  bottomBg.fill({ color: getUITheme().bg, alpha: 0.95 });
   bottomBg.eventMode = "static";
   container.addChild(bottomBg);
 

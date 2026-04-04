@@ -223,15 +223,16 @@ function drawNeonPlatform(gfx: Graphics, w: number, h: number, style: PlatformSt
     ice: 0x66ddff, teleport: 0xcc44ff, crumbling: 0xff6644,
   };
   const c = neonOverrides[style] ?? neonify(zoneColor);
-  // Multi-layer glow — 4 concentric layers for convincing neon bloom
-  gfx.roundRect(-8, -5, w + 16, h + 10, 9); gfx.fill({ color: c, alpha: 0.04 });
-  gfx.roundRect(-5, -3, w + 10, h + 6, 7); gfx.fill({ color: c, alpha: 0.07 });
-  gfx.roundRect(-3, -2, w + 6, h + 4, 6); gfx.fill({ color: c, alpha: 0.12 });
-  gfx.roundRect(-1, -1, w + 2, h + 2, 5); gfx.fill({ color: c, alpha: 0.18 });
-  // Bright neon outline (the "tube")
-  gfx.roundRect(0, 0, w, h, 4); gfx.stroke({ width: 2, color: c });
-  // White-hot center highlight
-  gfx.roundRect(2, 1, w - 4, h - 2, 3); gfx.stroke({ width: 0.8, color: 0xffffff, alpha: 0.3 });
+  // 5 concentric glow layers — wide outer halo for strong neon bloom
+  gfx.roundRect(-12, -7, w + 24, h + 14, 12); gfx.fill({ color: c, alpha: 0.03 });
+  gfx.roundRect(-8, -5, w + 16, h + 10, 9); gfx.fill({ color: c, alpha: 0.06 });
+  gfx.roundRect(-5, -3, w + 10, h + 6, 7); gfx.fill({ color: c, alpha: 0.1 });
+  gfx.roundRect(-2, -1, w + 4, h + 2, 5); gfx.fill({ color: c, alpha: 0.18 });
+  gfx.roundRect(0, 0, w, h, 4); gfx.fill({ color: c, alpha: 0.25 });
+  // Bright neon outline
+  gfx.roundRect(0, 0, w, h, 4); gfx.stroke({ width: 2.5, color: c });
+  // White-hot center
+  gfx.roundRect(2, 1, w - 4, h - 2, 3); gfx.stroke({ width: 1, color: 0xffffff, alpha: 0.4 });
 }
 
 function drawPixelPlatform(gfx: Graphics, w: number, _h: number, color: number): void {
