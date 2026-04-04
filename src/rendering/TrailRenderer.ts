@@ -45,8 +45,10 @@ export class TrailRenderer {
   addPoint(x: number, y: number): void {
     if (!this.trailType) return;
     this.points.push({ x, y, age: 0 });
-    const max = RAINBOW_TRAILS.has(this.trailType) ? RAINBOW_MAX : MAX_TRAIL_LENGTH;
-    if (this.points.length > max) this.points.shift();
+    // Cap array size (rainbow pruning happens in updateRainbow by age)
+    if (this.points.length > MAX_TRAIL_LENGTH && !RAINBOW_TRAILS.has(this.trailType)) {
+      this.points.shift();
+    }
   }
 
   private getFromPool(index: number): Graphics {

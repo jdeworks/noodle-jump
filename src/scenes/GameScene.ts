@@ -1,5 +1,5 @@
 /** Gameplay scene — thin orchestrator wiring pure logic to PixiJS rendering. */
-import { BlurFilter, Container, Graphics, Text, TextStyle } from "pixi.js";
+import { Container, Graphics, Text, TextStyle } from "pixi.js";
 import { worldToScreen } from "../systems/Camera";
 import { getInterpolatedTheme } from "../systems/Zone";
 import { ParallaxBackground } from "../systems/Parallax";
@@ -89,11 +89,8 @@ export class GameScene {
     this.parallax.setCosmeticTheme(this.cosmeticTheme);
     this.container.addChild(this.parallax.container);
     this.container.addChild(this.gameContainer);
-    if (this.cosmeticTheme === "theme_neon") {
-      // Neon bloom: gentle blur on the entire scene — bright neon colors
-      // bleed against the dark background for a glow effect
-      this.container.filters = [new BlurFilter({ strength: 1.5, quality: 3 })];
-    }
+    // Neon glow is handled by multi-layer alpha in ThemeSprites — no BlurFilter
+    // needed (BlurFilter on full scene kills FPS on mobile)
     this.gameContainer.addChild(this.particles.crumbleContainer);
     this.gameContainer.addChild(this.particles.dustContainer);
     this.gameContainer.addChild(this.particles.sneezeContainer);
