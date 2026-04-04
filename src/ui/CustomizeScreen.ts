@@ -1,0 +1,278 @@
+/** Customize screen — browse/equip cosmetics, view achievements, enter codes. */
+
+import { Container, Graphics, Text, TextStyle } from "pixi.js";
+import { GAME_WIDTH, GAME_HEIGHT } from "../config/constants";
+import {
+  loadCosmetics, saveCosmetics, equipCosmetic, getCosmeticsByType, TINT_COLORS,
+  COSMETICS, UNLOCKABLE_CHARACTERS, isCharacterUnlocked, type CosmeticState,
+} from "../systems/Cosmetics";
+import { ACHIEVEMENTS, loadAchievements, saveAchievements } from "../systems/Achievements";
+import { CHARACTERS } from "../rendering/PlayerCharacters";
+import { getSelectedCharacter, setSelectedCharacter } from "../systems/CharacterSettings";
+import { tryCode, loadUnlockCodeState, saveUnlockCodeState, markCodeUsed } from "../systems/UnlockCodes";
+import { exportProgress, importProgress, copyToClipboard } from "../systems/ProgressBackup";
+import {
+  addSection, addCosmeticRow, addAchievementRow, addCharacterRow,
+  addButtonRow, addInfoText, ROW_H, type TapRegion,
+} from "./CustomizeStorage";
+
+const TAP_THRESHOLD = 8;
+const BOTTOM_H = 44;
+
+export class CustomizeScreen {
+  readonly container = new Container();
+  private active = false;
+  private cosmeticState: CosmeticState = loadCosmetics();
+  private scrollContent = new Container();
+  private tapRegions: TapRegion[] = [];
+  private scrollY = 0;
+  private maxScroll = 0;
+  private scrollVelocity = 0;
+  private dragging = false;
+  private dragStartY = 0;
+  private dragLastY = 0;
+  private totalDragDist = 0;
+  private dragVelocity = 0;
+  private tickerFn: (() => void) | null = null;
+  onClose: (() => void) | null = null;
+
+  show(): void {
+    this.active = true;
+    this.container.visible = true;
+    this.cosmeticState = loadCosmetics();
+    this.scrollY = 0;
+    this.scrollVelocity = 0;
+    this.render();
+  }
+
+  hide(): void {
+    this.active = false;
+    this.container.visible = false;
+    while (this.container.children.length > 0) {
+      const c = this.container.children[0];
+      this.container.removeChild(c);
+      c.destroy({ children: true });
+    }
+    this.onClose?.();
+  }
+
+  isActive(): boolean { return this.active; }
+
+  private render(): void {
+    const old = this.scrollContent;
+    this.scrollContent = new Container();
+    this.tapRegions = [];
+    let y = 8;
+    const gw = GAME_WIDTH;
+    const achs = loadAchievements();
+    const selectedChar = getSelectedCharacter();
+
+    // ── Characters ──
+    y = addSection(this.scrollContent, gw, "CHARACTERS", y);
+    for (const ch of CHARACTERS) {
+      const unlockable = UNLOCKABLE_CHARACTERS.find((u) => u.id === ch.id);
+      const unlocked = unlockable ? isCharacterUnlocked(ch.id, achs.unlocked) : true;
+      y = addCharacterRow(this.scrollContent, this.tapRegions, gw,
+        ch.id, ch.name, unlocked, ch.id === selectedChar, y,
+        () => { setSelectedCharacter(ch.id); this.render(); });
+    }
+    y += 6;
+
+    // ── Trails ──
+    y = addSection(this.scrollContent, gw, "TRAILS", y);
+    for (const c of getCosmeticsByType("trail")) {
+      const unlocked = this.cosmeticState.unlocked.has(c.id);
+      const equipped = this.cosmeticState.equipped.trail === c.id;
+      y = addCosmeticRow(this.scrollContent, this.tapRegions, gw, c, unlocked, equipped, y,
+        () => { this.cosmeticState = equipCosmetic(this.cosmeticState, c.id); saveCosmetics(this.cosmeticState); this.render(); });
+    }
+    y += 6;
+
+    // ── Tints ──
+    y = addSection(this.scrollContent, gw, "TINTS", y);
+    for (const c of getCosmeticsByType("tint")) {
+      const unlocked = this.cosmeticState.unlocked.has(c.id);
+      const equipped = this.cosmeticState.equipped.tint === c.id;
+      y = addCosmeticRow(this.scrollContent, this.tapRegions, gw, c, unlocked, equipped, y,
+        () => { this.cosmeticState = equipCosmetic(this.cosmeticState, c.id); saveCosmetics(this.cosmeticState); this.render(); },
+        TINT_COLORS[c.id]);
+    }
+    y += 6;
+
+    // ── Themes ──
+    y = addSection(this.scrollContent, gw, "THEMES", y);
+    for (const c of getCosmeticsByType("theme")) {
+      const unlocked = this.cosmeticState.unlocked.has(c.id);
+      const equipped = this.cosmeticState.equipped.theme === c.id;
+      y = addCosmeticRow(this.scrollContent, this.tapRegions, gw, c, unlocked, equipped, y,
+        () => { this.cosmeticState = equipCosmetic(this.cosmeticState, c.id); saveCosmetics(this.cosmeticState); this.render(); });
+    }
+    y += 6;
+
+    // ── Achievements ──
+    const unlockCount = [...achs.unlocked].length;
+    y = addSection(this.scrollContent, gw, `ACHIEVEMENTS (${unlockCount}/${ACHIEVEMENTS.length})`, y);
+    for (const a of ACHIEVEMENTS) {
+      y = addAchievementRow(this.scrollContent, gw, a, achs.unlocked.has(a.id), y);
+    }
+    y += 8;
+
+    // ── Unlock Code ──
+    y = addSection(this.scrollContent, gw, "UNLOCK CODE", y);
+    y = addButtonRow(this.scrollContent, this.tapRegions, gw, "Enter Code", "#88aaff", y, () => this.promptCode());
+    y += 4;
+
+    // ── Export / Import ──
+    y = addSection(this.scrollContent, gw, "BACKUP", y);
+    y = addButtonRow(this.scrollContent, this.tapRegions, gw, "Export Progress", "#88ff88", y, () => this.doExport());
+    y = addButtonRow(this.scrollContent, this.tapRegions, gw, "Import Progress", "#ffaa88", y, () => this.doImport());
+    y += 4;
+
+    y = addInfoText(this.scrollContent, gw, "Progress is stored locally in your browser. Clearing browser data will erase unlocks. Use Export to back up.", y);
+    y += 16;
+
+    this.maxScroll = Math.max(0, y - (GAME_HEIGHT - BOTTOM_H - 44));
+    this.buildUI(old);
+  }
+
+  private buildUI(oldContent: Container): void {
+    while (this.container.children.length > 0) {
+      const c = this.container.children[0];
+      this.container.removeChild(c);
+      if (c !== oldContent) c.destroy({ children: true });
+    }
+    oldContent.destroy({ children: true });
+
+    // Background
+    const bg = new Graphics();
+    bg.rect(0, 0, GAME_WIDTH, GAME_HEIGHT); bg.fill(0x111111);
+    this.container.addChild(bg);
+
+    // Title
+    const title = new Text({ text: "CUSTOMIZE", style: new TextStyle({ fontFamily: "monospace", fontSize: 18, fill: "#ffcc88", fontWeight: "bold" }) });
+    title.x = GAME_WIDTH / 2; title.y = 14; title.anchor.set(0.5, 0);
+    this.container.addChild(title);
+
+    // Scroll mask
+    const mask = new Graphics();
+    mask.rect(0, 40, GAME_WIDTH, GAME_HEIGHT - 40 - BOTTOM_H); mask.fill(0xffffff);
+    this.container.addChild(mask);
+    this.scrollContent.y = 40 - this.scrollY;
+    this.scrollContent.mask = mask;
+    this.container.addChild(this.scrollContent);
+
+    // Scroll overlay (captures input)
+    const overlay = new Graphics();
+    overlay.rect(0, 40, GAME_WIDTH, GAME_HEIGHT - 40 - BOTTOM_H);
+    overlay.fill({ color: 0x000000, alpha: 0.001 });
+    overlay.eventMode = "static";
+    this.container.addChild(overlay);
+    this.bindScroll(overlay);
+
+    // Bottom bar
+    const bar = new Graphics();
+    bar.rect(0, GAME_HEIGHT - BOTTOM_H, GAME_WIDTH, BOTTOM_H); bar.fill({ color: 0x000000, alpha: 0.95 });
+    bar.eventMode = "static";
+    this.container.addChild(bar);
+    const backBtn = new Text({ text: "[ Back ]", style: new TextStyle({ fontFamily: "monospace", fontSize: 16, fill: "#ccbbaa", fontWeight: "bold" }) });
+    backBtn.x = GAME_WIDTH / 2; backBtn.y = GAME_HEIGHT - BOTTOM_H + 14; backBtn.anchor.set(0.5, 0);
+    backBtn.eventMode = "static"; backBtn.cursor = "pointer";
+    backBtn.on("pointertap", () => this.hide());
+    this.container.addChild(backBtn);
+
+    this.startMomentum();
+  }
+
+  private bindScroll(overlay: Graphics): void {
+    overlay.on("pointerdown", (e) => {
+      this.dragging = true; this.dragStartY = e.globalY; this.dragLastY = e.globalY;
+      this.totalDragDist = 0; this.scrollVelocity = 0; this.dragVelocity = 0;
+    });
+    overlay.on("globalpointermove", (e) => {
+      if (!this.dragging) return;
+      const dy = this.dragLastY - e.globalY;
+      this.scrollY = Math.max(0, Math.min(this.maxScroll, this.scrollY + dy));
+      this.scrollContent.y = 40 - this.scrollY;
+      this.totalDragDist += Math.abs(dy);
+      this.dragVelocity = dy;
+      this.dragLastY = e.globalY;
+    });
+    const endDrag = (e: { globalY: number }) => {
+      if (!this.dragging) return;
+      this.dragging = false;
+      if (this.totalDragDist < TAP_THRESHOLD) {
+        const sy = e.globalY - 40 + this.scrollY;
+        for (const r of this.tapRegions) {
+          if (e.globalY >= 40 && e.globalY <= GAME_HEIGHT - BOTTOM_H &&
+              sy >= r.y && sy < r.y + r.h) { r.action(); return; }
+        }
+      } else { this.scrollVelocity = this.dragVelocity; }
+    };
+    overlay.on("pointerup", endDrag);
+    overlay.on("pointerupoutside", endDrag);
+    overlay.on("wheel", (e) => {
+      this.scrollY = Math.max(0, Math.min(this.maxScroll, this.scrollY + (e as unknown as WheelEvent).deltaY));
+      this.scrollContent.y = 40 - this.scrollY;
+      this.scrollVelocity = 0;
+    });
+  }
+
+  private startMomentum(): void {
+    if (this.tickerFn) return;
+    this.tickerFn = () => {
+      if (!this.active) return;
+      if (Math.abs(this.scrollVelocity) > 0.5) {
+        this.scrollY = Math.max(0, Math.min(this.maxScroll, this.scrollY + this.scrollVelocity));
+        this.scrollContent.y = 40 - this.scrollY;
+        this.scrollVelocity *= 0.92;
+      }
+    };
+    requestAnimationFrame(function tick(fn: () => void) { fn(); requestAnimationFrame(() => tick(fn)); }.bind(null, this.tickerFn));
+  }
+
+  private promptCode(): void {
+    const code = window.prompt("Enter unlock code:");
+    if (!code) return;
+    const result = tryCode(code, this.cosmeticState);
+    if (result) {
+      this.cosmeticState = result.cosmetics;
+      saveCosmetics(this.cosmeticState);
+      let codeState = loadUnlockCodeState();
+      codeState = markCodeUsed(codeState, code);
+      saveUnlockCodeState(codeState);
+      // Unlock characters via code
+      for (const charId of result.unlockedCharacters) {
+        // Characters are gated by achievements — mark the required achievement as unlocked
+        const ch = UNLOCKABLE_CHARACTERS.find((u) => u.id === charId);
+        if (ch?.unlockAchievement) {
+          const achs = loadAchievements();
+          if (!achs.unlocked.has(ch.unlockAchievement)) {
+            achs.unlocked.add(ch.unlockAchievement);
+            saveAchievements(achs);
+          }
+        }
+      }
+      this.render();
+    } else {
+      window.alert("Invalid code.");
+    }
+  }
+
+  private async doExport(): Promise<void> {
+    const encoded = exportProgress();
+    const ok = await copyToClipboard(encoded);
+    window.alert(ok ? "Progress copied to clipboard!" : "Failed to copy. Try manually.");
+  }
+
+  private doImport(): void {
+    const encoded = window.prompt("Paste your progress code:");
+    if (!encoded) return;
+    if (importProgress(encoded)) {
+      this.cosmeticState = loadCosmetics();
+      window.alert("Progress restored!");
+      this.render();
+    } else {
+      window.alert("Invalid progress code.");
+    }
+  }
+}

@@ -10,6 +10,7 @@ import { createSettingsToggles } from "./SettingsToggles";
 import { requestFullscreen } from "../utils/wakeLock";
 import { ExplanationScreen } from "./ExplanationScreen";
 import { CustomRunScreen } from "./CustomRunScreen";
+import { CustomizeScreen } from "./CustomizeScreen";
 import { loadStats } from "./StatsPanel";
 import { drawCharacter, CHARACTERS } from "../rendering/PlayerCharacters";
 import { getSelectedCharacter, setSelectedCharacter } from "../systems/CharacterSettings";
@@ -197,6 +198,10 @@ export function showTitleScreen(
   const customBtn = customButton.text;
   cursorY += btnH + btnSpacing;
 
+  // 3b. Customize
+  const custButton = makeButton("Customize", cursorY, 0x222233, "#ffcc88", 15);
+  cursorY += btnH + btnSpacing;
+
   // 4. Fullscreen (iOS doesn't support Fullscreen API — suggest PWA install)
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
   const isPWA = window.matchMedia("(display-mode: standalone)").matches;
@@ -265,6 +270,13 @@ export function showTitleScreen(
   customBtn.eventMode = "static";
   customBtn.on("pointertap", showCustom);
 
+  // Customize screen
+  const customizeScreen = new CustomizeScreen();
+  const showCust = (e: Event) => { e.stopPropagation(); contentGroup.visible = false; customizeScreen.show(); };
+  custButton.bg.on("pointertap", showCust);
+  custButton.text.eventMode = "static";
+  custButton.text.on("pointertap", showCust);
+
   // Multiplayer
   let mpMenu: MultiplayerMenu | null = null;
   const cleanupTitle = () => {
@@ -293,10 +305,11 @@ export function showTitleScreen(
   // Restore content when sub-menus close
   explanationScreen.onClose = () => { contentGroup.visible = true; };
   customRunScreen.onClose = () => { contentGroup.visible = true; };
+  customizeScreen.onClose = () => { contentGroup.visible = true; };
 
-  // Add overlay containers LAST so they render on top of everything
   titleContainer.addChild(explanationScreen.container);
   titleContainer.addChild(customRunScreen.container);
+  titleContainer.addChild(customizeScreen.container);
 
   // Stats display — below settings panel
   const stats = loadStats();
@@ -342,7 +355,7 @@ export function showTitleScreen(
   let started = false;
   const startGame = async () => {
     if (started) return;
-    if (explanationScreen.isActive() || customRunScreen.isActive()) return;
+    if (explanationScreen.isActive() || customRunScreen.isActive() || customizeScreen.isActive()) return;
     started = true;
 
     window.removeEventListener("keydown", handleKey);
@@ -378,7 +391,7 @@ export function showTitleScreen(
 
   // Keyboard still works
   const handleKey = (e: KeyboardEvent) => {
-    if (explanationScreen.isActive() || customRunScreen.isActive()) return;
+    if (explanationScreen.isActive() || customRunScreen.isActive() || customizeScreen.isActive()) return;
     if (e.key === "Enter" || e.key === " ") startGame();
   };
   window.addEventListener("keydown", handleKey);
