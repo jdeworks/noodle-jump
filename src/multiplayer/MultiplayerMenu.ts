@@ -253,21 +253,14 @@ export class MultiplayerMenu implements MenuContext {
     }
 
     const lobby = new LobbyScreen(role, sync, {
-      onStart: (seed, mode, touchControls, remoteChar) => {
+      onStart: (seed, mode, touchControls, remoteChar, remoteCos) => {
         this.container.removeChild(lobby.container);
         lobby.destroy();
         this.onLaunch?.();
         this.container.visible = false;
-
         const session = new OnlineSession({
-          app: this.app,
-          connection: this.connection!,
-          seed,
-          role,
-          mode,
-          touchControls,
-          remoteCharacter: remoteChar,
-          sync,
+          app: this.app, connection: this.connection!, seed, role, mode,
+          touchControls, remoteCharacter: remoteChar, remoteCosmetics: remoteCos, sync,
         });
         session.start();
       },

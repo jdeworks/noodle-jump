@@ -224,9 +224,7 @@ export function showTitleScreen(
       stroke: { color: "#000000", width: 2 },
     }),
   });
-  kbHint.x = GAME_WIDTH / 2;
-  kbHint.y = cursorY;
-  kbHint.anchor.set(0.5, 0);
+  kbHint.x = GAME_WIDTH / 2; kbHint.y = cursorY; kbHint.anchor.set(0.5, 0);
   contentGroup.addChild(kbHint);
   cursorY += 38;
 
@@ -255,7 +253,7 @@ export function showTitleScreen(
       initAudio();
       playMusic(0);
       app.ticker.remove(titleTicker);
-      parallax.destroy();
+      titleDestroyed = true; parallax.destroy();
       app.stage.removeChild(titleContainer);
       titleContainer.destroy({ children: true });
       onStartGame(config);
@@ -279,7 +277,7 @@ export function showTitleScreen(
     // Remove the Enter/Space keyboard listener that starts a single-player game —
     // without this, pressing Enter in multiplayer menus launches a hidden solo game.
     window.removeEventListener("keydown", handleKey);
-    parallax.destroy();
+    titleDestroyed = true; parallax.destroy();
     app.stage.removeChild(titleContainer);
     titleContainer.destroy({ children: true });
   };
@@ -303,7 +301,7 @@ export function showTitleScreen(
   customizeScreen.onClose = () => {
     // Rebuild entire title screen to pick up theme changes
     app.ticker.remove(titleTicker);
-    parallax.destroy();
+    titleDestroyed = true; parallax.destroy();
     app.stage.removeChild(titleContainer);
     titleContainer.destroy({ children: true });
     showTitleScreen(app, onStartGame);
@@ -338,7 +336,9 @@ export function showTitleScreen(
 
   let scrollY = 0;
   let animTick = 0;
+  let titleDestroyed = false;
   const titleTicker = () => {
+    if (titleDestroyed) return;
     scrollY -= 4;
     parallax.update(scrollY);
     const pulse = 0.85 + Math.sin(Date.now() * 0.004) * 0.15;
@@ -367,7 +367,7 @@ export function showTitleScreen(
     applyMusicVolume();
 
     app.ticker.remove(titleTicker);
-    parallax.destroy();
+    titleDestroyed = true; parallax.destroy();
     app.stage.removeChild(titleContainer);
     titleContainer.destroy({ children: true });
 
