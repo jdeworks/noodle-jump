@@ -101,6 +101,42 @@ export function addButtonRow(
   return y + ROW_H + 4;
 }
 
+/** 2-column cosmetic grid item (for trails, tints). */
+export function addCosmeticGridItem(
+  c: Container, taps: TapRegion[], gw: number,
+  cosmetic: Cosmetic, unlocked: boolean, equipped: boolean,
+  col: number, y: number, onEquip: () => void, swatchColor?: number,
+): void {
+  const colW = (gw - 20) / 2;
+  const x = 10 + col * colW;
+  const style = !unlocked ? lockedStyle : equipped ? equippedStyle : labelStyle;
+  const prefix = equipped ? "* " : unlocked ? "  " : "# ";
+  const t = new Text({ text: `${prefix}${cosmetic.name}`, style });
+  t.x = x + 4; t.y = y; c.addChild(t);
+  if (swatchColor !== undefined && swatchColor !== 0xffffff) {
+    const sw = new Graphics();
+    sw.roundRect(x + colW - 22, y + 2, 12, 12, 3);
+    sw.fill(unlocked ? swatchColor : 0x444444);
+    c.addChild(sw);
+  }
+  if (unlocked) taps.push({ x, y, w: colW, h: ROW_H, action: onEquip });
+}
+
+/** 2-column character grid item. */
+export function addCharGridItem(
+  c: Container, taps: TapRegion[], gw: number,
+  name: string, unlocked: boolean, selected: boolean,
+  col: number, y: number, onSelect: () => void,
+): void {
+  const colW = (gw - 20) / 2;
+  const x = 10 + col * colW;
+  const style = !unlocked ? lockedStyle : selected ? equippedStyle : labelStyle;
+  const prefix = selected ? "* " : unlocked ? "  " : "# ";
+  const t = new Text({ text: `${prefix}${name}`, style });
+  t.x = x + 4; t.y = y; c.addChild(t);
+  if (unlocked) taps.push({ x, y, w: colW, h: ROW_H, action: onSelect });
+}
+
 /** Small dim text line. */
 export function addInfoText(c: Container, gw: number, text: string, y: number): number {
   const t = new Text({ text, style: new TextStyle({ fontFamily: "monospace", fontSize: 10, fill: "#554433", wordWrap: true, wordWrapWidth: gw - 40 }) });

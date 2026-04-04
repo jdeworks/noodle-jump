@@ -12,8 +12,9 @@ import { getSelectedCharacter, setSelectedCharacter } from "../systems/Character
 import { tryCode, loadUnlockCodeState, saveUnlockCodeState, markCodeUsed } from "../systems/UnlockCodes";
 import { exportProgress, importProgress, copyToClipboard } from "../systems/ProgressBackup";
 import {
-  addSection, addCosmeticRow, addAchievementRow, addCharacterRow,
-  addButtonRow, addInfoText, ROW_H, type TapRegion,
+  addSection, addCosmeticRow, addAchievementRow,
+  addButtonRow, addInfoText, addCosmeticGridItem, addCharGridItem,
+  ROW_H, type TapRegion,
 } from "./CustomizeStorage";
 
 const TAP_THRESHOLD = 8;
@@ -62,73 +63,76 @@ export class CustomizeScreen {
     const old = this.scrollContent;
     this.scrollContent = new Container();
     this.tapRegions = [];
-    let y = 8;
+    let y = 4;
     const gw = GAME_WIDTH;
     const achs = loadAchievements();
     const selectedChar = getSelectedCharacter();
+    const equipFn = (id: string) => () => {
+      this.cosmeticState = equipCosmetic(this.cosmeticState, id);
+      saveCosmetics(this.cosmeticState); this.render();
+    };
 
-    // ── Characters ──
+    // ── Unlock Code + Backup (at top for easy access) ──
+    y = addButtonRow(this.scrollContent, this.tapRegions, gw, "Enter Code", "#88aaff", y, () => this.promptCode());
+    y = addButtonRow(this.scrollContent, this.tapRegions, gw, "Export", "#88ff88", y, () => this.doExport());
+    y = addButtonRow(this.scrollContent, this.tapRegions, gw, "Import", "#ffaa88", y, () => this.doImport());
+    y = addInfoText(this.scrollContent, gw, "Progress is local — use Export to back up before clearing browser data.", y);
+
+    // ── Characters (2-column grid) ──
     y = addSection(this.scrollContent, gw, "CHARACTERS", y);
-    for (const ch of CHARACTERS) {
+    for (let i = 0; i < CHARACTERS.length; i++) {
+      const ch = CHARACTERS[i];
       const unlockable = UNLOCKABLE_CHARACTERS.find((u) => u.id === ch.id);
       const unlocked = unlockable ? isCharacterUnlocked(ch.id, achs.unlocked) : true;
-      y = addCharacterRow(this.scrollContent, this.tapRegions, gw,
-        ch.id, ch.name, unlocked, ch.id === selectedChar, y,
+      const col = i % 2;
+      if (col === 0 && i > 0) y += ROW_H;
+      addCharGridItem(this.scrollContent, this.tapRegions, gw,
+        ch.name, unlocked, ch.id === selectedChar, col, y,
         () => { setSelectedCharacter(ch.id); this.render(); });
     }
-    y += 6;
+    y += ROW_H + 6;
 
-    // ── Trails ──
+    // ── Trails (2-column grid) ──
     y = addSection(this.scrollContent, gw, "TRAILS", y);
-    for (const c of getCosmeticsByType("trail")) {
-      const unlocked = this.cosmeticState.unlocked.has(c.id);
-      const equipped = this.cosmeticState.equipped.trail === c.id;
-      y = addCosmeticRow(this.scrollContent, this.tapRegions, gw, c, unlocked, equipped, y,
-        () => { this.cosmeticState = equipCosmetic(this.cosmeticState, c.id); saveCosmetics(this.cosmeticState); this.render(); });
+    const trails = getCosmeticsByType("trail");
+    for (let i = 0; i < trails.length; i++) {
+      const c = trails[i];
+      const col = i % 2;
+      if (col === 0 && i > 0) y += ROW_H;
+      addCosmeticGridItem(this.scrollContent, this.tapRegions, gw,
+        c, this.cosmeticState.unlocked.has(c.id), this.cosmeticState.equipped.trail === c.id,
+        col, y, equipFn(c.id));
     }
-    y += 6;
+    y += ROW_H + 6;
 
-    // ── Tints ──
+    // ── Tints (2-column grid with swatches) ──
     y = addSection(this.scrollContent, gw, "TINTS", y);
-    for (const c of getCosmeticsByType("tint")) {
-      const unlocked = this.cosmeticState.unlocked.has(c.id);
-      const equipped = this.cosmeticState.equipped.tint === c.id;
-      y = addCosmeticRow(this.scrollContent, this.tapRegions, gw, c, unlocked, equipped, y,
-        () => { this.cosmeticState = equipCosmetic(this.cosmeticState, c.id); saveCosmetics(this.cosmeticState); this.render(); },
-        TINT_COLORS[c.id]);
+    const tints = getCosmeticsByType("tint");
+    for (let i = 0; i < tints.length; i++) {
+      const c = tints[i];
+      const col = i % 2;
+      if (col === 0 && i > 0) y += ROW_H;
+      addCosmeticGridItem(this.scrollContent, this.tapRegions, gw,
+        c, this.cosmeticState.unlocked.has(c.id), this.cosmeticState.equipped.tint === c.id,
+        col, y, equipFn(c.id), TINT_COLORS[c.id]);
     }
-    y += 6;
+    y += ROW_H + 6;
 
-    // ── Themes ──
+    // ── Themes (full-width rows with descriptions) ──
     y = addSection(this.scrollContent, gw, "THEMES", y);
     for (const c of getCosmeticsByType("theme")) {
-      const unlocked = this.cosmeticState.unlocked.has(c.id);
-      const equipped = this.cosmeticState.equipped.theme === c.id;
-      y = addCosmeticRow(this.scrollContent, this.tapRegions, gw, c, unlocked, equipped, y,
-        () => { this.cosmeticState = equipCosmetic(this.cosmeticState, c.id); saveCosmetics(this.cosmeticState); this.render(); });
+      y = addCosmeticRow(this.scrollContent, this.tapRegions, gw, c,
+        this.cosmeticState.unlocked.has(c.id), this.cosmeticState.equipped.theme === c.id,
+        y, equipFn(c.id));
     }
     y += 6;
 
-    // ── Achievements ──
+    // ── Achievements (2-column) ──
     const unlockCount = [...achs.unlocked].length;
     y = addSection(this.scrollContent, gw, `ACHIEVEMENTS (${unlockCount}/${ACHIEVEMENTS.length})`, y);
     for (const a of ACHIEVEMENTS) {
       y = addAchievementRow(this.scrollContent, gw, a, achs.unlocked.has(a.id), y);
     }
-    y += 8;
-
-    // ── Unlock Code ──
-    y = addSection(this.scrollContent, gw, "UNLOCK CODE", y);
-    y = addButtonRow(this.scrollContent, this.tapRegions, gw, "Enter Code", "#88aaff", y, () => this.promptCode());
-    y += 4;
-
-    // ── Export / Import ──
-    y = addSection(this.scrollContent, gw, "BACKUP", y);
-    y = addButtonRow(this.scrollContent, this.tapRegions, gw, "Export Progress", "#88ff88", y, () => this.doExport());
-    y = addButtonRow(this.scrollContent, this.tapRegions, gw, "Import Progress", "#ffaa88", y, () => this.doImport());
-    y += 4;
-
-    y = addInfoText(this.scrollContent, gw, "Progress is stored locally in your browser. Clearing browser data will erase unlocks. Use Export to back up.", y);
     y += 16;
 
     this.maxScroll = Math.max(0, y - (GAME_HEIGHT - BOTTOM_H - 44));

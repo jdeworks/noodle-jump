@@ -197,15 +197,18 @@ function drawNeonPlatform(gfx: Graphics, w: number, h: number, style: PlatformSt
     teleport: 0xaa44ff, weighted: 0x88ff88,
   };
   const c = colors[style] ?? 0x00ffff;
-  // Glow behind
+  // Wide outer glow
+  gfx.roundRect(-3, -2, w + 6, h + 4, 6);
+  gfx.fill({ color: c, alpha: 0.1 });
+  // Inner glow
   gfx.roundRect(-1, -1, w + 2, h + 2, 5);
   gfx.fill({ color: c, alpha: 0.15 });
-  // Neon outline only
+  // Bright neon outline
   gfx.roundRect(0, 0, w, h, 4);
-  gfx.stroke({ width: 2, color: c });
-  // Subtle inner fill
-  gfx.roundRect(2, 2, w - 4, h - 4, 3);
-  gfx.fill({ color: c, alpha: 0.08 });
+  gfx.stroke({ width: 2.5, color: c });
+  // Center line highlight
+  gfx.moveTo(4, h / 2); gfx.lineTo(w - 4, h / 2);
+  gfx.stroke({ width: 1, color: c, alpha: 0.3 });
 }
 
 function drawPixelPlatform(gfx: Graphics, w: number, h: number, color: number): void {

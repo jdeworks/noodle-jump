@@ -155,15 +155,9 @@ export class GameScene {
       this.gameContainer,
     );
 
-    // Apply initial theme
-    const theme = getInterpolatedTheme(0);
-    this.parallax.applyTheme(theme, this.state.zoneState.currentZone);
+    this.parallax.applyTheme(getInterpolatedTheme(0), this.state.zoneState.currentZone);
   }
-
-  initInput(canvas: HTMLCanvasElement): void {
-    this.input.init(canvas);
-  }
-
+  initInput(canvas: HTMLCanvasElement): void { this.input.init(canvas); }
   getState(): GameWorldState { return this.state; }
   isGameOver(): boolean { return this.state.gameOver; }
   getScore(): number { return this.state.scoreState.points; }
@@ -283,6 +277,13 @@ export class GameScene {
     }
 
     const theme = getInterpolatedTheme(this.state.platformsPassed);
+    if (this.cosmeticTheme !== "theme_default") {
+      const overrides: Record<string, number> = {
+        theme_neon: 0x080818, theme_pixel: 0x222222,
+        theme_candy: 0xffeef4, theme_dark: 0x0a0a14,
+      };
+      theme.background = overrides[this.cosmeticTheme] ?? theme.background;
+    }
     this.parallax.applyTheme(theme, this.state.zoneState.currentZone);
     this.parallax.update(this.state.camera.y);
     const camY = this.state.camera.y;
