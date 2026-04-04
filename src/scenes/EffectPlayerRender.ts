@@ -35,6 +35,7 @@ export function renderPlayerForEffect(
     playerW: number,
     playerH: number,
   ) => void,
+  cosmeticTint = 0xffffff,
 ): string | null {
   const { player, activeEffect, animTick, springFlashTicks } = state;
   const activeType = activeEffect?.type;
@@ -180,7 +181,7 @@ export function renderPlayerForEffect(
     playerGfx.x = player.x + player.width / 2;
     playerGfx.y = worldToScreen(player.y, camY);
     playerGfx.scale.set(1);
-    playerGfx.tint = 0xffffff;
+    playerGfx.tint = cosmeticTint;
     ensureEffectEmitter(particles, "pasta_shield", player.x, player.y, player.width, player.height);
     particles.updateEffectEmitter(player.x, player.y, player.width, player.height, camY);
     particles.clearTornadoParticles();
@@ -240,7 +241,7 @@ export function renderPlayerForEffect(
         player.x, player.y, player.width, player.height, camY, animTick,
       );
     } else {
-      playerGfx.tint = 0xffffff;
+      playerGfx.tint = cosmeticTint;
       particles.clearSpringParticles();
     }
 

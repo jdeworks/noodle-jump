@@ -111,8 +111,8 @@ function finishBossKill(s: GameWorldState, events: GameEvent[]): GameWorldState 
     bossAttacks: [],
     pendingTentacles: [],
     highestPlatformY: resumeY,
-    // Reset highestPlayerY so arena platforms don't get counted as "passed"
     highestPlayerY: s.player.y,
+    bossesDefeated: s.bossesDefeated + 1,
     meatballs: s.meatballs.filter((m) => m.collected || survivingPlatIds.has(m.platformId)),
     powerUps: s.powerUps.filter((pu) => pu.collected || survivingPlatIds.has(pu.platformId)),
   };
@@ -223,8 +223,7 @@ export function tickBoss(
     if (overlapX && stompY) {
       const dmgResult = damageBoss({ ...s.activeBoss, health: 1 });
       s = { ...s, activeBoss: { ...dmgResult.boss, deathTicks: BOSS_DEATH_TICKS } };
-      s = { ...s, player: { ...s.player, vy: -12 } };
-      // Bonus points for skill kill
+      s = { ...s, player: { ...s.player, vy: -12 }, bossStomps: s.bossStomps + 1 };
       s = { ...s, scoreState: { ...s.scoreState, points: s.scoreState.points + SKILL_KILL_POINTS } };
       events.push({ type: "skillKill" });
     }

@@ -1,5 +1,4 @@
 /** Gameplay scene — thin orchestrator wiring pure logic to PixiJS rendering. */
-
 import { Container, Graphics, Text, TextStyle } from "pixi.js";
 import { worldToScreen } from "../systems/Camera";
 import { getInterpolatedTheme } from "../systems/Zone";
@@ -32,7 +31,7 @@ import { handleEvents } from "./GameSceneEvents";
 import { renderBoss, renderBossArc, renderWeather, renderWindOverlay } from "./GameSceneRender";
 import { getMaxDuration } from "./effectDuration";
 import { TrailRenderer } from "../rendering/TrailRenderer";
-import { loadCosmetics } from "../systems/Cosmetics";
+import { loadCosmetics, TINT_COLORS } from "../systems/Cosmetics";
 import { getSelectedCharacter } from "../systems/CharacterSettings";
 import { getProjectileVisual, projectileSpins } from "../rendering/sprites";
 import { FloatingTextManager } from "./FloatingText";
@@ -62,6 +61,8 @@ export class GameScene {
   private knifeAmmoIcons = new Container();
   private trail: TrailRenderer;
   private cosmeticTrail: string | null;
+  private cosmeticTint: number;
+  private cosmeticTheme: string;
   private comboGlowGfx = new Graphics();
   private hitboxGfx = new Graphics();
   private tentacleGfx = new Graphics();
@@ -80,17 +81,14 @@ export class GameScene {
     const cosmetics = loadCosmetics();
     this.cosmeticTrail = cosmetics.equipped.trail;
     this.trail.setTrailType(this.cosmeticTrail);
+    this.cosmeticTint = TINT_COLORS[cosmetics.equipped.tint ?? "tint_none"] ?? 0xffffff;
+    this.cosmeticTheme = cosmetics.equipped.theme ?? "theme_default";
 
-    // Parallax background
     this.parallax = new ParallaxBackground();
     this.container.addChild(this.parallax.container);
-
-    // Game container (scrolls with camera)
     this.container.addChild(this.gameContainer);
     this.gameContainer.addChild(this.particles.crumbleContainer);
     this.gameContainer.addChild(this.particles.dustContainer);
-
-    // Effect particle containers
     this.gameContainer.addChild(this.particles.sneezeContainer);
     this.gameContainer.addChild(this.particles.springContainer);
     this.gameContainer.addChild(this.particles.lasagnaContainer);
@@ -189,6 +187,8 @@ export class GameScene {
   isInBossFight(): boolean { return this.state.inBossFight; }
   isCustomRun(): boolean { return this.state.runConfig.seed !== 0 || this.state.practiceMode; }
   getEnemiesKilled(): number { return this.state.enemiesKilled; }
+  getBossesDefeated(): number { return this.state.bossesDefeated; }
+  getBossStomps(): number { return this.state.bossStomps; }
   togglePause(): void { this.state = togglePause(this.state); }
   startCountdown(): void { this.state = startCountdown(this.state); }
   enableGhostMode(): void { this.state = { ...this.state, isGhost: true }; }
@@ -288,7 +288,7 @@ export class GameScene {
     this.parallax.update(this.state.camera.y);
     const camY = this.state.camera.y;
 
-    this.effectRenderer.renderPlayer(this.state, this.playerGfx, camY, this.particles, this.input.inputX);
+    this.effectRenderer.renderPlayer(this.state, this.playerGfx, camY, this.particles, this.input.inputX, this.cosmeticTint);
     renderPlatforms(this.state, this.gfxSync, theme, camY);
     renderMeatballs(this.state, this.gfxSync, camY);
     renderPowerUps(this.state, this.gfxSync, camY);

@@ -122,6 +122,10 @@ export interface GameWorldState {
   pendingBossZone: number | null;
   /** Enemies killed this game (for achievements). */
   enemiesKilled: number;
+  /** Bosses defeated this game. */
+  bossesDefeated: number;
+  /** Boss stomps this game (landed on boss head). */
+  bossStomps: number;
   /** Ghost mode — player keeps playing after death with frozen scoring (multiplayer). */
   isGhost: boolean;
   /** Height at moment of death in ghost mode. */
@@ -222,6 +226,8 @@ export function createInitialState(runConfig?: RunConfig): GameWorldState {
     inBossFight: false,
     pendingBossZone: null,
     enemiesKilled: 0,
+    bossesDefeated: 0,
+    bossStomps: 0,
     isGhost: false,
     ghostDeathHeight: 0,
     deathPenaltyEnabled: false,

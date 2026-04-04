@@ -128,6 +128,7 @@ export function createGameLoopTicker(
         combo: scene.getBestCombo(),
         zone: scene.getZone(),
         seconds: scene.getElapsedSeconds(),
+        bossesDefeated: scene.getBossesDefeated(),
       };
       // Only save stats for normal runs (not custom/practice)
       const isCustom = scene.isCustomRun();
@@ -140,6 +141,8 @@ export function createGameLoopTicker(
         platforms: scene.getPlatformsPassed(),
         streak: scene.getBestStreak(),
         enemiesKilled: scene.getEnemiesKilled(),
+        bossStomps: scene.getBossStomps(),
+        powerUpsCollected: scene.getPowerUpsCollected(),
       };
       const achState = loadAchievements();
       const achResult = checkAchievements(achState, stats, gameStats);

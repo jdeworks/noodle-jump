@@ -49,6 +49,7 @@ export class EffectRenderer {
     camY: number,
     particles: ParticleManager,
     inputX: number,
+    cosmeticTint = 0xffffff,
   ): void {
     const { activeEffect } = state;
     const activeType = activeEffect?.type;
@@ -60,6 +61,7 @@ export class EffectRenderer {
       particles,
       this.activeEmitterType,
       this.ensureEffectEmitter.bind(this),
+      cosmeticTint,
     );
 
     // Sprite faces movement direction (skip for spinning effects)

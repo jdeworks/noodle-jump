@@ -10,6 +10,7 @@ export interface PlayerStats {
   bestCombo: number;
   maxZone: number;
   totalPlayTimeSeconds: number;
+  totalBossesDefeated: number;
 }
 
 function defaultStats(): PlayerStats {
@@ -21,6 +22,7 @@ function defaultStats(): PlayerStats {
     bestCombo: 0,
     maxZone: 0,
     totalPlayTimeSeconds: 0,
+    totalBossesDefeated: 0,
   };
 }
 
@@ -52,6 +54,7 @@ export function updateStatsAfterGame(
     combo: number;
     zone: number;
     seconds: number;
+    bossesDefeated: number;
   },
 ): PlayerStats {
   return {
@@ -62,5 +65,6 @@ export function updateStatsAfterGame(
     bestCombo: Math.max(stats.bestCombo, gameResult.combo),
     maxZone: Math.max(stats.maxZone, gameResult.zone),
     totalPlayTimeSeconds: stats.totalPlayTimeSeconds + gameResult.seconds,
+    totalBossesDefeated: stats.totalBossesDefeated + gameResult.bossesDefeated,
   };
 }
