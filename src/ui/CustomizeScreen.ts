@@ -200,14 +200,15 @@ export class CustomizeScreen {
       this.dragVelocity = dy;
       this.dragLastY = e.globalY;
     });
-    const endDrag = (e: { globalY: number }) => {
+    const endDrag = (e: { globalX: number; globalY: number }) => {
       if (!this.dragging) return;
       this.dragging = false;
       if (this.totalDragDist < TAP_THRESHOLD) {
+        const sx = e.globalX;
         const sy = e.globalY - 40 + this.scrollY;
         for (const r of this.tapRegions) {
           if (e.globalY >= 40 && e.globalY <= GAME_HEIGHT - BOTTOM_H &&
-              sy >= r.y && sy < r.y + r.h) { r.action(); return; }
+              sx >= r.x && sx < r.x + r.w && sy >= r.y && sy < r.y + r.h) { r.action(); return; }
         }
       } else { this.scrollVelocity = this.dragVelocity; }
     };
