@@ -81,15 +81,32 @@ export class TrailRenderer {
       gfx.x = p.x; gfx.y = p.y - camY;
 
       if (isBand) {
-        // Horizontal rainbow/neon band — wider, stretches left-right
-        const bandW = 20 + (1 - p.age / MAX_AGE) * 12;
-        const bandH = 3 + (1 - p.age / MAX_AGE) * 3;
+        // Rainbow/neon: wide horizontal ribbon segments connecting consecutive points
+        const t = 1 - p.age / MAX_AGE;
+        const bandH = 3 + t * 5; // thicker when fresh
         const c = colors[i % colors.length];
-        gfx.roundRect(-bandW / 2, -bandH / 2, bandW, bandH, 2);
-        gfx.fill({ color: c, alpha: alpha * 0.7 });
-        // Glow behind
-        gfx.roundRect(-bandW / 2 - 2, -bandH / 2 - 1, bandW + 4, bandH + 2, 3);
-        gfx.fill({ color: c, alpha: alpha * 0.15 });
+        // Draw a fat line segment to the previous point (or just a dot for the first)
+        if (i > 0 && i - 1 < this.points.length) {
+          const prev = this.points[i - 1];
+          const dx = prev.x - p.x, dy = (prev.y - p.y);
+          const len = Math.sqrt(dx * dx + dy * dy);
+          if (len > 0.5) {
+            // Perpendicular for ribbon width
+            const nx = -dy / len * bandH / 2, ny = dx / len * bandH / 2;
+            gfx.x = 0; gfx.y = -camY;
+            gfx.moveTo(p.x + nx, p.y + ny); gfx.lineTo(prev.x + nx, prev.y + ny);
+            gfx.lineTo(prev.x - nx, prev.y - ny); gfx.lineTo(p.x - nx, p.y - ny);
+            gfx.closePath(); gfx.fill({ color: c, alpha: alpha * 0.7 });
+            // Glow layer
+            const gx = nx * 1.6, gy = ny * 1.6;
+            gfx.moveTo(p.x + gx, p.y + gy); gfx.lineTo(prev.x + gx, prev.y + gy);
+            gfx.lineTo(prev.x - gx, prev.y - gy); gfx.lineTo(p.x - gx, p.y - gy);
+            gfx.closePath(); gfx.fill({ color: c, alpha: alpha * 0.12 });
+          }
+        } else {
+          gfx.x = p.x; gfx.y = p.y - camY;
+          gfx.circle(0, 0, bandH / 2); gfx.fill({ color: c, alpha: alpha * 0.7 });
+        }
       } else if (shape === "heart") {
         const s = 2 + (1 - p.age / MAX_AGE) * 3;
         const c = colors[i % colors.length];

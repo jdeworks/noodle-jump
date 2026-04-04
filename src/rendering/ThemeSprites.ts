@@ -21,17 +21,18 @@ function drawNeonEnemy(gfx: Graphics, w: number, type: string): void {
   gfx.clear();
   const colors: Record<string, number> = { rat: 0x00ffff, fish: 0x00ff88, alien: 0xff00ff };
   const c = colors[type] ?? 0x00ffff;
-  // Neon glow body
-  gfx.ellipse(w / 2, w / 2, w * 0.38, w * 0.28);
-  gfx.fill({ color: c, alpha: 0.15 });
-  gfx.ellipse(w / 2, w / 2, w * 0.38, w * 0.28);
-  gfx.stroke({ width: 2, color: c, alpha: 0.9 });
-  // Inner core
-  gfx.ellipse(w / 2, w / 2, w * 0.2, w * 0.14);
-  gfx.fill({ color: c, alpha: 0.3 });
-  // Eyes
-  gfx.circle(w * 0.6, w * 0.42, 2); gfx.fill(0xffffff);
-  gfx.circle(w * 0.4, w * 0.42, 2); gfx.fill(0xffffff);
+  const cx = w / 2, cy = w / 2;
+  // Multi-layer glow
+  gfx.ellipse(cx, cy, w * 0.46, w * 0.36); gfx.fill({ color: c, alpha: 0.05 });
+  gfx.ellipse(cx, cy, w * 0.42, w * 0.32); gfx.fill({ color: c, alpha: 0.1 });
+  gfx.ellipse(cx, cy, w * 0.38, w * 0.28); gfx.fill({ color: c, alpha: 0.15 });
+  // Bright outline
+  gfx.ellipse(cx, cy, w * 0.35, w * 0.25); gfx.stroke({ width: 2, color: c });
+  // White-hot inner highlight
+  gfx.ellipse(cx, cy, w * 0.2, w * 0.14); gfx.stroke({ width: 0.8, color: 0xffffff, alpha: 0.3 });
+  // Glowing eyes
+  gfx.circle(w * 0.6, w * 0.42, 2.5); gfx.fill({ color: 0xffffff, alpha: 0.9 });
+  gfx.circle(w * 0.4, w * 0.42, 2.5); gfx.fill({ color: 0xffffff, alpha: 0.9 });
 }
 
 function drawPixelEnemy(gfx: Graphics, w: number, type: string): void {
@@ -219,17 +220,15 @@ function drawNeonPlatform(gfx: Graphics, w: number, h: number, style: PlatformSt
     ice: 0x66ddff, teleport: 0xcc44ff, crumbling: 0xff6644,
   };
   const c = neonOverrides[style] ?? neonify(zoneColor);
-  // Wide outer glow
-  gfx.roundRect(-4, -3, w + 8, h + 6, 7);
-  gfx.fill({ color: c, alpha: 0.08 });
-  gfx.roundRect(-2, -1, w + 4, h + 2, 5);
-  gfx.fill({ color: c, alpha: 0.15 });
-  // Bright neon outline
-  gfx.roundRect(0, 0, w, h, 4);
-  gfx.stroke({ width: 2.5, color: c });
-  // Center line highlight
-  gfx.moveTo(4, h / 2); gfx.lineTo(w - 4, h / 2);
-  gfx.stroke({ width: 1, color: c, alpha: 0.3 });
+  // Multi-layer glow — 4 concentric layers for convincing neon bloom
+  gfx.roundRect(-8, -5, w + 16, h + 10, 9); gfx.fill({ color: c, alpha: 0.04 });
+  gfx.roundRect(-5, -3, w + 10, h + 6, 7); gfx.fill({ color: c, alpha: 0.07 });
+  gfx.roundRect(-3, -2, w + 6, h + 4, 6); gfx.fill({ color: c, alpha: 0.12 });
+  gfx.roundRect(-1, -1, w + 2, h + 2, 5); gfx.fill({ color: c, alpha: 0.18 });
+  // Bright neon outline (the "tube")
+  gfx.roundRect(0, 0, w, h, 4); gfx.stroke({ width: 2, color: c });
+  // White-hot center highlight
+  gfx.roundRect(2, 1, w - 4, h - 2, 3); gfx.stroke({ width: 0.8, color: 0xffffff, alpha: 0.3 });
 }
 
 function drawPixelPlatform(gfx: Graphics, w: number, h: number, color: number): void {
@@ -274,9 +273,11 @@ export function drawThemedMeatball(gfx: Graphics, size: number, theme: string): 
   const r = size / 2;
   gfx.clear();
   if (theme === "theme_neon") {
-    gfx.circle(r, r, r + 2); gfx.fill({ color: 0x00ffff, alpha: 0.1 });
+    gfx.circle(r, r, r + 5); gfx.fill({ color: 0x00ffff, alpha: 0.04 });
+    gfx.circle(r, r, r + 3); gfx.fill({ color: 0x00ffff, alpha: 0.08 });
+    gfx.circle(r, r, r + 1); gfx.fill({ color: 0x00ffff, alpha: 0.15 });
     gfx.circle(r, r, r); gfx.stroke({ width: 2, color: 0x00ffff });
-    gfx.circle(r, r, r * 0.4); gfx.fill({ color: 0x00ffff, alpha: 0.3 });
+    gfx.circle(r, r, r * 0.3); gfx.fill({ color: 0xffffff, alpha: 0.3 });
   } else if (theme === "theme_pixel") {
     const px = Math.max(3, Math.floor(size / 4));
     for (let x = 0; x < 4; x++) for (let y = 0; y < 4; y++) {

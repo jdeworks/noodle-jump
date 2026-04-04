@@ -16,6 +16,7 @@ import {
   addButtonLine, addInfoText, addGridItem, gridEndY,
   type TapRegion,
 } from "./CustomizeStorage";
+import { getUITheme } from "./ThemeUI";
 
 const TAP_THRESHOLD = 8;
 const BOTTOM_H = 44;
@@ -67,6 +68,7 @@ export class CustomizeScreen {
     const gw = GAME_WIDTH;
     const achs = loadAchievements();
     const selectedChar = getSelectedCharacter();
+    const t = getUITheme();
     const equipFn = (id: string) => () => {
       this.cosmeticState = equipCosmetic(this.cosmeticState, id);
       saveCosmetics(this.cosmeticState); this.render();
@@ -74,14 +76,14 @@ export class CustomizeScreen {
 
     // ── Buttons on one line ──
     y = addButtonLine(this.scrollContent, this.tapRegions, gw, [
-      { label: "Enter Code", color: "#88aaff", action: () => this.promptCode() },
+      { label: "Enter Code", color: t.accent, action: () => this.promptCode() },
       { label: "Export", color: "#88ff88", action: () => this.doExport() },
       { label: "Import", color: "#ffaa88", action: () => this.doImport() },
-    ], y);
-    y = addInfoText(this.scrollContent, gw, "Progress is local — Export to back up before clearing browser data.", y);
+    ], y, t);
+    y = addInfoText(this.scrollContent, gw, "Progress is local — Export to back up before clearing browser data.", y, t);
 
     // ── Characters (3-column grid) ──
-    y = addSection(this.scrollContent, gw, "CHARACTERS", y);
+    y = addSection(this.scrollContent, gw, "CHARACTERS", y, t);
     const charStartY = y;
     for (let i = 0; i < CHARACTERS.length; i++) {
       const ch = CHARACTERS[i];
@@ -89,48 +91,48 @@ export class CustomizeScreen {
       const unlocked = unlockable ? isCharacterUnlocked(ch.id, achs.unlocked) : true;
       addGridItem(this.scrollContent, this.tapRegions, gw,
         ch.name, unlocked, ch.id === selectedChar, i % 3, charStartY + Math.floor(i / 3) * 32,
-        () => { setSelectedCharacter(ch.id); this.render(); });
+        () => { setSelectedCharacter(ch.id); this.render(); }, t);
     }
     y = gridEndY(charStartY, CHARACTERS.length);
 
     // ── Trails (3-column grid) ──
-    y = addSection(this.scrollContent, gw, "TRAILS", y);
+    y = addSection(this.scrollContent, gw, "TRAILS", y, t);
     const trails = getCosmeticsByType("trail");
     const trailStartY = y;
     for (let i = 0; i < trails.length; i++) {
       const c = trails[i];
       addGridItem(this.scrollContent, this.tapRegions, gw,
         c.name, this.cosmeticState.unlocked.has(c.id), this.cosmeticState.equipped.trail === c.id,
-        i % 3, trailStartY + Math.floor(i / 3) * 32, equipFn(c.id));
+        i % 3, trailStartY + Math.floor(i / 3) * 32, equipFn(c.id), t);
     }
     y = gridEndY(trailStartY, trails.length);
 
     // ── Tints (3-column grid with swatches) ──
-    y = addSection(this.scrollContent, gw, "TINTS", y);
+    y = addSection(this.scrollContent, gw, "TINTS", y, t);
     const tints = getCosmeticsByType("tint");
     const tintStartY = y;
     for (let i = 0; i < tints.length; i++) {
       const c = tints[i];
       addGridItem(this.scrollContent, this.tapRegions, gw,
         c.name, this.cosmeticState.unlocked.has(c.id), this.cosmeticState.equipped.tint === c.id,
-        i % 3, tintStartY + Math.floor(i / 3) * 32, equipFn(c.id), TINT_COLORS[c.id]);
+        i % 3, tintStartY + Math.floor(i / 3) * 32, equipFn(c.id), t, TINT_COLORS[c.id]);
     }
     y = gridEndY(tintStartY, tints.length);
 
     // ── Themes (full-width rows with descriptions) ──
-    y = addSection(this.scrollContent, gw, "THEMES", y);
+    y = addSection(this.scrollContent, gw, "THEMES", y, t);
     for (const c of getCosmeticsByType("theme")) {
       y = addCosmeticRow(this.scrollContent, this.tapRegions, gw, c,
         this.cosmeticState.unlocked.has(c.id), this.cosmeticState.equipped.theme === c.id,
-        y, equipFn(c.id));
+        y, equipFn(c.id), t);
     }
     y += 4;
 
     // ── Achievements ──
     const unlockCount = [...achs.unlocked].length;
-    y = addSection(this.scrollContent, gw, `ACHIEVEMENTS (${unlockCount}/${ACHIEVEMENTS.length})`, y);
+    y = addSection(this.scrollContent, gw, `ACHIEVEMENTS (${unlockCount}/${ACHIEVEMENTS.length})`, y, t);
     for (const a of ACHIEVEMENTS) {
-      y = addAchievementRow(this.scrollContent, gw, a, achs.unlocked.has(a.id), y);
+      y = addAchievementRow(this.scrollContent, gw, a, achs.unlocked.has(a.id), y, t);
     }
     y += 16;
 
@@ -146,13 +148,12 @@ export class CustomizeScreen {
     }
     oldContent.destroy({ children: true });
 
-    // Background
+    const t = getUITheme();
     const bg = new Graphics();
-    bg.rect(0, 0, GAME_WIDTH, GAME_HEIGHT); bg.fill(0x111111);
+    bg.rect(0, 0, GAME_WIDTH, GAME_HEIGHT); bg.fill({ color: t.bg, alpha: t.bgAlpha });
     this.container.addChild(bg);
 
-    // Title
-    const title = new Text({ text: "CUSTOMIZE", style: new TextStyle({ fontFamily: "monospace", fontSize: 18, fill: "#ffcc88", fontWeight: "bold" }) });
+    const title = new Text({ text: "CUSTOMIZE", style: new TextStyle({ fontFamily: "monospace", fontSize: 18, fill: t.accent, fontWeight: "bold" }) });
     title.x = GAME_WIDTH / 2; title.y = 14; title.anchor.set(0.5, 0);
     this.container.addChild(title);
 
@@ -174,10 +175,10 @@ export class CustomizeScreen {
 
     // Bottom bar
     const bar = new Graphics();
-    bar.rect(0, GAME_HEIGHT - BOTTOM_H, GAME_WIDTH, BOTTOM_H); bar.fill({ color: 0x000000, alpha: 0.95 });
+    bar.rect(0, GAME_HEIGHT - BOTTOM_H, GAME_WIDTH, BOTTOM_H); bar.fill({ color: t.bg, alpha: 0.95 });
     bar.eventMode = "static";
     this.container.addChild(bar);
-    const backBtn = new Text({ text: "[ Back ]", style: new TextStyle({ fontFamily: "monospace", fontSize: 16, fill: "#ccbbaa", fontWeight: "bold" }) });
+    const backBtn = new Text({ text: "[ Back ]", style: new TextStyle({ fontFamily: "monospace", fontSize: 16, fill: t.text, fontWeight: "bold" }) });
     backBtn.x = GAME_WIDTH / 2; backBtn.y = GAME_HEIGHT - BOTTOM_H + 14; backBtn.anchor.set(0.5, 0);
     backBtn.eventMode = "static"; backBtn.cursor = "pointer";
     backBtn.on("pointertap", () => this.hide());
