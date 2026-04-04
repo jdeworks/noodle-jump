@@ -391,6 +391,7 @@ export function drawCharacter(
   h: number,
   id: string,
 ): void {
+  gfx.clear();
   const draw = characterMap.get(id) ?? drawChefBase;
   draw(gfx, w, h);
 }

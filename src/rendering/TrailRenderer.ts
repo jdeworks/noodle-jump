@@ -6,8 +6,8 @@ interface TrailPoint { x: number; y: number; age: number }
 
 const MAX_TRAIL_LENGTH = 14;
 const MAX_AGE = 18;
-const RAINBOW_MAX = 60; // ~1 second fade
-const RAINBOW_SKIP = 3; // only record every 3rd frame to reduce draw calls
+const RAINBOW_MAX = 80; // ~1.3 second fade
+const RAINBOW_SKIP = 2; // record every 2nd frame — smoother curves
 
 const TRAIL_COLORS: Record<string, number[]> = {
   trail_sparkle: [0xffdd44, 0xffeeaa, 0xffffff],
@@ -161,28 +161,32 @@ export class TrailRenderer {
       if (sy > -10 && sy < 760) visible.push(p);
     }
 
-    // Draw simple rect blocks per point — stretching to next point (no beziers)
-    for (let i = 0; i < visible.length; i++) {
-      const p = visible[i];
-      const sy = p.y - camY;
-      const alpha = Math.max(0, 0.8 * (1 - p.age / RAINBOW_MAX));
+    // Draw smooth curved bands between consecutive chronological points
+    for (let i = 0; i < visible.length - 1; i++) {
+      const cur = visible[i];
+      const nxt = visible[i + 1];
+      const sy1 = cur.y - camY;
+      const sy2 = nxt.y - camY;
+      const alpha = Math.max(0, 0.8 * (1 - cur.age / RAINBOW_MAX));
       if (alpha < 0.01) continue;
-      const nextSy = i < visible.length - 1 ? visible[i + 1].y - camY : sy + 6;
-      const h = Math.max(6, nextSy - sy + 1);
-      const left = p.x - charW / 2;
+      const midX = (cur.x + nxt.x) / 2;
+      const midY = (sy1 + sy2) / 2;
       for (let s = 0; s < colors.length; s++) {
-        gfx.rect(left + s * bandW, sy, bandW, h);
+        const off = (s - colors.length / 2) * bandW;
+        gfx.moveTo(cur.x + off, sy1);
+        gfx.quadraticCurveTo(midX + off, midY, nxt.x + off, sy2);
+        gfx.lineTo(nxt.x + off + bandW, sy2);
+        gfx.quadraticCurveTo(midX + off + bandW, midY, cur.x + off + bandW, sy1);
+        gfx.closePath();
         gfx.fill({ color: colors[s], alpha });
       }
-      // Sparkle star every ~4th point
-      if (i % 4 === 0 && alpha > 0.15) {
-        const sx = left + Math.sin(p.y * 0.17) * charW * 0.6 + charW / 2;
-        const ss = 3 + Math.sin(p.age * 0.2) * 1.5;
-        const sa = alpha * (0.5 + Math.sin(p.age * 0.3) * 0.4);
-        const ssy = sy + h / 2;
-        gfx.moveTo(sx, ssy - ss); gfx.lineTo(sx, ssy + ss);
-        gfx.moveTo(sx - ss, ssy); gfx.lineTo(sx + ss, ssy);
-        gfx.stroke({ width: 1.5, color: 0xffffff, alpha: sa });
+      // Sparkle star every ~5th segment
+      if (i % 5 === 0 && alpha > 0.15) {
+        const sx = midX + Math.sin(cur.y * 0.17) * charW * 0.5;
+        const ss = 3 + Math.sin(cur.age * 0.2) * 1.5;
+        gfx.moveTo(sx, midY - ss); gfx.lineTo(sx, midY + ss);
+        gfx.moveTo(sx - ss, midY); gfx.lineTo(sx + ss, midY);
+        gfx.stroke({ width: 1.5, color: 0xffffff, alpha: alpha * 0.6 });
       }
     }
   }
