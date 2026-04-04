@@ -68,7 +68,6 @@ export class GameScene {
   private hitboxGfx = new Graphics();
   private tentacleGfx = new Graphics();
   private floatingTextMgr = new FloatingTextManager();
-  _lastPerfTime = 0;
 
   constructor(runConfig?: RunConfig) {
     clearCharCache();
@@ -241,10 +240,6 @@ export class GameScene {
     // Dispatch events to audio/visual side effects
     handleEvents(result.events, this.eventDeps());
 
-    if (this.state.animTick % 60 === 0) {
-      const now = performance.now(); const fps = this._lastPerfTime ? Math.round(60000 / (now - this._lastPerfTime)) : 0; this._lastPerfTime = now;
-      console.log(`[perf] fps=${fps} p=${this.state.platforms.length} gc=${this.gameContainer.children.length} dust=${this.particles.dustContainer.children.length} crumble=${this.particles.crumbleContainer.children.length} eff=${this.particles.effectParticleContainer.children.length}`);
-    }
     this.gfxSync.syncAll(
       this.state.platforms,
       this.state.meatballs,
@@ -294,11 +289,11 @@ export class GameScene {
     this.parallax.update(this.state.camera.y);
     const camY = this.state.camera.y;
 
-    this.effectRenderer.renderPlayer(this.state, this.playerGfx, camY, this.particles, this.input.inputX, this.cosmeticTint);
+    this.effectRenderer.renderPlayer(this.state, this.playerGfx, camY, this.particles, this.input.inputX, this.cosmeticTint, this.cosmeticTheme);
     renderPlatforms(this.state, this.gfxSync, theme, camY, this.cosmeticTheme);
     renderMeatballs(this.state, this.gfxSync, camY);
     renderPowerUps(this.state, this.gfxSync, camY);
-    if (this.state.enemiesEnabled) renderEnemies(this.state, this.gfxSync, camY);
+    if (this.state.enemiesEnabled) renderEnemies(this.state, this.gfxSync, camY, this.cosmeticTheme);
     if (this.state.enemiesEnabled || this.state.inBossFight) {
       const charVisual = getProjectileVisual(getSelectedCharacter());
       renderProjectiles(this.state, this.gfxSync, camY, projectileSpins(charVisual));

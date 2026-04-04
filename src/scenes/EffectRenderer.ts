@@ -50,18 +50,15 @@ export class EffectRenderer {
     particles: ParticleManager,
     inputX: number,
     cosmeticTint = 0xffffff,
+    cosmeticTheme = "theme_default",
   ): void {
     const { activeEffect } = state;
     const activeType = activeEffect?.type;
 
     this.activeEmitterType = renderPlayerForEffect(
-      state,
-      playerGfx,
-      camY,
-      particles,
-      this.activeEmitterType,
-      this.ensureEffectEmitter.bind(this),
-      cosmeticTint,
+      state, playerGfx, camY, particles,
+      this.activeEmitterType, this.ensureEffectEmitter.bind(this),
+      cosmeticTint, cosmeticTheme,
     );
 
     // Sprite faces movement direction (skip for spinning effects)

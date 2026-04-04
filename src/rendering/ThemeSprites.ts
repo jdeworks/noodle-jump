@@ -214,10 +214,15 @@ function drawNeonPlatform(gfx: Graphics, w: number, h: number, style: PlatformSt
     ice: 0x66ddff, teleport: 0xcc44ff, crumbling: 0xff6644,
   };
   const c = neonOverrides[style] ?? neonify(zoneColor);
-  // 2 glow layers + outline (reduced from 5 for performance)
-  gfx.roundRect(-4, -3, w + 8, h + 6, 7); gfx.fill({ color: c, alpha: 0.1 });
-  gfx.roundRect(-1, -1, w + 2, h + 2, 5); gfx.fill({ color: c, alpha: 0.2 });
+  // Wide neon glow — "broken sign bleeding light" effect (drawn once, cached)
+  gfx.roundRect(-10, -6, w + 20, h + 12, 12); gfx.fill({ color: c, alpha: 0.04 });
+  gfx.roundRect(-6, -4, w + 12, h + 8, 9); gfx.fill({ color: c, alpha: 0.08 });
+  gfx.roundRect(-3, -2, w + 6, h + 4, 6); gfx.fill({ color: c, alpha: 0.15 });
+  gfx.roundRect(-1, -1, w + 2, h + 2, 5); gfx.fill({ color: c, alpha: 0.25 });
+  // Bright neon tube outline
   gfx.roundRect(0, 0, w, h, 4); gfx.stroke({ width: 2.5, color: c });
+  // White-hot center for "lit tube" effect
+  gfx.roundRect(2, 1, w - 4, h - 2, 3); gfx.stroke({ width: 0.8, color: 0xffffff, alpha: 0.35 });
 }
 
 function drawPixelPlatform(gfx: Graphics, w: number, _h: number, color: number): void {

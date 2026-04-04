@@ -105,8 +105,11 @@ export function renderPlatforms(
       // Shimmer via slight alpha oscillation
       gfx.alpha = 0.85 + Math.sin(t * 0.08 + platform.id) * 0.15;
     } else if (platform.type === "lasagna") {
-      // Warm glow pulse
       gfx.alpha = 0.8 + Math.sin(t * 0.06) * 0.2;
+    }
+    // Neon sign flicker — subtle random pulse per platform
+    if (cosmeticTheme === "theme_neon") {
+      gfx.alpha *= 0.85 + Math.sin(t * 0.18 + platform.id * 7) * 0.1 + Math.sin(t * 0.43 + platform.id * 3) * 0.05;
     }
   }
 }
@@ -201,6 +204,7 @@ export function renderEnemies(
   state: GameWorldState,
   gfxSync: GraphicsSync,
   camY: number,
+  cosmeticTheme = "theme_default",
 ): void {
   const bob = Math.sin(state.animTick * 0.06) * 2;
 
@@ -216,6 +220,8 @@ export function renderEnemies(
     gfx.x = enemy.x + enemy.width / 2;
     gfx.y = worldToScreen(enemy.y, camY) + bob;
     gfx.pivot.set(enemy.width / 2, enemy.height / 2);
+    // Neon flicker for themed enemies
+    gfx.alpha = cosmeticTheme === "theme_neon" ? 0.8 + Math.sin(state.animTick * 0.2 + enemy.id * 3) * 0.2 : 1;
     const facing = enemy.vx >= 0 ? 1 : -1;
     gfx.scale.x = facing;
     // Wobble rotation for liveliness

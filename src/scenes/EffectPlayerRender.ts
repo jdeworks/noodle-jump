@@ -45,6 +45,7 @@ export function renderPlayerForEffect(
     playerH: number,
   ) => void,
   cosmeticTint = 0xffffff,
+  cosmeticTheme = "theme_default",
 ): string | null {
   const { player, activeEffect, animTick, springFlashTicks } = state;
   const activeType = activeEffect?.type;
@@ -236,6 +237,14 @@ export function renderPlayerForEffect(
       return null;
     }
     drawCharacter(playerGfx, player.width, player.height, getChar());
+    if (cosmeticTheme === "theme_neon") {
+      const gc = cosmeticTint !== 0xffffff ? cosmeticTint : 0x00ffff;
+      const fl = 0.7 + Math.sin(animTick * 0.15) * 0.15 + Math.sin(animTick * 0.37) * 0.1;
+      playerGfx.roundRect(-6, -4, player.width + 12, player.height + 8, 8);
+      playerGfx.fill({ color: gc, alpha: 0.06 * fl });
+      playerGfx.roundRect(-3, -2, player.width + 6, player.height + 4, 6);
+      playerGfx.fill({ color: gc, alpha: 0.12 * fl });
+    }
     playerGfx.pivot.set(player.width / 2, 0);
     playerGfx.rotation = 0;
     playerGfx.x = player.x + player.width / 2;
