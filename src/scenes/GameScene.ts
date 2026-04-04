@@ -329,7 +329,7 @@ export class GameScene {
     }
     this.trail.addPoint(
       this.state.player.x + this.state.player.width / 2,
-      this.state.player.y + this.state.player.height,
+      this.state.player.y + this.state.player.height + 6,
     );
     this.trail.update(camY);
 
