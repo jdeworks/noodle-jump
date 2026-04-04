@@ -35,6 +35,7 @@ import { loadCosmetics, TINT_COLORS } from "../systems/Cosmetics";
 import { getSelectedCharacter } from "../systems/CharacterSettings";
 import { getProjectileVisual, projectileSpins } from "../rendering/sprites";
 import { FloatingTextManager } from "./FloatingText";
+import { clearCharCache } from "./EffectPlayerRender";
 import { renderTentacles, renderKnifeAmmo, renderDebugHitboxes } from "./BossArenaRenderer";
 
 export class GameScene {
@@ -69,6 +70,7 @@ export class GameScene {
   private floatingTextMgr = new FloatingTextManager();
 
   constructor(runConfig?: RunConfig) {
+    clearCharCache();
     this.state = createInitialState(runConfig);
     // For custom runs, use the config's enemiesEnabled; for normal play, use global setting
     this.state = { ...this.state, enemiesEnabled: runConfig ? runConfig.enemiesEnabled : isEnemiesEnabled() };
@@ -98,8 +100,7 @@ export class GameScene {
     this.gameContainer.addChild(this.particles.springContainer);
     this.gameContainer.addChild(this.particles.lasagnaContainer);
     this.gameContainer.addChild(this.particles.rocketContainer);
-    this.gameContainer.addChild(this.particles.tornadoContainer);
-    this.gameContainer.addChild(this.particles.effectParticleContainer);
+    this.gameContainer.addChild(this.particles.tornadoContainer); this.gameContainer.addChild(this.particles.effectParticleContainer);
     this.gameContainer.addChild(this.trail.container);
     this.gameContainer.addChild(this.playerGfx);
 

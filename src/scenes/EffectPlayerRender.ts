@@ -18,6 +18,14 @@ import { getSelectedCharacter } from "../systems/CharacterSettings";
 import type { GameWorldState } from "./GameState";
 import type { ParticleManager } from "./ParticleManager";
 
+// Cache character ID to avoid localStorage reads every frame
+let cachedCharId: string | null = null;
+function getChar(): string {
+  if (!cachedCharId) cachedCharId = getSelectedCharacter();
+  return cachedCharId;
+}
+export function clearCharCache(): void { cachedCharId = null; }
+
 /**
  * Render the player sprite based on the active effect type.
  * Returns the new activeEmitterType (or null if cleared).
@@ -168,7 +176,7 @@ export function renderPlayerForEffect(
     particles.clearSpringParticles();
     particles.clearSneezeParticles();
   } else if (activeType === "pasta_shield") {
-    drawCharacter(playerGfx, player.width, player.height, getSelectedCharacter());
+    drawCharacter(playerGfx, player.width, player.height, getChar());
     // Draw shield bubble around character
     const cx = player.width / 2, cy = player.height / 2;
     const shieldR = Math.max(player.width, player.height) * 0.7;
@@ -191,7 +199,7 @@ export function renderPlayerForEffect(
     particles.clearSpringParticles();
     particles.clearSneezeParticles();
   } else if (activeType === "gnocchi_bounce") {
-    drawCharacter(playerGfx, player.width, player.height, getSelectedCharacter());
+    drawCharacter(playerGfx, player.width, player.height, getChar());
     playerGfx.pivot.set(player.width / 2, 0);
     playerGfx.rotation = 0;
     playerGfx.x = player.x + player.width / 2;
@@ -207,7 +215,7 @@ export function renderPlayerForEffect(
     particles.clearSpringParticles();
     particles.clearSneezeParticles();
   } else if (activeType === "minestrone_soup") {
-    drawCharacter(playerGfx, player.width, player.height, getSelectedCharacter());
+    drawCharacter(playerGfx, player.width, player.height, getChar());
     playerGfx.pivot.set(player.width / 2, 0);
     playerGfx.rotation = 0;
     playerGfx.x = player.x + player.width / 2;
@@ -227,7 +235,7 @@ export function renderPlayerForEffect(
       particles.clearEffectEmitter();
       return null;
     }
-    drawCharacter(playerGfx, player.width, player.height, getSelectedCharacter());
+    drawCharacter(playerGfx, player.width, player.height, getChar());
     playerGfx.pivot.set(player.width / 2, 0);
     playerGfx.rotation = 0;
     playerGfx.x = player.x + player.width / 2;
