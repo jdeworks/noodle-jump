@@ -3,7 +3,6 @@
 import { Graphics } from "pixi.js";
 import { worldToScreen } from "../systems/Camera";
 import {
-  drawChef,
   drawChefOnRocket,
   drawMagnetSprite,
   drawTornadoSprite,
@@ -14,6 +13,8 @@ import {
   drawGarlicSprite,
   drawBurntToastSprite,
 } from "../rendering/sprites";
+import { drawCharacter } from "../rendering/PlayerCharacters";
+import { getSelectedCharacter } from "../systems/CharacterSettings";
 import type { GameWorldState } from "./GameState";
 import type { ParticleManager } from "./ParticleManager";
 
@@ -167,7 +168,7 @@ export function renderPlayerForEffect(
     particles.clearSpringParticles();
     particles.clearSneezeParticles();
   } else if (activeType === "pasta_shield") {
-    drawChef(playerGfx, player.width, player.height, undefined, "pasta_shield");
+    drawCharacter(playerGfx, player.width, player.height, getSelectedCharacter());
     // Draw shield bubble around character
     const cx = player.width / 2, cy = player.height / 2;
     const shieldR = Math.max(player.width, player.height) * 0.7;
@@ -190,7 +191,7 @@ export function renderPlayerForEffect(
     particles.clearSpringParticles();
     particles.clearSneezeParticles();
   } else if (activeType === "gnocchi_bounce") {
-    drawChef(playerGfx, player.width, player.height);
+    drawCharacter(playerGfx, player.width, player.height, getSelectedCharacter());
     playerGfx.pivot.set(player.width / 2, 0);
     playerGfx.rotation = 0;
     playerGfx.x = player.x + player.width / 2;
@@ -206,7 +207,7 @@ export function renderPlayerForEffect(
     particles.clearSpringParticles();
     particles.clearSneezeParticles();
   } else if (activeType === "minestrone_soup") {
-    drawChef(playerGfx, player.width, player.height);
+    drawCharacter(playerGfx, player.width, player.height, getSelectedCharacter());
     playerGfx.pivot.set(player.width / 2, 0);
     playerGfx.rotation = 0;
     playerGfx.x = player.x + player.width / 2;
@@ -226,7 +227,7 @@ export function renderPlayerForEffect(
       particles.clearEffectEmitter();
       return null;
     }
-    drawChef(playerGfx, player.width, player.height);
+    drawCharacter(playerGfx, player.width, player.height, getSelectedCharacter());
     playerGfx.pivot.set(player.width / 2, 0);
     playerGfx.rotation = 0;
     playerGfx.x = player.x + player.width / 2;
