@@ -111,7 +111,7 @@ export function showGameOver(
     text: breakdownLines.join("\n"),
     style: new TextStyle({
       fontFamily: "monospace", fontSize: 13,
-      fill: "#cccccc", lineHeight: 20,
+      fill: uiT.text, lineHeight: 20,
     }),
   });
   breakdown.x = GAME_WIDTH / 2;
@@ -125,7 +125,7 @@ export function showGameOver(
       text: "UNLOCKED: " + achievements.join(", "),
       style: new TextStyle({
         fontFamily: "monospace", fontSize: 13,
-        fill: "#ffdd44", fontWeight: "bold",
+        fill: uiT.accent, fontWeight: "bold",
         stroke: { color: "#000000", width: 2 },
         wordWrap: true, wordWrapWidth: GAME_WIDTH - 40,
         align: "center",
@@ -179,9 +179,9 @@ export function showGameOver(
   // Play Again button
   const restartBg = new Graphics();
   restartBg.roundRect(GAME_WIDTH / 2 - 100, GAME_HEIGHT * 0.74 - 18, 200, 36, 8);
-  restartBg.fill({ color: 0x1a3355, alpha: 0.7 });
+  restartBg.fill({ color: uiT.buttonBg, alpha: 0.7 });
   restartBg.roundRect(GAME_WIDTH / 2 - 100, GAME_HEIGHT * 0.74 - 18, 200, 36, 8);
-  restartBg.stroke({ width: 1.5, color: 0x6688bb, alpha: 0.5 });
+  restartBg.stroke({ width: 1.5, color: uiT.buttonBorder, alpha: 0.5 });
   restartBg.eventMode = "static";
   restartBg.cursor = "pointer";
   app.stage.addChild(restartBg);
@@ -204,7 +204,7 @@ export function showGameOver(
   // Home button
   const homeBg = new Graphics();
   homeBg.roundRect(GAME_WIDTH / 2 - 100, GAME_HEIGHT * 0.82 - 16, 200, 32, 8);
-  homeBg.fill({ color: 0x222244, alpha: 0.7 });
+  homeBg.fill({ color: uiT.buttonBg, alpha: 0.7 });
   homeBg.eventMode = "static";
   homeBg.cursor = "pointer";
   app.stage.addChild(homeBg);
@@ -213,7 +213,7 @@ export function showGameOver(
     text: "Home",
     style: new TextStyle({
       fontFamily: "monospace", fontSize: 16,
-      fill: "#aaccff", fontWeight: "bold",
+      fill: uiT.text, fontWeight: "bold",
       stroke: { color: "#000000", width: 2 },
     }),
   });

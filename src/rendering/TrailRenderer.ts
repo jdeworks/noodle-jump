@@ -161,16 +161,17 @@ export class TrailRenderer {
       // Jiggle: slight horizontal wobble based on age
       const jig1 = Math.sin(cur.age * 0.3 + cur.y * 0.02) * 1.5;
       const jig2 = Math.sin(nxt.age * 0.3 + nxt.y * 0.02) * 1.5;
-      // Center on character (p.x is left edge of character)
-      const cx1 = cur.x + charW / 2 + jig1;
-      const cx2 = nxt.x + charW / 2 + jig2;
+      // p.x is already center X (addPoint passes player.x + width/2)
+      const cx1 = cur.x + jig1;
+      const cx2 = nxt.x + jig2;
       for (let s = 0; s < colors.length; s++) {
         const lOff = (s - colors.length / 2) * bandW;
         const rOff = lOff + bandW;
-        gfx.moveTo(cx1 + lOff, sy1);
-        gfx.lineTo(cx1 + rOff, sy1);
-        gfx.lineTo(cx2 + rOff, sy2);
-        gfx.lineTo(cx2 + lOff, sy2);
+        // Slight overlap (1px) to prevent gaps between segments
+        gfx.moveTo(cx1 + lOff, sy1 - 1);
+        gfx.lineTo(cx1 + rOff, sy1 - 1);
+        gfx.lineTo(cx2 + rOff, sy2 + 1);
+        gfx.lineTo(cx2 + lOff, sy2 + 1);
         gfx.closePath();
         gfx.fill({ color: colors[s], alpha });
       }

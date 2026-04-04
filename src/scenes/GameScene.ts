@@ -1,5 +1,5 @@
 /** Gameplay scene — thin orchestrator wiring pure logic to PixiJS rendering. */
-import { Container, Graphics, Text, TextStyle } from "pixi.js";
+import { BlurFilter, Container, Graphics, Text, TextStyle } from "pixi.js";
 import { worldToScreen } from "../systems/Camera";
 import { getInterpolatedTheme } from "../systems/Zone";
 import { ParallaxBackground } from "../systems/Parallax";
@@ -87,6 +87,11 @@ export class GameScene {
     this.parallax.setCosmeticTheme(this.cosmeticTheme);
     this.container.addChild(this.parallax.container);
     this.container.addChild(this.gameContainer);
+    if (this.cosmeticTheme === "theme_neon") {
+      // Neon bloom: gentle blur on the entire scene — bright neon colors
+      // bleed against the dark background for a glow effect
+      this.container.filters = [new BlurFilter({ strength: 0.8, quality: 2 })];
+    }
     this.gameContainer.addChild(this.particles.crumbleContainer);
     this.gameContainer.addChild(this.particles.dustContainer);
     this.gameContainer.addChild(this.particles.sneezeContainer);
@@ -309,14 +314,9 @@ export class GameScene {
     renderTentacles(this.tentacleGfx, this.state, camY);
     renderKnifeAmmo(this.knifeAmmoIcons, this.knifeAmmoText, this.state, GAME_WIDTH);
 
-    // Weather
     this.weatherGfx = renderWeather(this.state, this.weatherGfx, this.weatherContainer);
-
-    // Wind (hidden during boss fights)
     if (this.state.inBossFight) { this.windGfx.clear(); this.windGfx.visible = false; }
     else renderWindOverlay(this.windGfx, this.state, camY);
-
-    // Trail — speed effects override cosmetic trail
     const speedEffect = this.state.activeEffect?.type;
     if (speedEffect === "ravioli_rocket") {
       this.trail.setTrailType("speed_rocket");

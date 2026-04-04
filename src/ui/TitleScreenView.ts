@@ -16,6 +16,7 @@ import { drawCharacter, CHARACTERS } from "../rendering/PlayerCharacters";
 import { getSelectedCharacter, setSelectedCharacter } from "../systems/CharacterSettings";
 import type { RunConfig } from "../systems/CustomRunConfig";
 import { MultiplayerMenu } from "../multiplayer/MultiplayerMenu";
+import { loadCosmetics, TINT_COLORS } from "../systems/Cosmetics";
 import { getUITheme } from "./ThemeUI";
 
 export function showTitleScreen(
@@ -111,6 +112,8 @@ export function showTitleScreen(
   chefGfx.x = GAME_WIDTH / 2 - 16;
   chefGfx.y = cursorY;
   drawCharacter(chefGfx, 32, 40, getSelectedCharacter());
+  const cosm = loadCosmetics();
+  chefGfx.tint = TINT_COLORS[cosm.equipped.tint ?? "tint_none"] ?? 0xffffff;
   contentGroup.addChild(chefGfx);
   const chefBaseY = cursorY;
 
@@ -333,7 +336,6 @@ export function showTitleScreen(
     contentGroup.addChild(statsText);
   }
 
-  // Animate parallax + pulse prompt + chef
   let scrollY = 0;
   let animTick = 0;
   const titleTicker = () => {
