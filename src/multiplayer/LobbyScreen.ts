@@ -9,12 +9,13 @@ import { GAME_WIDTH, GAME_HEIGHT } from "../config/constants";
 import type { GameSync, GameSyncEvent } from "./GameSync";
 import { CHARACTERS, drawCharacter } from "../rendering/PlayerCharacters";
 import { getSelectedCharacter, setSelectedCharacter } from "../systems/CharacterSettings";
+import { loadCosmetics } from "../systems/Cosmetics";
 import { getUITheme } from "../ui/ThemeUI";
 
 export type LobbyRole = "host" | "guest";
 
 export interface LobbyCallbacks {
-  onStart: (seed: number, mode: string, touchControls: boolean, remoteChar?: string) => void;
+  onStart: (seed: number, mode: string, touchControls: boolean, remoteChar?: string, remoteCosmetics?: { tint?: string; trail?: string }) => void;
 }
 
 const HEADER_STYLE = new TextStyle({
@@ -51,6 +52,7 @@ export class LobbyScreen {
   private touchControls = false;
   private localChar = getSelectedCharacter();
   private remoteChar = "chef";
+  private remoteCosmetics: { tint?: string; trail?: string } = {};
 
   private p1StatusText: Text;
   private p2StatusText: Text;
@@ -131,7 +133,7 @@ export class LobbyScreen {
       this.localChar = CHARACTERS[(idx + 1) % CHARACTERS.length].id;
       setSelectedCharacter(this.localChar);
       updateCharPreviews();
-      this.sync.sendGameEvent({ type: "ready", payload: { character: this.localChar } });
+      this.sync.sendGameEvent({ type: "ready", payload: { character: this.localChar, ...this.localCosmeticPayload() } });
     });
     this.onCharacterChanged = () => updateCharPreviews();
 
@@ -257,7 +259,7 @@ export class LobbyScreen {
           type: "start",
           payload: { seed, mode: this.mode, touchControls: this.touchControls, character: this.localChar },
         });
-        this.callbacks.onStart(seed, this.mode, this.touchControls, this.remoteChar);
+        this.callbacks.onStart(seed, this.mode, this.touchControls, this.remoteChar, this.remoteCosmetics);
       };
       this.startBtn.on("pointertap", startGame);
       this.startText.on("pointertap", startGame);
@@ -282,7 +284,7 @@ export class LobbyScreen {
 
     this.updateUI();
     // Announce our character to the remote player
-    this.sync.sendGameEvent({ type: "ready", payload: { character: this.localChar } });
+    this.sync.sendGameEvent({ type: "ready", payload: { character: this.localChar, ...this.localCosmeticPayload() } });
   }
 
   private isLocalReady(): boolean {
@@ -295,7 +297,7 @@ export class LobbyScreen {
     // Re-announce our character on first remote event (initial send may have been lost)
     if (!this.remoteConnected) {
       this.remoteConnected = true;
-      this.sync.sendGameEvent({ type: "ready", payload: { character: this.localChar } });
+      this.sync.sendGameEvent({ type: "ready", payload: { character: this.localChar, ...this.localCosmeticPayload() } });
     }
     if (event.type === "ready") {
       if (event.payload.mode) {
@@ -307,6 +309,8 @@ export class LobbyScreen {
       }
       if (event.payload.character) {
         this.remoteChar = event.payload.character as string;
+        if (event.payload.tint) this.remoteCosmetics.tint = event.payload.tint as string;
+        if (event.payload.trail) this.remoteCosmetics.trail = event.payload.trail as string;
         this.onCharacterChanged?.();
       }
       if (event.payload.role) {
@@ -322,9 +326,17 @@ export class LobbyScreen {
       const mode = (event.payload.mode as string) || "best-height";
       const tc = (event.payload.touchControls as boolean) ?? this.touchControls;
       const rc = (event.payload.character as string) ?? this.remoteChar;
-      this.callbacks.onStart(seed, mode, tc, rc);
+      this.callbacks.onStart(seed, mode, tc, rc, this.remoteCosmetics);
     }
   }
+
+  private localCosmeticPayload(): Record<string, string> {
+    const c = loadCosmetics();
+    return { tint: c.equipped.tint ?? "tint_none", trail: c.equipped.trail ?? "trail_none" };
+  }
+
+  /** Get remote player's cosmetics for the renderer. */
+  getRemoteCosmetics(): { tint?: string; trail?: string } { return this.remoteCosmetics; }
 
   private updateUI(): void {
     this.p1StatusText.text = this.hostReady ? "Ready!" : "Not Ready";

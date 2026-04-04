@@ -1,5 +1,4 @@
 /** Online multiplayer session — wires networking to the game loop. */
-
 import { Application, Graphics, Text, TextStyle } from "pixi.js";
 import { GameScene } from "../scenes/GameScene";
 import { GAME_WIDTH, GAME_HEIGHT } from "../config/constants";
@@ -34,6 +33,7 @@ interface OnlineSessionConfig {
   mode?: string;
   touchControls?: boolean;
   remoteCharacter?: string;
+  remoteCosmetics?: { tint?: string; trail?: string };
   sync?: GameSync;
 }
 
@@ -48,6 +48,7 @@ export class OnlineSession {
   private seed: number;
   private touchControls: boolean;
   private remoteChar: string;
+  private remoteCosmetics?: { tint?: string; trail?: string };
   private mode: string;
   private timerTicks = -1;
   private timerText: Text | null = null;
@@ -58,7 +59,6 @@ export class OnlineSession {
   private localDeathHeight = 0;
   private remoteDeathHeight = 0;
   private gameLoop: (() => void) | null = null;
-
   private deathToast: Text;
   private toastTimer = 0;
   private fpsText: Text | null = null;
@@ -79,6 +79,7 @@ export class OnlineSession {
     this.seed = config.seed;
     this.touchControls = config.touchControls ?? false;
     this.remoteChar = config.remoteCharacter ?? "chef";
+    this.remoteCosmetics = config.remoteCosmetics;
     this.mode = config.mode ?? "best-height";
     this.sync = config.sync ?? new GameSync();
 
@@ -96,7 +97,7 @@ export class OnlineSession {
     }
     this.app.stage.addChild(this.scene.container);
 
-    this.remoteRenderer = new RemotePlayerRenderer(config.remoteCharacter);
+    this.remoteRenderer = new RemotePlayerRenderer(config.remoteCharacter, config.remoteCosmetics);
     this.remoteRenderer.hide();
 
     this.deathToast = this.makeToast();
@@ -310,7 +311,9 @@ export class OnlineSession {
     }
 
     const lobby = new LobbyScreen(this.role, sync, {
-      onStart: (seed) => {
+      onStart: (seed, _mode, _tc, rc, rCos) => {
+        if (rc) this.remoteChar = rc;
+        this.remoteCosmetics = rCos;
         this.app.stage.removeChild(lobby.container);
         lobby.destroy();
         this.startNewGame(seed, sync);
@@ -331,7 +334,7 @@ export class OnlineSession {
     if (this.touchControls) { setTouchControlsForced(true); }
     else if (this.scene.input.needsTiltPermission) { this.scene.input.requestTiltPermission(); }
     this.app.stage.addChild(this.scene.container);
-    this.remoteRenderer = new RemotePlayerRenderer(this.remoteChar);
+    this.remoteRenderer = new RemotePlayerRenderer(this.remoteChar, this.remoteCosmetics);
     this.remoteRenderer.hide();
     this.deathToast = this.makeToast();
     this.fpsText = this.makeFps();
@@ -376,8 +379,7 @@ export class OnlineSession {
     if (this.gameLoop) { this.app.ticker.remove(this.gameLoop); this.gameLoop = null; }
     this.sync.stopSending();
     if (this.scene.container.parent) this.scene.container.parent.removeChild(this.scene.container);
-    this.scene.destroy();
-    this.remoteRenderer.destroy();
+    this.scene.destroy(); this.remoteRenderer.destroy();
     while (this.app.stage.children.length > 0) {
       const c = this.app.stage.children[0];
       this.app.stage.removeChild(c);
@@ -389,7 +391,7 @@ export class OnlineSession {
 
   private goHome(): void {
     if (this.escapeHandler) { window.removeEventListener("keydown", this.escapeHandler); this.escapeHandler = null; }
-    if (this.touchControls) setTouchControlsForced(false); // restore user's own setting
+    if (this.touchControls) setTouchControlsForced(false);
     this.cleanup(); this.sync.destroy(); this.connection.disconnect();
     stopMusic(); killBossMusic();
     showTitleScreen(this.app, (rc) => launchGame(this.app, rc));

@@ -8,9 +8,11 @@ import { Container, Graphics, Text, TextStyle } from "pixi.js";
 import { drawCharacter } from "../rendering/PlayerCharacters";
 import { worldToScreen } from "../systems/Camera";
 import { GAME_WIDTH, GAME_HEIGHT, PLAYER_WIDTH, PLAYER_HEIGHT } from "../config/constants";
+import { TINT_COLORS } from "../systems/Cosmetics";
+import { TrailRenderer } from "../rendering/TrailRenderer";
 import type { InterpolatedState } from "./InterpolationBuffer";
 
-const GHOST_ALPHA = 0.55;
+const GHOST_ALPHA = 0.45;
 const GHOST_DEAD_ALPHA = 0.3;
 const ARROW_MARGIN = 30;
 const ARROW_SIZE = 14;
@@ -20,15 +22,29 @@ const COLOR_ABOVE = 0xff8833; // opponent is higher (ahead)
 const COLOR_BELOW = 0x33cc55; // opponent is lower (behind)
 const COLOR_SAME = 0xffcc44;  // roughly same height
 
+export interface RemoteCosmetics {
+  tint?: string;
+  trail?: string;
+}
+
 export class RemotePlayerRenderer {
   readonly container = new Container();
   private chefGfx = new Graphics();
   private arrowGfx = new Graphics();
   private distanceText: Text;
   private characterId = "chef";
+  private cosmeticTint = 0xffffff;
+  private trail: TrailRenderer | null = null;
 
-  constructor(characterId = "chef") {
+  constructor(characterId = "chef", cosmetics?: RemoteCosmetics) {
     this.characterId = characterId;
+    if (cosmetics?.tint) this.cosmeticTint = TINT_COLORS[cosmetics.tint] ?? 0xffffff;
+    if (cosmetics?.trail && cosmetics.trail !== "trail_none") {
+      this.trail = new TrailRenderer();
+      this.trail.setTrailType(cosmetics.trail);
+      this.trail.container.alpha = 0.4; // reduced opacity for remote player
+      this.container.addChild(this.trail.container);
+    }
     this.chefGfx.alpha = GHOST_ALPHA;
     this.container.addChild(this.chefGfx);
 
@@ -68,8 +84,12 @@ export class RemotePlayerRenderer {
       this.chefGfx.visible = true;
       this.chefGfx.x = screenX;
       this.chefGfx.y = screenY;
-      this.chefGfx.tint = tintColor;
+      this.chefGfx.tint = this.cosmeticTint !== 0xffffff ? this.cosmeticTint : tintColor;
       this.chefGfx.alpha = remote.playerState >= 1 ? GHOST_DEAD_ALPHA : GHOST_ALPHA;
+      if (this.trail) {
+        this.trail.addPoint(remote.x + PLAYER_WIDTH / 2, remote.y + PLAYER_HEIGHT + 6);
+        this.trail.update(localCameraY);
+      }
 
       this.arrowGfx.visible = false;
       this.distanceText.visible = false;
@@ -107,6 +127,7 @@ export class RemotePlayerRenderer {
   }
 
   destroy(): void {
+    this.trail?.destroy();
     this.container.destroy({ children: true });
   }
 }
