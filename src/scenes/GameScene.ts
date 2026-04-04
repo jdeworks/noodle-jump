@@ -68,6 +68,7 @@ export class GameScene {
   private hitboxGfx = new Graphics();
   private tentacleGfx = new Graphics();
   private floatingTextMgr = new FloatingTextManager();
+  _lastPerfTime = 0;
 
   constructor(runConfig?: RunConfig) {
     clearCharCache();
@@ -240,7 +241,10 @@ export class GameScene {
     // Dispatch events to audio/visual side effects
     handleEvents(result.events, this.eventDeps());
 
-    if (this.state.animTick % 120 === 0) console.log(`[perf] t=${this.state.animTick} p=${this.state.platforms.length} gc=${this.gameContainer.children.length} gfx=${this.gfxSync.platformGfxMap.size}`);
+    if (this.state.animTick % 60 === 0) {
+      const now = performance.now(); const fps = this._lastPerfTime ? Math.round(60000 / (now - this._lastPerfTime)) : 0; this._lastPerfTime = now;
+      console.log(`[perf] fps=${fps} p=${this.state.platforms.length} gc=${this.gameContainer.children.length} dust=${this.particles.dustContainer.children.length} crumble=${this.particles.crumbleContainer.children.length} eff=${this.particles.effectParticleContainer.children.length}`);
+    }
     this.gfxSync.syncAll(
       this.state.platforms,
       this.state.meatballs,
@@ -330,11 +334,7 @@ export class GameScene {
       this.state.player.y + this.state.player.height + 6,
     );
     this.trail.update(camY);
-
-    // Zone transition — spawn deferred boss when transition ends
     this.tickBossTransition();
-
-    // Effect overlays
     this.effectRenderer.renderEffectOverlay(this.state);
 
     // Combo border glow
