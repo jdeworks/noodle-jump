@@ -129,7 +129,7 @@ export class TrailRenderer {
     this.activeCount = this.points.length;
   }
 
-  /** Nyan Cat style rainbow — connected left-to-right color bands with jiggle. */
+  /** Nyan Cat rainbow — independent color blocks at each position, tall enough to fill gaps. */
   private updateRainbow(camY: number): void {
     if (!this.ribbonGfx) {
       this.ribbonGfx = new Graphics();
@@ -150,37 +150,27 @@ export class TrailRenderer {
     }
     if (len < this.points.length) this.points.length = len;
 
-    // Sort by Y descending (bottom of screen first = oldest trail)
+    // Sort by Y ascending (highest point first = newest at top)
     const sorted = this.points.filter((p) => {
       const sy = p.y - camY;
       return sy > -10 && sy < 760 && p.age < RAINBOW_MAX;
-    }).sort((a, b) => b.y - a.y);
+    }).sort((a, b) => a.y - b.y);
 
-    // Draw connected quads between consecutive points for each color band
-    for (let i = 0; i < sorted.length - 1; i++) {
-      const cur = sorted[i];
-      const nxt = sorted[i + 1];
-      const sy1 = cur.y - camY;
-      const sy2 = nxt.y - camY;
-      const alpha1 = Math.max(0, 0.85 * (1 - cur.age / RAINBOW_MAX));
-      const alpha2 = Math.max(0, 0.85 * (1 - nxt.age / RAINBOW_MAX));
-      const alpha = (alpha1 + alpha2) / 2;
+    // Draw each point as an independent block of vertical color bands.
+    // Block height stretches to reach the next point below, eliminating gaps.
+    for (let i = 0; i < sorted.length; i++) {
+      const p = sorted[i];
+      const sy = p.y - camY;
+      const alpha = Math.max(0, 0.85 * (1 - p.age / RAINBOW_MAX));
       if (alpha < 0.01) continue;
-      // Jiggle: slight horizontal wobble based on age
-      const jig1 = Math.sin(cur.age * 0.3 + cur.y * 0.02) * 1.5;
-      const jig2 = Math.sin(nxt.age * 0.3 + nxt.y * 0.02) * 1.5;
-      // p.x is center X; nudge left slightly to align with character visual center
-      const cx1 = cur.x - 2 + jig1;
-      const cx2 = nxt.x - 2 + jig2;
+      // Height: distance to next point below (or minimum 4px for the last one)
+      const nextY = i < sorted.length - 1 ? sorted[i + 1].y - camY : sy + 4;
+      const blockH = Math.max(4, nextY - sy + 1);
+      // Subtle jiggle
+      const jig = Math.sin(p.y * 0.03) * 1.2;
+      const left = p.x - charW / 2 + jig;
       for (let s = 0; s < colors.length; s++) {
-        const lOff = (s - colors.length / 2) * bandW;
-        const rOff = lOff + bandW;
-        // Slight overlap (1px) to prevent gaps between segments
-        gfx.moveTo(cx1 + lOff, sy1 - 1);
-        gfx.lineTo(cx1 + rOff, sy1 - 1);
-        gfx.lineTo(cx2 + rOff, sy2 + 1);
-        gfx.lineTo(cx2 + lOff, sy2 + 1);
-        gfx.closePath();
+        gfx.rect(left + s * bandW, sy, bandW, blockH);
         gfx.fill({ color: colors[s], alpha });
       }
     }
