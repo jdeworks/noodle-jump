@@ -6,7 +6,7 @@ interface TrailPoint { x: number; y: number; age: number }
 
 const MAX_TRAIL_LENGTH = 14;
 const MAX_AGE = 18;
-const RAINBOW_MAX = 200; // rainbow points persist much longer
+const RAINBOW_MAX = 90; // ~1.5 seconds, doesn't block the view
 
 const TRAIL_COLORS: Record<string, number[]> = {
   trail_sparkle: [0xffdd44, 0xffeeaa, 0xffffff],
@@ -172,6 +172,23 @@ export class TrailRenderer {
       for (let s = 0; s < colors.length; s++) {
         gfx.rect(left + s * bandW, sy, bandW, blockH);
         gfx.fill({ color: colors[s], alpha });
+      }
+      // Sparkle stars on every ~8th point
+      if (i % 8 === 0 && alpha > 0.2) {
+        const starX = left + Math.sin(p.y * 0.17) * charW * 0.6 + charW / 2;
+        const starY = sy + blockH / 2;
+        const starSize = 3 + Math.sin(p.age * 0.2) * 1.5;
+        const starAlpha = alpha * (0.5 + Math.sin(p.age * 0.3) * 0.4);
+        gfx.moveTo(starX, starY - starSize);
+        gfx.lineTo(starX + starSize * 0.3, starY - starSize * 0.3);
+        gfx.lineTo(starX + starSize, starY);
+        gfx.lineTo(starX + starSize * 0.3, starY + starSize * 0.3);
+        gfx.lineTo(starX, starY + starSize);
+        gfx.lineTo(starX - starSize * 0.3, starY + starSize * 0.3);
+        gfx.lineTo(starX - starSize, starY);
+        gfx.lineTo(starX - starSize * 0.3, starY - starSize * 0.3);
+        gfx.closePath();
+        gfx.fill({ color: 0xffffff, alpha: starAlpha });
       }
     }
   }
