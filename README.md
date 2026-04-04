@@ -86,7 +86,7 @@ Commits are gated by: LOC limit (400/file), typecheck, lint, and test suite.
 
 ## Lessons Learned — Building a Game with AI
 
-This project was built across 11 Claude Code sessions (~129 commits). Below are the hardest problems encountered, reconstructed from the actual conversation logs. These aren't just the final fixes — they include the wrong turns, failed attempts, and user corrections that led to the solutions.
+This project was built across 12+ Claude Code sessions (~160 commits). Below are the hardest problems encountered, reconstructed from the actual conversation logs. These aren't just the final fixes — they include the wrong turns, failed attempts, and user corrections that led to the solutions.
 
 ### 1. Mobile tilt controls — debugging the wrong sensor (~15 iterations)
 
@@ -209,6 +209,50 @@ This project was built across 11 Claude Code sessions (~129 commits). Below are 
 **Also:** PixiJS renders to canvas, so there's no native text input. The multiplayer room code field wasn't interactive on mobile — keyboard didn't open. Fix: overlay real HTML `<input>` elements on top of the canvas, positioned to match the PixiJS coordinates.
 
 **Takeaway:** If your canvas UI has more than ~5 interactive elements, invest in a layout system early. Manual absolute positioning creates a maintenance burden that compounds with every screen.
+
+### 13. PixiJS Graphics.clear() leaks GPU buffers when called every frame
+
+**Problem:** FPS dropped progressively from 60 to 27 over 30 seconds of gameplay. Entity counts stayed flat — the issue wasn't too many objects.
+
+**Root cause:** When we replaced `drawChef()` with `drawCharacter()` for power-up effects, we accidentally removed the `gfx.clear()` call. `drawChef()` had `gfx.clear()` at the top. `drawCharacter()` delegated to character-specific functions that DON'T clear. Result: 10+ PixiJS shapes were added to the player's Graphics object every frame, accumulating to 30,000+ shapes after 30 seconds.
+
+**How we found it:** Added FPS + entity count logging every second. Counts were stable but FPS dropped steadily — pointed to a per-object leak, not an object count issue. Checking which Graphics objects called `clear()` vs which didn't revealed the missing call.
+
+**Fix:** Added `gfx.clear()` to `drawCharacter()` before delegating to the character draw function.
+
+**Additional discovery:** Even legitimate `gfx.clear()` + redraw cycles leak in PixiJS v8 if done every frame. Platform rendering was calling `drawThemedPlatform()` (which clears and rebuilds) for every platform every frame. Caching by color key and only redrawing on zone change eliminated 40 geometry rebuilds per frame.
+
+**Takeaway:** In PixiJS v8, `Graphics.clear()` doesn't fully release internal GPU buffers. Calling it 60 times per second per object causes progressive slowdown. Cache drawn graphics and only rebuild when the visual actually changes. When delegating draw functions, verify that `clear()` is called exactly once before drawing.
+
+### 14. Cosmetic themes — theming every screen requires rebuild-on-close
+
+**Problem:** After selecting a theme in the Customize screen, the title screen and other screens still showed the old theme colors.
+
+**Root cause:** The title screen is created once at startup. All buttons, text styles, and colors are set during construction using `getUITheme()`. When the user changes theme in Customize, the already-constructed title screen still has the old colors.
+
+**Fix:** When the Customize screen closes, destroy and recreate the entire title screen: `titleContainer.destroy({ children: true }); showTitleScreen(app, onStartGame);`. This ensures all buttons and text pick up the new theme. Other screens that re-render on `show()` (ExplanationScreen, CustomRunScreen, CustomizeScreen) naturally get the new theme each time they open.
+
+**Takeaway:** Singleton UI screens that are constructed once need a rebuild mechanism when global state changes. The pattern: store a `titleDestroyed` flag, set it before destruction, check it in the ticker to prevent use-after-free crashes.
+
+### 15. Neon glow without BlurFilter — the multi-layer alpha approach
+
+**Problem:** Wanted a "broken neon sign" glow effect. BlurFilter on the entire scene killed FPS (multiple Gaussian passes per frame on every pixel).
+
+**What didn't work:** `BlurFilter({ strength: 1.5, quality: 3 })` on the scene container — dropped FPS from 60 to 15 on mobile. Even `strength: 0.5, quality: 1` was too expensive.
+
+**What worked:** Multiple concentric filled shapes at decreasing alpha, drawn ONCE and cached. For a platform: 4 rounded rectangles extending 3-10px beyond the platform edge at alpha 0.04→0.08→0.15→0.25, plus a bright stroke outline and a white center highlight. Combined with a dark background (0x080818), the bright alpha layers create convincing light bleed. Add per-object alpha flickering (dual sine waves with unique phase) for the "broken sign" effect — this only modulates alpha, no geometry rebuild needed.
+
+**Takeaway:** In 2D games without post-processing, fake glow via concentric alpha layers outperforms real blur filters by 10x+. The key: draw the glow layers once (cached), then animate only alpha for flickering. Dark backgrounds make even subtle alpha layers visible as "light bleeding."
+
+### 16. Bezier curves in PixiJS Graphics are expensive — avoid in hot loops
+
+**Problem:** The rainbow (Nyan Cat) trail used quadratic bezier curves to smoothly connect trail segments. With 90 points × 6 color bands = 534 bezier-filled shapes rebuilt on a single Graphics every frame, FPS dropped to 15.
+
+**Root cause:** PixiJS tessellates bezier curves into triangles for GPU rendering. Each `quadraticCurveTo` + `fill` generates a triangle fan. 534 of these rebuilt 60 times per second overwhelmed the geometry pipeline.
+
+**Fix:** Reduced point density (record every 2nd frame), reduced max points (80→40), and the bezier shapes are now reasonable at ~240 per frame. The real FPS fix was the player sprite leak (lesson 13), not the beziers — once that was fixed, 240 bezier shapes per frame ran fine.
+
+**Takeaway:** PixiJS bezier tessellation is 3-5x more expensive than simple rect fills. For particle/trail effects with many shapes, profile before using curves. If you need curves, reduce point count aggressively.
 
 ---
 
