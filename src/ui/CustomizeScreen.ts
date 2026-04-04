@@ -13,8 +13,8 @@ import { tryCode, loadUnlockCodeState, saveUnlockCodeState, markCodeUsed } from 
 import { exportProgress, importProgress, copyToClipboard } from "../systems/ProgressBackup";
 import {
   addSection, addCosmeticRow, addAchievementRow,
-  addButtonRow, addInfoText, addCosmeticGridItem, addCharGridItem,
-  ROW_H, type TapRegion,
+  addButtonLine, addInfoText, addGridItem, gridEndY,
+  type TapRegion,
 } from "./CustomizeStorage";
 
 const TAP_THRESHOLD = 8;
@@ -72,51 +72,50 @@ export class CustomizeScreen {
       saveCosmetics(this.cosmeticState); this.render();
     };
 
-    // ── Unlock Code + Backup (at top for easy access) ──
-    y = addButtonRow(this.scrollContent, this.tapRegions, gw, "Enter Code", "#88aaff", y, () => this.promptCode());
-    y = addButtonRow(this.scrollContent, this.tapRegions, gw, "Export", "#88ff88", y, () => this.doExport());
-    y = addButtonRow(this.scrollContent, this.tapRegions, gw, "Import", "#ffaa88", y, () => this.doImport());
-    y = addInfoText(this.scrollContent, gw, "Progress is local — use Export to back up before clearing browser data.", y);
+    // ── Buttons on one line ──
+    y = addButtonLine(this.scrollContent, this.tapRegions, gw, [
+      { label: "Enter Code", color: "#88aaff", action: () => this.promptCode() },
+      { label: "Export", color: "#88ff88", action: () => this.doExport() },
+      { label: "Import", color: "#ffaa88", action: () => this.doImport() },
+    ], y);
+    y = addInfoText(this.scrollContent, gw, "Progress is local — Export to back up before clearing browser data.", y);
 
-    // ── Characters (2-column grid) ──
+    // ── Characters (3-column grid) ──
     y = addSection(this.scrollContent, gw, "CHARACTERS", y);
+    const charStartY = y;
     for (let i = 0; i < CHARACTERS.length; i++) {
       const ch = CHARACTERS[i];
       const unlockable = UNLOCKABLE_CHARACTERS.find((u) => u.id === ch.id);
       const unlocked = unlockable ? isCharacterUnlocked(ch.id, achs.unlocked) : true;
-      const col = i % 2;
-      if (col === 0 && i > 0) y += ROW_H;
-      addCharGridItem(this.scrollContent, this.tapRegions, gw,
-        ch.name, unlocked, ch.id === selectedChar, col, y,
+      addGridItem(this.scrollContent, this.tapRegions, gw,
+        ch.name, unlocked, ch.id === selectedChar, i % 3, charStartY + Math.floor(i / 3) * 32,
         () => { setSelectedCharacter(ch.id); this.render(); });
     }
-    y += ROW_H + 6;
+    y = gridEndY(charStartY, CHARACTERS.length);
 
-    // ── Trails (2-column grid) ──
+    // ── Trails (3-column grid) ──
     y = addSection(this.scrollContent, gw, "TRAILS", y);
     const trails = getCosmeticsByType("trail");
+    const trailStartY = y;
     for (let i = 0; i < trails.length; i++) {
       const c = trails[i];
-      const col = i % 2;
-      if (col === 0 && i > 0) y += ROW_H;
-      addCosmeticGridItem(this.scrollContent, this.tapRegions, gw,
-        c, this.cosmeticState.unlocked.has(c.id), this.cosmeticState.equipped.trail === c.id,
-        col, y, equipFn(c.id));
+      addGridItem(this.scrollContent, this.tapRegions, gw,
+        c.name, this.cosmeticState.unlocked.has(c.id), this.cosmeticState.equipped.trail === c.id,
+        i % 3, trailStartY + Math.floor(i / 3) * 32, equipFn(c.id));
     }
-    y += ROW_H + 6;
+    y = gridEndY(trailStartY, trails.length);
 
-    // ── Tints (2-column grid with swatches) ──
+    // ── Tints (3-column grid with swatches) ──
     y = addSection(this.scrollContent, gw, "TINTS", y);
     const tints = getCosmeticsByType("tint");
+    const tintStartY = y;
     for (let i = 0; i < tints.length; i++) {
       const c = tints[i];
-      const col = i % 2;
-      if (col === 0 && i > 0) y += ROW_H;
-      addCosmeticGridItem(this.scrollContent, this.tapRegions, gw,
-        c, this.cosmeticState.unlocked.has(c.id), this.cosmeticState.equipped.tint === c.id,
-        col, y, equipFn(c.id), TINT_COLORS[c.id]);
+      addGridItem(this.scrollContent, this.tapRegions, gw,
+        c.name, this.cosmeticState.unlocked.has(c.id), this.cosmeticState.equipped.tint === c.id,
+        i % 3, tintStartY + Math.floor(i / 3) * 32, equipFn(c.id), TINT_COLORS[c.id]);
     }
-    y += ROW_H + 6;
+    y = gridEndY(tintStartY, tints.length);
 
     // ── Themes (full-width rows with descriptions) ──
     y = addSection(this.scrollContent, gw, "THEMES", y);
@@ -125,9 +124,9 @@ export class CustomizeScreen {
         this.cosmeticState.unlocked.has(c.id), this.cosmeticState.equipped.theme === c.id,
         y, equipFn(c.id));
     }
-    y += 6;
+    y += 4;
 
-    // ── Achievements (2-column) ──
+    // ── Achievements ──
     const unlockCount = [...achs.unlocked].length;
     y = addSection(this.scrollContent, gw, `ACHIEVEMENTS (${unlockCount}/${ACHIEVEMENTS.length})`, y);
     for (const a of ACHIEVEMENTS) {

@@ -180,7 +180,7 @@ export function drawThemedPlatform(
   style: PlatformStyle, theme: string,
 ): void {
   switch (theme) {
-    case "theme_neon": return drawNeonPlatform(gfx, w, h, style);
+    case "theme_neon": return drawNeonPlatform(gfx, w, h, style, color);
     case "theme_pixel": return drawPixelPlatform(gfx, w, h, color);
     case "theme_candy": return drawCandyPlatform(gfx, w, h, style);
     case "theme_dark": return drawDarkPlatform(gfx, w, h, style);
@@ -188,20 +188,18 @@ export function drawThemedPlatform(
   }
 }
 
-function drawNeonPlatform(gfx: Graphics, w: number, h: number, style: PlatformStyle): void {
+function drawNeonPlatform(gfx: Graphics, w: number, h: number, style: PlatformStyle, zoneColor: number): void {
   gfx.clear();
-  const colors: Record<string, number> = {
-    normal: 0x00ffff, breaking: 0xff4444, brittle: 0xff8844,
-    moving: 0x44ff44, spring: 0xffff00, ice: 0x88ccff,
-    conveyor: 0xff88ff, lasagna: 0xffaa00, crumbling: 0xff6644,
-    teleport: 0xaa44ff, weighted: 0x88ff88,
+  // Neon-ify the zone color: boost saturation + brightness
+  const neonOverrides: Record<string, number> = {
+    breaking: 0xff3333, brittle: 0xff8844, spring: 0xffff00,
+    ice: 0x66ddff, teleport: 0xcc44ff, crumbling: 0xff6644,
   };
-  const c = colors[style] ?? 0x00ffff;
+  const c = neonOverrides[style] ?? neonify(zoneColor);
   // Wide outer glow
-  gfx.roundRect(-3, -2, w + 6, h + 4, 6);
-  gfx.fill({ color: c, alpha: 0.1 });
-  // Inner glow
-  gfx.roundRect(-1, -1, w + 2, h + 2, 5);
+  gfx.roundRect(-4, -3, w + 8, h + 6, 7);
+  gfx.fill({ color: c, alpha: 0.08 });
+  gfx.roundRect(-2, -1, w + 4, h + 2, 5);
   gfx.fill({ color: c, alpha: 0.15 });
   // Bright neon outline
   gfx.roundRect(0, 0, w, h, 4);
@@ -245,6 +243,20 @@ function drawDarkPlatform(gfx: Graphics, w: number, h: number, style: PlatformSt
   gfx.roundRect(0, 0, w, h, 4); gfx.fill(c);
   gfx.roundRect(0, 0, w, h, 4);
   gfx.stroke({ width: 1, color: 0x6644aa, alpha: 0.4 });
+}
+
+/** Boost a color to neon brightness — increase each channel toward max. */
+function neonify(color: number): number {
+  let r = (color >> 16) & 0xff;
+  let g = (color >> 8) & 0xff;
+  let b = color & 0xff;
+  // Find dominant channel and boost it, dim the others slightly
+  const max = Math.max(r, g, b);
+  if (max === 0) return 0x00ffff;
+  r = Math.min(255, Math.floor(r * 1.6 + 40));
+  g = Math.min(255, Math.floor(g * 1.6 + 40));
+  b = Math.min(255, Math.floor(b * 1.6 + 40));
+  return (r << 16) | (g << 8) | b;
 }
 
 function darken(color: number, amount: number): number {
