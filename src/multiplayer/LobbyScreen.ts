@@ -9,6 +9,7 @@ import { GAME_WIDTH, GAME_HEIGHT } from "../config/constants";
 import type { GameSync, GameSyncEvent } from "./GameSync";
 import { CHARACTERS, drawCharacter } from "../rendering/PlayerCharacters";
 import { getSelectedCharacter, setSelectedCharacter } from "../systems/CharacterSettings";
+import { getUITheme } from "../ui/ThemeUI";
 
 export type LobbyRole = "host" | "guest";
 
@@ -63,11 +64,12 @@ export class LobbyScreen {
     this.role = role;
     this.sync = sync;
     this.callbacks = callbacks;
+    const uiT = getUITheme();
 
     // Background
     const bg = new Graphics();
     bg.rect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-    bg.fill({ color: 0x0a0a1a, alpha: 0.95 });
+    bg.fill({ color: uiT.bg, alpha: 0.95 });
     this.container.addChild(bg);
 
     // Title
@@ -341,9 +343,10 @@ export class LobbyScreen {
   private renderStartButton(y: number, enabled: boolean): void {
     this.startBtn.clear();
     this.startBtn.roundRect(GAME_WIDTH / 2 - 110, y - 22, 220, 44, 10);
-    this.startBtn.fill({ color: enabled ? 0x1a3355 : 0x333333, alpha: 0.9 });
+    const uiT = getUITheme();
+    this.startBtn.fill({ color: enabled ? uiT.buttonBg : 0x333333, alpha: 0.9 });
     this.startBtn.roundRect(GAME_WIDTH / 2 - 110, y - 22, 220, 44, 10);
-    this.startBtn.stroke({ width: 1.5, color: enabled ? 0x6688bb : 0x555555, alpha: 0.5 });
+    this.startBtn.stroke({ width: 1.5, color: enabled ? uiT.buttonBorder : 0x555555, alpha: 0.5 });
     this.startBtn.eventMode = enabled ? "static" : "none";
     this.startBtn.cursor = enabled ? "pointer" : "default";
   }

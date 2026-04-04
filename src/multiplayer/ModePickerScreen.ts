@@ -7,6 +7,7 @@ import { Application, Container, Graphics, Text, TextStyle } from "pixi.js";
 import { GAME_WIDTH, GAME_HEIGHT } from "../config/constants";
 import { CHARACTERS, drawCharacter } from "../rendering/PlayerCharacters";
 import { getSelectedCharacter, setSelectedCharacter } from "../systems/CharacterSettings";
+import { getUITheme } from "../ui/ThemeUI";
 import type { LocalCoopMode } from "./LocalCoopLauncher";
 
 const MODES: LocalCoopMode[] = ["best-height", "first-to-die", "timed-2min"];
@@ -29,10 +30,11 @@ export function showModePicker(
 ): void {
   const view = new Container();
   let selectedIdx = 0;
+  const uiT = getUITheme();
 
   const bg = new Graphics();
   bg.rect(0, 0, SPLIT_WIDTH, GAME_HEIGHT);
-  bg.fill({ color: 0x0a0a1a, alpha: 0.95 });
+  bg.fill({ color: uiT.bg, alpha: 0.95 });
   view.addChild(bg);
 
   const title = new Text({

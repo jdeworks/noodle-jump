@@ -3,10 +3,12 @@
 import { Container, Graphics, Text, TextStyle } from "pixi.js";
 import { GAME_WIDTH, GAME_HEIGHT, COLORS } from "../config/constants";
 import { POWER_UP_INFO } from "./PowerUpDescriptions";
-import { drawPlatform, type PlatformStyle } from "../rendering/PlatformSprites";
+import { type PlatformStyle } from "../rendering/PlatformSprites";
+import { drawThemedPlatform } from "../rendering/ThemeSprites";
 import { drawPowerUp } from "../rendering/ItemSprites";
 import { InertiaScroll } from "./InertiaScroll";
 import { getUITheme } from "./ThemeUI";
+import { loadCosmetics } from "../systems/Cosmetics";
 
 interface Section {
   title: string;
@@ -247,7 +249,8 @@ export class ExplanationScreen {
         // Platform sprite preview (animated)
         if (item.platformStyle != null && item.color != null) {
           const platGfx = new Graphics();
-          drawPlatform(platGfx, 56, 10, item.color, item.platformStyle);
+          const cosm = loadCosmetics();
+          drawThemedPlatform(platGfx, 56, 10, item.color, item.platformStyle, cosm.equipped.theme ?? "theme_default");
           platGfx.x = 15;
           platGfx.y = y + 6;
           content.addChild(platGfx);

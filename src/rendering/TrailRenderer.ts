@@ -81,17 +81,20 @@ export class TrailRenderer {
       const p = this.points[i];
       const alpha = 1 - p.age / MAX_AGE;
       const gfx = this.getFromPool(i);
-      gfx.clear(); gfx.x = p.x; gfx.y = p.y - camY;
+      gfx.clear();
+      // Spread shapes horizontally based on point index for wider visual
+      const spread = Math.sin(i * 2.7 + p.age * 0.1) * 14;
+      gfx.x = p.x + spread; gfx.y = p.y - camY;
 
       if (shape === "heart") {
-        const s = 2 + (1 - p.age / MAX_AGE) * 3;
+        const s = 3 + (1 - p.age / MAX_AGE) * 4;
         const c = colors[i % colors.length];
         gfx.circle(-s * 0.3, -s * 0.2, s * 0.5); gfx.fill({ color: c, alpha: alpha * 0.7 });
         gfx.circle(s * 0.3, -s * 0.2, s * 0.5); gfx.fill({ color: c, alpha: alpha * 0.7 });
         gfx.moveTo(0, s * 0.5); gfx.lineTo(-s * 0.6, -s * 0.1);
         gfx.lineTo(s * 0.6, -s * 0.1); gfx.closePath(); gfx.fill({ color: c, alpha: alpha * 0.7 });
       } else if (shape === "star") {
-        const s = 2 + (1 - p.age / MAX_AGE) * 3;
+        const s = 3 + (1 - p.age / MAX_AGE) * 4;
         const c = colors[i % colors.length];
         gfx.moveTo(0, -s); gfx.lineTo(s * 0.3, -s * 0.3); gfx.lineTo(s, 0);
         gfx.lineTo(s * 0.3, s * 0.3); gfx.lineTo(0, s);
@@ -99,20 +102,22 @@ export class TrailRenderer {
         gfx.lineTo(-s * 0.3, -s * 0.3); gfx.closePath();
         gfx.fill({ color: c, alpha: alpha * 0.7 });
       } else if (shape === "snowflake") {
-        const s = 2 + (1 - p.age / MAX_AGE) * 2;
+        // Snowflakes: larger, spread wide, shrink + fade over time
+        const s = 3 + (1 - p.age / MAX_AGE) * 4;
         const c = colors[i % colors.length];
         for (let a = 0; a < 6; a++) {
-          const angle = (a / 6) * Math.PI * 2;
+          const angle = (a / 6) * Math.PI * 2 + p.age * 0.02;
           gfx.moveTo(0, 0); gfx.lineTo(Math.cos(angle) * s, Math.sin(angle) * s);
-          gfx.stroke({ width: 1, color: c, alpha: alpha * 0.7 });
+          gfx.stroke({ width: 1.2, color: c, alpha: alpha * 0.7 });
         }
-        gfx.circle(0, 0, s * 0.3); gfx.fill({ color: c, alpha: alpha * 0.5 });
+        gfx.circle(0, 0, s * 0.35); gfx.fill({ color: 0xffffff, alpha: alpha * 0.3 });
       } else {
-        const size = 2 + (1 - p.age / MAX_AGE) * 3;
+        // Fire/sparkle/neon: larger glow circles
+        const size = 3 + (1 - p.age / MAX_AGE) * 4;
         const c = colors[i % colors.length];
         if (this.trailType === "trail_fire" || this.trailType === "trail_sparkle" || this.trailType === "trail_neon") {
-          gfx.circle(0, 0, size + 3); gfx.fill({ color: c, alpha: alpha * 0.1 });
-          gfx.circle(0, 0, size + 1); gfx.fill({ color: c, alpha: alpha * 0.15 });
+          gfx.circle(0, 0, size + 4); gfx.fill({ color: c, alpha: alpha * 0.08 });
+          gfx.circle(0, 0, size + 2); gfx.fill({ color: c, alpha: alpha * 0.15 });
         }
         gfx.circle(0, 0, size); gfx.fill({ color: c, alpha: alpha * 0.6 });
       }

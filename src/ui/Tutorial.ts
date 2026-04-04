@@ -2,6 +2,7 @@
 
 import { Container, Graphics, Text, TextStyle } from "pixi.js";
 import { GAME_WIDTH, GAME_HEIGHT } from "../config/constants";
+import { getUITheme } from "./ThemeUI";
 
 const TUTORIAL_KEY = "noodle-jump-tutorial-seen";
 
@@ -67,6 +68,8 @@ export class Tutorial {
   }
 
   private renderStep(): void {
+    const uiT = getUITheme();
+
     // Clear previous
     while (this.container.children.length > 0) {
       const child = this.container.children[0];
@@ -77,7 +80,7 @@ export class Tutorial {
     // Dim overlay — extend beyond canvas bounds to cover any offset
     const dim = new Graphics();
     dim.rect(-50, -50, GAME_WIDTH + 100, GAME_HEIGHT + 100);
-    dim.fill({ color: 0x000000, alpha: 0.6 });
+    dim.fill({ color: uiT.bg, alpha: 0.7 });
     dim.eventMode = "static";
     this.container.addChild(dim);
 

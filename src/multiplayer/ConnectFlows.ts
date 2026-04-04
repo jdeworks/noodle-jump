@@ -9,6 +9,7 @@ import { ManualSignaling } from "./ManualSignaling";
 import { NostrSignaling } from "./NostrSignaling";
 import { ConnectionManager } from "./ConnectionManager";
 import { copyToClipboard, showHtmlToast, createCodeInput, createSubmitButton } from "./HtmlOverlay";
+import { getUITheme } from "../ui/ThemeUI";
 
 const BTN_STYLE = new TextStyle({
   fontFamily: "monospace",
@@ -51,9 +52,10 @@ export interface MenuContext {
 }
 
 function makeBackground(): Graphics {
+  const uiT = getUITheme();
   const bg = new Graphics();
   bg.rect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-  bg.fill({ color: 0x0a0a1a, alpha: 0.95 });
+  bg.fill({ color: uiT.bg, alpha: 0.95 });
   return bg;
 }
 
@@ -130,7 +132,7 @@ export async function doQuickCreate(ctx: MenuContext): Promise<void> {
 
     const copyBtnY = 270;
     ctx.addButton(view, "Copy Code", copyBtnY, 180, 36,
-      (GAME_WIDTH - 180) / 2, 0x333355, async () => {
+      (GAME_WIDTH - 180) / 2, getUITheme().buttonBg, async () => {
         const ok = await copyToClipboard(code);
         if (ok) showHtmlToast("Copied!");
       });
@@ -143,7 +145,7 @@ export async function doQuickCreate(ctx: MenuContext): Promise<void> {
   } catch {
     statusText.text = "Failed to create room.";
     ctx.addButton(view, "Back", 200, 160, 36,
-      (GAME_WIDTH - 160) / 2, 0x222244, () => {
+      (GAME_WIDTH - 160) / 2, getUITheme().buttonBg, () => {
         ctx.showQuickConnect();
       });
   }
@@ -175,7 +177,7 @@ export async function doQuickJoin(
   } catch {
     statusText.text = "Failed to connect.";
     ctx.addButton(view, "Back", GAME_HEIGHT * 0.55, 160, 36,
-      (GAME_WIDTH - 160) / 2, 0x222244, () => {
+      (GAME_WIDTH - 160) / 2, getUITheme().buttonBg, () => {
         ctx.showQuickConnect();
       });
   }
@@ -222,7 +224,7 @@ export async function doPrivateCreate(ctx: MenuContext): Promise<void> {
     let btnY = Math.min(codeText.y + codeText.height + 15, 280);
 
     ctx.addButton(view, "Copy Code", btnY, 180, 34,
-      (GAME_WIDTH - 180) / 2, 0x333355, async () => {
+      (GAME_WIDTH - 180) / 2, getUITheme().buttonBg, async () => {
         const ok = await copyToClipboard(offerCode);
         if (ok) showHtmlToast("Copied!");
       });
@@ -274,7 +276,7 @@ export async function doPrivateCreate(ctx: MenuContext): Promise<void> {
   } catch {
     statusText.text = "Failed to generate offer.";
     ctx.addButton(view, "Back", 200, 160, 36,
-      (GAME_WIDTH - 160) / 2, 0x222244, () => {
+      (GAME_WIDTH - 160) / 2, getUITheme().buttonBg, () => {
         ctx.showPrivateConnect();
       });
   }
@@ -326,7 +328,7 @@ export async function doPrivateJoin(
     let btnY = Math.min(codeText.y + codeText.height + 15, 280);
 
     ctx.addButton(view, "Copy Code", btnY, 180, 34,
-      (GAME_WIDTH - 180) / 2, 0x333355, async () => {
+      (GAME_WIDTH - 180) / 2, getUITheme().buttonBg, async () => {
         const ok = await copyToClipboard(answerCode as string);
         if (ok) showHtmlToast("Copied!");
       });
@@ -350,7 +352,7 @@ export async function doPrivateJoin(
   } catch {
     statusText.text = "Invalid host code or connection failed.";
     ctx.addButton(view, "Back", 200, 160, 36,
-      (GAME_WIDTH - 160) / 2, 0x222244, () => {
+      (GAME_WIDTH - 160) / 2, getUITheme().buttonBg, () => {
         ctx.showPrivateConnect();
       });
   }

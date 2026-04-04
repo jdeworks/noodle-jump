@@ -4,6 +4,7 @@ import { Container, Graphics, Text, TextStyle } from "pixi.js";
 import { GAME_WIDTH, GAME_HEIGHT } from "../config/constants";
 import { requestFullscreen } from "../utils/wakeLock";
 import { POWER_UP_INFO } from "./PowerUpDescriptions";
+import { getUITheme } from "./ThemeUI";
 import type { GameWorldState } from "../scenes/GameState";
 
 const ZONE_NAMES = [
@@ -35,6 +36,7 @@ export class HUD {
   private fpsValue = 0;
 
   constructor() {
+    const uiT = getUITheme();
     const hudStyle = new TextStyle({
       fontFamily: "monospace",
       fontSize: 14,
@@ -44,7 +46,7 @@ export class HUD {
 
     // Background bar
     this.bgBar.rect(0, 0, GAME_WIDTH, 36);
-    this.bgBar.fill({ color: 0x000000, alpha: 0.3 });
+    this.bgBar.fill({ color: uiT.bg, alpha: 0.3 });
     this.container.addChild(this.bgBar);
 
     // Timer
@@ -193,6 +195,7 @@ export class HUD {
 
   /** Update all HUD elements from game state. */
   update(state: GameWorldState, elapsedSeconds: number): void {
+    const uiT = getUITheme();
     // Timer
     const m = Math.floor(elapsedSeconds / 60);
     const s = elapsedSeconds % 60;
@@ -211,7 +214,7 @@ export class HUD {
       this.zoneBar.rect(0, barTop, GAME_WIDTH, 3);
       this.zoneBar.fill({ color: 0x333333, alpha: 0.3 });
       this.zoneBar.rect(0, barTop, GAME_WIDTH * zp, 3);
-      this.zoneBar.fill({ color: 0xffdd44, alpha: 0.6 });
+      this.zoneBar.fill({ color: uiT.buttonBorder, alpha: 0.6 });
     }
     this.zoneLabel.text = ZONE_NAMES[zone] ?? `Zone ${zone + 1}`;
     this.zoneLabel.visible = true;

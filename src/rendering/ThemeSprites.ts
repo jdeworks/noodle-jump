@@ -5,6 +5,9 @@ import { drawEnemy } from "./EnemySprites";
 import { drawBoss } from "./BossSprites";
 import { drawPlatform, type PlatformStyle } from "./PlatformSprites";
 
+/** Consistent pixel size for the pixel theme — everything uses this grid. */
+const PX = 5;
+
 // ── Themed enemy drawing ──────────────────────────────────────────────
 
 export function drawThemedEnemy(gfx: Graphics, width: number, type: string, theme: string): void {
@@ -39,7 +42,7 @@ function drawPixelEnemy(gfx: Graphics, w: number, type: string): void {
   gfx.clear();
   const colors: Record<string, number> = { rat: 0x888888, fish: 0x4488cc, alien: 0x88ff44 };
   const c = colors[type] ?? 0x888888;
-  const px = Math.max(4, Math.floor(w / 6));
+  const px = PX;
   // Pixelated body — grid of squares
   for (let x = 1; x < 5; x++) {
     for (let y = 1; y < 4; y++) {
@@ -145,7 +148,7 @@ function drawPixelBoss(gfx: Graphics, w: number, h: number, type: string): void 
   gfx.clear();
   const colors: Record<string, number> = { chef_rival: 0xcc2222, kraken: 0x22aa66, ufo: 0x8844cc };
   const c = colors[type] ?? 0xcc2222;
-  const px = Math.max(6, Math.floor(w / 8));
+  const px = PX;
   for (let x = 1; x < 7; x++) {
     for (let y = 0; y < Math.floor(h / px) - 1; y++) {
       if ((x + y) % 3 === 0) continue; // holes for shape
@@ -231,13 +234,15 @@ function drawNeonPlatform(gfx: Graphics, w: number, h: number, style: PlatformSt
   gfx.roundRect(2, 1, w - 4, h - 2, 3); gfx.stroke({ width: 0.8, color: 0xffffff, alpha: 0.3 });
 }
 
-function drawPixelPlatform(gfx: Graphics, w: number, h: number, color: number): void {
+function drawPixelPlatform(gfx: Graphics, w: number, _h: number, color: number): void {
   gfx.clear();
-  const px = Math.max(4, Math.floor(h));
-  const cols = Math.floor(w / px);
-  for (let i = 0; i < cols; i++) {
-    gfx.rect(i * px, 0, px - 1, px - 1);
-    gfx.fill(i % 2 === 0 ? color : darken(color, 0.15));
+  const cols = Math.floor(w / PX);
+  const rows = Math.max(2, Math.floor(_h / PX));
+  for (let x = 0; x < cols; x++) {
+    for (let y = 0; y < rows; y++) {
+      const shade = (x + y) % 2 === 0 ? color : darken(color, 0.12);
+      gfx.rect(x * PX, y * PX, PX - 1, PX - 1); gfx.fill(shade);
+    }
   }
 }
 
@@ -279,7 +284,7 @@ export function drawThemedMeatball(gfx: Graphics, size: number, theme: string): 
     gfx.circle(r, r, r); gfx.stroke({ width: 2, color: 0x00ffff });
     gfx.circle(r, r, r * 0.3); gfx.fill({ color: 0xffffff, alpha: 0.3 });
   } else if (theme === "theme_pixel") {
-    const px = Math.max(3, Math.floor(size / 4));
+    const px = PX;
     for (let x = 0; x < 4; x++) for (let y = 0; y < 4; y++) {
       if ((x === 0 || x === 3) && (y === 0 || y === 3)) continue;
       gfx.rect(x * px, y * px, px - 1, px - 1); gfx.fill(0xcc8844);

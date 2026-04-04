@@ -3,6 +3,7 @@
 import { Application, Graphics, Text, TextStyle } from "pixi.js";
 import { GameScene } from "../scenes/GameScene";
 import { GAME_WIDTH, GAME_HEIGHT } from "../config/constants";
+import { getUITheme } from "../ui/ThemeUI";
 
 const SPLIT_WIDTH = GAME_WIDTH * 2;
 
@@ -23,9 +24,10 @@ export function showLocalCoopResults(params: ResultsParams): void {
   const { app, scene1, scene2, mode, p1Dead, p2Dead,
     cleanupAndReset, cleanupAndGoHome } = params;
 
+  const uiT = getUITheme();
   const overlay = new Graphics();
   overlay.rect(0, 0, SPLIT_WIDTH, GAME_HEIGHT);
-  overlay.fill({ color: 0x000000, alpha: 0.7 });
+  overlay.fill({ color: uiT.bg, alpha: 0.7 });
   app.stage.addChild(overlay);
 
   // Always use max height for comparison (death penalties reduce current height)
