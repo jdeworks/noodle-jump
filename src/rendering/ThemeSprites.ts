@@ -250,10 +250,10 @@ function drawPixelPlatform(gfx: Graphics, w: number, _h: number, color: number):
 function drawCandyPlatform(gfx: Graphics, w: number, h: number, style: PlatformStyle): void {
   gfx.clear();
   const pastel: Record<string, number> = {
-    normal: 0xffaacc, breaking: 0xffccaa, brittle: 0xffddaa,
-    moving: 0xaaffcc, spring: 0xffffaa, ice: 0xaaddff,
-    conveyor: 0xddaaff, lasagna: 0xffccaa, crumbling: 0xffbbaa,
-    teleport: 0xccaaff, weighted: 0xbbffbb,
+    normal: 0xffaacc, breaking: 0xff8888, brittle: 0xffbb88,
+    moving: 0xaaffcc, spring: 0xccff88, ice: 0xaaddff,
+    conveyor: 0xddaaff, lasagna: 0xffcc66, crumbling: 0xff9966,
+    teleport: 0xcc88ff, weighted: 0xbbffbb,
   };
   const c = pastel[style] ?? 0xffaacc;
   gfx.roundRect(0, 0, w, h, 6); gfx.fill(c);
@@ -266,11 +266,17 @@ function drawCandyPlatform(gfx: Graphics, w: number, h: number, style: PlatformS
 
 function drawDarkPlatform(gfx: Graphics, w: number, h: number, style: PlatformStyle): void {
   gfx.clear();
-  const isSafe = style === "normal" || style === "moving" || style === "spring";
-  const c = isSafe ? 0x332244 : 0x442233;
-  gfx.roundRect(0, 0, w, h, 4); gfx.fill(c);
-  gfx.roundRect(0, 0, w, h, 4);
-  gfx.stroke({ width: 1, color: 0x6644aa, alpha: 0.4 });
+  const colors: Record<string, [number, number]> = {
+    normal: [0x2a2040, 0x6644aa], moving: [0x2a2050, 0x4488cc],
+    breaking: [0x3a1525, 0xaa3344], brittle: [0x3a2020, 0xcc6644],
+    spring: [0x1a3020, 0x44aa44], ice: [0x1a2535, 0x4488cc],
+    conveyor: [0x2a2535, 0x8866aa], crumbling: [0x352020, 0xaa5533],
+    teleport: [0x251535, 0xaa44cc], weighted: [0x2a2520, 0x888844],
+    lasagna: [0x352a1a, 0xcc8833],
+  };
+  const [fill, border] = colors[style] ?? [0x2a2040, 0x6644aa];
+  gfx.roundRect(0, 0, w, h, 4); gfx.fill(fill);
+  gfx.roundRect(0, 0, w, h, 4); gfx.stroke({ width: 1, color: border, alpha: 0.5 });
 }
 
 // ── Themed meatball drawing ───────────────────────────────────────────

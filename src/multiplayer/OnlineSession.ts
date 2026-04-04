@@ -82,6 +82,12 @@ export class OnlineSession {
     this.remoteCosmetics = config.remoteCosmetics;
     this.mode = config.mode ?? "best-height";
     this.sync = config.sync ?? new GameSync();
+    // Return to home on peer disconnect
+    this.connection.on({
+      onStateChange: (s) => { if (s === "failed" || s === "disconnected") this.goHome(); },
+      onError: () => this.goHome(),
+      onDataChannel: () => {}, onRoom: () => {},
+    });
 
     // Create game scene with shared seed
     setDebugConfig(createDebugConfig());
@@ -99,14 +105,11 @@ export class OnlineSession {
 
     this.remoteRenderer = new RemotePlayerRenderer(config.remoteCharacter, config.remoteCosmetics);
     this.remoteRenderer.hide();
-
     this.deathToast = this.makeToast();
     this.fpsText = this.makeFps();
     this.connDot = new Graphics();
     this.connDot.circle(GAME_WIDTH - 15, 15, 6); this.connDot.fill(0x44ff44);
     this.makeCountdown();
-
-    // Add overlays in correct z-order: remote player between scene and UI
     this.app.stage.addChild(this.remoteRenderer.container);
     this.app.stage.addChild(this.deathToast);
     if (this.fpsText) this.app.stage.addChild(this.fpsText);
@@ -143,12 +146,8 @@ export class OnlineSession {
 
     if (this.fpsText) { this.app.stage.removeChild(this.fpsText); this.app.stage.addChild(this.fpsText); }
 
-    // Escape to forfeit
-    this.escapeHandler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setTimeout(() => this.goHome(), 0);
-    };
+    this.escapeHandler = (e: KeyboardEvent) => { if (e.key === "Escape") setTimeout(() => this.goHome(), 0); };
     window.addEventListener("keydown", this.escapeHandler);
-
     this.gameLoop = () => { this.tick(); };
     this.app.ticker.add(this.gameLoop);
   }
