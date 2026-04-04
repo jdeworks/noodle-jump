@@ -25,14 +25,8 @@ function drawNeonEnemy(gfx: Graphics, w: number, type: string): void {
   const colors: Record<string, number> = { rat: 0x00ffff, fish: 0x00ff88, alien: 0xff00ff };
   const c = colors[type] ?? 0x00ffff;
   const cx = w / 2, cy = w / 2;
-  // Multi-layer glow
-  gfx.ellipse(cx, cy, w * 0.46, w * 0.36); gfx.fill({ color: c, alpha: 0.05 });
-  gfx.ellipse(cx, cy, w * 0.42, w * 0.32); gfx.fill({ color: c, alpha: 0.1 });
-  gfx.ellipse(cx, cy, w * 0.38, w * 0.28); gfx.fill({ color: c, alpha: 0.15 });
-  // Bright outline
+  gfx.ellipse(cx, cy, w * 0.42, w * 0.32); gfx.fill({ color: c, alpha: 0.12 });
   gfx.ellipse(cx, cy, w * 0.35, w * 0.25); gfx.stroke({ width: 2, color: c });
-  // White-hot inner highlight
-  gfx.ellipse(cx, cy, w * 0.2, w * 0.14); gfx.stroke({ width: 0.8, color: 0xffffff, alpha: 0.3 });
   // Glowing eyes
   gfx.circle(w * 0.6, w * 0.42, 2.5); gfx.fill({ color: 0xffffff, alpha: 0.9 });
   gfx.circle(w * 0.4, w * 0.42, 2.5); gfx.fill({ color: 0xffffff, alpha: 0.9 });
@@ -107,11 +101,8 @@ function drawNeonBoss(gfx: Graphics, w: number, h: number, type: string, animTic
   const c = colors[type] ?? 0xff0044;
   const cx = w / 2, cy = h / 2;
   const pulse = 1 + Math.sin(animTick * 0.08) * 0.05;
-  // Wide glow
-  gfx.ellipse(cx, cy, w * 0.46 * pulse, h * 0.42 * pulse);
-  gfx.fill({ color: c, alpha: 0.06 });
   gfx.ellipse(cx, cy, w * 0.42 * pulse, h * 0.38 * pulse);
-  gfx.fill({ color: c, alpha: 0.1 });
+  gfx.fill({ color: c, alpha: 0.12 });
   if (type === "chef_rival") {
     // Neon chef — body + hat outline
     gfx.roundRect(cx - 12, cy - 5, 24, 22, 4); gfx.stroke({ width: 2.5, color: c });
@@ -223,16 +214,10 @@ function drawNeonPlatform(gfx: Graphics, w: number, h: number, style: PlatformSt
     ice: 0x66ddff, teleport: 0xcc44ff, crumbling: 0xff6644,
   };
   const c = neonOverrides[style] ?? neonify(zoneColor);
-  // 5 concentric glow layers — wide outer halo for strong neon bloom
-  gfx.roundRect(-12, -7, w + 24, h + 14, 12); gfx.fill({ color: c, alpha: 0.03 });
-  gfx.roundRect(-8, -5, w + 16, h + 10, 9); gfx.fill({ color: c, alpha: 0.06 });
-  gfx.roundRect(-5, -3, w + 10, h + 6, 7); gfx.fill({ color: c, alpha: 0.1 });
-  gfx.roundRect(-2, -1, w + 4, h + 2, 5); gfx.fill({ color: c, alpha: 0.18 });
-  gfx.roundRect(0, 0, w, h, 4); gfx.fill({ color: c, alpha: 0.25 });
-  // Bright neon outline
+  // 2 glow layers + outline (reduced from 5 for performance)
+  gfx.roundRect(-4, -3, w + 8, h + 6, 7); gfx.fill({ color: c, alpha: 0.1 });
+  gfx.roundRect(-1, -1, w + 2, h + 2, 5); gfx.fill({ color: c, alpha: 0.2 });
   gfx.roundRect(0, 0, w, h, 4); gfx.stroke({ width: 2.5, color: c });
-  // White-hot center
-  gfx.roundRect(2, 1, w - 4, h - 2, 3); gfx.stroke({ width: 1, color: 0xffffff, alpha: 0.4 });
 }
 
 function drawPixelPlatform(gfx: Graphics, w: number, _h: number, color: number): void {
@@ -285,11 +270,8 @@ export function drawThemedMeatball(gfx: Graphics, size: number, theme: string): 
   const r = size / 2;
   gfx.clear();
   if (theme === "theme_neon") {
-    gfx.circle(r, r, r + 5); gfx.fill({ color: 0x00ffff, alpha: 0.04 });
-    gfx.circle(r, r, r + 3); gfx.fill({ color: 0x00ffff, alpha: 0.08 });
-    gfx.circle(r, r, r + 1); gfx.fill({ color: 0x00ffff, alpha: 0.15 });
+    gfx.circle(r, r, r + 2); gfx.fill({ color: 0x00ffff, alpha: 0.12 });
     gfx.circle(r, r, r); gfx.stroke({ width: 2, color: 0x00ffff });
-    gfx.circle(r, r, r * 0.3); gfx.fill({ color: 0xffffff, alpha: 0.3 });
   } else if (theme === "theme_pixel") {
     const px = PX;
     for (let x = 0; x < 4; x++) for (let y = 0; y < 4; y++) {
