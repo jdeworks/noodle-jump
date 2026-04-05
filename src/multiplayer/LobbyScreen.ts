@@ -55,6 +55,7 @@ export class LobbyScreen {
   private waitingText: Text;
   private onTouchControlsChanged: (() => void) | null = null;
   private onCharacterChanged: (() => void) | null = null;
+  private onSettingsChanged: (() => void) | null = null;
 
   constructor(role: LobbyRole, sync: GameSync, callbacks: LobbyCallbacks) {
     this.role = role;
@@ -186,19 +187,22 @@ export class LobbyScreen {
         this.useCustomRun = !this.useCustomRun;
         customLabel.text = this.useCustomRun ? "Custom Run: ON (saved)" : "Custom Run: OFF (tap)";
         customLabel.style.fill = this.useCustomRun ? "#44ff44" : "#888888";
+        this.sync.sendGameEvent({ type: "ready", payload: { customRun: this.useCustomRun } });
       });
     }
+
+    this.onSettingsChanged = () => { // Update labels when host changes settings
+      const tn = THEMES.find(t => t.id === this.selectedTheme)?.name ?? "Classic";
+      themeLabel.text = role === "host" ? `Theme: ${tn} (tap)` : `Theme: ${tn}`;
+      customLabel.text = this.useCustomRun ? "Custom Run: ON" : "Custom Run: OFF";
+      customLabel.style.fill = this.useCustomRun ? "#44ff44" : "#888888"; };
 
     // Ready button
     const readyBtnY = 420;
     const readyBg = new Graphics();
-    readyBg.roundRect(GAME_WIDTH / 2 - 100, readyBtnY - 20, 200, 40, 10);
-    readyBg.fill({ color: 0x2a6e3f, alpha: 0.9 });
-    readyBg.roundRect(GAME_WIDTH / 2 - 100, readyBtnY - 20, 200, 40, 10);
-    readyBg.stroke({ width: 1.5, color: 0x44bb66, alpha: 0.5 });
-    readyBg.eventMode = "static";
-    readyBg.cursor = "pointer";
-    this.container.addChild(readyBg);
+    readyBg.roundRect(GAME_WIDTH / 2 - 100, readyBtnY - 20, 200, 40, 10); readyBg.fill({ color: 0x2a6e3f, alpha: 0.9 });
+    readyBg.roundRect(GAME_WIDTH / 2 - 100, readyBtnY - 20, 200, 40, 10); readyBg.stroke({ width: 1.5, color: 0x44bb66, alpha: 0.5 });
+    readyBg.eventMode = "static"; readyBg.cursor = "pointer"; this.container.addChild(readyBg);
 
     const readyText = new Text({
       text: "Ready",
@@ -318,6 +322,11 @@ export class LobbyScreen {
       if (event.payload.theme) {
         this.selectedTheme = event.payload.theme as string;
         this.remoteCosmetics.theme = this.selectedTheme;
+        this.onSettingsChanged?.();
+      }
+      if (event.payload.customRun !== undefined) {
+        this.useCustomRun = event.payload.customRun as boolean;
+        this.onSettingsChanged?.();
       }
       if (event.payload.character) {
         this.remoteChar = event.payload.character as string;

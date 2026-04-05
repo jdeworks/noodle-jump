@@ -169,6 +169,7 @@ export class ParallaxBackground {
   }
 
   update(cameraY: number): void {
+    if (!this.container.parent) return; // destroyed
     this.animTick++;
 
     // Fade transition (~3 seconds)
