@@ -154,12 +154,13 @@ export function createInitialState(runConfig?: RunConfig): GameWorldState {
   const platforms = [ground];
   let highestPlatformY = ground.y;
 
-  // Generate initial platforms
+  // Generate initial platforms (respect forcePlatformType from debug config)
   const generated = generatePlatforms(
     highestPlatformY,
     PLATFORM_COUNT_BUFFER,
     undefined,
     false,
+    debugCfg.forcePlatformType,
   );
   platforms.push(...generated);
   highestPlatformY = generated[generated.length - 1].y;
