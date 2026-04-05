@@ -175,7 +175,7 @@ export const chefRivalBehavior: BossBehavior = {
         currentPlatformId = jumpArc.targetPlatformId ?? null;
         jumpArc = { ...jumpArc, startX: x, startY: y, progress: 0 };
         const baseCd = Math.max(MIN_JUMP_COOLDOWN, BASE_JUMP_COOLDOWN - boss.phase * 10);
-        const cd = Math.max(30, Math.ceil(baseCd * attackMultiplier));
+        const cd = Math.max(30, Math.ceil(baseCd / attackMultiplier));
         jumpCooldown = (jumpCount << 16) | cd;
       } else {
         jumpCooldown = (jumpCount << 16) | newCooldown;

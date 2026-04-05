@@ -56,8 +56,8 @@ export const krakenBehavior: BossBehavior = {
     const GRACE = 120;
     const attackCount = boss.jumpCooldown; // reuse jumpCooldown as attack counter
     const baseInterval = Math.max(MIN_ATTACK_INTERVAL, BASE_ATTACK_INTERVAL - attackCount * INTERVAL_REDUCTION);
-    // attackMultiplier: <1 = faster attacks (shorter interval), >1 = slower
-    const interval = Math.max(30, Math.ceil(baseInterval * attackMultiplier));
+    // attackMultiplier: >1 = faster attacks (shorter interval)
+    const interval = Math.max(30, Math.ceil(baseInterval / attackMultiplier));
     const ticksSinceGrace = patternTick - GRACE;
     const shouldAttack = patternTick === GRACE + 1
       || (ticksSinceGrace > 0 && ticksSinceGrace % interval === 0);

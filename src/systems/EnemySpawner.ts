@@ -39,8 +39,8 @@ export function trySpawnEnemy(
     return { spawner: { ticksSinceLastSpawn: ticks }, enemy: null };
   }
 
-  // spawnMultiplier < 1 = faster spawns (0.1 = 10x faster)
-  const adjustedInterval = Math.max(1, Math.ceil(ENEMY_SPAWN_INTERVAL * spawnMultiplier));
+  // spawnMultiplier > 1 = faster spawns (2x = half interval, 3x = third)
+  const adjustedInterval = Math.max(1, Math.ceil(ENEMY_SPAWN_INTERVAL / spawnMultiplier));
   if (ticks < adjustedInterval) {
     return { spawner: { ticksSinceLastSpawn: ticks }, enemy: null };
   }

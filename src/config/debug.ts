@@ -72,14 +72,14 @@ export function createDebugConfig(): DebugConfig {
 export function bossTestPreset(): Partial<DebugConfig> {
   return {
     quickZoneTransitions: 15,
-    enemySpawnMultiplier: 0.1,
+    enemySpawnMultiplier: 10,
   };
 }
 
 /** Preset: enemy testing — fast spawns, show hitboxes. */
 export function enemyTestPreset(): Partial<DebugConfig> {
   return {
-    enemySpawnMultiplier: 0.2,
+    enemySpawnMultiplier: 5,
     showHitboxes: true,
     startingPlatforms: 50,
   };

@@ -34,7 +34,7 @@ describe("DebugConfig", () => {
 
   test("enemyTestPreset has fast spawns and hitboxes", () => {
     const preset = enemyTestPreset();
-    expect(preset.enemySpawnMultiplier).toBeLessThan(1);
+    expect(preset.enemySpawnMultiplier).toBeGreaterThan(1);
     expect(preset.showHitboxes).toBe(true);
   });
 

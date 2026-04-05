@@ -278,9 +278,9 @@ export function tickBoss(
         const side: "left" | "right" = atk.x < plat.x + plat.width / 2 ? "left" : "right";
         // Tentacle gets faster over time: starts at 6 sec, min 2.5 sec
         const attackNum = s.activeBoss?.jumpCooldown ?? 0;
-        // bossAttackMultiplier < 1 = faster attacks
+        // bossAttackMultiplier > 1 = faster attacks (2x = half duration)
         const baseTicks = Math.max(150, 360 - attackNum * 20); // 6s → 2.5s
-        const totalTicks = Math.max(60, Math.ceil(baseTicks * s.debugConfig.bossAttackMultiplier));
+        const totalTicks = Math.max(60, Math.ceil(baseTicks / s.debugConfig.bossAttackMultiplier));
         s = {
           ...s,
           pendingTentacles: [

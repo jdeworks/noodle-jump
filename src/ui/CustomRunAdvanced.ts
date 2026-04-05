@@ -45,7 +45,7 @@ export function addAdvancedDebugRows(
 
   y = addRow(scrollContent, tapRegions, gameWidth,
     `Enemy Spawn: ${debugCfg.enemySpawnMultiplier.toFixed(1)}x`, "[Cycle]", y, () => {
-      const opts = [1.0, 0.5, 0.2, 0.1, 2.0, 3.0];
+      const opts = [1.0, 2.0, 3.0, 5.0, 10.0, 0.5];
       const idx = opts.findIndex(o => Math.abs(o - debugCfg.enemySpawnMultiplier) < 0.01);
       debugCfg.enemySpawnMultiplier = opts[(idx + 1) % opts.length];
       onRender();
@@ -53,7 +53,7 @@ export function addAdvancedDebugRows(
 
   y = addRow(scrollContent, tapRegions, gameWidth,
     `Boss Attack: ${debugCfg.bossAttackMultiplier.toFixed(1)}x`, "[Cycle]", y, () => {
-      const opts = [1.0, 0.5, 0.2, 2.0, 3.0];
+      const opts = [1.0, 2.0, 3.0, 5.0, 0.5];
       const idx = opts.findIndex(o => Math.abs(o - debugCfg.bossAttackMultiplier) < 0.01);
       debugCfg.bossAttackMultiplier = opts[(idx + 1) % opts.length];
       onRender();
