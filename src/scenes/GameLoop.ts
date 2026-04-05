@@ -251,6 +251,18 @@ export function tickGameWorld(
     s = { ...s, player: updatePlayer(s.player, adjustedInputX) };
   }
 
+  // Safety: push player out if embedded inside a platform (moving platform clipping during squash hold)
+  if (!inSquashHold && !isSquashTransition && s.player.vy >= 0) {
+    for (const p of s.platforms) {
+      if (p.broken) continue;
+      const pb = s.player.y + s.player.height;
+      const hOverlap = s.player.x + s.player.width > p.x && s.player.x < p.x + p.width;
+      if (hOverlap && pb > p.y + 2 && pb < p.y + p.height + s.player.height * 0.5 && s.player.y < p.y) {
+        s = { ...s, player: { ...s.player, y: p.y - s.player.height, vy: -10, isJumping: true } };
+        break;
+      }
+    }
+  }
   // Platform collisions, effects, flood
   s = tickPlatformCollisions(s, events, previousX, previousY, inSquashHold, isSquashTransition);
   s = tickPlatformEffects(s);
