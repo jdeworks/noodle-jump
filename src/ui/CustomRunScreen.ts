@@ -32,6 +32,13 @@ import {
 } from "./CustomRunStorage";
 import { addAdvancedDebugRows, createBottomBar } from "./CustomRunAdvanced";
 
+/** Simple string → number hash for word-based seeds. */
+function hashString(s: string): number {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+
 // ── Screen class ────────────────────────────────────────────────────────
 
 export class CustomRunScreen {
@@ -167,10 +174,22 @@ export class CustomRunScreen {
 
     y = addSectionHeader(this.scrollContent, GAME_WIDTH,"GAME SETTINGS", "#ccbbaa", y);
 
-    y = addRow(this.scrollContent, this.tapRegions, GAME_WIDTH,`Seed: ${this.config.seed === 0 ? "RANDOM" : seedToCode(this.config.seed)}`, "[Change]", y, () => {
-      const seeds = [0, 12345, 42, 99999, 314159];
-      const idx = seeds.indexOf(this.config.seed);
-      this.config.seed = seeds[(idx + 1) % seeds.length];
+    const seedLabel = this.config.seed === 0 ? "RANDOM" : seedToCode(this.config.seed);
+    y = addRow(this.scrollContent, this.tapRegions, GAME_WIDTH, `Seed: ${seedLabel}`, "[Change]", y, () => {
+      // Cycle: RANDOM → new random → prompt for custom
+      if (this.config.seed === 0) {
+        // Generate a random seed
+        this.config.seed = Math.floor(Math.random() * 0xffffffff);
+      } else {
+        // Prompt user for custom seed or reset to random
+        const input = prompt("Enter seed (number or word), or leave empty for random:", seedToCode(this.config.seed));
+        if (input === null) return; // cancelled
+        if (input.trim() === "") { this.config.seed = 0; }
+        else {
+          const num = parseInt(input, 10);
+          this.config.seed = isNaN(num) ? hashString(input.trim()) : Math.abs(num);
+        }
+      }
       this.render();
     });
 

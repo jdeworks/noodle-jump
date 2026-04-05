@@ -27,8 +27,10 @@ import { resetDebugConfig } from "../config/debug";
 let activeScene: GameScene | null = null;
 let activeGameTicker: (() => void) | null = null;
 let activeOrientationCleanup: (() => void) | null = null;
+let activeEscHandler: ((e: KeyboardEvent) => void) | null = null;
 
 export function cleanupAndRestart(app: Application): void {
+  if (activeEscHandler) { window.removeEventListener("keydown", activeEscHandler); activeEscHandler = null; }
   if (activeGameTicker) {
     app.ticker.remove(activeGameTicker);
     activeGameTicker = null;
@@ -61,6 +63,7 @@ export function cleanupAndRestart(app: Application): void {
 }
 
 export function cleanupAndGoHome(app: Application): void {
+  if (activeEscHandler) { window.removeEventListener("keydown", activeEscHandler); activeEscHandler = null; }
   if (activeGameTicker) {
     app.ticker.remove(activeGameTicker);
     activeGameTicker = null;
@@ -272,6 +275,16 @@ export async function launchGame(app: Application, runConfig?: RunConfig): Promi
     scene.togglePause();
     pauseOverlay.visible = scene.isPaused();
   };
+
+  // ESC key: toggle pause (shows overlay with Home button)
+  activeEscHandler = (e: KeyboardEvent) => {
+    if (e.key === "Escape" && !scene.isGameOver()) {
+      scene.togglePause();
+      pauseOverlay.visible = scene.isPaused();
+    }
+  };
+  window.addEventListener("keydown", activeEscHandler);
+
   resumeBg.on("pointertap", resumeGame);
   resumeText.eventMode = "static";
   resumeText.on("pointertap", resumeGame);
