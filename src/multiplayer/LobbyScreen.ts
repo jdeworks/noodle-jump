@@ -17,7 +17,6 @@ import { createDefaultRunConfig, type RunConfig } from "../systems/CustomRunConf
 
 function serializeForSync(cfg: RunConfig): Record<string, unknown> { return { ...cfg, enabledPowerUps: [...cfg.enabledPowerUps] }; }
 function deserializeFromSync(d: Record<string, unknown>): RunConfig { return { ...createDefaultRunConfig(), ...d, enabledPowerUps: new Set(d.enabledPowerUps as string[] ?? []) }; }
-
 export type LobbyRole = "host" | "guest";
 
 export interface LobbyCallbacks {
@@ -290,8 +289,11 @@ export class LobbyScreen {
     });
 
     this.updateUI();
-    // Announce our character to the remote player
-    this.sync.sendGameEvent({ type: "ready", payload: { character: this.localChar, ...this.localCosmeticPayload() } });
+    // Announce our character + settings to the remote player
+    this.sync.sendGameEvent({ type: "ready", payload: {
+      character: this.localChar, ...this.localCosmeticPayload(),
+      mode: this.mode, customRun: this.useCustomRun,
+    } });
   }
 
   private isLocalReady(): boolean {
@@ -304,7 +306,10 @@ export class LobbyScreen {
     // Re-announce our character on first remote event (initial send may have been lost)
     if (!this.remoteConnected) {
       this.remoteConnected = true;
-      this.sync.sendGameEvent({ type: "ready", payload: { character: this.localChar, ...this.localCosmeticPayload() } });
+      this.sync.sendGameEvent({ type: "ready", payload: {
+        character: this.localChar, ...this.localCosmeticPayload(),
+        mode: this.mode, customRun: this.useCustomRun,
+      } });
     }
     if (event.type === "ready") {
       if (event.payload.mode) {

@@ -153,24 +153,18 @@ export async function launchLocalCoop(
 
   playMusic(0);
 
-  // Escape to quit mid-game
-  let quitRequested = false;
+  // Escape to pause/unpause
+  const { PauseOverlay } = await import("./PauseOverlay");
+  const pauseOvl = new PauseOverlay(app, SPLIT_WIDTH, GAME_HEIGHT, () => {
+    gameEnded = true; scene1.forceStop(); scene2.forceStop(); app.ticker.remove(gameLoop);
+    window.removeEventListener("keydown", midGameEscape);
+    setTimeout(() => { cleanupLocalCoop(app, scene1, scene2, input, gameLoop);
+      app.renderer.resize(GAME_WIDTH, GAME_HEIGHT); app.canvas.style.maxWidth = "500px";
+      app.canvas.style.aspectRatio = "400 / 700";
+      showTitleScreen(app, (runConfig) => launchGame(app, runConfig)); }, 0);
+  });
   const midGameEscape = (e: KeyboardEvent) => {
-    if (e.key === "Escape" && !quitRequested) {
-      quitRequested = true;
-      gameEnded = true;
-      scene1.forceStop();
-      scene2.forceStop();
-      app.ticker.remove(gameLoop);
-      window.removeEventListener("keydown", midGameEscape);
-      setTimeout(() => {
-        cleanupLocalCoop(app, scene1, scene2, input, gameLoop);
-        app.renderer.resize(GAME_WIDTH, GAME_HEIGHT);
-        app.canvas.style.maxWidth = "500px";
-        app.canvas.style.aspectRatio = "400 / 700";
-        showTitleScreen(app, (runConfig) => launchGame(app, runConfig));
-      }, 0);
-    }
+    if (e.key === "Escape" && !gameEnded) pauseOvl.toggle();
   };
   window.addEventListener("keydown", midGameEscape);
 
@@ -222,7 +216,7 @@ export async function launchLocalCoop(
   };
 
   const gameLoop = () => {
-    if (gameEnded) return;
+    if (gameEnded || pauseOvl.paused) return;
     input.update();
 
     // Tick scenes with split keyboard input, separate RNG streams and characters

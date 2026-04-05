@@ -1,7 +1,7 @@
 /** Online multiplayer session — wires networking to the game loop. */
 import { Application, Graphics, Text, TextStyle } from "pixi.js";
 import { GameScene } from "../scenes/GameScene";
-import { GAME_WIDTH, GAME_HEIGHT } from "../config/constants";
+import { GAME_WIDTH, GAME_HEIGHT, DEBUG_MODE } from "../config/constants";
 import { playMusic, stopMusic, killBossMusic } from "../systems/Audio";
 import { resetPlatformIds } from "../entities/Platform";
 import { resetPowerUpIds } from "../entities/PowerUp";
@@ -11,7 +11,6 @@ import { resetProjectileIds } from "../entities/Projectile";
 import { resetRNG } from "../systems/RNG";
 import { resetRendererState } from "../scenes/EntityRenderer";
 import { createDefaultRunConfig, type RunConfig } from "../systems/CustomRunConfig";
-import { DEBUG_MODE } from "../config/constants";
 import { createDebugConfig, setDebugConfig } from "../config/debug";
 import { showTitleScreen } from "../ui/TitleScreenView";
 import { launchGame } from "../scenes/GameLauncher";
@@ -71,6 +70,7 @@ export class OnlineSession {
   private countdownText: Text | null = null;
   private spectateText: Text | null = null;
   private escapeHandler: ((e: KeyboardEvent) => void) | null = null;
+  private pause: import("./PauseOverlay").PauseOverlay | null = null;
   private resultsShown = false; private connDot: Graphics | null = null;
 
   constructor(config: OnlineSessionConfig) {
@@ -134,7 +134,7 @@ export class OnlineSession {
     });
   }
 
-  start(): void {
+  async start(): Promise<void> {
     this.scene.startCountdown();
     this.sync.startSending();
     playMusic(0);
@@ -151,14 +151,19 @@ export class OnlineSession {
 
     if (this.fpsText) { this.app.stage.removeChild(this.fpsText); this.app.stage.addChild(this.fpsText); }
 
-    this.escapeHandler = (e: KeyboardEvent) => { if (e.key === "Escape") setTimeout(() => this.goHome(), 0); };
+    // ESC: toggle pause (with Leave button). Second ESC resumes.
+    const { PauseOverlay } = await import("./PauseOverlay");
+    this.pause = new PauseOverlay(this.app, GAME_WIDTH, GAME_HEIGHT, () => this.goHome());
+    this.escapeHandler = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !this.resultsShown && this.pause) this.pause.toggle();
+    };
     window.addEventListener("keydown", this.escapeHandler);
     this.gameLoop = () => { this.tick(); };
     this.app.ticker.add(this.gameLoop);
   }
 
   private tick(): void {
-    if (this.resultsShown) return;
+    if (this.resultsShown || this.pause?.paused) return;
     this.scene.update();
     const state = this.scene.getState();
 
