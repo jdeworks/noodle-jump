@@ -1,42 +1,27 @@
 /** Gameplay scene — thin orchestrator wiring pure logic to PixiJS rendering. */
 import { Container, Graphics, Text, TextStyle } from "pixi.js";
-import { worldToScreen } from "../systems/Camera";
 import { getInterpolatedTheme } from "../systems/Zone";
 import { ParallaxBackground } from "../systems/Parallax";
 import { InputManager } from "../systems/Input";
 import { tickShake } from "../systems/ScreenShake";
-import { GAME_WIDTH, GAME_HEIGHT, DEATH_ANIMATION_TICKS } from "../config/constants";
+import { GAME_WIDTH, GAME_HEIGHT } from "../config/constants";
 import { createInitialState, type GameWorldState } from "./GameState";
 import type { RunConfig } from "../systems/CustomRunConfig";
-import {
-  tickGameWorld,
-  startCountdown,
-  togglePause,
-  throwProjectile,
-} from "./GameLoop";
+import { tickGameWorld, startCountdown, togglePause, throwProjectile } from "./GameLoop";
 import { spawnPendingBoss } from "./GameLoopBoss";
 import { isEnemiesEnabled } from "../systems/EnemySettings";
 import { ZoneTransition } from "./ZoneTransition";
 import { ParticleManager } from "./ParticleManager";
 import { EffectRenderer } from "./EffectRenderer";
 import { GraphicsSync } from "./GraphicsSync";
-import {
-  renderPlatforms,
-  renderMeatballs,
-  renderPowerUps,
-  renderEnemies,
-  renderProjectiles,
-} from "./EntityRenderer";
 import { handleEvents } from "./GameSceneEvents";
-import { renderBoss, renderBossArc, renderWeather, renderWindOverlay } from "./GameSceneRender";
 import { getMaxDuration } from "./effectDuration";
 import { TrailRenderer } from "../rendering/TrailRenderer";
 import { loadCosmetics, TINT_COLORS } from "../systems/Cosmetics";
 import { getSelectedCharacter } from "../systems/CharacterSettings";
-import { getProjectileVisual, projectileSpins } from "../rendering/sprites";
 import { FloatingTextManager } from "./FloatingText";
 import { clearCharCache } from "./EffectPlayerRender";
-import { renderTentacles, renderKnifeAmmo, renderDebugHitboxes } from "./BossArenaRenderer";
+import { renderDeathAnimation, renderGameWorld, type RenderContext } from "./GameSceneUpdate";
 
 export class GameScene {
   readonly container = new Container();
@@ -68,6 +53,8 @@ export class GameScene {
   private hitboxGfx = new Graphics();
   private tentacleGfx = new Graphics();
   private floatingTextMgr = new FloatingTextManager();
+  /** Game speed accumulator — fractional ticks carried between frames. */
+  private speedAccumulator = 0;
 
   constructor(runConfig?: RunConfig) {
     clearCharCache();
@@ -234,11 +221,23 @@ export class GameScene {
   update(externalInputX?: number): void {
     if (this.destroyed || this.state.gameOver || this.state.paused) return;
     if (externalInputX === undefined) this.input.update();
-    const result = tickGameWorld(this.state, externalInputX ?? this.input.inputX);
-    this.state = result.state;
 
-    // Dispatch events to audio/visual side effects
-    handleEvents(result.events, this.eventDeps());
+    // Game speed: accumulate fractional ticks, run multiple or skip ticks
+    const speed = this.state.debugConfig.gameSpeed;
+    this.speedAccumulator += speed;
+    const ticksThisFrame = Math.floor(this.speedAccumulator);
+    this.speedAccumulator -= ticksThisFrame;
+
+    const inputX = externalInputX ?? this.input.inputX;
+    let lastEvents: import("./GameLoopTypes").GameEvent[] = [];
+    for (let t = 0; t < ticksThisFrame; t++) {
+      const result = tickGameWorld(this.state, inputX);
+      this.state = result.state;
+      lastEvents = result.events;
+      handleEvents(result.events, this.eventDeps());
+      if (this.state.gameOver) break;
+    }
+    if (ticksThisFrame === 0) return; // skip rendering when accumulator hasn't reached 1
 
     this.gfxSync.syncAll(
       this.state.platforms,
@@ -264,84 +263,27 @@ export class GameScene {
       this.gameContainer.x = sr.offsetX; this.gameContainer.y = sr.offsetY;
     } else { this.gameContainer.x = 0; this.gameContainer.y = 0; }
 
-    // Death animation
-    if (this.state.isDying) {
-      const t = this.state.dyingTicks / DEATH_ANIMATION_TICKS;
-      this.playerGfx.rotation += 0.1 + t * 0.3;
-      this.playerGfx.scale.x = (1 - t * 0.6) * (1 + Math.sin(t * 20) * 0.15);
-      this.playerGfx.scale.y = 1 - t * 0.8;
-      this.playerGfx.alpha = t > 0.7 ? 1 - (t - 0.7) / 0.3 : 1;
-      this.playerGfx.y = worldToScreen(this.state.player.y, this.state.camera.y);
-      this.floatingTextMgr.update();
-      this.particles.updateCrumbleParticles();
-      return;
-    }
-
-    const theme = getInterpolatedTheme(this.state.platformsPassed);
-    if (this.cosmeticTheme !== "theme_default") {
-      const overrides: Record<string, number> = {
-        theme_neon: 0x080818, theme_pixel: 0x222222,
-        theme_candy: 0xffeef4, theme_dark: 0x0a0a14,
-      };
-      theme.background = overrides[this.cosmeticTheme] ?? theme.background;
-    }
-    this.parallax.applyTheme(theme, this.state.zoneState.currentZone);
-    this.parallax.update(this.state.camera.y);
-    const camY = this.state.camera.y;
-
-    this.effectRenderer.renderPlayer(this.state, this.playerGfx, camY, this.particles, this.input.inputX, this.cosmeticTint, this.cosmeticTheme);
-    renderPlatforms(this.state, this.gfxSync, theme, camY, this.cosmeticTheme);
-    renderMeatballs(this.state, this.gfxSync, camY);
-    renderPowerUps(this.state, this.gfxSync, camY);
-    if (this.state.enemiesEnabled) renderEnemies(this.state, this.gfxSync, camY, this.cosmeticTheme);
-    if (this.state.enemiesEnabled || this.state.inBossFight) {
-      const charVisual = getProjectileVisual(getSelectedCharacter());
-      renderProjectiles(this.state, this.gfxSync, camY, projectileSpins(charVisual));
-    }
-    renderDebugHitboxes(this.hitboxGfx, this.state, camY);
-
-    // Particles and floating text
-    this.particles.updateDustParticles();
-    this.particles.updateCrumbleParticles();
-    this.floatingTextMgr.update();
-
-    // Boss + tentacles + ammo
-    this.bossAttackGfx = renderBoss(this.state, this.bossGfx, this.bossHealthGfx, this.bossAttackGfx, this.gameContainer, camY, this.cosmeticTheme);
-    renderBossArc(this.bossArcGfx, this.state, camY);
-    renderTentacles(this.tentacleGfx, this.state, camY);
-    renderKnifeAmmo(this.knifeAmmoIcons, this.knifeAmmoText, this.state, GAME_WIDTH);
-
-    this.weatherGfx = renderWeather(this.state, this.weatherGfx, this.weatherContainer);
-    if (this.state.inBossFight) { this.windGfx.clear(); this.windGfx.visible = false; }
-    else renderWindOverlay(this.windGfx, this.state, camY);
-    const speedEffect = this.state.activeEffect?.type;
-    if (speedEffect === "ravioli_rocket") {
-      this.trail.setTrailType("speed_rocket");
-    } else if (speedEffect === "fusilli_tornado") {
-      this.trail.setTrailType("speed_tornado");
-    } else if (speedEffect === "pepper_sneeze") {
-      this.trail.setTrailType("speed_sneeze");
-    } else {
-      this.trail.setTrailType(this.cosmeticTrail);
-    }
-    this.trail.addPoint(
-      this.state.player.x + this.state.player.width / 2,
-      this.state.player.y + this.state.player.height + 6,
-    );
-    this.trail.update(camY);
+    const ctx = this.buildRenderContext();
+    if (renderDeathAnimation(ctx)) return;
+    this.weatherGfx = renderGameWorld(ctx);
+    this.bossAttackGfx = ctx.bossAttackGfx;
     this.tickBossTransition();
-    this.effectRenderer.renderEffectOverlay(this.state);
+  }
 
-    // Combo border glow
-    this.comboGlowGfx.clear();
-    const combo = this.state.scoreState.comboMultiplier;
-    if (combo >= 2) {
-      const a = Math.min(combo / 5, 1) * (0.3 + Math.sin(this.state.animTick * 0.1) * 0.2);
-      const gw = 4 + combo;
-      this.comboGlowGfx.rect(0, 0, GAME_WIDTH, gw); this.comboGlowGfx.rect(0, GAME_HEIGHT - gw, GAME_WIDTH, gw);
-      this.comboGlowGfx.rect(0, 0, gw, GAME_HEIGHT); this.comboGlowGfx.rect(GAME_WIDTH - gw, 0, gw, GAME_HEIGHT);
-      this.comboGlowGfx.fill({ color: 0xff8800, alpha: a });
-    }
+  private buildRenderContext(): RenderContext {
+    return {
+      state: this.state, parallax: this.parallax, particles: this.particles,
+      effectRenderer: this.effectRenderer, gfxSync: this.gfxSync, trail: this.trail,
+      floatingTextMgr: this.floatingTextMgr, gameContainer: this.gameContainer,
+      playerGfx: this.playerGfx, weatherContainer: this.weatherContainer,
+      weatherGfx: this.weatherGfx, windGfx: this.windGfx, bossGfx: this.bossGfx,
+      bossArcGfx: this.bossArcGfx, bossHealthGfx: this.bossHealthGfx,
+      bossAttackGfx: this.bossAttackGfx, knifeAmmoText: this.knifeAmmoText,
+      knifeAmmoIcons: this.knifeAmmoIcons, hitboxGfx: this.hitboxGfx,
+      tentacleGfx: this.tentacleGfx, comboGlowGfx: this.comboGlowGfx,
+      cosmeticTrail: this.cosmeticTrail, cosmeticTint: this.cosmeticTint,
+      cosmeticTheme: this.cosmeticTheme, inputX: this.input.inputX,
+    };
   }
 
   private eventDeps(): import("./GameSceneEvents").EventHandlerDeps {

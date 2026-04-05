@@ -29,8 +29,8 @@ import {
   addPresetRow,
   buildPresets,
   addPowerUpGrid,
-  createBottomBar,
 } from "./CustomRunStorage";
+import { addAdvancedDebugRows, createBottomBar } from "./CustomRunAdvanced";
 
 // ── Screen class ────────────────────────────────────────────────────────
 
@@ -251,15 +251,7 @@ export class CustomRunScreen {
         },
       );
 
-      const allTypes = ["(none)", ...ALL_POWER_UP_TYPES];
-      const currentForce = this.debugCfg.forcePowerUpType ?? "(none)";
-      const forceName = currentForce.replace(/_/g, " ");
-      y = addRow(this.scrollContent, this.tapRegions, GAME_WIDTH,`Force PowerUp: ${forceName}`, "[Next]", y, () => {
-        const idx = allTypes.indexOf(currentForce);
-        const next = allTypes[(idx + 1) % allTypes.length];
-        this.debugCfg.forcePowerUpType = next === "(none)" ? null : next;
-        this.render();
-      });
+      y = addAdvancedDebugRows(this.scrollContent, this.tapRegions, GAME_WIDTH, this.debugCfg, y, () => this.render());
     }
 
     y += 10;

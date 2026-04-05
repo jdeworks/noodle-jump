@@ -204,6 +204,7 @@ export function generatePlatforms(
   count: number,
   difficulty?: DifficultyParams,
   lastWasBrittle = false,
+  forcePlatformType?: string | null,
 ): PlatformState[] {
   const platforms: PlatformState[] = [];
   let y = highestY;
@@ -223,11 +224,11 @@ export function generatePlatforms(
     const maxX = GAME_WIDTH - width - PLATFORM_HORIZONTAL_MARGIN;
     const x = PLATFORM_HORIZONTAL_MARGIN + random() * Math.max(0, maxX);
 
-    let type = rollType(difficulty);
+    let type = forcePlatformType ? (forcePlatformType as PlatformType) : rollType(difficulty);
 
     // Never two consecutive unreliable platforms (brittle, crumbling, breaking)
     const isUnreliable = type === "brittle" || type === "crumbling" || type === "breaking";
-    if (lastWasUnlandable && isUnreliable) {
+    if (lastWasUnlandable && isUnreliable && !forcePlatformType) {
       type = "static";
     }
 

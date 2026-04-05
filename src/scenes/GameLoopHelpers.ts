@@ -69,12 +69,13 @@ export function maybeGeneratePlatforms(state: GameWorldState): GameWorldState {
   if (state.inBossFight) return state; // freeze platform generation during boss fights
   const cameraTop = state.camera.y;
   if (state.highestPlatformY > cameraTop - GAME_HEIGHT) {
-    const difficulty = getDifficulty(state.platformsPassed);
+    const difficulty = getDifficulty(state.platformsPassed, state.runConfig.difficultyMultiplier);
     const generated = generatePlatforms(
       state.highestPlatformY,
       PLATFORM_COUNT_BUFFER,
       difficulty,
       state.lastPlatformWasBrittle,
+      state.debugConfig.forcePlatformType,
     );
 
     const hasUncollected = state.powerUps.some((pu) => !pu.collected);

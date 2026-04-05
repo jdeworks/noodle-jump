@@ -113,7 +113,7 @@ export function tickGameWorld(
 
   // Countdown phase — update visuals but don't move player
   if (state.countdownTicks > 0) {
-    const difficulty = getDifficulty(state.platformsPassed);
+    const difficulty = getDifficulty(state.platformsPassed, state.runConfig.difficultyMultiplier);
     const platforms = updatePlatforms(
       state.platforms,
       difficulty.movingSpeedMultiplier,
@@ -202,7 +202,7 @@ export function tickGameWorld(
   }
 
   // Update moving platforms
-  const difficulty = getDifficulty(s.platformsPassed);
+  const difficulty = getDifficulty(s.platformsPassed, s.runConfig.difficultyMultiplier);
   s = {
     ...s,
     platforms: updatePlatforms(s.platforms, difficulty.movingSpeedMultiplier),
@@ -313,8 +313,10 @@ export function tickGameWorld(
   s = tickBoss(s, events);
   s = tickKnifeAmmo(s);
 
-  // Weather + day/night
-  s = { ...s, weather: tickWeather(s.weather) };
+  // Weather + day/night (skip if disabled via debug config)
+  if (!s.debugConfig.disableWeather) {
+    s = { ...s, weather: tickWeather(s.weather) };
+  }
   s = { ...s, dayNight: tickDayNight(s.dayNight) };
 
   // Camera

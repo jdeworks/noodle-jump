@@ -6,7 +6,6 @@ import type { CollectibleState } from "../entities/Collectible";
 import type { PowerUpState, ActiveEffect } from "../entities/PowerUp";
 import type { CameraState } from "../systems/Camera";
 import type { ScoreState } from "../systems/Score";
-import type { ZoneState } from "../systems/Zone";
 import type { ShakeState } from "../systems/ScreenShake";
 
 import { createPlayer } from "../entities/Player";
@@ -18,7 +17,7 @@ import { spawnMeatballs } from "../entities/Collectible";
 import { spawnPowerUps } from "../entities/PowerUp";
 import { createCamera } from "../systems/Camera";
 import { createScoreState, loadHighScore } from "../systems/Score";
-import { createZoneState } from "../systems/Zone";
+import { createZoneState, type ZoneState } from "../systems/Zone";
 import type { MinestroneState } from "../systems/PowerUpEffects";
 import type { EnemyState } from "../entities/Enemy";
 import type { ProjectileState } from "../entities/Projectile";
@@ -42,6 +41,7 @@ import {
   GAME_WIDTH,
   GAME_HEIGHT,
   PLATFORM_COUNT_BUFFER,
+  ZONE_THRESHOLDS,
 } from "../config/constants";
 
 /** Complete game world state — everything needed to tick the game. */
@@ -137,10 +137,15 @@ export interface GameWorldState {
 /** Create the initial game world state for a new game. */
 export function createInitialState(runConfig?: RunConfig): GameWorldState {
   const config = runConfig ?? createDefaultRunConfig();
+  const debugCfg = getDebugConfig();
   initRNG(config.seed);
   const scoreState = createScoreState();
-  const zoneState = createZoneState();
   const highScore = loadHighScore();
+
+  // Starting zone: use config or debug override, compute initial platformsPassed
+  const startZone = config.startingZone || 0;
+  const startPlatforms = debugCfg.startingPlatforms || (startZone > 0 ? ZONE_THRESHOLDS[Math.min(startZone, ZONE_THRESHOLDS.length - 1)] : 0);
+  const zoneState: ZoneState = { currentZone: startZone, platformsPassed: startPlatforms };
 
   // Ground floor
   const ground = createGroundPlatform(GAME_HEIGHT);
@@ -188,7 +193,7 @@ export function createInitialState(runConfig?: RunConfig): GameWorldState {
     highestPlatformY,
     lastPlatformWasBrittle,
     platformCount: generated.length,
-    platformsPassed: 0,
+    platformsPassed: startPlatforms,
     highestPlayerY: Infinity,
     stagnantTicks: 0,
     closeCallPlatformIds: [],
@@ -211,12 +216,12 @@ export function createInitialState(runConfig?: RunConfig): GameWorldState {
     enemySpawner: createSpawnerState(),
     windSystem: createWindSystem(),
     enemiesEnabled: false,
-    weather: createWeather(0),
+    weather: createWeather(startZone),
     dayNight: createDayNight(),
     livesState: createLivesState(false),
-    practiceMode: config.practiceMode || getDebugConfig().invincible,
+    practiceMode: config.practiceMode || debugCfg.invincible,
     runConfig: config,
-    debugConfig: { ...getDebugConfig() },
+    debugConfig: { ...debugCfg },
     knifeAmmo: 3,
     knifeAmmoMax: 3,
     knifeRegenTimer: 0,

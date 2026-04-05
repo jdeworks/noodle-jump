@@ -21,6 +21,14 @@ export function maybeSpawnBoss(
   s: GameWorldState,
   zoneChanged: boolean,
 ): GameWorldState {
+  // forceBossAtPlatforms: trigger boss at a specific platform count
+  const forceAt = s.debugConfig.forceBossAtPlatforms;
+  if (forceAt > 0 && !s.activeBoss && s.pendingBossZone === null && s.platformsPassed >= forceAt) {
+    // Only trigger once — set forceBossAtPlatforms to 0 after triggering
+    s = { ...s, debugConfig: { ...s.debugConfig, forceBossAtPlatforms: 0 } };
+    return { ...s, pendingBossZone: s.zoneState.currentZone };
+  }
+
   if (!zoneChanged || s.activeBoss || s.pendingBossZone !== null) return s;
   const bossType = getBossForZone(s.zoneState.currentZone);
   if (!bossType) return s;
@@ -33,7 +41,8 @@ export function spawnPendingBoss(
   events: GameEvent[],
 ): GameWorldState {
   if (s.pendingBossZone === null || s.activeBoss) return s;
-  const bossType = getBossForZone(s.pendingBossZone);
+  // forceBossType overrides the zone-based boss selection
+  const bossType = s.debugConfig.forceBossType ?? getBossForZone(s.pendingBossZone);
   const behavior = bossType ? getBossBehavior(bossType) : undefined;
   if (!bossType || !behavior) return { ...s, pendingBossZone: null };
 
@@ -269,7 +278,9 @@ export function tickBoss(
         const side: "left" | "right" = atk.x < plat.x + plat.width / 2 ? "left" : "right";
         // Tentacle gets faster over time: starts at 6 sec, min 2.5 sec
         const attackNum = s.activeBoss?.jumpCooldown ?? 0;
-        const totalTicks = Math.max(150, 360 - attackNum * 20); // 6s → 2.5s
+        // bossAttackMultiplier < 1 = faster attacks
+        const baseTicks = Math.max(150, 360 - attackNum * 20); // 6s → 2.5s
+        const totalTicks = Math.max(60, Math.ceil(baseTicks * s.debugConfig.bossAttackMultiplier));
         s = {
           ...s,
           pendingTentacles: [

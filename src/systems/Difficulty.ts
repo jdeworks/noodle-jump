@@ -34,8 +34,8 @@ function lerp(a: number, b: number, t: number): number {
 }
 
 /** Get difficulty parameters based on how many platforms the player has passed. */
-export function getDifficulty(platformsPassed: number): DifficultyParams {
-  const t = Math.min(1, platformsPassed / DIFFICULTY_RAMP_PLATFORMS);
+export function getDifficulty(platformsPassed: number, difficultyMultiplier = 1.0): DifficultyParams {
+  const t = Math.min(1, (platformsPassed * difficultyMultiplier) / DIFFICULTY_RAMP_PLATFORMS);
 
   return {
     platformWidthMin: lerp(

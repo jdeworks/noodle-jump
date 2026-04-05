@@ -31,6 +31,7 @@ export function trySpawnEnemy(
   zone: number,
   cameraY: number,
   platformsPassed: number,
+  spawnMultiplier = 1.0,
 ): { spawner: SpawnerState; enemy: EnemyState | null } {
   const ticks = spawner.ticksSinceLastSpawn + 1;
 
@@ -38,7 +39,9 @@ export function trySpawnEnemy(
     return { spawner: { ticksSinceLastSpawn: ticks }, enemy: null };
   }
 
-  if (ticks < ENEMY_SPAWN_INTERVAL) {
+  // spawnMultiplier < 1 = faster spawns (0.1 = 10x faster)
+  const adjustedInterval = Math.max(1, Math.ceil(ENEMY_SPAWN_INTERVAL * spawnMultiplier));
+  if (ticks < adjustedInterval) {
     return { spawner: { ticksSinceLastSpawn: ticks }, enemy: null };
   }
 

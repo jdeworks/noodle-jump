@@ -36,6 +36,7 @@ export function tickEnemies(
     s.zoneState.currentZone,
     s.camera.y,
     s.platformsPassed,
+    s.debugConfig.enemySpawnMultiplier,
   );
   s = { ...s, enemySpawner: spawnResult.spawner };
   if (spawnResult.enemy) {
