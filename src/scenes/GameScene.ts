@@ -55,6 +55,8 @@ export class GameScene {
   private floatingTextMgr = new FloatingTextManager();
   /** Game speed accumulator — fractional ticks carried between frames. */
   private speedAccumulator = 0;
+  /** Interpolation alpha for smooth slow-mo rendering. */
+  private interpAlpha = 0;
 
   constructor(runConfig?: RunConfig) {
     clearCharCache();
@@ -242,7 +244,9 @@ export class GameScene {
       handleEvents(result.events, this.eventDeps());
       if (this.state.gameOver) break;
     }
-    if (ticksThisFrame === 0) return; // skip rendering when accumulator hasn't reached 1
+    // Interpolation alpha: how far between last tick and next (for smooth slow-mo)
+    // At 1x+ speed this is always ~0 (no interpolation needed)
+    this.interpAlpha = speed < 1 ? this.speedAccumulator / speed : 0;
 
     this.gfxSync.syncAll(
       this.state.platforms,
@@ -277,7 +281,8 @@ export class GameScene {
 
   private buildRenderContext(): RenderContext {
     return {
-      state: this.state, parallax: this.parallax, particles: this.particles,
+      state: this.state, interpAlpha: this.interpAlpha,
+      parallax: this.parallax, particles: this.particles,
       effectRenderer: this.effectRenderer, gfxSync: this.gfxSync, trail: this.trail,
       floatingTextMgr: this.floatingTextMgr, gameContainer: this.gameContainer,
       playerGfx: this.playerGfx, weatherContainer: this.weatherContainer,
