@@ -17,12 +17,10 @@ const RTC_CONFIG: RTCConfiguration = {
   iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
 };
 
-/** Known-reliable Nostr relays (overrides Trystero defaults which include many dead ones). */
+/** Known-reliable Nostr relays — use fewer to avoid rate limiting. */
 const RELAY_URLS = [
   "wss://nos.lol",
   "wss://relay.primal.net",
-  "wss://relay.damus.io",
-  "wss://relay.nostr.band",
 ];
 
 /** Generate a random 6-character room code. */

@@ -12,12 +12,16 @@ import { getSelectedCharacter, setSelectedCharacter } from "../systems/Character
 import { loadCosmetics, COSMETICS } from "../systems/Cosmetics";
 import { getUITheme } from "../ui/ThemeUI";
 import { loadRunConfigFromStorage, loadDebugConfigFromStorage } from "../ui/CustomRunStorage";
-import { setDebugConfig } from "../config/debug";
+import { setDebugConfig, createDebugConfig, type DebugConfig } from "../config/debug";
+import { createDefaultRunConfig, type RunConfig } from "../systems/CustomRunConfig";
+
+function serializeForSync(cfg: RunConfig): Record<string, unknown> { return { ...cfg, enabledPowerUps: [...cfg.enabledPowerUps] }; }
+function deserializeFromSync(d: Record<string, unknown>): RunConfig { return { ...createDefaultRunConfig(), ...d, enabledPowerUps: new Set(d.enabledPowerUps as string[] ?? []) }; }
 
 export type LobbyRole = "host" | "guest";
 
 export interface LobbyCallbacks {
-  onStart: (seed: number, mode: string, touchControls: boolean, remoteChar?: string, remoteCosmetics?: { tint?: string; trail?: string; theme?: string }) => void;
+  onStart: (seed: number, mode: string, touchControls: boolean, remoteChar?: string, remoteCosmetics?: { tint?: string; trail?: string; theme?: string }, sharedRunConfig?: RunConfig) => void;
 }
 
 const HEADER_STYLE = new TextStyle({ fontFamily: "monospace", fontSize: 24,
@@ -42,6 +46,7 @@ export class LobbyScreen {
   private remoteCosmetics: { tint?: string; trail?: string; theme?: string } = {};
   private selectedTheme = "theme_default";
   private useCustomRun = false;
+  private sharedRunConfig: RunConfig | null = null;
 
   private p1StatusText: Text;
   private p2StatusText: Text;
@@ -57,28 +62,11 @@ export class LobbyScreen {
     this.callbacks = callbacks;
     const uiT = getUITheme();
 
-    // Background
-    const bg = new Graphics();
-    bg.rect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-    bg.fill({ color: uiT.bg, alpha: 0.95 });
-    this.container.addChild(bg);
-
-    // Title
+    const bg = new Graphics(); bg.rect(0, 0, GAME_WIDTH, GAME_HEIGHT); bg.fill({ color: uiT.bg, alpha: 0.95 }); this.container.addChild(bg);
     const title = new Text({ text: "LOBBY", style: HEADER_STYLE });
-    title.x = GAME_WIDTH / 2;
-    title.y = 60;
-    title.anchor.set(0.5, 0.5);
-    this.container.addChild(title);
-
-    // Role label
-    const roleText = new Text({
-      text: role === "host" ? "You are the Host" : "You are the Guest",
-      style: STATUS_STYLE,
-    });
-    roleText.x = GAME_WIDTH / 2;
-    roleText.y = 90;
-    roleText.anchor.set(0.5, 0.5);
-    this.container.addChild(roleText);
+    title.x = GAME_WIDTH / 2; title.y = 60; title.anchor.set(0.5, 0.5); this.container.addChild(title);
+    const roleText = new Text({ text: role === "host" ? "You are the Host" : "You are the Guest", style: STATUS_STYLE });
+    roleText.x = GAME_WIDTH / 2; roleText.y = 90; roleText.anchor.set(0.5, 0.5); this.container.addChild(roleText);
 
     // Player 1 (Host) — sprite + status side by side
     const p1Gfx = new Graphics(); p1Gfx.x = GAME_WIDTH / 2 - 60; p1Gfx.y = 130;
@@ -187,20 +175,16 @@ export class LobbyScreen {
       });
     }
 
-    // Custom run toggle (host only — uses saved custom run settings)
-    const customLabel = new Text({
-      text: "Custom Run: OFF",
-      style: new TextStyle({ fontFamily: "monospace", fontSize: 13,
-        fill: "#888888", stroke: { color: "#000000", width: 2 } }),
-    });
+    // Custom run toggle (host only)
+    const customLabel = new Text({ text: "Custom Run: OFF",
+      style: new TextStyle({ fontFamily: "monospace", fontSize: 13, fill: "#888888", stroke: { color: "#000000", width: 2 } }) });
     customLabel.x = GAME_WIDTH / 2; customLabel.y = 385; customLabel.anchor.set(0.5, 0.5);
     this.container.addChild(customLabel);
     if (role === "host") {
-      customLabel.eventMode = "static"; customLabel.cursor = "pointer";
-      customLabel.text = "Custom Run: OFF (tap)";
+      customLabel.eventMode = "static"; customLabel.cursor = "pointer"; customLabel.text = "Custom Run: OFF (tap)";
       customLabel.on("pointertap", () => {
         this.useCustomRun = !this.useCustomRun;
-        customLabel.text = this.useCustomRun ? "Custom Run: ON (saved settings)" : "Custom Run: OFF (tap)";
+        customLabel.text = this.useCustomRun ? "Custom Run: ON (saved)" : "Custom Run: OFF (tap)";
         customLabel.style.fill = this.useCustomRun ? "#44ff44" : "#888888";
       });
     }
@@ -271,15 +255,19 @@ export class LobbyScreen {
 
       const startGame = () => {
         if (!this.hostReady || !this.guestReady) return;
-        // Apply custom run settings if enabled
-        if (this.useCustomRun) setDebugConfig(loadDebugConfigFromStorage());
         const seed = Math.floor(Math.random() * 0xffffffff);
+        // Serialize custom run settings so guest gets identical config
+        const runCfg = this.useCustomRun ? loadRunConfigFromStorage() : null;
+        const dbgCfg = this.useCustomRun ? loadDebugConfigFromStorage() : null;
+        if (dbgCfg) setDebugConfig(dbgCfg);
         this.sync.sendGameEvent({
           type: "start",
-          payload: { seed, mode: this.mode, touchControls: this.touchControls, character: this.localChar, theme: this.selectedTheme, customRun: this.useCustomRun },
+          payload: { seed, mode: this.mode, touchControls: this.touchControls, character: this.localChar,
+            theme: this.selectedTheme, runCfg: runCfg ? serializeForSync(runCfg) : null, dbgCfg },
         });
         this.remoteCosmetics.theme = this.selectedTheme;
-        this.callbacks.onStart(seed, this.mode, this.touchControls, this.remoteChar, this.remoteCosmetics);
+        this.callbacks.onStart(seed, this.mode, this.touchControls, this.remoteChar, this.remoteCosmetics,
+          runCfg ? { ...runCfg, seed } : undefined);
       };
       this.startBtn.on("pointertap", startGame);
       this.startText.on("pointertap", startGame);
@@ -351,7 +339,14 @@ export class LobbyScreen {
       const tc = (event.payload.touchControls as boolean) ?? this.touchControls;
       const rc = (event.payload.character as string) ?? this.remoteChar;
       if (event.payload.theme) this.remoteCosmetics.theme = event.payload.theme as string;
-      this.callbacks.onStart(seed, mode, tc, rc, this.remoteCosmetics);
+      // Apply host's custom run settings so both players have identical config
+      if (event.payload.dbgCfg) setDebugConfig({ ...createDebugConfig(), ...(event.payload.dbgCfg as Partial<DebugConfig>) });
+      if (event.payload.runCfg) {
+        const hostRun = deserializeFromSync(event.payload.runCfg as Record<string, unknown>);
+        // Store for OnlineSession to pick up via getSharedRunConfig
+        this.sharedRunConfig = { ...hostRun, seed };
+      }
+      this.callbacks.onStart(seed, mode, tc, rc, this.remoteCosmetics, this.sharedRunConfig ?? undefined);
     }
   }
 

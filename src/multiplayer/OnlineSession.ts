@@ -35,6 +35,7 @@ interface OnlineSessionConfig {
   remoteCharacter?: string;
   remoteCosmetics?: { tint?: string; trail?: string; theme?: string };
   sync?: GameSync;
+  sharedRunConfig?: RunConfig;
 }
 
 export class OnlineSession {
@@ -89,8 +90,10 @@ export class OnlineSession {
       onDataChannel: () => {}, onRoom: () => {},
     });
 
-    // Don't reset debug config — lobby may have applied custom run settings
-    const runConfig: RunConfig = { ...createDefaultRunConfig(), seed: config.seed };
+    // Use shared run config if provided (custom run), otherwise default
+    const runConfig: RunConfig = config.sharedRunConfig
+      ? { ...config.sharedRunConfig, seed: config.seed }
+      : { ...createDefaultRunConfig(), seed: config.seed };
     this.scene = new GameScene(runConfig);
     // Apply shared theme from lobby
     if (this.remoteCosmetics?.theme) this.scene.setCosmeticTheme(this.remoteCosmetics.theme);
