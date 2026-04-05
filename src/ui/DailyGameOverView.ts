@@ -17,6 +17,7 @@ const MEDAL_COLORS: Record<Medal, string> = {
 
 export interface DailyGameOverStats {
   score: number;
+  bestScore: number;
   height: number;
   seconds: number;
   meatballs: number;
@@ -70,20 +71,18 @@ export function showDailyGameOver(
   app.stage.addChild(title);
   y += 36;
 
-  // Score
+  // Score (this run + best today)
+  const scoreLabel = stats.bestScore > stats.score
+    ? `Score: ${stats.score}  |  Best: ${stats.bestScore}`
+    : `Score: ${stats.score}`;
   const scoreText = new Text({
-    text: `Score: ${stats.score}`,
+    text: scoreLabel,
     style: new TextStyle({
-      fontFamily: "monospace",
-      fontSize: 22,
-      fill: uiT.accent,
-      fontWeight: "bold",
-      stroke: { color: "#000000", width: 2 },
+      fontFamily: "monospace", fontSize: stats.bestScore > stats.score ? 17 : 22,
+      fill: uiT.accent, fontWeight: "bold", stroke: { color: "#000000", width: 2 },
     }),
   });
-  scoreText.x = GAME_WIDTH / 2;
-  scoreText.y = y;
-  scoreText.anchor.set(0.5, 0);
+  scoreText.x = GAME_WIDTH / 2; scoreText.y = y; scoreText.anchor.set(0.5, 0);
   app.stage.addChild(scoreText);
   y += 34;
 

@@ -55,17 +55,18 @@ export function createGameLoopTicker(
     if (gameOverHandled) return;
     scene.update();
 
-    // Shadow recording + playback
+    // Shadow recording + playback (skip during countdown)
     const shadow = getShadowContext();
-    if (shadow.recorder && !scene.isGameOver()) {
+    const counting = scene.getCountdownSeconds() !== undefined && scene.getCountdownSeconds()! > 0;
+    if (shadow.recorder && !scene.isGameOver() && !counting) {
       shadow.recorder.tick(scene.getState());
     }
-    if (shadow.playback && shadow.renderer && !scene.isGameOver()) {
+    if (shadow.playback && shadow.renderer && !scene.isGameOver() && !counting) {
       const ghostState = shadow.playback.tick();
       if (ghostState) {
         shadow.renderer.update(ghostState, scene.getState().camera.y, scene.getState().player.y);
       } else { shadow.renderer.hide(); }
-    }
+    } else if (shadow.renderer && counting) { shadow.renderer.hide(); }
 
     // Countdown display
     const cd = scene.getCountdownSeconds();
@@ -210,14 +211,15 @@ export function createGameLoopTicker(
         let dailyData = loadDailyData();
         dailyData = recordDailyResult(dailyData, dateKey, gameResult.score, gameResult.height, thresholds);
         saveDailyData(dailyData);
-        const prevBest = dailyData.results[dateKey];
+        const best = dailyData.results[dateKey];
         showDailyGameOver(app, {
           score: gameResult.score, height: gameResult.height,
+          bestScore: best?.score ?? gameResult.score,
           seconds: scene.getElapsedSeconds(), meatballs: gameResult.meatballs,
           powerUps: scene.getPowerUpsCollected(), bestCombo: gameResult.combo,
           bestStreak: scene.getBestStreak(), platforms: scene.getPlatformsPassed(),
-          medal: prevBest?.medal ?? null, thresholds, streak: dailyData.currentStreak,
-          isNewBest: prevBest?.score === gameResult.score,
+          medal: best?.medal ?? null, thresholds, streak: dailyData.currentStreak,
+          isNewBest: best?.score === gameResult.score,
         }, onRestart, onHome, achNames);
       } else {
         showGameOver(app, {
