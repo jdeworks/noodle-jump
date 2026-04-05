@@ -78,6 +78,10 @@ export class GameScene {
     this.cosmeticTheme = cosmetics.equipped.theme ?? "theme_default";
     this.gfxSync.setTheme(this.cosmeticTheme);
 
+    this.prevPlayerX = this.state.player.x;
+    this.prevPlayerY = this.state.player.y;
+    this.prevCamY = this.state.camera.y;
+
     this.parallax = new ParallaxBackground();
     this.parallax.setCosmeticTheme(this.cosmeticTheme);
     this.container.addChild(this.parallax.container);
@@ -252,9 +256,10 @@ export class GameScene {
       handleEvents(result.events, this.eventDeps());
       if (this.state.gameOver) break;
     }
-    // Interpolation: lerp between previous tick and current tick positions
-    // At 1x+ speed alpha is ~0 (no interpolation). At <1x, we smoothly blend.
-    this.interpAlpha = speed < 1 ? this.speedAccumulator / speed : 0;
+    // Interpolation: lerp between previous tick and current tick positions.
+    // speedAccumulator is 0 right after a tick fires, approaches 1.0 before next tick.
+    // At 1x+ speed every frame has a tick so interpolation is unnecessary.
+    this.interpAlpha = speed < 1 ? this.speedAccumulator : 0;
 
     this.gfxSync.syncAll(
       this.state.platforms,
