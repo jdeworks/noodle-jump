@@ -49,6 +49,7 @@ export const chefRivalBehavior: BossBehavior = {
     platforms: PlatformState[],
     _animTick: number,
     speedScale = 1,
+    attackMultiplier = 1,
   ): BossTickResult {
     if (!boss.alive) return { boss, attacks: [] };
 
@@ -173,7 +174,8 @@ export const chefRivalBehavior: BossBehavior = {
         // Now transfer to the target platform
         currentPlatformId = jumpArc.targetPlatformId ?? null;
         jumpArc = { ...jumpArc, startX: x, startY: y, progress: 0 };
-        const cd = Math.max(MIN_JUMP_COOLDOWN, BASE_JUMP_COOLDOWN - boss.phase * 10);
+        const baseCd = Math.max(MIN_JUMP_COOLDOWN, BASE_JUMP_COOLDOWN - boss.phase * 10);
+        const cd = Math.max(30, Math.ceil(baseCd * attackMultiplier));
         jumpCooldown = (jumpCount << 16) | cd;
       } else {
         jumpCooldown = (jumpCount << 16) | newCooldown;

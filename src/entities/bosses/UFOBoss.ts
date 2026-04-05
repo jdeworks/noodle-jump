@@ -32,6 +32,7 @@ export const ufoBehavior: BossBehavior = {
     _platforms: PlatformState[],
     animTick: number,
     speedScale = 1,
+    attackMultiplier = 1,
   ): BossTickResult {
     if (!boss.alive) return { boss, attacks: [] };
 
@@ -59,8 +60,9 @@ export const ufoBehavior: BossBehavior = {
     const dist = Math.sqrt(dx * dx + dy * dy) || 1;
     const speed = PROJECTILE_SPEED + boss.phase * 0.3;
 
-    // Fire aimed projectiles
-    const interval = Math.max(MIN_ATTACK_INTERVAL, BASE_ATTACK_INTERVAL - boss.phase * 15);
+    // Fire aimed projectiles (attackMultiplier scales interval)
+    const baseInterval = Math.max(MIN_ATTACK_INTERVAL, BASE_ATTACK_INTERVAL - boss.phase * 15);
+    const interval = Math.max(15, Math.ceil(baseInterval * attackMultiplier));
     if (patternTick % interval === 0) {
       // Add slight random spread so it's not perfectly aimed
       const spread = (random() - 0.5) * 0.8;

@@ -163,7 +163,7 @@ export function tickBoss(
 
   const boss = s.activeBoss!;
   const bossResult = behavior.tick(
-    boss, s.player, s.platforms, s.animTick, s.gameSpeedScale,
+    boss, s.player, s.platforms, s.animTick, s.gameSpeedScale, s.debugConfig.bossAttackMultiplier,
   );
   s = { ...s, activeBoss: bossResult.boss };
 
