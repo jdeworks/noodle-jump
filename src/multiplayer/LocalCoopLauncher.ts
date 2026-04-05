@@ -37,6 +37,7 @@ export async function launchLocalCoop(
   mode: LocalCoopMode = "best-height",
   p1Char = "chef",
   p2Char = "chef",
+  runConfig?: RunConfig,
 ): Promise<void> {
   // Resize canvas for split-screen and override CSS constraints
   app.renderer.resize(SPLIT_WIDTH, GAME_HEIGHT);
@@ -47,10 +48,10 @@ export async function launchLocalCoop(
   const input = new LocalInput();
   input.init();
 
-  const config: RunConfig = { ...createDefaultRunConfig(), seed };
+  const config: RunConfig = runConfig ? { ...runConfig, seed } : { ...createDefaultRunConfig(), seed };
 
-  // Reset debug config so multiplayer isn't affected by custom run presets
-  setDebugConfig(createDebugConfig());
+  // Only reset debug config if no custom run was requested
+  if (!runConfig) setDebugConfig(createDebugConfig());
 
   const scene1 = new GameScene(config);
   const scene2 = new GameScene(config);

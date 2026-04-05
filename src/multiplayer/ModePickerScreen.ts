@@ -9,6 +9,9 @@ import { CHARACTERS, drawCharacter } from "../rendering/PlayerCharacters";
 import { getSelectedCharacter, setSelectedCharacter } from "../systems/CharacterSettings";
 import { getUITheme } from "../ui/ThemeUI";
 import type { LocalCoopMode } from "./LocalCoopLauncher";
+import type { RunConfig } from "../systems/CustomRunConfig";
+import { loadRunConfigFromStorage, loadDebugConfigFromStorage } from "../ui/CustomRunStorage";
+import { setDebugConfig } from "../config/debug";
 
 const MODES: LocalCoopMode[] = ["best-height", "first-to-die", "timed-2min"];
 const MODE_LABELS: Record<LocalCoopMode, string> = {
@@ -26,10 +29,11 @@ const SPLIT_WIDTH = GAME_WIDTH * 2;
 
 export function showModePicker(
   app: Application,
-  onSelect: (mode: LocalCoopMode, p1Char: string, p2Char: string) => void,
+  onSelect: (mode: LocalCoopMode, p1Char: string, p2Char: string, runConfig?: RunConfig) => void,
 ): void {
   const view = new Container();
   let selectedIdx = 0;
+  let useCustom = false;
   const uiT = getUITheme();
 
   const bg = new Graphics();
@@ -112,8 +116,23 @@ export function showModePicker(
   p2Name.eventMode = "static"; p2Name.cursor = "pointer";
   p2Name.on("pointertap", () => { p2CharIdx = (p2CharIdx + 1) % CHARACTERS.length; updateChars(); });
 
+  // Custom run toggle
+  const customLabel = new Text({
+    text: "Custom Run: OFF (tap to toggle)",
+    style: new TextStyle({ fontFamily: "monospace", fontSize: 13,
+      fill: "#888888", stroke: { color: "#000000", width: 2 } }),
+  });
+  customLabel.x = SPLIT_WIDTH / 2; customLabel.y = 520; customLabel.anchor.set(0.5, 0.5);
+  customLabel.eventMode = "static"; customLabel.cursor = "pointer";
+  customLabel.on("pointertap", () => {
+    useCustom = !useCustom;
+    customLabel.text = useCustom ? "Custom Run: ON (uses saved settings)" : "Custom Run: OFF (tap to toggle)";
+    customLabel.style.fill = useCustom ? "#44ff44" : "#888888";
+  });
+  view.addChild(customLabel);
+
   // Start button (clickable)
-  const startBtnY = 540;
+  const startBtnY = 555;
   const startBg = new Graphics();
   startBg.roundRect(SPLIT_WIDTH / 2 - 110, startBtnY - 22, 220, 44, 10);
   startBg.fill({ color: uiT.buttonBg, alpha: 0.9 });
@@ -134,7 +153,13 @@ export function showModePicker(
     setSelectedCharacter(CHARACTERS[p1CharIdx].id);
     app.stage.removeChild(view);
     view.destroy({ children: true });
-    onSelect(MODES[selectedIdx], CHARACTERS[p1CharIdx].id, CHARACTERS[p2CharIdx].id);
+    if (useCustom) {
+      const cfg = loadRunConfigFromStorage();
+      setDebugConfig(loadDebugConfigFromStorage());
+      onSelect(MODES[selectedIdx], CHARACTERS[p1CharIdx].id, CHARACTERS[p2CharIdx].id, cfg);
+    } else {
+      onSelect(MODES[selectedIdx], CHARACTERS[p1CharIdx].id, CHARACTERS[p2CharIdx].id);
+    }
   };
   startBg.on("pointertap", doStart);
   startText.on("pointertap", doStart);

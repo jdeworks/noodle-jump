@@ -103,7 +103,7 @@ export class MultiplayerMenu implements MenuContext {
       this.app.renderer.resize(GAME_WIDTH * 2, GAME_HEIGHT);
       this.app.canvas.style.maxWidth = "1000px";
       this.app.canvas.style.aspectRatio = `${GAME_WIDTH * 2} / ${GAME_HEIGHT}`;
-      showModePicker(this.app, (m, p1c, p2c) => launchLocalCoop(this.app, Math.floor(Math.random() * 0xffffffff), m, p1c, p2c));
+      showModePicker(this.app, (m, p1c, p2c, rc) => launchLocalCoop(this.app, Math.floor(Math.random() * 0xffffffff), m, p1c, p2c, rc));
     });
 
     const localInfo = new Text({ text: "Same PC — Player 1: WASD, Player 2: Arrows", style: INFO_STYLE });

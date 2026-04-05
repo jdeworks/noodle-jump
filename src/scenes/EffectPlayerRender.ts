@@ -18,13 +18,9 @@ import { getSelectedCharacter } from "../systems/CharacterSettings";
 import type { GameWorldState } from "./GameState";
 import type { ParticleManager } from "./ParticleManager";
 
-// Cache character ID to avoid localStorage reads every frame
-let cachedCharId: string | null = null;
-function getChar(): string {
-  if (!cachedCharId) cachedCharId = getSelectedCharacter();
-  return cachedCharId;
-}
-export function clearCharCache(): void { cachedCharId = null; }
+// In multiplayer, setSelectedCharacter swaps per-scene, so always read current value
+function getChar(): string { return getSelectedCharacter(); }
+export function clearCharCache(): void { /* no-op — kept for API compat */ }
 
 /**
  * Render the player sprite based on the active effect type.
