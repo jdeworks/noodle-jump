@@ -1,11 +1,7 @@
 /** Power-up effect rendering — overlays, labels, squash/stretch, delegation. */
 
 import { Graphics, Text, TextStyle } from "pixi.js";
-import {
-  GAME_WIDTH,
-  GAME_HEIGHT,
-  PLAYER_HEIGHT,
-} from "../config/constants";
+import { GAME_WIDTH, GAME_HEIGHT, PLAYER_HEIGHT } from "../config/constants";
 import type { GameWorldState } from "./GameState";
 import type { ParticleManager } from "./ParticleManager";
 import { renderPlayerForEffect } from "./EffectPlayerRender";
@@ -56,9 +52,14 @@ export class EffectRenderer {
     const activeType = activeEffect?.type;
 
     this.activeEmitterType = renderPlayerForEffect(
-      state, playerGfx, camY, particles,
-      this.activeEmitterType, this.ensureEffectEmitter.bind(this),
-      cosmeticTint, cosmeticTheme,
+      state,
+      playerGfx,
+      camY,
+      particles,
+      this.activeEmitterType,
+      this.ensureEffectEmitter.bind(this),
+      cosmeticTint,
+      cosmeticTheme,
     );
 
     // Sprite faces movement direction (skip for spinning effects)
@@ -72,7 +73,7 @@ export class EffectRenderer {
 
     // Squash/stretch keyframe animation
     if (state.squashTicks > 0) {
-      const frameIdx = SQUASH_TOTAL - state.squashTicks;
+      const frameIdx = Math.round(SQUASH_TOTAL - state.squashTicks);
       if (frameIdx >= 0 && frameIdx < SQUASH_KEYFRAMES.length) {
         const [scaleY, scaleXFactor] = SQUASH_KEYFRAMES[frameIdx];
         playerGfx.scale.y = scaleY;
@@ -126,8 +127,7 @@ export class EffectRenderer {
     const type = state.activeEffect.type;
     const maxDuration = getMaxDuration(type);
     const progress = state.activeEffect.ticksRemaining / maxDuration;
-    const flashAlpha =
-      0.1 + Math.sin(state.animTick * 0.08) * 0.05;
+    const flashAlpha = 0.1 + Math.sin(state.animTick * 0.08) * 0.05;
 
     if (type === "chili_pepper") {
       this.effectOverlay.rect(0, 0, GAME_WIDTH, GAME_HEIGHT);
@@ -142,14 +142,12 @@ export class EffectRenderer {
         alpha: flashAlpha * progress,
       });
     } else if (type === "garlic_breath") {
-      const fogAlpha =
-        (0.3 + Math.sin(state.animTick * 0.04) * 0.1) * progress;
+      const fogAlpha = (0.3 + Math.sin(state.animTick * 0.04) * 0.1) * progress;
       this.effectOverlay.rect(0, 0, GAME_WIDTH, GAME_HEIGHT);
       this.effectOverlay.fill({ color: 0x88bb44, alpha: fogAlpha * 0.4 });
       for (let i = 0; i < 5; i++) {
         const bandY = GAME_HEIGHT * 0.15 + (i / 5) * GAME_HEIGHT * 0.7;
-        const wobble =
-          Math.sin(state.animTick * 0.02 + i * 1.5) * 30;
+        const wobble = Math.sin(state.animTick * 0.02 + i * 1.5) * 30;
         this.effectOverlay.ellipse(
           GAME_WIDTH / 2 + wobble,
           bandY,
@@ -172,7 +170,10 @@ export class EffectRenderer {
   /** Show effect name label at bottom of screen. */
   showEffectLabel(
     type: string,
-    container: { addChild: (child: Text) => void; removeChild: (child: Text) => void },
+    container: {
+      addChild: (child: Text) => void;
+      removeChild: (child: Text) => void;
+    },
   ): void {
     this.clearEffectLabel(container);
     const label = type.replace("_", " ").toUpperCase();
@@ -205,4 +206,3 @@ export class EffectRenderer {
     this.effectOverlay.destroy();
   }
 }
-
