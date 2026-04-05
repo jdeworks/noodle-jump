@@ -124,17 +124,18 @@ export function showTitleScreen(
   const customBtn = mkBtn("Custom Run", cursorY, uiT.buttonBg, uiT.text, 15); cursorY += btnH + btnSp;
   const custBtn = mkBtn("Customize", cursorY, uiT.buttonBg, uiT.accent, 15); cursorY += btnH + btnSp;
 
-  // Fullscreen
+  // Fullscreen icon (top-right corner)
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
   const isPWA = window.matchMedia("(display-mode: standalone)").matches;
-  const fsBtn = mkBtn(isIOS && !isPWA ? "Add to Home Screen for fullscreen" : "Fullscreen",
-    cursorY, uiT.buttonBg, uiT.textDim, isIOS ? 11 : 13);
-  const handleFs = (e: Event) => { e.stopPropagation();
-    if (isIOS && !isPWA) { fsBtn.text.text = "Safari \u2192 Share \u2192 Add to Home Screen"; fsBtn.text.style.fill = "#ffcc44"; }
-    else requestFullscreen();
-  };
-  fsBtn.bg.on("pointertap", handleFs); fsBtn.text.eventMode = "static"; fsBtn.text.on("pointertap", handleFs);
-  cursorY += btnH + btnSp + 4;
+  const fsIcon = new Text({ text: isIOS && !isPWA ? "" : "\u26F6", style: new TextStyle({
+    fontFamily: "monospace", fontSize: 20, fill: uiT.textDim, stroke: { color: "#000000", width: 2 },
+  }) });
+  if (!isIOS || isPWA) {
+    fsIcon.x = GAME_WIDTH - 14; fsIcon.y = 10; fsIcon.anchor.set(1, 0);
+    fsIcon.eventMode = "static"; fsIcon.cursor = "pointer";
+    fsIcon.on("pointertap", (e: Event) => { e.stopPropagation(); requestFullscreen(); });
+    contentGroup.addChild(fsIcon);
+  }
 
   // Input hint
   const hint = "ontouchstart" in window ? "Tilt or tap left/right to move" : "Arrow keys / WASD to move";
