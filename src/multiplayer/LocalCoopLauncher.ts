@@ -184,7 +184,8 @@ export async function launchLocalCoop(
   // Timer for timed mode (2 min = 7200 ticks at 60fps)
   let timerCleanup: (() => void) | null = null;
   let timerText: Text | null = null;
-  let timerTicks = mode === "timed-2min" ? 120 * 60 : -1; // -1 = no timer
+  const timerDurationMs = mode === "timed-2min" ? 120_000 : -1;
+  const timerStartTime = performance.now();
   if (mode === "timed-2min") {
     timerText = new Text({ text: "2:00", style: new TextStyle({ fontFamily: "monospace",
       fontSize: 20, fill: "#ffffff", fontWeight: "bold", stroke: { color: "#000000", width: 3 } }) });
@@ -239,13 +240,14 @@ export async function launchLocalCoop(
     p1Height.text = `H: ${scene1.getMaxHeight()}`;
     p2Height.text = `H: ${scene2.getMaxHeight()}`;
 
-    // Timed mode countdown
-    if (timerTicks > 0) {
-      timerTicks--;
-      const secs = Math.ceil(timerTicks / 60);
+    // Timed mode countdown (wall-clock based)
+    if (timerDurationMs > 0) {
+      const elapsedMs = performance.now() - timerStartTime;
+      const remainMs = Math.max(0, timerDurationMs - elapsedMs);
+      const secs = Math.ceil(remainMs / 1000);
       const m = Math.floor(secs / 60), s = secs % 60;
       if (timerText) timerText.text = `${m}:${s.toString().padStart(2, "0")}`;
-      if (timerTicks <= 0 && !gameEnded) {
+      if (remainMs <= 0 && !gameEnded) {
         p1DeathHeight = scene1.getHeight(); p2DeathHeight = scene2.getHeight();
         endGame(); return;
       }

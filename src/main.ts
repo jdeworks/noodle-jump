@@ -22,6 +22,9 @@ async function main() {
     autoDensity: true,
   });
 
+  // Expose app globally for testing frame rates (e.g. app.ticker.maxFPS = 30)
+  (window as unknown as Record<string, unknown>).__app = app;
+
   const container = document.getElementById("game");
   if (!container) throw new Error("Missing #game element");
   container.appendChild(app.canvas);
@@ -38,7 +41,8 @@ async function main() {
     wrapper.appendChild(app.canvas);
     const badge = document.createElement("div");
     badge.textContent = "DEBUG";
-    badge.style.cssText = "position:absolute;top:4px;left:4px;padding:2px 6px;font:bold 10px monospace;color:#ff0;background:rgba(0,0,0,0.6);border-radius:4px;z-index:99999;pointer-events:none";
+    badge.style.cssText =
+      "position:absolute;top:4px;left:4px;padding:2px 6px;font:bold 10px monospace;color:#ff0;background:rgba(0,0,0,0.6);border-radius:4px;z-index:99999;pointer-events:none";
     wrapper.appendChild(badge);
   }
 }

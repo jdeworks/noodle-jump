@@ -50,7 +50,8 @@ export class OnlineSession {
   private remoteChar: string;
   private remoteCosmetics?: { tint?: string; trail?: string; theme?: string };
   private mode: string;
-  private timerTicks = -1;
+  private timerDurationMs = -1;
+  private timerStartTime = 0;
   private timerText: Text | null = null;
   private countdownAnim = new CountdownAnim();
 
@@ -142,7 +143,8 @@ export class OnlineSession {
 
     // Timer for timed mode
     if (this.mode === "timed-2min") {
-      this.timerTicks = 120 * 60;
+      this.timerDurationMs = 120_000;
+      this.timerStartTime = performance.now();
       this.timerText = new Text({ text: "2:00", style: new TextStyle({ fontFamily: "monospace",
         fontSize: 18, fill: "#ffffff", fontWeight: "bold", stroke: { color: "#000000", width: 3 } }) });
       this.timerText.x = GAME_WIDTH / 2; this.timerText.y = 20; this.timerText.anchor.set(0.5, 0.5);
@@ -212,12 +214,13 @@ export class OnlineSession {
     }
 
     // Timed mode countdown
-    if (this.timerTicks > 0) {
-      this.timerTicks--;
-      const secs = Math.ceil(this.timerTicks / 60);
+    if (this.timerDurationMs > 0) {
+      const elapsedMs = performance.now() - this.timerStartTime;
+      const remainMs = Math.max(0, this.timerDurationMs - elapsedMs);
+      const secs = Math.ceil(remainMs / 1000);
       const m = Math.floor(secs / 60), s = secs % 60;
       if (this.timerText) this.timerText.text = `${m}:${s.toString().padStart(2, "0")}`;
-      if (this.timerTicks <= 0 && !this.resultsShown) {
+      if (remainMs <= 0 && !this.resultsShown) {
         this.resultsShown = true;
         this.showResults();
         return;
@@ -363,7 +366,6 @@ export class OnlineSession {
     t.x = 10; t.y = GAME_HEIGHT - 16;
     return t;
   }
-
   private makeCountdown(): void {
     this.countdownDim = new Graphics();
     this.countdownDim.rect(0, 0, GAME_WIDTH, GAME_HEIGHT);
@@ -374,7 +376,6 @@ export class OnlineSession {
     this.countdownText.x = GAME_WIDTH / 2; this.countdownText.y = GAME_HEIGHT * 0.4;
     this.countdownText.anchor.set(0.5, 0.5); this.app.stage.addChild(this.countdownText);
   }
-
   private cleanup(): void {
     if (this.gameLoop) { this.app.ticker.remove(this.gameLoop); this.gameLoop = null; }
     this.sync.stopSending();
@@ -388,7 +389,6 @@ export class OnlineSession {
     resetPlatformIds(); resetPowerUpIds(); resetCollectibleIds();
     resetEnemyIds(); resetProjectileIds(); resetRNG(); resetRendererState();
   }
-
   private goHome(): void {
     if (this.escapeHandler) { window.removeEventListener("keydown", this.escapeHandler); this.escapeHandler = null; }
     if (this.touchControls) setTouchControlsForced(false);
