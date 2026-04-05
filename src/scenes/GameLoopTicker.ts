@@ -21,7 +21,7 @@ import {
   saveCosmetics,
 } from "../systems/Cosmetics";
 import { getShadowContext } from "./GameLauncher";
-import { saveLastShadow, saveBestShadow, saveDailyShadow } from "../systems/ShadowRecorder";
+import { saveShadow } from "../systems/ShadowRecorder";
 import {
   getTodayDateKey,
   getMedalThresholds,
@@ -193,15 +193,11 @@ export function createGameLoopTicker(
       const cosState = syncCosmeticsWithAchievements(loadCosmetics(), achResult.state.unlocked);
       saveCosmetics(cosState);
 
-      // Save shadow recording
+      // Save shadow recording (mode-based)
       const shadowCtx = getShadowContext();
       if (shadowCtx.recorder) {
         const rec = shadowCtx.recorder.finalize(gameResult.score, gameResult.height);
-        saveLastShadow(rec);
-        if (!isCustom) saveBestShadow(rec);
-        if (scene.getState().runConfig.isDailyChallenge) {
-          saveDailyShadow(getTodayDateKey(), rec);
-        }
+        saveShadow(shadowCtx.mode, shadowCtx.qualifier, rec);
       }
 
       const achNames = achResult.newlyUnlocked.map((id) => getAchievement(id)?.name ?? id);

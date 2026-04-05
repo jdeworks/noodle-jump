@@ -34,13 +34,13 @@ export interface DailyModifiers {
 const STORAGE_KEY = "noodle-jump-daily-challenge";
 
 const BASE_THRESHOLDS = { bronze: 5000, silver: 15000, gold: 30000, platinum: 50000, diamond: 80000 };
-const ZONES = [0, 1, 2, 3];
+const ZONES = [0, 0, 1, 1, 2, 2, 3, 3, 4, 5];
 const DIFFICULTIES = [0.8, 1.0, 1.0, 1.2, 1.5, 2.0];
-const PLATFORM_TYPES = [null, null, null, "moving", "ice", "conveyor", "breaking"];
-const GAME_SPEEDS = [1.0, 1.0, 1.0, 0.8, 1.2, 1.5];
-const ENEMY_SPAWN_RATES = [1.0, 1.0, 2.0, 3.0];
-const BOSS_ATTACK_RATES = [1.0, 1.0, 1.5, 2.0];
-const QUICK_ZONE_OPTS = [0, 0, 0, 20, 15];
+const PLATFORM_TYPES = [null, null, null, null, null, "moving", "ice", "conveyor", "breaking"];
+const GAME_SPEEDS = [1.0, 1.0, 1.0, 1.0, 0.8, 1.2, 1.5];
+const ENEMY_SPAWN_RATES = [1.0, 1.0, 1.0, 2.0, 3.0];
+const BOSS_ATTACK_RATES = [1.0, 1.0, 1.0, 1.5, 2.0];
+const QUICK_ZONE_OPTS = [0, 0, 0, 0, 0, 20, 15];
 
 const NEGATIVE_POWER_UPS = ["chili_pepper", "soggy_noodle", "garlic_breath", "burnt_toast", "minestrone_soup"];
 
@@ -109,18 +109,11 @@ export function generateDailyDebugConfig(seed?: number): Partial<DebugConfig> {
   };
 }
 
-/** Get medal score thresholds for a daily config. */
-export function getMedalThresholds(config: RunConfig): {
+/** Get medal score thresholds — flat values, same every day. */
+export function getMedalThresholds(_config?: RunConfig): {
   bronze: number; silver: number; gold: number; platinum: number; diamond: number;
 } {
-  const scale = config.difficultyMultiplier * (1 + config.startingZone * 0.15);
-  return {
-    bronze: Math.round(BASE_THRESHOLDS.bronze / scale),
-    silver: Math.round(BASE_THRESHOLDS.silver / scale),
-    gold: Math.round(BASE_THRESHOLDS.gold / scale),
-    platinum: Math.round(BASE_THRESHOLDS.platinum / scale),
-    diamond: Math.round(BASE_THRESHOLDS.diamond / scale),
-  };
+  return { ...BASE_THRESHOLDS };
 }
 
 /** Determine medal earned for a score. */

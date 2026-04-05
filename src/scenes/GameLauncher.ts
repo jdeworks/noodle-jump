@@ -23,11 +23,8 @@ import { resetDebugConfig, setDebugConfig, getDebugConfig } from "../config/debu
 import { createPauseMenu } from "./PauseMenu";
 import { generateDailyDebugConfig } from "../systems/DailyChallengeState";
 import {
-  createShadowRecorder,
-  loadLastShadow,
-  loadBestShadow,
-  loadDailyShadow,
-  type ShadowRecorder as ShadowRecorderType,
+  createShadowRecorder, loadShadow, getShadowSlot,
+  type ShadowRecorder as ShadowRecorderType, type ShadowMode,
 } from "../systems/ShadowRecorder";
 import {
   createShadowPlayback,
@@ -46,6 +43,8 @@ let activeRunConfig: RunConfig | undefined;
 let activeShadowRecorder: ShadowRecorderType | null = null;
 let activeShadowPlayback: ShadowPlayback | null = null;
 let activeShadowRenderer: RemotePlayerRenderer | null = null;
+let activeShadowMode: ShadowMode = "normal";
+let activeShadowQualifier = "";
 
 export function cleanupAndRestart(app: Application): void {
   if (activeEscHandler) {
@@ -133,15 +132,10 @@ export function cleanupAndGoHome(app: Application): void {
 // ── Game Launch ──────────────────────────────────────────────────────────
 
 /** Get the active shadow context (for GameLoopTicker). */
-export function getShadowContext(): {
-  recorder: ShadowRecorderType | null;
-  playback: ShadowPlayback | null;
-  renderer: RemotePlayerRenderer | null;
-} {
+export function getShadowContext() {
   return {
-    recorder: activeShadowRecorder,
-    playback: activeShadowPlayback,
-    renderer: activeShadowRenderer,
+    recorder: activeShadowRecorder, playback: activeShadowPlayback,
+    renderer: activeShadowRenderer, mode: activeShadowMode, qualifier: activeShadowQualifier,
   };
 }
 
@@ -163,23 +157,18 @@ export async function launchGame(
   scene.initInput(app.canvas);
   app.stage.addChild(scene.container);
 
-  // ── Shadow replay ────────────────────────────────────────────────────────
+  // ── Shadow replay (mode-based) ──────────────────────────────────────────
   activeShadowRecorder = createShadowRecorder();
-  const isDaily = runConfig?.isDailyChallenge ?? false;
-  const shadowRec = isDaily
-    ? loadDailyShadow(getTodayDateKey())
-    : (loadBestShadow() ?? loadLastShadow());
+  const slot = getShadowSlot(runConfig);
+  activeShadowMode = slot.mode;
+  activeShadowQualifier = slot.mode === "daily" ? getTodayDateKey() : slot.qualifier;
+  const shadowRec = loadShadow(activeShadowMode, activeShadowQualifier);
   if (shadowRec) {
     activeShadowPlayback = createShadowPlayback(shadowRec);
-    activeShadowRenderer = new RemotePlayerRenderer("chef", {
-      tint: "tint_none",
-    });
+    activeShadowRenderer = new RemotePlayerRenderer("chef", { tint: "tint_none" });
     activeShadowRenderer.container.alpha = 0.35;
     scene.container.addChild(activeShadowRenderer.container);
-  } else {
-    activeShadowPlayback = null;
-    activeShadowRenderer = null;
-  }
+  } else { activeShadowPlayback = null; activeShadowRenderer = null; }
 
   // ── HUD ──────────────────────────────────────────────────────────────────
   const hud = new HUD();

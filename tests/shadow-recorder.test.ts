@@ -3,8 +3,10 @@ import {
   createShadowRecorder,
   getSampleCount,
   getFrame,
+  getShadowSlot,
 } from "../src/systems/ShadowRecorder";
 import { createInitialState } from "../src/scenes/GameState";
+import { createDefaultRunConfig } from "../src/systems/CustomRunConfig";
 
 describe("ShadowRecorder", () => {
   function makeState(x = 100, y = -500, vy = -10, isDying = false) {
@@ -84,5 +86,25 @@ describe("ShadowRecorder", () => {
     const recording = recorder.finalize(100, 10);
     expect(recording.timestamp).toBeGreaterThan(0);
     expect(recording.sampleInterval).toBe(1);
+  });
+
+  test("getShadowSlot returns normal for default config", () => {
+    const slot = getShadowSlot(createDefaultRunConfig());
+    expect(slot.mode).toBe("normal");
+  });
+
+  test("getShadowSlot returns daily for daily challenge", () => {
+    const config = { ...createDefaultRunConfig(), isDailyChallenge: true, seed: 12345 };
+    expect(getShadowSlot(config).mode).toBe("daily");
+  });
+
+  test("getShadowSlot returns custom for seeded config", () => {
+    expect(getShadowSlot({ ...createDefaultRunConfig(), seed: 42 }).mode).toBe("custom");
+  });
+
+  test("different custom configs get different qualifiers", () => {
+    const a = getShadowSlot({ ...createDefaultRunConfig(), seed: 42 });
+    const b = getShadowSlot({ ...createDefaultRunConfig(), seed: 99 });
+    expect(a.qualifier).not.toBe(b.qualifier);
   });
 });

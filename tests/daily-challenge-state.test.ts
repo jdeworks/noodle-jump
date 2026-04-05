@@ -18,7 +18,7 @@ describe("DailyChallengeState", () => {
     expect(config.isDailyChallenge).toBe(true);
     expect(config.seed).toBe(12345);
     expect(config.startingZone).toBeGreaterThanOrEqual(0);
-    expect(config.startingZone).toBeLessThanOrEqual(3);
+    expect(config.startingZone).toBeLessThanOrEqual(5);
     expect(config.difficultyMultiplier).toBeGreaterThan(0);
     expect(config.enabledPowerUps.size).toBeGreaterThan(0);
     expect(config.practiceMode).toBe(false);
@@ -55,16 +55,11 @@ describe("DailyChallengeState", () => {
     expect(t.bronze).toBeGreaterThan(0);
   });
 
-  test("harder configs have lower thresholds", () => {
-    const easy = generateDailyConfig(42);
-    easy.difficultyMultiplier = 0.8;
-    easy.startingZone = 0;
-    const hard = generateDailyConfig(42);
-    hard.difficultyMultiplier = 1.5;
-    hard.startingZone = 3;
-    const te = getMedalThresholds(easy);
-    const th = getMedalThresholds(hard);
-    expect(th.gold).toBeLessThan(te.gold);
+  test("thresholds are flat (same for all configs)", () => {
+    const t1 = getMedalThresholds(generateDailyConfig(42));
+    const t2 = getMedalThresholds(generateDailyConfig(99999));
+    expect(t1.gold).toBe(t2.gold);
+    expect(t1.diamond).toBe(t2.diamond);
   });
 
   test("getMedal returns correct medal", () => {
