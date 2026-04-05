@@ -338,11 +338,10 @@ export function showTitleScreen(
   let animTick = 0;
   let titleDestroyed = false;
   const titleTicker = () => {
-    if (titleDestroyed) { app.ticker.remove(titleTicker); return; }
+    if (titleDestroyed || !chefGfx.context) { app.ticker.remove(titleTicker); return; }
     scrollY -= 4;
     parallax.update(scrollY);
-    const pulse = 0.85 + Math.sin(Date.now() * 0.004) * 0.15;
-    promptText.alpha = pulse;
+    promptText.alpha = 0.85 + Math.sin(Date.now() * 0.004) * 0.15;
     animTick++;
     chefGfx.clear();
     drawCharacter(chefGfx, 32, 40, getSelectedCharacter());
