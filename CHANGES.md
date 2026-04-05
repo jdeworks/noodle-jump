@@ -127,3 +127,11 @@ intent: Implement Daily Challenge (date-seeded runs, medals, streaks, achievemen
 - progress: UI screens — DailyChallengeScreen, DailyGameOverView | src/ui/DailyChallengeScreen.ts, src/ui/DailyGameOverView.ts
 - progress: Integration — Daily button on title screen, shadow recorder/playback in GameLauncher/GameLoopTicker, daily achievements | src/ui/TitleScreenView.ts, src/scenes/GameLauncher.ts, src/scenes/GameLoopTicker.ts, src/systems/Achievements.ts
 - progress: Extract TitleScreenMenus and PauseMenu for LOC limits | src/ui/TitleScreenMenus.ts, src/scenes/PauseMenu.ts
+
+## [2026-04-05T15:10] session-dc01 | status: completed | mode: full | type: add
+files_touched: src/systems/DailyChallengeState.ts, src/systems/ShadowRecorder.ts, src/systems/ShadowPlayback.ts, src/ui/DailyChallengeScreen.ts, src/ui/DailyGameOverView.ts, src/ui/TitleScreenView.ts, src/ui/TitleScreenMenus.ts, src/scenes/GameLauncher.ts, src/scenes/GameLoopTicker.ts, src/scenes/PauseMenu.ts, src/systems/Achievements.ts, TASKS.md
+symbols_added: generateDailyConfig, getMedalThresholds, getMedal, recordDailyResult, calculateStreak, getDailyConfigSummary, getTodayDateKey, getMedalsInRange, loadDailyData, saveDailyData, DailyChallengeScreen, showDailyGameOver, createShadowRecorder, getSampleCount, getFrame, saveLastShadow, saveBestShadow, saveDailyShadow, loadLastShadow, loadBestShadow, loadDailyShadow, createShadowPlayback, getShadowContext, setupTitleMenus, createPauseMenu
+symbols_removed: (none)
+tests_added: tests/daily-challenge-state.test.ts, tests/shadow-recorder.test.ts, tests/shadow-playback.test.ts
+reason: Daily Challenge (date-seeded config, medals, streaks, 5 achievements, dedicated game-over screen) and Shadow Replay (records all runs, plays ghost on next run via RemotePlayerRenderer).
+health_snapshot: LOC=28097, tests=447, complexity=ok
