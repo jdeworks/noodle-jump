@@ -83,10 +83,10 @@ export class OnlineSession {
     this.remoteCosmetics = config.remoteCosmetics;
     this.mode = config.mode ?? "best-height";
     this.sync = config.sync ?? new GameSync();
-    // Return to home on peer disconnect
+    // Return to home on peer disconnect (suppress Trystero abort noise)
     this.connection.on({
-      onStateChange: (s) => { if (s === "failed" || s === "disconnected") this.goHome(); },
-      onError: () => this.goHome(),
+      onStateChange: (s) => { if ((s === "failed" || s === "disconnected") && !this.resultsShown) setTimeout(() => this.goHome(), 0); },
+      onError: () => { if (!this.resultsShown) setTimeout(() => this.goHome(), 0); },
       onDataChannel: () => {}, onRoom: () => {},
     });
 
