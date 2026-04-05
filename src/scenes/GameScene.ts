@@ -55,8 +55,12 @@ export class GameScene {
   private floatingTextMgr = new FloatingTextManager();
   /** Game speed accumulator — fractional ticks carried between frames. */
   private speedAccumulator = 0;
-  /** Interpolation alpha for smooth slow-mo rendering. */
+  /** Interpolation alpha for smooth slow-mo rendering (lerp between prev and current). */
   private interpAlpha = 0;
+  /** Previous tick snapshot for interpolation (player + camera positions). */
+  private prevPlayerX = 0;
+  private prevPlayerY = 0;
+  private prevCamY = 0;
 
   constructor(runConfig?: RunConfig) {
     clearCharCache();
@@ -239,13 +243,17 @@ export class GameScene {
 
     const inputX = externalInputX ?? this.input.inputX;
     for (let t = 0; t < ticksThisFrame; t++) {
+      // Save pre-tick positions for interpolation
+      this.prevPlayerX = this.state.player.x;
+      this.prevPlayerY = this.state.player.y;
+      this.prevCamY = this.state.camera.y;
       const result = tickGameWorld(this.state, inputX);
       this.state = result.state;
       handleEvents(result.events, this.eventDeps());
       if (this.state.gameOver) break;
     }
-    // Interpolation alpha: how far between last tick and next (for smooth slow-mo)
-    // At 1x+ speed this is always ~0 (no interpolation needed)
+    // Interpolation: lerp between previous tick and current tick positions
+    // At 1x+ speed alpha is ~0 (no interpolation). At <1x, we smoothly blend.
     this.interpAlpha = speed < 1 ? this.speedAccumulator / speed : 0;
 
     this.gfxSync.syncAll(
@@ -282,6 +290,7 @@ export class GameScene {
   private buildRenderContext(): RenderContext {
     return {
       state: this.state, interpAlpha: this.interpAlpha,
+      prevPlayerX: this.prevPlayerX, prevPlayerY: this.prevPlayerY, prevCamY: this.prevCamY,
       parallax: this.parallax, particles: this.particles,
       effectRenderer: this.effectRenderer, gfxSync: this.gfxSync, trail: this.trail,
       floatingTextMgr: this.floatingTextMgr, gameContainer: this.gameContainer,

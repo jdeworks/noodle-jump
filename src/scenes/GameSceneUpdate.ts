@@ -26,8 +26,12 @@ import { renderTentacles, renderKnifeAmmo, renderDebugHitboxes } from "./BossAre
 
 export interface RenderContext {
   state: GameWorldState;
-  /** Interpolation alpha 0–1: how far between last tick and next tick (for smooth slow-mo). */
+  /** Interpolation alpha 0–1: lerp between previous tick and current tick (for smooth slow-mo). */
   interpAlpha: number;
+  /** Previous tick positions for lerp-based interpolation. */
+  prevPlayerX: number;
+  prevPlayerY: number;
+  prevCamY: number;
   parallax: ParallaxBackground;
   particles: ParticleManager;
   effectRenderer: EffectRenderer;
@@ -54,14 +58,12 @@ export interface RenderContext {
   inputX: number;
 }
 
+function lerp(a: number, b: number, t: number): number { return a + (b - a) * t; }
+
 /** Compute interpolated camera Y for smooth slow-mo rendering. */
 function interpCamY(ctx: RenderContext): number {
-  const { state, interpAlpha } = ctx;
-  if (interpAlpha <= 0 || state.isDying) return state.camera.y;
-  // Estimate where camera would be next tick based on player velocity
-  const futurePlayerY = state.player.y + state.player.vy * interpAlpha;
-  const targetCamY = state.camera.y + (futurePlayerY - state.player.y) * 0.1;
-  return state.camera.y + (targetCamY - state.camera.y) * interpAlpha;
+  if (ctx.interpAlpha <= 0 || ctx.state.isDying) return ctx.state.camera.y;
+  return lerp(ctx.prevCamY, ctx.state.camera.y, ctx.interpAlpha);
 }
 
 /** Render the death animation. Returns true if in death state. */
@@ -73,7 +75,8 @@ export function renderDeathAnimation(ctx: RenderContext): boolean {
   ctx.playerGfx.scale.y = 1 - t * 0.8;
   ctx.playerGfx.alpha = t > 0.7 ? 1 - (t - 0.7) / 0.3 : 1;
   const camY = interpCamY(ctx);
-  ctx.playerGfx.y = worldToScreen(ctx.state.player.y + ctx.state.player.vy * ctx.interpAlpha, camY);
+  const interpY = lerp(ctx.prevPlayerY, ctx.state.player.y, ctx.interpAlpha);
+  ctx.playerGfx.y = worldToScreen(interpY, camY);
   ctx.floatingTextMgr.update();
   ctx.particles.updateCrumbleParticles();
   return true;
@@ -98,11 +101,11 @@ export function renderGameWorld(ctx: RenderContext): Graphics[] {
   }
   ctx.parallax.container.visible = !state.debugConfig.disableParallax;
 
-  // Create interpolated state for rendering (visual only, doesn't affect game logic)
+  // Lerp between previous and current tick for smooth slow-mo (visual only)
   const alpha = ctx.interpAlpha;
   const interpState = alpha > 0 ? {
     ...state,
-    player: { ...state.player, x: state.player.x + state.player.vx * alpha, y: state.player.y + state.player.vy * alpha },
+    player: { ...state.player, x: lerp(ctx.prevPlayerX, state.player.x, alpha), y: lerp(ctx.prevPlayerY, state.player.y, alpha) },
     camera: { ...state.camera, y: camY },
   } : state;
 
