@@ -1,6 +1,6 @@
 /** Game launch, game loop ticker, and restart logic. */
 
-import { Application, Container, Graphics, Text, TextStyle } from "pixi.js";
+import { Application, Graphics, Text, TextStyle } from "pixi.js";
 import { GameScene } from "./GameScene";
 import { GAME_WIDTH, GAME_HEIGHT } from "../config/constants";
 import { playMusic } from "../systems/Audio";
@@ -19,10 +19,19 @@ import { resetRendererState } from "./EntityRenderer";
 import { stopMusic, killBossMusic } from "../systems/Audio";
 import { showTitleScreen } from "../ui/TitleScreenView";
 import { createGameLoopTicker } from "./GameLoopTicker";
-import { getUITheme } from "../ui/ThemeUI";
 import { resetDebugConfig } from "../config/debug";
-import { createShadowRecorder, loadLastShadow, loadBestShadow, loadDailyShadow, saveLastShadow, saveBestShadow, saveDailyShadow, type ShadowRecorder as ShadowRecorderType } from "../systems/ShadowRecorder";
-import { createShadowPlayback, type ShadowPlayback } from "../systems/ShadowPlayback";
+import { createPauseMenu } from "./PauseMenu";
+import {
+  createShadowRecorder,
+  loadLastShadow,
+  loadBestShadow,
+  loadDailyShadow,
+  type ShadowRecorder as ShadowRecorderType,
+} from "../systems/ShadowRecorder";
+import {
+  createShadowPlayback,
+  type ShadowPlayback,
+} from "../systems/ShadowPlayback";
 import { RemotePlayerRenderer } from "../multiplayer/RemotePlayerRenderer";
 import { getTodayDateKey } from "../systems/DailyChallengeState";
 
@@ -38,7 +47,10 @@ let activeShadowPlayback: ShadowPlayback | null = null;
 let activeShadowRenderer: RemotePlayerRenderer | null = null;
 
 export function cleanupAndRestart(app: Application): void {
-  if (activeEscHandler) { window.removeEventListener("keydown", activeEscHandler); activeEscHandler = null; }
+  if (activeEscHandler) {
+    window.removeEventListener("keydown", activeEscHandler);
+    activeEscHandler = null;
+  }
   if (activeGameTicker) {
     app.ticker.remove(activeGameTicker);
     activeGameTicker = null;
@@ -47,23 +59,41 @@ export function cleanupAndRestart(app: Application): void {
     activeOrientationCleanup();
     activeOrientationCleanup = null;
   }
-  if (activeShadowRenderer) { activeShadowRenderer.destroy(); activeShadowRenderer = null; }
-  activeShadowRecorder = null; activeShadowPlayback = null;
-  if (activeScene) { activeScene.destroy(); activeScene = null; }
+  if (activeShadowRenderer) {
+    activeShadowRenderer.destroy();
+    activeShadowRenderer = null;
+  }
+  activeShadowRecorder = null;
+  activeShadowPlayback = null;
+  if (activeScene) {
+    activeScene.destroy();
+    activeScene = null;
+  }
   while (app.stage.children.length > 0) {
     const child = app.stage.children[0];
     app.stage.removeChild(child);
     child.destroy({ children: true });
   }
-  resetPlatformIds(); resetPowerUpIds(); resetCollectibleIds();
-  resetEnemyIds(); resetProjectileIds(); resetRNG(); resetRendererState();
-  stopMusic(); killBossMusic(); app.ticker.start(); playMusic(0);
+  resetPlatformIds();
+  resetPowerUpIds();
+  resetCollectibleIds();
+  resetEnemyIds();
+  resetProjectileIds();
+  resetRNG();
+  resetRendererState();
+  stopMusic();
+  killBossMusic();
+  app.ticker.start();
+  playMusic(0);
   launchGame(app, activeRunConfig);
 }
 
 export function cleanupAndGoHome(app: Application): void {
   activeRunConfig = undefined; // clear so normal play doesn't reuse custom settings
-  if (activeEscHandler) { window.removeEventListener("keydown", activeEscHandler); activeEscHandler = null; }
+  if (activeEscHandler) {
+    window.removeEventListener("keydown", activeEscHandler);
+    activeEscHandler = null;
+  }
   if (activeGameTicker) {
     app.ticker.remove(activeGameTicker);
     activeGameTicker = null;
@@ -72,17 +102,30 @@ export function cleanupAndGoHome(app: Application): void {
     activeOrientationCleanup();
     activeOrientationCleanup = null;
   }
-  if (activeShadowRenderer) { activeShadowRenderer.destroy(); activeShadowRenderer = null; }
-  activeShadowRecorder = null; activeShadowPlayback = null;
-  if (activeScene) { activeScene.destroy(); activeScene = null; }
+  if (activeShadowRenderer) {
+    activeShadowRenderer.destroy();
+    activeShadowRenderer = null;
+  }
+  activeShadowRecorder = null;
+  activeShadowPlayback = null;
+  if (activeScene) {
+    activeScene.destroy();
+    activeScene = null;
+  }
   while (app.stage.children.length > 0) {
     const child = app.stage.children[0];
     app.stage.removeChild(child);
     child.destroy({ children: true });
   }
-  resetPlatformIds(); resetPowerUpIds(); resetCollectibleIds();
-  resetEnemyIds(); resetProjectileIds(); resetRNG();
-  stopMusic(); killBossMusic(); app.ticker.start();
+  resetPlatformIds();
+  resetPowerUpIds();
+  resetCollectibleIds();
+  resetEnemyIds();
+  resetProjectileIds();
+  resetRNG();
+  stopMusic();
+  killBossMusic();
+  app.ticker.start();
   showTitleScreen(app, (runConfig) => launchGame(app, runConfig));
 }
 
@@ -94,10 +137,17 @@ export function getShadowContext(): {
   playback: ShadowPlayback | null;
   renderer: RemotePlayerRenderer | null;
 } {
-  return { recorder: activeShadowRecorder, playback: activeShadowPlayback, renderer: activeShadowRenderer };
+  return {
+    recorder: activeShadowRecorder,
+    playback: activeShadowPlayback,
+    renderer: activeShadowRenderer,
+  };
 }
 
-export async function launchGame(app: Application, runConfig?: RunConfig): Promise<void> {
+export async function launchGame(
+  app: Application,
+  runConfig?: RunConfig,
+): Promise<void> {
   activeRunConfig = runConfig; // remember for restart
   // Reset debug config for normal play so custom run presets don't leak
   if (!runConfig) resetDebugConfig();
@@ -110,13 +160,20 @@ export async function launchGame(app: Application, runConfig?: RunConfig): Promi
   // ── Shadow replay ────────────────────────────────────────────────────────
   activeShadowRecorder = createShadowRecorder();
   const isDaily = runConfig?.isDailyChallenge ?? false;
-  const shadowRec = isDaily ? loadDailyShadow(getTodayDateKey()) : (loadBestShadow() ?? loadLastShadow());
+  const shadowRec = isDaily
+    ? loadDailyShadow(getTodayDateKey())
+    : (loadBestShadow() ?? loadLastShadow());
   if (shadowRec) {
     activeShadowPlayback = createShadowPlayback(shadowRec);
-    activeShadowRenderer = new RemotePlayerRenderer("chef", { tint: "tint_none" });
+    activeShadowRenderer = new RemotePlayerRenderer("chef", {
+      tint: "tint_none",
+    });
     activeShadowRenderer.container.alpha = 0.35;
     scene.container.addChild(activeShadowRenderer.container);
-  } else { activeShadowPlayback = null; activeShadowRenderer = null; }
+  } else {
+    activeShadowPlayback = null;
+    activeShadowRenderer = null;
+  }
 
   // ── HUD ──────────────────────────────────────────────────────────────────
   const hud = new HUD();
@@ -196,8 +253,10 @@ export async function launchGame(app: Application, runConfig?: RunConfig): Promi
   const effectTimerLabel = new Text({
     text: "",
     style: new TextStyle({
-      fontFamily: "monospace", fontSize: 14,
-      fill: "#ffffff", fontWeight: "bold",
+      fontFamily: "monospace",
+      fontSize: 14,
+      fill: "#ffffff",
+      fontWeight: "bold",
       stroke: { color: "#000000", width: 2 },
     }),
   });
@@ -206,87 +265,20 @@ export async function launchGame(app: Application, runConfig?: RunConfig): Promi
   effectTimerLabel.y = GAME_HEIGHT - 8;
   app.stage.addChild(effectTimerBar, effectTimerLabel);
 
-  // ── Pause overlay with menu ────────────────────────────────────────
-  const pauseOverlay = new Container();
-  pauseOverlay.visible = false;
-  const pauseDim = new Graphics();
-  pauseDim.rect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-  const uiT = getUITheme();
-  pauseDim.fill({ color: uiT.bg, alpha: 0.7 });
-  pauseOverlay.addChild(pauseDim);
-
-  const pauseTitle = new Text({
-    text: "PAUSED",
-    style: new TextStyle({
-      fontFamily: "monospace", fontSize: 28,
-      fill: "#ffffff", fontWeight: "bold",
-      stroke: { color: "#000000", width: 3 },
-    }),
-  });
-  pauseTitle.x = GAME_WIDTH / 2;
-  pauseTitle.y = GAME_HEIGHT * 0.3;
-  pauseTitle.anchor.set(0.5, 0.5);
-  pauseOverlay.addChild(pauseTitle);
-
-  // Resume button
-  const resumeBg = new Graphics();
-  resumeBg.roundRect(GAME_WIDTH / 2 - 100, GAME_HEIGHT * 0.42 - 18, 200, 36, 8);
-  resumeBg.fill({ color: uiT.buttonBg, alpha: 0.8 });
-  resumeBg.roundRect(GAME_WIDTH / 2 - 100, GAME_HEIGHT * 0.42 - 18, 200, 36, 8);
-  resumeBg.stroke({ width: 1, color: uiT.buttonBorder, alpha: 0.5 });
-  resumeBg.eventMode = "static";
-  resumeBg.cursor = "pointer";
-  pauseOverlay.addChild(resumeBg);
-
-  const resumeText = new Text({
-    text: "Resume",
-    style: new TextStyle({
-      fontFamily: "monospace", fontSize: 18,
-      fill: uiT.text, fontWeight: "bold",
-      stroke: { color: "#000000", width: 2 },
-    }),
-  });
-  resumeText.x = GAME_WIDTH / 2;
-  resumeText.y = GAME_HEIGHT * 0.42;
-  resumeText.anchor.set(0.5, 0.5);
-  pauseOverlay.addChild(resumeText);
-
-  // Home button in pause menu
-  const pauseHomeBg = new Graphics();
-  pauseHomeBg.roundRect(GAME_WIDTH / 2 - 100, GAME_HEIGHT * 0.52 - 18, 200, 36, 8);
-  pauseHomeBg.fill({ color: 0x222244, alpha: 0.8 });
-  pauseHomeBg.eventMode = "static";
-  pauseHomeBg.cursor = "pointer";
-  pauseOverlay.addChild(pauseHomeBg);
-
-  const pauseHomeText = new Text({
-    text: "Home",
-    style: new TextStyle({
-      fontFamily: "monospace", fontSize: 16,
-      fill: "#aaccff", fontWeight: "bold",
-      stroke: { color: "#000000", width: 2 },
-    }),
-  });
-  pauseHomeText.x = GAME_WIDTH / 2;
-  pauseHomeText.y = GAME_HEIGHT * 0.52;
-  pauseHomeText.anchor.set(0.5, 0.5);
-  pauseOverlay.addChild(pauseHomeText);
-
-  app.stage.addChild(pauseOverlay);
-
+  // ── Pause overlay ────────────────────────────────────────────────────
   const resumeGame = () => {
     if (scene.isPaused()) {
       scene.togglePause();
       pauseOverlay.visible = false;
     }
   };
+  const pauseOverlay = createPauseMenu(resumeGame, () => cleanupAndGoHome(app));
+  app.stage.addChild(pauseOverlay);
 
   hud.onPause = () => {
     scene.togglePause();
     pauseOverlay.visible = scene.isPaused();
   };
-
-  // ESC key: toggle pause (shows overlay with Home button)
   activeEscHandler = (e: KeyboardEvent) => {
     if (e.key === "Escape" && !scene.isGameOver()) {
       scene.togglePause();
@@ -295,19 +287,14 @@ export async function launchGame(app: Application, runConfig?: RunConfig): Promi
   };
   window.addEventListener("keydown", activeEscHandler);
 
-  resumeBg.on("pointertap", resumeGame);
-  resumeText.eventMode = "static";
-  resumeText.on("pointertap", resumeGame);
-  pauseHomeBg.on("pointertap", () => cleanupAndGoHome(app));
-  pauseHomeText.eventMode = "static";
-  pauseHomeText.on("pointertap", () => cleanupAndGoHome(app));
-
   // ── Countdown ──────────────────────────────────────────────────────────
   const countdownText = new Text({
     text: "",
     style: new TextStyle({
-      fontFamily: "monospace", fontSize: 48,
-      fill: "#ffffff", fontWeight: "bold",
+      fontFamily: "monospace",
+      fontSize: 48,
+      fill: "#ffffff",
+      fontWeight: "bold",
       stroke: { color: "#000000", width: 4 },
     }),
   });

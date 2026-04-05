@@ -6,18 +6,21 @@ If a session is interrupted, the next session sees the orphaned "started" entry 
 progress lines — so it knows exactly what was done.
 
 **Start entry (write before doing any work):**
+
 ```
 ## [YYYY-MM-DDTHH:MM] session-<id> | status: started | mode: full|lean | type: add|fix|refactor|chore
 intent: One line describing what this session will do
 ```
 
 **Progress lines (append after each logical unit of work):**
+
 ```
 - progress: <what was done> | <files touched>
 - progress: Replaced OldThing with NewThing | src/foo.ts (removed: OldThing)
 ```
 
 **End entry (write when work is done):**
+
 ```
 ## [YYYY-MM-DDTHH:MM] session-<id> | status: completed | mode: full|lean | type: add|fix|refactor|chore
 files_touched: path/to/file.ts, path/to/other.ts
@@ -29,6 +32,7 @@ health_snapshot: LOC=<n>, tests=<n>, complexity=ok|warn|fail
 ```
 
 **Rules:**
+
 - Write the **started** entry first — before doing any work.
 - **Log progress as you go** — after each completed chunk, before moving to the next task.
 - Write the **completed** entry when you finish — `symbols_removed` is mandatory if you deleted code.
@@ -39,15 +43,19 @@ health_snapshot: LOC=<n>, tests=<n>, complexity=ok|warn|fail
 - See `.kit/changelog-protocol.md` for full details.
 
 ---
+
 <!-- Entries below — newest at bottom -->
 
 ## [2026-03-30T11:35] session-x7k2 | status: abandoned | mode: full | type: add
+
 reason: Session interrupted without completion. Work continued across 42 commits (see git log). Staged changes caused silent breakage across subsequent sessions.
 
 ## [2026-04-01T10:00] session-b3f7 | status: started | mode: full | type: fix
+
 intent: Fix drill safety, boss fight screen locking, music overlap, menu visibility, and double-tap zoom
 
 ## [2026-04-01T10:30] session-b3f7 | status: completed | mode: full | type: fix
+
 files_touched: src/systems/PowerUpEffects.ts, src/systems/Camera.ts, src/scenes/GameLoop.ts, src/scenes/GameLoopHelpers.ts, src/systems/MusicPlayer.ts, src/systems/Audio.ts, src/scenes/GameLauncher.ts, src/services/PWA.ts, src/ui/TitleScreenView.ts, src/ui/ExplanationScreen.ts, src/ui/CustomRunScreen.ts, index.html, tests/camera.test.ts, tests/powerup-effects.test.ts
 symbols_added: killBossMusic
 symbols_removed: (none)
@@ -56,6 +64,7 @@ reason: Fixed drill destroying landing platforms, camera/platform-gen not lockin
 health_snapshot: LOC=9800, tests=689, complexity=ok
 
 ## [2026-04-01T12:00] session-a1d4 | status: started | mode: lean | type: add
+
 intent: Debug mode UI, boss fight overhaul, remove drill, fix music overlap
 
 - progress: Enable DEBUG_MODE, add debug options to Custom Run screen | src/config/constants.ts, src/ui/CustomRunScreen.ts, src/scenes/GameState.ts
@@ -77,6 +86,7 @@ intent: Debug mode UI, boss fight overhaul, remove drill, fix music overlap
 - progress: Fix tests for drill removal and bossTestPreset change | tests/custom-run-config.test.ts, tests/debug-config.test.ts, tests/wiring.test.ts
 
 ## [2026-04-01T14:10] session-a1d4 | status: completed | mode: lean | type: add
+
 files_touched: src/config/constants.ts, src/config/debug.ts, src/entities/PowerUp.ts, src/entities/bosses/ChefRivalBoss.ts, src/entities/bosses/KrakenBoss.ts, src/entities/bosses/UFOBoss.ts, src/scenes/GameLoop.ts, src/scenes/GameLoopBoss.ts, src/scenes/GameLoopHelpers.ts, src/scenes/GameLoopTicker.ts, src/scenes/GameScene.ts, src/scenes/GameSceneEvents.ts, src/scenes/GameSceneRender.ts, src/scenes/GameState.ts, src/systems/CustomRunConfig.ts, src/systems/MusicPlayer.ts, src/ui/CustomRunScreen.ts, src/ui/CustomRunStorage.ts, src/ui/HUD.ts, src/ui/TitleScreenView.ts, src/scenes/BossArenaRenderer.ts, tests/custom-run-config.test.ts, tests/debug-config.test.ts, tests/wiring.test.ts
 symbols_added: BossArenaRenderer (renderTentacles, renderKnifeAmmo, renderDebugHitboxes), CustomRunStorage (saveRunConfigToStorage, loadRunConfigFromStorage, saveDebugConfigToStorage, loadDebugConfigFromStorage, addSectionHeader, addRow, addToggleRow, addPresetRow, buildPresets, addPowerUpGrid, createBottomBar), pendingTentacles (GameWorldState)
 symbols_removed: rigatoni_drill (from POSITIVE_TYPES, ALL_POWER_UP_TYPES), infiniteKnives (from bossTestPreset)
@@ -85,6 +95,7 @@ reason: Added debug mode UI with presets/persistence, overhauled all 3 boss figh
 health_snapshot: LOC=16124, tests=346, complexity=ok
 
 ## [2026-04-01T15:15] session-mp01 | status: started | mode: lean | type: add
+
 intent: Stage 1 — Multiplayer networking layer (signaling strategies, connection manager, game sync)
 
 - progress: SignalingStrategy interface, ManualSignaling (SDP compression via pako+base62), NostrSignaling (Trystero wrapper), ConnectionManager, GameSync (binary position + events) | src/multiplayer/SignalingStrategy.ts, src/multiplayer/ManualSignaling.ts, src/multiplayer/NostrSignaling.ts, src/multiplayer/ConnectionManager.ts, src/multiplayer/GameSync.ts, src/multiplayer/SDPCompressor.ts, src/multiplayer/index.ts
@@ -96,11 +107,12 @@ intent: Stage 1 — Multiplayer networking layer (signaling strategies, connecti
 - progress: InterpolationBuffer tests | tests/multiplayer/interpolation-buffer.test.ts
 - progress: LobbyScreen (ready-up, host controls, start), MultiplayerMenu + ConnectFlows (create/join for Quick/Private Connect, DSGVO info text), Multiplayer button on title screen | src/multiplayer/LobbyScreen.ts, src/multiplayer/MultiplayerMenu.ts, src/multiplayer/ConnectFlows.ts, src/ui/TitleScreenView.ts
 - progress: Lobby/session integration tests | tests/multiplayer/lobby-session.test.ts
-- progress: Ghost tinting (orange/green), spectate after death, auto-aim shooting (E/Q and Space), mode selection in lobby, Escape to forfeit, FPS debug-only | src/multiplayer/*.ts, src/scenes/GameScene.ts
+- progress: Ghost tinting (orange/green), spectate after death, auto-aim shooting (E/Q and Space), mode selection in lobby, Escape to forfeit, FPS debug-only | src/multiplayer/\*.ts, src/scenes/GameScene.ts
 - progress: Ghost mode (keep playing after death, frozen scoring), mode picker for local co-op, game mode logic (first-to-die, timed 2min, best-height), connection quality dot | src/scenes/GameLoop.ts, src/scenes/GameState.ts, src/multiplayer/ModePickerScreen.ts, src/multiplayer/LocalCoopLauncher.ts, src/multiplayer/OnlineSession.ts, src/multiplayer/InterpolationBuffer.ts
 
 ## [2026-04-01T16:22] session-mp01 | status: completed | mode: lean | type: add
-files_touched: src/multiplayer/SignalingStrategy.ts, src/multiplayer/ManualSignaling.ts, src/multiplayer/NostrSignaling.ts, src/multiplayer/SDPCompressor.ts, src/multiplayer/ConnectionManager.ts, src/multiplayer/GameSync.ts, src/multiplayer/LocalInput.ts, src/multiplayer/MultiplayerSession.ts, src/multiplayer/LocalCoopLauncher.ts, src/multiplayer/InterpolationBuffer.ts, src/multiplayer/RemotePlayerRenderer.ts, src/multiplayer/OnlineSession.ts, src/multiplayer/LobbyScreen.ts, src/multiplayer/MultiplayerMenu.ts, src/multiplayer/ConnectFlows.ts, src/multiplayer/index.ts, src/scenes/GameScene.ts, src/ui/TitleScreenView.ts, tests/multiplayer/*.ts
+
+files_touched: src/multiplayer/SignalingStrategy.ts, src/multiplayer/ManualSignaling.ts, src/multiplayer/NostrSignaling.ts, src/multiplayer/SDPCompressor.ts, src/multiplayer/ConnectionManager.ts, src/multiplayer/GameSync.ts, src/multiplayer/LocalInput.ts, src/multiplayer/MultiplayerSession.ts, src/multiplayer/LocalCoopLauncher.ts, src/multiplayer/InterpolationBuffer.ts, src/multiplayer/RemotePlayerRenderer.ts, src/multiplayer/OnlineSession.ts, src/multiplayer/LobbyScreen.ts, src/multiplayer/MultiplayerMenu.ts, src/multiplayer/ConnectFlows.ts, src/multiplayer/index.ts, src/scenes/GameScene.ts, src/ui/TitleScreenView.ts, tests/multiplayer/\*.ts
 symbols_added: SignalingStrategy, ManualSignaling, NostrSignaling, SDPCompressor (compressSDP, decompressSDP, toBase62, fromBase62, compressDescription, decompressDescription), ConnectionManager, GameSync (encodePosition, decodePosition), LocalInput, MultiplayerSession, launchLocalCoop, InterpolationBuffer, RemotePlayerRenderer, OnlineSession, LobbyScreen, MultiplayerMenu, ConnectFlows (doQuickCreate, doQuickJoin, doPrivateCreate, doPrivateJoin, setupConnectionCallbacks), updateWithInput (GameScene)
 symbols_removed: (none)
 tests_added: tests/multiplayer/sdp-compressor.test.ts, tests/multiplayer/game-sync.test.ts, tests/multiplayer/local-input.test.ts, tests/multiplayer/multiplayer-session.test.ts, tests/multiplayer/interpolation-buffer.test.ts, tests/multiplayer/lobby-session.test.ts
@@ -108,7 +120,10 @@ reason: Full multiplayer networking layer — all 5 stages complete. Dual signal
 health_snapshot: LOC=19800, tests=383, complexity=ok
 
 ## [2026-04-05T14:50] session-dc01 | status: started | mode: full | type: add
+
 intent: Implement Daily Challenge (date-seeded runs, medals, streaks, achievements) and Shadow Replay (record/playback ghost on all runs)
+
 - progress: Pure logic — DailyChallengeState (config gen, medals, streaks), ShadowRecorder, ShadowPlayback + tests | src/systems/DailyChallengeState.ts, src/systems/ShadowRecorder.ts, src/systems/ShadowPlayback.ts, tests/daily-challenge-state.test.ts, tests/shadow-recorder.test.ts, tests/shadow-playback.test.ts
 - progress: UI screens — DailyChallengeScreen, DailyGameOverView | src/ui/DailyChallengeScreen.ts, src/ui/DailyGameOverView.ts
 - progress: Integration — Daily button on title screen, shadow recorder/playback in GameLauncher/GameLoopTicker, daily achievements | src/ui/TitleScreenView.ts, src/scenes/GameLauncher.ts, src/scenes/GameLoopTicker.ts, src/systems/Achievements.ts
+- progress: Extract TitleScreenMenus and PauseMenu for LOC limits | src/ui/TitleScreenMenus.ts, src/scenes/PauseMenu.ts
