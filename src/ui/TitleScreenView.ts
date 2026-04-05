@@ -338,7 +338,7 @@ export function showTitleScreen(
   let animTick = 0;
   let titleDestroyed = false;
   const titleTicker = () => {
-    if (titleDestroyed) return;
+    if (titleDestroyed) { app.ticker.remove(titleTicker); return; }
     scrollY -= 4;
     parallax.update(scrollY);
     const pulse = 0.85 + Math.sin(Date.now() * 0.004) * 0.15;

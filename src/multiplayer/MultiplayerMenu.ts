@@ -63,7 +63,9 @@ export class MultiplayerMenu implements MenuContext {
     this.app = app;
     this.onLaunch = onLaunch ?? null;
     this.onBack = onBack;
-    this.escHandler = (e: KeyboardEvent) => { if (e.key === "Escape") { this.destroy(); onBack(); } };
+    this.escHandler = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && this.container.visible) { this.destroy(); onBack(); }
+    };
     window.addEventListener("keydown", this.escHandler);
     this.showMainMenu();
   }
