@@ -194,6 +194,7 @@ export class LobbyScreen {
     this.onSettingsChanged = () => { // Update labels when host changes settings
       const tn = THEMES.find(t => t.id === this.selectedTheme)?.name ?? "Classic";
       themeLabel.text = role === "host" ? `Theme: ${tn} (tap)` : `Theme: ${tn}`;
+      modeLabel.text = role === "host" ? `Mode: ${MODE_LABELS[this.mode]} (tap to change)` : `Mode: ${MODE_LABELS[this.mode]}`;
       customLabel.text = this.useCustomRun ? "Custom Run: ON" : "Custom Run: OFF";
       customLabel.style.fill = this.useCustomRun ? "#44ff44" : "#888888"; };
 
@@ -277,15 +278,9 @@ export class LobbyScreen {
       this.startText.on("pointertap", startGame);
     }
 
-    // Waiting text (guest only)
-    this.waitingText = new Text({
-      text: "Waiting for host to start...",
-      style: STATUS_STYLE,
-    });
-    this.waitingText.x = GAME_WIDTH / 2;
-    this.waitingText.y = startBtnY;
-    this.waitingText.anchor.set(0.5, 0.5);
-    this.waitingText.visible = role === "guest";
+    this.waitingText = new Text({ text: "Waiting for host to start...", style: STATUS_STYLE });
+    this.waitingText.x = GAME_WIDTH / 2; this.waitingText.y = startBtnY;
+    this.waitingText.anchor.set(0.5, 0.5); this.waitingText.visible = role === "guest";
     this.container.addChild(this.waitingText);
 
     // Listen for remote events
@@ -314,6 +309,7 @@ export class LobbyScreen {
     if (event.type === "ready") {
       if (event.payload.mode) {
         this.mode = event.payload.mode as string;
+        this.onSettingsChanged?.();
       }
       if (event.payload.touchControls !== undefined) {
         this.touchControls = event.payload.touchControls as boolean;
