@@ -57,10 +57,14 @@ export class MultiplayerMenu implements MenuContext {
   private connection: ConnectionManager | null = null;
   private currentView: Container | null = null;
 
+  private escHandler: ((e: KeyboardEvent) => void) | null = null;
+
   constructor(app: Application, onBack: MenuCallback, onLaunch?: MenuCallback) {
     this.app = app;
     this.onLaunch = onLaunch ?? null;
     this.onBack = onBack;
+    this.escHandler = (e: KeyboardEvent) => { if (e.key === "Escape") { this.destroy(); onBack(); } };
+    window.addEventListener("keydown", this.escHandler);
     this.showMainMenu();
   }
   clearView(): void {
@@ -386,5 +390,8 @@ export class MultiplayerMenu implements MenuContext {
 
     return y + h + 8;
   }
-  destroy(): void { this.connection?.disconnect(); this.container.destroy({ children: true }); }
+  destroy(): void {
+    if (this.escHandler) { window.removeEventListener("keydown", this.escHandler); this.escHandler = null; }
+    this.connection?.disconnect(); this.container.destroy({ children: true });
+  }
 }

@@ -102,7 +102,52 @@ export function showModePicker(
   };
   updateChars();
 
+  // Clickable character cycling
+  p1Title.eventMode = "static"; p1Title.cursor = "pointer";
+  p1Title.on("pointertap", () => { p1CharIdx = (p1CharIdx + 1) % CHARACTERS.length; updateChars(); });
+  p1Name.eventMode = "static"; p1Name.cursor = "pointer";
+  p1Name.on("pointertap", () => { p1CharIdx = (p1CharIdx + 1) % CHARACTERS.length; updateChars(); });
+  p2Title.eventMode = "static"; p2Title.cursor = "pointer";
+  p2Title.on("pointertap", () => { p2CharIdx = (p2CharIdx + 1) % CHARACTERS.length; updateChars(); });
+  p2Name.eventMode = "static"; p2Name.cursor = "pointer";
+  p2Name.on("pointertap", () => { p2CharIdx = (p2CharIdx + 1) % CHARACTERS.length; updateChars(); });
+
+  // Start button (clickable)
+  const startBtnY = 540;
+  const startBg = new Graphics();
+  startBg.roundRect(SPLIT_WIDTH / 2 - 110, startBtnY - 22, 220, 44, 10);
+  startBg.fill({ color: uiT.buttonBg, alpha: 0.9 });
+  startBg.roundRect(SPLIT_WIDTH / 2 - 110, startBtnY - 22, 220, 44, 10);
+  startBg.stroke({ width: 1.5, color: uiT.buttonBorder, alpha: 0.5 });
+  startBg.eventMode = "static"; startBg.cursor = "pointer";
+  view.addChild(startBg);
+  const startText = new Text({
+    text: "Start Game",
+    style: new TextStyle({ fontFamily: "monospace", fontSize: 20,
+      fill: "#ffffff", fontWeight: "bold", stroke: { color: "#000000", width: 2 } }),
+  });
+  startText.x = SPLIT_WIDTH / 2; startText.y = startBtnY; startText.anchor.set(0.5, 0.5);
+  startText.eventMode = "static"; startText.cursor = "pointer";
+  view.addChild(startText);
+  const doStart = () => {
+    window.removeEventListener("keydown", keyHandler);
+    setSelectedCharacter(CHARACTERS[p1CharIdx].id);
+    app.stage.removeChild(view);
+    view.destroy({ children: true });
+    onSelect(MODES[selectedIdx], CHARACTERS[p1CharIdx].id, CHARACTERS[p2CharIdx].id);
+  };
+  startBg.on("pointertap", doStart);
+  startText.on("pointertap", doStart);
+
   for (let i = 0; i < MODES.length; i++) {
+    // Clickable background for each mode
+    const btnBg = new Graphics();
+    btnBg.roundRect(SPLIT_WIDTH / 2 - 150, 200 + i * 55 - 20, 300, 40, 8);
+    btnBg.fill({ color: uiT.buttonBg, alpha: 0.6 });
+    btnBg.eventMode = "static"; btnBg.cursor = "pointer";
+    btnBg.on("pointertap", () => { selectedIdx = i; updateSelection(); });
+    view.addChild(btnBg);
+
     const t = new Text({
       text: MODE_LABELS[MODES[i]],
       style: new TextStyle({ fontFamily: "monospace", fontSize: 22,
@@ -110,6 +155,8 @@ export function showModePicker(
         stroke: { color: "#000000", width: 3 } }),
     });
     t.x = SPLIT_WIDTH / 2; t.y = 200 + i * 55; t.anchor.set(0.5, 0.5);
+    t.eventMode = "static"; t.cursor = "pointer";
+    t.on("pointertap", () => { selectedIdx = i; updateSelection(); });
     view.addChild(t);
     modeTexts.push(t);
   }
@@ -144,11 +191,15 @@ export function showModePicker(
       p2CharIdx = (p2CharIdx + 1) % CHARACTERS.length;
       updateChars();
     } else if (e.key === "Enter") {
+      doStart();
+    } else if (e.key === "Escape") {
       window.removeEventListener("keydown", keyHandler);
-      setSelectedCharacter(CHARACTERS[p1CharIdx].id);
       app.stage.removeChild(view);
       view.destroy({ children: true });
-      onSelect(MODES[selectedIdx], CHARACTERS[p1CharIdx].id, CHARACTERS[p2CharIdx].id);
+      // Re-show title screen
+      import("../ui/TitleScreenView").then(({ showTitleScreen }) =>
+        import("../scenes/GameLauncher").then(({ launchGame }) =>
+          showTitleScreen(app, (rc) => launchGame(app, rc))));
     }
   };
   window.addEventListener("keydown", keyHandler);
