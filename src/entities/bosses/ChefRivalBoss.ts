@@ -47,6 +47,8 @@ export const chefRivalBehavior: BossBehavior = {
     boss: BossState,
     player: PlayerState,
     platforms: PlatformState[],
+    _animTick: number,
+    speedScale = 1,
   ): BossTickResult {
     if (!boss.alive) return { boss, attacks: [] };
 
@@ -83,7 +85,7 @@ export const chefRivalBehavior: BossBehavior = {
       const peakY = midY - ARC_HEIGHT;
       const invT = 1 - t;
       y = invT * invT * jumpArc!.startY + 2 * invT * t * peakY + t * t * tgtY;
-      jumpArc = { ...jumpArc!, targetX: tgtX, targetY: tgtY, progress: t + 1 / jumpArc!.duration };
+      jumpArc = { ...jumpArc!, targetX: tgtX, targetY: tgtY, progress: t + speedScale / jumpArc!.duration };
       vy = 0;
 
       if (jumpArc!.progress >= 1) {

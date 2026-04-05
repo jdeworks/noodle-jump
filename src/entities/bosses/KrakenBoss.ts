@@ -31,6 +31,8 @@ export const krakenBehavior: BossBehavior = {
     boss: BossState,
     player: PlayerState,
     platforms: PlatformState[],
+    _animTick: number,
+    speedScale = 1,
   ): BossTickResult {
     if (!boss.alive) return { boss, attacks: [] };
 
@@ -39,13 +41,13 @@ export const krakenBehavior: BossBehavior = {
 
     // Drift toward player horizontally
     const targetX = player.x - boss.width / 2;
-    x += Math.sign(targetX - x) * Math.min(Math.abs(targetX - x), 0.6);
+    x += Math.sign(targetX - x) * Math.min(Math.abs(targetX - x), 0.6) * speedScale;
     // Stay near player vertically — slow upward (stompable), normal downward
     const targetY = player.y - 200;
     const diff = targetY - y;
     const lerpRate = diff < 0 ? 0.005 : 0.03; // up = slow, down = normal
-    y += diff * lerpRate;
-    y += Math.sin(patternTick * 0.02) * 0.3;
+    y += diff * lerpRate * speedScale;
+    y += Math.sin(patternTick * 0.02) * 0.3 * speedScale;
 
     const attacks: BossTickResult["attacks"] = [];
 

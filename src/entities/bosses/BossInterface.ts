@@ -64,6 +64,7 @@ export interface BossBehavior {
     player: PlayerState,
     platforms: PlatformState[],
     animTick: number,
+    speedScale?: number,
   ): BossTickResult;
 
   /** Check if the boss directly damages the player (e.g. contact). */

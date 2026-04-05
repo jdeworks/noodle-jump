@@ -31,6 +31,7 @@ export const ufoBehavior: BossBehavior = {
     player: PlayerState,
     _platforms: PlatformState[],
     animTick: number,
+    speedScale = 1,
   ): BossTickResult {
     if (!boss.alive) return { boss, attacks: [] };
 
@@ -39,14 +40,14 @@ export const ufoBehavior: BossBehavior = {
 
     // Track player horizontally
     const targetX = player.x - boss.width / 2;
-    const moveSpeed = 0.8 + boss.phase * 0.3;
+    const moveSpeed = (0.8 + boss.phase * 0.3) * speedScale;
     x += Math.sign(targetX - x) * Math.min(Math.abs(targetX - x), moveSpeed);
     // Stay near player vertically — slower upward (stompable), normal downward
     const targetY = player.y - 180;
     const diff = targetY - y;
-    const lerpRate = diff < 0 ? 0.01 : 0.04; // up = slow, down = normal
-    y += diff * lerpRate;
-    y += Math.sin(animTick * 0.03) * 0.5;
+    const lerpRate = diff < 0 ? 0.01 : 0.04;
+    y += diff * lerpRate * speedScale;
+    y += Math.sin(animTick * 0.03) * 0.5 * speedScale;
 
     const attacks: BossTickResult["attacks"] = [];
     const bossCX = x + boss.width / 2;

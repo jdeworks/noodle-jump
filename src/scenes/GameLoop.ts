@@ -250,14 +250,15 @@ export function tickGameWorld(
     s = { ...s, player: updatePlayer(s.player, adjustedInputX, s.gameSpeedScale) };
   }
 
-  // Push player out if embedded inside a platform (moving platform clipping during squash hold)
-  if (!inSquashHold && !isSquashTransition && s.player.vy >= 0) {
+  // Last resort: push player out if deeply embedded inside a platform (rare edge case)
+  if (!inSquashHold && !isSquashTransition && s.player.vy >= 0 && s.squashTicks <= 0) {
     for (const p of s.platforms) {
       if (p.broken) continue;
       const pb = s.player.y + s.player.height;
       const hOverlap = s.player.x + s.player.width > p.x && s.player.x < p.x + p.width;
-      if (hOverlap && pb > p.y + 2 && pb < p.y + p.height + s.player.height * 0.5 && s.player.y < p.y) {
-        s = { ...s, player: { ...s.player, y: p.y - s.player.height, vy: -10, isJumping: true } };
+      // Only trigger when feet are deeply embedded (>6px into platform), not normal landing
+      if (hOverlap && pb > p.y + 6 && pb < p.y + p.height + 10 && s.player.y < p.y) {
+        s = { ...s, player: { ...s.player, y: p.y - s.player.height, vy: -8, isJumping: true } };
         break;
       }
     }
