@@ -148,6 +148,13 @@ export class GameScene {
 
     this.parallax.applyTheme(getInterpolatedTheme(0), this.state.zoneState.currentZone);
   }
+  /** Override the cosmetic theme (for multiplayer — host sets theme for all players). */
+  setCosmeticTheme(theme: string): void {
+    this.cosmeticTheme = theme;
+    this.gfxSync.setTheme(theme);
+    this.parallax.setCosmeticTheme(theme);
+  }
+
   initInput(canvas: HTMLCanvasElement): void { this.input.init(canvas); }
   getState(): GameWorldState { return this.state; }
   isGameOver(): boolean { return this.state.gameOver; }

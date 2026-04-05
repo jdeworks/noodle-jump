@@ -9,13 +9,13 @@ import { GAME_WIDTH, GAME_HEIGHT } from "../config/constants";
 import type { GameSync, GameSyncEvent } from "./GameSync";
 import { CHARACTERS, drawCharacter } from "../rendering/PlayerCharacters";
 import { getSelectedCharacter, setSelectedCharacter } from "../systems/CharacterSettings";
-import { loadCosmetics } from "../systems/Cosmetics";
+import { loadCosmetics, COSMETICS } from "../systems/Cosmetics";
 import { getUITheme } from "../ui/ThemeUI";
 
 export type LobbyRole = "host" | "guest";
 
 export interface LobbyCallbacks {
-  onStart: (seed: number, mode: string, touchControls: boolean, remoteChar?: string, remoteCosmetics?: { tint?: string; trail?: string }) => void;
+  onStart: (seed: number, mode: string, touchControls: boolean, remoteChar?: string, remoteCosmetics?: { tint?: string; trail?: string; theme?: string }) => void;
 }
 
 const HEADER_STYLE = new TextStyle({
@@ -52,7 +52,8 @@ export class LobbyScreen {
   private touchControls = false;
   private localChar = getSelectedCharacter();
   private remoteChar = "chef";
-  private remoteCosmetics: { tint?: string; trail?: string } = {};
+  private remoteCosmetics: { tint?: string; trail?: string; theme?: string } = {};
+  private selectedTheme = "theme_default";
 
   private p1StatusText: Text;
   private p2StatusText: Text;
@@ -178,8 +179,28 @@ export class LobbyScreen {
     });
     this.onTouchControlsChanged = () => updateTouchLabel();
 
+    // Theme picker (host can cycle, guest sees host's choice)
+    const THEMES = COSMETICS.filter(c => c.type === "theme");
+    const themeLabel = new Text({
+      text: `Theme: ${THEMES.find(t => t.id === this.selectedTheme)?.name ?? "Classic"}`,
+      style: new TextStyle({ fontFamily: "monospace", fontSize: 14,
+        fill: "#ccaaff", stroke: { color: "#000000", width: 2 } }),
+    });
+    themeLabel.x = GAME_WIDTH / 2; themeLabel.y = 360; themeLabel.anchor.set(0.5, 0.5);
+    this.container.addChild(themeLabel);
+    if (role === "host") {
+      themeLabel.eventMode = "static"; themeLabel.cursor = "pointer";
+      themeLabel.text = `Theme: ${THEMES.find(t => t.id === this.selectedTheme)?.name ?? "Classic"} (tap)`;
+      themeLabel.on("pointertap", () => {
+        const idx = THEMES.findIndex(t => t.id === this.selectedTheme);
+        this.selectedTheme = THEMES[(idx + 1) % THEMES.length].id;
+        themeLabel.text = `Theme: ${THEMES.find(t => t.id === this.selectedTheme)?.name ?? "Classic"} (tap)`;
+        this.sync.sendGameEvent({ type: "ready", payload: { theme: this.selectedTheme } });
+      });
+    }
+
     // Ready button
-    const readyBtnY = 390;
+    const readyBtnY = 410;
     const readyBg = new Graphics();
     readyBg.roundRect(GAME_WIDTH / 2 - 100, readyBtnY - 20, 200, 40, 10);
     readyBg.fill({ color: 0x2a6e3f, alpha: 0.9 });
@@ -229,7 +250,7 @@ export class LobbyScreen {
     readyText.on("pointertap", toggleReady);
 
     // Start button (host only)
-    const startBtnY = 460;
+    const startBtnY = 480;
     this.startBtn = new Graphics();
     this.startText = new Text({
       text: "Start Game",
@@ -257,8 +278,9 @@ export class LobbyScreen {
         const seed = Math.floor(Math.random() * 0xffffffff);
         this.sync.sendGameEvent({
           type: "start",
-          payload: { seed, mode: this.mode, touchControls: this.touchControls, character: this.localChar },
+          payload: { seed, mode: this.mode, touchControls: this.touchControls, character: this.localChar, theme: this.selectedTheme },
         });
+        this.remoteCosmetics.theme = this.selectedTheme;
         this.callbacks.onStart(seed, this.mode, this.touchControls, this.remoteChar, this.remoteCosmetics);
       };
       this.startBtn.on("pointertap", startGame);
@@ -307,6 +329,10 @@ export class LobbyScreen {
         this.touchControls = event.payload.touchControls as boolean;
         this.onTouchControlsChanged?.();
       }
+      if (event.payload.theme) {
+        this.selectedTheme = event.payload.theme as string;
+        this.remoteCosmetics.theme = this.selectedTheme;
+      }
       if (event.payload.character) {
         this.remoteChar = event.payload.character as string;
         if (event.payload.tint) this.remoteCosmetics.tint = event.payload.tint as string;
@@ -326,13 +352,14 @@ export class LobbyScreen {
       const mode = (event.payload.mode as string) || "best-height";
       const tc = (event.payload.touchControls as boolean) ?? this.touchControls;
       const rc = (event.payload.character as string) ?? this.remoteChar;
+      if (event.payload.theme) this.remoteCosmetics.theme = event.payload.theme as string;
       this.callbacks.onStart(seed, mode, tc, rc, this.remoteCosmetics);
     }
   }
 
   private localCosmeticPayload(): Record<string, string> {
     const c = loadCosmetics();
-    return { tint: c.equipped.tint ?? "tint_none", trail: c.equipped.trail ?? "trail_none" };
+    return { tint: c.equipped.tint ?? "tint_none", trail: c.equipped.trail ?? "trail_none", theme: this.selectedTheme };
   }
 
   /** Get remote player's cosmetics for the renderer. */

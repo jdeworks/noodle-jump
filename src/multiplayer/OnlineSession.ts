@@ -33,7 +33,7 @@ interface OnlineSessionConfig {
   mode?: string;
   touchControls?: boolean;
   remoteCharacter?: string;
-  remoteCosmetics?: { tint?: string; trail?: string };
+  remoteCosmetics?: { tint?: string; trail?: string; theme?: string };
   sync?: GameSync;
 }
 
@@ -48,7 +48,7 @@ export class OnlineSession {
   private seed: number;
   private touchControls: boolean;
   private remoteChar: string;
-  private remoteCosmetics?: { tint?: string; trail?: string };
+  private remoteCosmetics?: { tint?: string; trail?: string; theme?: string };
   private mode: string;
   private timerTicks = -1;
   private timerText: Text | null = null;
@@ -93,6 +93,8 @@ export class OnlineSession {
     setDebugConfig(createDebugConfig());
     const runConfig: RunConfig = { ...createDefaultRunConfig(), seed: config.seed };
     this.scene = new GameScene(runConfig);
+    // Apply shared theme from lobby
+    if (this.remoteCosmetics?.theme) this.scene.setCosmeticTheme(this.remoteCosmetics.theme);
     if (this.mode === "timed-2min") this.scene.enableTimedRespawn();
     else this.scene.enableGhostMode();
     this.scene.initInput(this.app.canvas);
@@ -250,33 +252,22 @@ export class OnlineSession {
 
   private showResults(): void {
     if (this.gameLoop) { this.app.ticker.remove(this.gameLoop); this.gameLoop = null; }
-    this.scene.forceStop();
-    this.sync.stopSending();
-    const h1 = this.localDeathHeight, h2 = this.remoteDeathHeight;
-    const label = this.role === "host" ? "You (Host)" : "You (Guest)";
+    this.scene.forceStop(); this.sync.stopSending();
+    const h1 = this.localDeathHeight, h2 = this.remoteDeathHeight, cx = GAME_WIDTH / 2;
     const winner = h1 > h2 ? "You Win!" : h2 > h1 ? "You Lose!" : "It's a Tie!";
-    const cx = GAME_WIDTH / 2;
-    const bg = new Graphics();
-    bg.rect(0, 0, GAME_WIDTH, GAME_HEIGHT); bg.fill({ color: 0x000000, alpha: 0.7 });
-    this.app.stage.addChild(bg);
-    const wt = new Text({ text: winner, style: new TextStyle({ fontFamily: "monospace",
-      fontSize: 28, fill: h1 > h2 ? "#44ff44" : h2 > h1 ? "#ff6666" : "#ffdd44",
-      fontWeight: "bold", stroke: { color: "#000000", width: 4 } }) });
-    wt.x = cx; wt.y = GAME_HEIGHT * 0.25; wt.anchor.set(0.5, 0.5);
-    this.app.stage.addChild(wt);
+    const bg = new Graphics(); bg.rect(0, 0, GAME_WIDTH, GAME_HEIGHT); bg.fill({ color: 0x000000, alpha: 0.7 }); this.app.stage.addChild(bg);
+    const wt = new Text({ text: winner, style: new TextStyle({ fontFamily: "monospace", fontSize: 28,
+      fill: h1 > h2 ? "#44ff44" : h2 > h1 ? "#ff6666" : "#ffdd44", fontWeight: "bold", stroke: { color: "#000000", width: 4 } }) });
+    wt.x = cx; wt.y = GAME_HEIGHT * 0.25; wt.anchor.set(0.5, 0.5); this.app.stage.addChild(wt);
     const cs = new TextStyle({ fontFamily: "monospace", fontSize: 14, fill: "#ffffff", stroke: { color: "#000000", width: 2 } });
+    const label = this.role === "host" ? "You (Host)" : "You (Guest)";
     [`${label}: ${h1}m  |  Opponent: ${h2}m`, `Score: ${this.scene.getScore()}`].forEach((ln, i) => {
-      const t = new Text({ text: ln, style: cs });
-      t.x = cx; t.y = GAME_HEIGHT * 0.36 + i * 22; t.anchor.set(0.5, 0.5); this.app.stage.addChild(t);
+      const t = new Text({ text: ln, style: cs }); t.x = cx; t.y = GAME_HEIGHT * 0.36 + i * 22; t.anchor.set(0.5, 0.5); this.app.stage.addChild(t);
     });
-
-    // Rematch button
     const rbg = this.makeButton(cx, GAME_HEIGHT * 0.5, 180, 36, 0x1a3355, true);
     const rtx = this.makeLabel("Rematch", cx, GAME_HEIGHT * 0.5, 18, "#ffffff");
     const doRematch = () => setTimeout(() => this.returnToLobby(), 0);
     rbg.on("pointertap", doRematch); rtx.on("pointertap", doRematch);
-
-    // Leave button
     const hbg = this.makeButton(cx, GAME_HEIGHT * 0.58, 180, 32, 0x222244, false);
     const htx = this.makeLabel("Leave", cx, GAME_HEIGHT * 0.58, 15, "#aaccff");
     const doHome = () => setTimeout(() => this.goHome(), 0);
@@ -328,6 +319,7 @@ export class OnlineSession {
     this.resultsShown = false; this.interpolation.reset(); this.sync = sync;
     const runConfig: RunConfig = { ...createDefaultRunConfig(), seed: newSeed };
     this.scene = new GameScene(runConfig);
+    if (this.remoteCosmetics?.theme) this.scene.setCosmeticTheme(this.remoteCosmetics.theme);
     this.scene.enableGhostMode();
     this.scene.initInput(this.app.canvas);
     if (this.touchControls) { setTouchControlsForced(true); }
