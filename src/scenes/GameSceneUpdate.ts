@@ -26,6 +26,11 @@ import { renderTentacles, renderKnifeAmmo, renderDebugHitboxes } from "./BossAre
 
 export interface RenderContext {
   state: GameWorldState;
+  /** Interpolated camera Y for smooth slow-mo. Equals state.camera.y when speed >= 1. */
+  camY: number;
+  /** Interpolated player X/Y for smooth slow-mo rendering. */
+  interpPlayerX: number;
+  interpPlayerY: number;
   parallax: ParallaxBackground;
   particles: ParticleManager;
   effectRenderer: EffectRenderer;
@@ -60,7 +65,7 @@ export function renderDeathAnimation(ctx: RenderContext): boolean {
   ctx.playerGfx.scale.x = (1 - t * 0.6) * (1 + Math.sin(t * 20) * 0.15);
   ctx.playerGfx.scale.y = 1 - t * 0.8;
   ctx.playerGfx.alpha = t > 0.7 ? 1 - (t - 0.7) / 0.3 : 1;
-  ctx.playerGfx.y = worldToScreen(ctx.state.player.y, ctx.state.camera.y);
+  ctx.playerGfx.y = worldToScreen(ctx.interpPlayerY, ctx.camY);
   ctx.floatingTextMgr.update();
   ctx.particles.updateCrumbleParticles();
   return true;
@@ -77,14 +82,16 @@ export function renderGameWorld(ctx: RenderContext): Graphics[] {
     };
     theme.background = overrides[ctx.cosmeticTheme] ?? theme.background;
   }
+  const camY = ctx.camY;
   ctx.parallax.applyTheme(theme, state.zoneState.currentZone);
   if (!state.debugConfig.disableParallax) {
-    ctx.parallax.update(state.camera.y);
+    ctx.parallax.update(camY);
   }
   ctx.parallax.container.visible = !state.debugConfig.disableParallax;
-  const camY = state.camera.y;
 
-  ctx.effectRenderer.renderPlayer(state, ctx.playerGfx, camY, ctx.particles, ctx.inputX, ctx.cosmeticTint, ctx.cosmeticTheme);
+  // Create a view-only state with interpolated player position for the renderer
+  const renderState = { ...state, player: { ...state.player, x: ctx.interpPlayerX, y: ctx.interpPlayerY } };
+  ctx.effectRenderer.renderPlayer(renderState, ctx.playerGfx, camY, ctx.particles, ctx.inputX, ctx.cosmeticTint, ctx.cosmeticTheme);
   renderPlatforms(state, ctx.gfxSync, theme, camY, ctx.cosmeticTheme);
   renderMeatballs(state, ctx.gfxSync, camY);
   renderPowerUps(state, ctx.gfxSync, camY);
@@ -124,8 +131,8 @@ export function renderGameWorld(ctx: RenderContext): Graphics[] {
   else if (speedEffect === "pepper_sneeze") ctx.trail.setTrailType("speed_sneeze");
   else ctx.trail.setTrailType(ctx.cosmeticTrail);
   ctx.trail.addPoint(
-    state.player.x + state.player.width / 2,
-    state.player.y + state.player.height + 6,
+    ctx.interpPlayerX + state.player.width / 2,
+    ctx.interpPlayerY + state.player.height + 6,
   );
   ctx.trail.update(camY);
 

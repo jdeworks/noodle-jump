@@ -246,19 +246,26 @@ export class GameScene {
     this.speedAccumulator -= ticksThisFrame;
 
     const inputX = externalInputX ?? this.input.inputX;
-    for (let t = 0; t < ticksThisFrame; t++) {
-      // Save pre-tick positions for interpolation
+
+    // Snapshot interpolation: before ticking, promote current→prev
+    if (ticksThisFrame > 0) {
       this.prevPlayerX = this.state.player.x;
       this.prevPlayerY = this.state.player.y;
       this.prevCamY = this.state.camera.y;
+    }
+    for (let t = 0; t < ticksThisFrame; t++) {
+      // For multi-tick frames, prev = state before LAST tick
+      if (t === ticksThisFrame - 1 && t > 0) {
+        this.prevPlayerX = this.state.player.x;
+        this.prevPlayerY = this.state.player.y;
+        this.prevCamY = this.state.camera.y;
+      }
       const result = tickGameWorld(this.state, inputX);
       this.state = result.state;
       handleEvents(result.events, this.eventDeps());
       if (this.state.gameOver) break;
     }
-    // Interpolation: lerp between previous tick and current tick positions.
-    // speedAccumulator is 0 right after a tick fires, approaches 1.0 before next tick.
-    // At 1x+ speed every frame has a tick so interpolation is unnecessary.
+    // Alpha: how far between prev tick and current tick (0 = at prev, 1 = at current)
     this.interpAlpha = speed < 1 ? this.speedAccumulator : 0;
 
     this.gfxSync.syncAll(
@@ -280,42 +287,27 @@ export class GameScene {
 
     // Screen shake
     if (!this.gameContainer.parent) return;
-    let shakeX = 0, shakeY = 0;
     if (this.state.shakeState) {
       const sr = tickShake(this.state.shakeState);
-      shakeX = sr.offsetX; shakeY = sr.offsetY;
-    }
+      this.gameContainer.x = sr.offsetX; this.gameContainer.y = sr.offsetY;
+    } else { this.gameContainer.x = 0; this.gameContainer.y = 0; }
 
     const ctx = this.buildRenderContext();
-    if (renderDeathAnimation(ctx)) {
-      this.gameContainer.x = shakeX; this.gameContainer.y = shakeY;
-      return;
-    }
+    if (renderDeathAnimation(ctx)) return;
     this.weatherGfx = renderGameWorld(ctx);
     this.bossAttackGfx = ctx.bossAttackGfx;
     this.tickBossTransition();
-
-    // Smooth slow-mo: offset entire container so ALL elements interpolate together.
-    // camOffset shifts rendering to show a position between prev and current tick.
-    const alpha = this.interpAlpha;
-    const camOffset = alpha > 0 ? (this.state.camera.y - this.prevCamY) * (1 - alpha) : 0;
-    this.gameContainer.x = shakeX;
-    this.gameContainer.y = shakeY - camOffset;
-    // Parallax also needs the interpolated camera position
-    if (alpha > 0) {
-      const lerpCamY = this.prevCamY + (this.state.camera.y - this.prevCamY) * alpha;
-      this.parallax.update(lerpCamY);
-    }
-    // Player gets an additional offset for its own movement between ticks
-    if (alpha > 0) {
-      this.playerGfx.x += (this.prevPlayerX - this.state.player.x) * (1 - alpha);
-      this.playerGfx.y += (this.prevPlayerY - this.state.player.y) * (1 - alpha);
-    }
   }
 
+  private lerp(a: number, b: number, t: number): number { return a + (b - a) * t; }
+
   private buildRenderContext(): RenderContext {
+    const a = this.interpAlpha;
     return {
       state: this.state,
+      camY: a > 0 ? this.lerp(this.prevCamY, this.state.camera.y, a) : this.state.camera.y,
+      interpPlayerX: a > 0 ? this.lerp(this.prevPlayerX, this.state.player.x, a) : this.state.player.x,
+      interpPlayerY: a > 0 ? this.lerp(this.prevPlayerY, this.state.player.y, a) : this.state.player.y,
       parallax: this.parallax, particles: this.particles,
       effectRenderer: this.effectRenderer, gfxSync: this.gfxSync, trail: this.trail,
       floatingTextMgr: this.floatingTextMgr, gameContainer: this.gameContainer,
