@@ -46,15 +46,15 @@ export function showModePicker(
     style: new TextStyle({ fontFamily: "monospace", fontSize: 28,
       fill: "#ffffff", fontWeight: "bold", stroke: { color: "#000000", width: 3 } }),
   });
-  title.x = SPLIT_WIDTH / 2; title.y = 80; title.anchor.set(0.5, 0.5);
+  title.x = SPLIT_WIDTH / 2; title.y = 40; title.anchor.set(0.5, 0.5);
   view.addChild(title);
 
   const hint = new Text({
-    text: "W/S: mode  A/D: P1 char  ←/→: P2 char  Enter: start",
+    text: "W/S: mode  A/D: P1 char  ←/→: P2 char  Enter: start  Esc: back",
     style: new TextStyle({ fontFamily: "monospace", fontSize: 11,
       fill: "#888888", stroke: { color: "#000000", width: 2 } }),
   });
-  hint.x = SPLIT_WIDTH / 2; hint.y = 120; hint.anchor.set(0.5, 0.5);
+  hint.x = SPLIT_WIDTH / 2; hint.y = 68; hint.anchor.set(0.5, 0.5);
   view.addChild(hint);
 
   const modeTexts: Text[] = [];
@@ -63,7 +63,7 @@ export function showModePicker(
     style: new TextStyle({ fontFamily: "monospace", fontSize: 14,
       fill: "#aaaaaa", align: "center", stroke: { color: "#000000", width: 2 } }),
   });
-  descText.x = SPLIT_WIDTH / 2; descText.y = 380; descText.anchor.set(0.5, 0.5);
+  descText.x = SPLIT_WIDTH / 2; descText.y = 290; descText.anchor.set(0.5, 0.5);
   view.addChild(descText);
 
   // Character pickers for P1 and P2
@@ -77,25 +77,26 @@ export function showModePicker(
     fill: "#ffcc44", stroke: { color: "#000000", width: 2 } });
 
   // P1 character (left side)
-  const p1Title = new Text({ text: "P1 (A/D)", style: charLabelStyle });
-  p1Title.x = SPLIT_WIDTH / 2 - 100; p1Title.y = 440; p1Title.anchor.set(0.5, 0.5);
+  const charY = 340;
+  const p1Title = new Text({ text: "P1 (tap/A/D)", style: charLabelStyle });
+  p1Title.x = SPLIT_WIDTH / 2 - 100; p1Title.y = charY; p1Title.anchor.set(0.5, 0.5);
   view.addChild(p1Title);
   const p1Gfx = new Graphics();
-  p1Gfx.x = SPLIT_WIDTH / 2 - 100 - 12; p1Gfx.y = 455;
+  p1Gfx.x = SPLIT_WIDTH / 2 - 100 - 12; p1Gfx.y = charY + 15;
   view.addChild(p1Gfx);
   const p1Name = new Text({ text: "", style: charNameStyle });
-  p1Name.x = SPLIT_WIDTH / 2 - 100; p1Name.y = 488; p1Name.anchor.set(0.5, 0.5);
+  p1Name.x = SPLIT_WIDTH / 2 - 100; p1Name.y = charY + 48; p1Name.anchor.set(0.5, 0.5);
   view.addChild(p1Name);
 
   // P2 character (right side)
-  const p2Title = new Text({ text: "P2 (←/→)", style: charLabelStyle });
-  p2Title.x = SPLIT_WIDTH / 2 + 100; p2Title.y = 440; p2Title.anchor.set(0.5, 0.5);
+  const p2Title = new Text({ text: "P2 (tap/←/→)", style: charLabelStyle });
+  p2Title.x = SPLIT_WIDTH / 2 + 100; p2Title.y = charY; p2Title.anchor.set(0.5, 0.5);
   view.addChild(p2Title);
   const p2Gfx = new Graphics();
-  p2Gfx.x = SPLIT_WIDTH / 2 + 100 - 12; p2Gfx.y = 455;
+  p2Gfx.x = SPLIT_WIDTH / 2 + 100 - 12; p2Gfx.y = charY + 15;
   view.addChild(p2Gfx);
   const p2Name = new Text({ text: "", style: charNameStyle });
-  p2Name.x = SPLIT_WIDTH / 2 + 100; p2Name.y = 488; p2Name.anchor.set(0.5, 0.5);
+  p2Name.x = SPLIT_WIDTH / 2 + 100; p2Name.y = charY + 48; p2Name.anchor.set(0.5, 0.5);
   view.addChild(p2Name);
 
   const updateChars = () => {
@@ -122,7 +123,7 @@ export function showModePicker(
     style: new TextStyle({ fontFamily: "monospace", fontSize: 13,
       fill: "#888888", stroke: { color: "#000000", width: 2 } }),
   });
-  customLabel.x = SPLIT_WIDTH / 2; customLabel.y = 520; customLabel.anchor.set(0.5, 0.5);
+  customLabel.x = SPLIT_WIDTH / 2; customLabel.y = 430; customLabel.anchor.set(0.5, 0.5);
   customLabel.eventMode = "static"; customLabel.cursor = "pointer";
   customLabel.on("pointertap", () => {
     useCustom = !useCustom;
@@ -132,7 +133,7 @@ export function showModePicker(
   view.addChild(customLabel);
 
   // Start button (clickable)
-  const startBtnY = 555;
+  const startBtnY = 480;
   const startBg = new Graphics();
   startBg.roundRect(SPLIT_WIDTH / 2 - 110, startBtnY - 22, 220, 44, 10);
   startBg.fill({ color: uiT.buttonBg, alpha: 0.9 });
@@ -165,9 +166,9 @@ export function showModePicker(
   startText.on("pointertap", doStart);
 
   for (let i = 0; i < MODES.length; i++) {
-    // Clickable background for each mode
+    const by = 120 + i * 50;
     const btnBg = new Graphics();
-    btnBg.roundRect(SPLIT_WIDTH / 2 - 150, 200 + i * 55 - 20, 300, 40, 8);
+    btnBg.roundRect(SPLIT_WIDTH / 2 - 160, by - 20, 320, 42, 8);
     btnBg.fill({ color: uiT.buttonBg, alpha: 0.6 });
     btnBg.eventMode = "static"; btnBg.cursor = "pointer";
     btnBg.on("pointertap", () => { selectedIdx = i; updateSelection(); });
@@ -175,11 +176,11 @@ export function showModePicker(
 
     const t = new Text({
       text: MODE_LABELS[MODES[i]],
-      style: new TextStyle({ fontFamily: "monospace", fontSize: 22,
+      style: new TextStyle({ fontFamily: "monospace", fontSize: 20,
         fill: i === 0 ? "#ffdd44" : "#666666", fontWeight: "bold",
         stroke: { color: "#000000", width: 3 } }),
     });
-    t.x = SPLIT_WIDTH / 2; t.y = 200 + i * 55; t.anchor.set(0.5, 0.5);
+    t.x = SPLIT_WIDTH / 2; t.y = by; t.anchor.set(0.5, 0.5);
     t.eventMode = "static"; t.cursor = "pointer";
     t.on("pointertap", () => { selectedIdx = i; updateSelection(); });
     view.addChild(t);

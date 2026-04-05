@@ -21,8 +21,8 @@ const RTC_CONFIG: RTCConfiguration = {
 const RELAY_URLS = [
   "wss://nos.lol",
   "wss://relay.primal.net",
-  "wss://purplerelay.com",
-  "wss://relay.snort.social",
+  "wss://relay.damus.io",
+  "wss://relay.nostr.band",
 ];
 
 /** Generate a random 6-character room code. */
