@@ -155,7 +155,10 @@ export class OnlineSession {
     const { PauseOverlay } = await import("./PauseOverlay");
     this.pause = new PauseOverlay(this.app, GAME_WIDTH, GAME_HEIGHT, () => this.goHome());
     this.escapeHandler = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !this.resultsShown && this.pause) this.pause.toggle();
+      if (e.key === "Escape" && !this.resultsShown && this.pause) {
+        this.pause.toggle();
+        this.sync.sendGameEvent({ type: "ready", payload: { paused: this.pause.paused } });
+      }
     };
     window.addEventListener("keydown", this.escapeHandler);
     this.gameLoop = () => { this.tick(); };
@@ -250,13 +253,14 @@ export class OnlineSession {
       this.remoteDeathHeight = (event.payload.height as number) || 0;
       this.showToast(`Opponent died at ${this.remoteDeathHeight}m!`);
     }
+    // Sync pause from remote player
+    if (event.type === "ready" && event.payload.paused !== undefined && this.pause) {
+      const shouldPause = event.payload.paused as boolean;
+      if (shouldPause !== this.pause.paused) this.pause.toggle();
+    }
   }
 
-  private showToast(msg: string): void {
-    this.deathToast.text = msg;
-    this.deathToast.visible = true;
-    this.toastTimer = 180;
-  }
+  private showToast(msg: string): void { this.deathToast.text = msg; this.deathToast.visible = true; this.toastTimer = 180; }
 
   private showResults(): void {
     if (this.gameLoop) { this.app.ticker.remove(this.gameLoop); this.gameLoop = null; }
@@ -282,17 +286,13 @@ export class OnlineSession {
     hbg.on("pointertap", doHome); htx.on("pointertap", doHome);
   }
   private makeButton(x: number, y: number, w: number, h: number, color: number, stroke: boolean): Graphics {
-    const g = new Graphics();
-    g.roundRect(x - w / 2, y - h / 2, w, h, 10); g.fill({ color, alpha: 0.9 });
+    const g = new Graphics(); g.roundRect(x - w / 2, y - h / 2, w, h, 10); g.fill({ color, alpha: 0.9 });
     if (stroke) { g.roundRect(x - w / 2, y - h / 2, w, h, 10); g.stroke({ width: 1.5, color: 0x6688bb, alpha: 0.5 }); }
     g.eventMode = "static"; g.cursor = "pointer"; this.app.stage.addChild(g); return g;
   }
-
   private makeLabel(text: string, x: number, y: number, size: number, fill: string): Text {
-    const t = new Text({ text, style: new TextStyle({ fontFamily: "monospace", fontSize: size,
-      fill, fontWeight: "bold", stroke: { color: "#000000", width: 2 } }) });
-    t.x = x; t.y = y; t.anchor.set(0.5, 0.5); t.eventMode = "static"; t.cursor = "pointer";
-    this.app.stage.addChild(t); return t;
+    const t = new Text({ text, style: new TextStyle({ fontFamily: "monospace", fontSize: size, fill, fontWeight: "bold", stroke: { color: "#000000", width: 2 } }) });
+    t.x = x; t.y = y; t.anchor.set(0.5, 0.5); t.eventMode = "static"; t.cursor = "pointer"; this.app.stage.addChild(t); return t;
   }
   private returnToLobby(): void {
     this.cleanup();

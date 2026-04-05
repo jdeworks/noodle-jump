@@ -312,22 +312,17 @@ export class LobbyScreen {
       } });
     }
     if (event.type === "ready") {
-      if (event.payload.mode) {
-        this.mode = event.payload.mode as string;
-        this.onSettingsChanged?.();
+      // Only guest accepts host-controlled settings (mode, theme, customRun)
+      if (this.role === "guest") {
+        let changed = false;
+        if (event.payload.mode) { this.mode = event.payload.mode as string; changed = true; }
+        if (event.payload.theme) { this.selectedTheme = event.payload.theme as string; this.remoteCosmetics.theme = this.selectedTheme; changed = true; }
+        if (event.payload.customRun !== undefined) { this.useCustomRun = event.payload.customRun as boolean; changed = true; }
+        if (changed) this.onSettingsChanged?.();
       }
       if (event.payload.touchControls !== undefined) {
         this.touchControls = event.payload.touchControls as boolean;
         this.onTouchControlsChanged?.();
-      }
-      if (event.payload.theme) {
-        this.selectedTheme = event.payload.theme as string;
-        this.remoteCosmetics.theme = this.selectedTheme;
-        this.onSettingsChanged?.();
-      }
-      if (event.payload.customRun !== undefined) {
-        this.useCustomRun = event.payload.customRun as boolean;
-        this.onSettingsChanged?.();
       }
       if (event.payload.character) {
         this.remoteChar = event.payload.character as string;
