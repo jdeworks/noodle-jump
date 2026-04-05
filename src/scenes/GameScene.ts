@@ -229,11 +229,9 @@ export class GameScene {
     this.speedAccumulator -= ticksThisFrame;
 
     const inputX = externalInputX ?? this.input.inputX;
-    let lastEvents: import("./GameLoopTypes").GameEvent[] = [];
     for (let t = 0; t < ticksThisFrame; t++) {
       const result = tickGameWorld(this.state, inputX);
       this.state = result.state;
-      lastEvents = result.events;
       handleEvents(result.events, this.eventDeps());
       if (this.state.gameOver) break;
     }

@@ -10,6 +10,13 @@ vi.mock("pixi.js", () => {
     circle = vi.fn().mockReturnThis();
     fill = vi.fn().mockReturnThis();
     clear = vi.fn().mockReturnThis();
+    moveTo = vi.fn().mockReturnThis();
+    lineTo = vi.fn().mockReturnThis();
+    stroke = vi.fn().mockReturnThis();
+    closePath = vi.fn().mockReturnThis();
+    quadraticCurveTo = vi.fn().mockReturnThis();
+    rect = vi.fn().mockReturnThis();
+    roundRect = vi.fn().mockReturnThis();
     destroy = vi.fn();
   }
   class MockContainer {

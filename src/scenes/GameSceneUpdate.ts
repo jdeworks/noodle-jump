@@ -22,7 +22,7 @@ import { renderBoss, renderBossArc, renderWeather, renderWindOverlay } from "./G
 import { getSelectedCharacter } from "../systems/CharacterSettings";
 import { getProjectileVisual, projectileSpins } from "../rendering/sprites";
 import { renderTentacles, renderKnifeAmmo, renderDebugHitboxes } from "./BossArenaRenderer";
-import { tickShake } from "../systems/ScreenShake";
+
 
 export interface RenderContext {
   state: GameWorldState;

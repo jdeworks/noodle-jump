@@ -17,7 +17,7 @@ import { spawnMeatballs } from "../entities/Collectible";
 import { spawnPowerUps } from "../entities/PowerUp";
 import { createCamera } from "../systems/Camera";
 import { createScoreState, loadHighScore } from "../systems/Score";
-import { createZoneState, type ZoneState } from "../systems/Zone";
+import { type ZoneState } from "../systems/Zone";
 import type { MinestroneState } from "../systems/PowerUpEffects";
 import type { EnemyState } from "../entities/Enemy";
 import type { ProjectileState } from "../entities/Projectile";
