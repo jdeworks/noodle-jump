@@ -28,6 +28,7 @@ let activeScene: GameScene | null = null;
 let activeGameTicker: (() => void) | null = null;
 let activeOrientationCleanup: (() => void) | null = null;
 let activeEscHandler: ((e: KeyboardEvent) => void) | null = null;
+let activeRunConfig: RunConfig | undefined;
 
 export function cleanupAndRestart(app: Application): void {
   if (activeEscHandler) { window.removeEventListener("keydown", activeEscHandler); activeEscHandler = null; }
@@ -59,10 +60,11 @@ export function cleanupAndRestart(app: Application): void {
   killBossMusic();
   app.ticker.start();
   playMusic(0);
-  launchGame(app);
+  launchGame(app, activeRunConfig);
 }
 
 export function cleanupAndGoHome(app: Application): void {
+  activeRunConfig = undefined; // clear so normal play doesn't reuse custom settings
   if (activeEscHandler) { window.removeEventListener("keydown", activeEscHandler); activeEscHandler = null; }
   if (activeGameTicker) {
     app.ticker.remove(activeGameTicker);
@@ -96,6 +98,7 @@ export function cleanupAndGoHome(app: Application): void {
 // ── Game Launch ──────────────────────────────────────────────────────────
 
 export async function launchGame(app: Application, runConfig?: RunConfig): Promise<void> {
+  activeRunConfig = runConfig; // remember for restart
   // Reset debug config for normal play so custom run presets don't leak
   if (!runConfig) resetDebugConfig();
   requestWakeLock();
