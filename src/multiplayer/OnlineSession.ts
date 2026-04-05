@@ -90,7 +90,8 @@ export class OnlineSession {
       onDataChannel: () => {}, onRoom: () => {},
     });
 
-    // Use shared run config if provided (custom run), otherwise default
+    // Reset debug config to defaults unless custom run was explicitly shared
+    if (!config.sharedRunConfig) setDebugConfig(createDebugConfig());
     const runConfig: RunConfig = config.sharedRunConfig
       ? { ...config.sharedRunConfig, seed: config.seed }
       : { ...createDefaultRunConfig(), seed: config.seed };
@@ -319,6 +320,7 @@ export class OnlineSession {
     this.localDead = false; this.remoteDead = false;
     this.localDeathHeight = 0; this.remoteDeathHeight = 0;
     this.resultsShown = false; this.interpolation.reset(); this.sync = sync;
+    setDebugConfig(createDebugConfig()); // reset for rematch (lobby will re-apply if custom)
     const runConfig: RunConfig = { ...createDefaultRunConfig(), seed: newSeed };
     this.scene = new GameScene(runConfig);
     if (this.remoteCosmetics?.theme) this.scene.setCosmeticTheme(this.remoteCosmetics.theme);
