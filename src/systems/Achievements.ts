@@ -26,6 +26,11 @@ export interface GameStats {
   bossesDefeated: number;
   bossStomps: number;
   powerUpsCollected: number;
+  /** Daily challenge fields (set only for daily runs). */
+  isDailyChallenge?: boolean;
+  dailyMedal?: string | null;
+  dailyStreak?: number;
+  dailyWeekHasAllMedals?: boolean;
 }
 
 export interface AchievementState {
@@ -116,6 +121,18 @@ export const ACHIEVEMENTS: Achievement[] = [
     condition: (_, g) => (g?.streak ?? 0) >= 50 },
   { id: "powerup_collector", name: "Power Hungry", description: "Collect 5 power-ups in one game",
     condition: (_, g) => (g?.powerUpsCollected ?? 0) >= 5 },
+
+  // Daily challenge achievements
+  { id: "daily_first", name: "Daily Debut", description: "Complete a daily challenge",
+    condition: (_, g) => g?.isDailyChallenge === true },
+  { id: "daily_streak_7", name: "Week Warrior", description: "7-day daily challenge streak",
+    condition: (_, g) => (g?.dailyStreak ?? 0) >= 7 },
+  { id: "daily_streak_30", name: "Monthly Master", description: "30-day daily challenge streak",
+    condition: (_, g) => (g?.dailyStreak ?? 0) >= 30 },
+  { id: "daily_gold", name: "Golden Chef", description: "Earn gold on a daily challenge",
+    condition: (_, g) => g?.dailyMedal === "gold" },
+  { id: "daily_week_medals", name: "Medal Collector", description: "Earn all 3 medal types in one week",
+    condition: (_, g) => g?.dailyWeekHasAllMedals === true },
 ];
 
 /** Load achievement state from localStorage. */

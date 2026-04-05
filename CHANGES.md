@@ -110,3 +110,5 @@ health_snapshot: LOC=19800, tests=383, complexity=ok
 ## [2026-04-05T14:50] session-dc01 | status: started | mode: full | type: add
 intent: Implement Daily Challenge (date-seeded runs, medals, streaks, achievements) and Shadow Replay (record/playback ghost on all runs)
 - progress: Pure logic — DailyChallengeState (config gen, medals, streaks), ShadowRecorder, ShadowPlayback + tests | src/systems/DailyChallengeState.ts, src/systems/ShadowRecorder.ts, src/systems/ShadowPlayback.ts, tests/daily-challenge-state.test.ts, tests/shadow-recorder.test.ts, tests/shadow-playback.test.ts
+- progress: UI screens — DailyChallengeScreen, DailyGameOverView | src/ui/DailyChallengeScreen.ts, src/ui/DailyGameOverView.ts
+- progress: Integration — Daily button on title screen, shadow recorder/playback in GameLauncher/GameLoopTicker, daily achievements | src/ui/TitleScreenView.ts, src/scenes/GameLauncher.ts, src/scenes/GameLoopTicker.ts, src/systems/Achievements.ts

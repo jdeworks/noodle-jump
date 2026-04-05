@@ -21,6 +21,10 @@ import { showTitleScreen } from "../ui/TitleScreenView";
 import { createGameLoopTicker } from "./GameLoopTicker";
 import { getUITheme } from "../ui/ThemeUI";
 import { resetDebugConfig } from "../config/debug";
+import { createShadowRecorder, loadLastShadow, loadBestShadow, loadDailyShadow, saveLastShadow, saveBestShadow, saveDailyShadow, type ShadowRecorder as ShadowRecorderType } from "../systems/ShadowRecorder";
+import { createShadowPlayback, type ShadowPlayback } from "../systems/ShadowPlayback";
+import { RemotePlayerRenderer } from "../multiplayer/RemotePlayerRenderer";
+import { getTodayDateKey } from "../systems/DailyChallengeState";
 
 // ── Active session tracking ──────────────────────────────────────────────
 
@@ -29,6 +33,9 @@ let activeGameTicker: (() => void) | null = null;
 let activeOrientationCleanup: (() => void) | null = null;
 let activeEscHandler: ((e: KeyboardEvent) => void) | null = null;
 let activeRunConfig: RunConfig | undefined;
+let activeShadowRecorder: ShadowRecorderType | null = null;
+let activeShadowPlayback: ShadowPlayback | null = null;
+let activeShadowRenderer: RemotePlayerRenderer | null = null;
 
 export function cleanupAndRestart(app: Application): void {
   if (activeEscHandler) { window.removeEventListener("keydown", activeEscHandler); activeEscHandler = null; }
@@ -40,26 +47,17 @@ export function cleanupAndRestart(app: Application): void {
     activeOrientationCleanup();
     activeOrientationCleanup = null;
   }
-  if (activeScene) {
-    activeScene.destroy();
-    activeScene = null;
-  }
+  if (activeShadowRenderer) { activeShadowRenderer.destroy(); activeShadowRenderer = null; }
+  activeShadowRecorder = null; activeShadowPlayback = null;
+  if (activeScene) { activeScene.destroy(); activeScene = null; }
   while (app.stage.children.length > 0) {
     const child = app.stage.children[0];
     app.stage.removeChild(child);
     child.destroy({ children: true });
   }
-  resetPlatformIds();
-  resetPowerUpIds();
-  resetCollectibleIds();
-  resetEnemyIds();
-  resetProjectileIds();
-  resetRNG();
-  resetRendererState();
-  stopMusic();
-  killBossMusic();
-  app.ticker.start();
-  playMusic(0);
+  resetPlatformIds(); resetPowerUpIds(); resetCollectibleIds();
+  resetEnemyIds(); resetProjectileIds(); resetRNG(); resetRendererState();
+  stopMusic(); killBossMusic(); app.ticker.start(); playMusic(0);
   launchGame(app, activeRunConfig);
 }
 
@@ -74,28 +72,30 @@ export function cleanupAndGoHome(app: Application): void {
     activeOrientationCleanup();
     activeOrientationCleanup = null;
   }
-  if (activeScene) {
-    activeScene.destroy();
-    activeScene = null;
-  }
+  if (activeShadowRenderer) { activeShadowRenderer.destroy(); activeShadowRenderer = null; }
+  activeShadowRecorder = null; activeShadowPlayback = null;
+  if (activeScene) { activeScene.destroy(); activeScene = null; }
   while (app.stage.children.length > 0) {
     const child = app.stage.children[0];
     app.stage.removeChild(child);
     child.destroy({ children: true });
   }
-  resetPlatformIds();
-  resetPowerUpIds();
-  resetCollectibleIds();
-  resetEnemyIds();
-  resetProjectileIds();
-  resetRNG();
-  stopMusic();
-  killBossMusic();
-  app.ticker.start();
+  resetPlatformIds(); resetPowerUpIds(); resetCollectibleIds();
+  resetEnemyIds(); resetProjectileIds(); resetRNG();
+  stopMusic(); killBossMusic(); app.ticker.start();
   showTitleScreen(app, (runConfig) => launchGame(app, runConfig));
 }
 
 // ── Game Launch ──────────────────────────────────────────────────────────
+
+/** Get the active shadow context (for GameLoopTicker). */
+export function getShadowContext(): {
+  recorder: ShadowRecorderType | null;
+  playback: ShadowPlayback | null;
+  renderer: RemotePlayerRenderer | null;
+} {
+  return { recorder: activeShadowRecorder, playback: activeShadowPlayback, renderer: activeShadowRenderer };
+}
 
 export async function launchGame(app: Application, runConfig?: RunConfig): Promise<void> {
   activeRunConfig = runConfig; // remember for restart
@@ -107,13 +107,20 @@ export async function launchGame(app: Application, runConfig?: RunConfig): Promi
   scene.initInput(app.canvas);
   app.stage.addChild(scene.container);
 
+  // ── Shadow replay ────────────────────────────────────────────────────────
+  activeShadowRecorder = createShadowRecorder();
+  const isDaily = runConfig?.isDailyChallenge ?? false;
+  const shadowRec = isDaily ? loadDailyShadow(getTodayDateKey()) : (loadBestShadow() ?? loadLastShadow());
+  if (shadowRec) {
+    activeShadowPlayback = createShadowPlayback(shadowRec);
+    activeShadowRenderer = new RemotePlayerRenderer("chef", { tint: "tint_none" });
+    activeShadowRenderer.container.alpha = 0.35;
+    scene.container.addChild(activeShadowRenderer.container);
+  } else { activeShadowPlayback = null; activeShadowRenderer = null; }
+
   // ── HUD ──────────────────────────────────────────────────────────────────
   const hud = new HUD();
   app.stage.addChild(hud.container);
-
-  // Pause — handled by HUD's built-in button
-
-  // Fullscreen handled by HUD button — no auto-fullscreen on tap
 
   // ── Tilt permission ──────────────────────────────────────────────────────
   if (scene.input.needsTiltPermission) {

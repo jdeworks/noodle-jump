@@ -20,6 +20,17 @@ import {
   syncCosmeticsWithAchievements,
   saveCosmetics,
 } from "../systems/Cosmetics";
+import { getShadowContext } from "./GameLauncher";
+import { saveLastShadow, saveBestShadow, saveDailyShadow } from "../systems/ShadowRecorder";
+import {
+  getTodayDateKey,
+  getMedalThresholds,
+  recordDailyResult,
+  loadDailyData,
+  saveDailyData,
+  getMedalsInRange,
+} from "../systems/DailyChallengeState";
+import { showDailyGameOver } from "../ui/DailyGameOverView";
 
 export interface OverlayElements {
   effectTimerBar: Graphics;
@@ -43,6 +54,18 @@ export function createGameLoopTicker(
   const gameLoopFn = () => {
     if (gameOverHandled) return;
     scene.update();
+
+    // Shadow recording + playback
+    const shadow = getShadowContext();
+    if (shadow.recorder && !scene.isGameOver()) {
+      shadow.recorder.tick(scene.getState());
+    }
+    if (shadow.playback && shadow.renderer && !scene.isGameOver()) {
+      const ghostState = shadow.playback.tick();
+      if (ghostState) {
+        shadow.renderer.update(ghostState, scene.getState().camera.y, scene.getState().player.y);
+      } else { shadow.renderer.hide(); }
+    }
 
     // Countdown display
     const cd = scene.getCountdownSeconds();
@@ -135,6 +158,20 @@ export function createGameLoopTicker(
       const stats = isCustom ? loadStats() : updateStatsAfterGame(loadStats(), gameResult);
       if (!isCustom) saveStats(stats);
 
+      const isDaily = scene.getState().runConfig.isDailyChallenge;
+      let dailyStreak = 0;
+      let dailyMedal: string | null = null;
+      let dailyWeekHasAllMedals = false;
+      if (isDaily) {
+        const dConfig = scene.getState().runConfig;
+        const dThresholds = getMedalThresholds(dConfig);
+        const dDate = getTodayDateKey();
+        let dd = loadDailyData();
+        dd = recordDailyResult(dd, dDate, gameResult.score, gameResult.height, dThresholds);
+        dailyStreak = dd.currentStreak;
+        dailyMedal = dd.results[dDate]?.medal ?? null;
+        dailyWeekHasAllMedals = getMedalsInRange(dd.results, dDate, 7).size >= 3;
+      }
       const gameStats: GameStats = {
         ...gameResult,
         powerUps: scene.getPowerUpsCollected(),
@@ -143,6 +180,8 @@ export function createGameLoopTicker(
         enemiesKilled: scene.getEnemiesKilled(),
         bossStomps: scene.getBossStomps(),
         powerUpsCollected: scene.getPowerUpsCollected(),
+        isDailyChallenge: isDaily,
+        dailyMedal, dailyStreak, dailyWeekHasAllMedals,
       };
       const achState = loadAchievements();
       const achResult = checkAchievements(achState, stats, gameStats);
@@ -151,30 +190,48 @@ export function createGameLoopTicker(
       }
 
       // Sync cosmetics with newly unlocked achievements
-      const cosState = syncCosmeticsWithAchievements(
-        loadCosmetics(),
-        achResult.state.unlocked,
-      );
+      const cosState = syncCosmeticsWithAchievements(loadCosmetics(), achResult.state.unlocked);
       saveCosmetics(cosState);
 
-      showGameOver(
-        app,
-        {
-          score: scene.getScore(),
-          height: scene.getHeight(),
-          seconds: scene.getElapsedSeconds(),
-          highScore: scene.getHighScore(),
-          meatballs: scene.getMeatballsCollected(),
-          powerUps: scene.getPowerUpsCollected(),
-          bestCombo: scene.getBestCombo(),
-          bestStreak: scene.getBestStreak(),
-          platforms: scene.getPlatformsPassed(),
-          isCustomRun: scene.isCustomRun(),
-        },
-        onRestart,
-        onHome,
-        achResult.newlyUnlocked.map((id) => getAchievement(id)?.name ?? id),
-      );
+      // Save shadow recording
+      const shadowCtx = getShadowContext();
+      if (shadowCtx.recorder) {
+        const rec = shadowCtx.recorder.finalize(gameResult.score, gameResult.height);
+        saveLastShadow(rec);
+        if (!isCustom) saveBestShadow(rec);
+        if (scene.getState().runConfig.isDailyChallenge) {
+          saveDailyShadow(getTodayDateKey(), rec);
+        }
+      }
+
+      const achNames = achResult.newlyUnlocked.map((id) => getAchievement(id)?.name ?? id);
+
+      // Daily challenge: compute medal, save result, show daily game-over
+      if (scene.getState().runConfig.isDailyChallenge) {
+        const config = scene.getState().runConfig;
+        const thresholds = getMedalThresholds(config);
+        const dateKey = getTodayDateKey();
+        let dailyData = loadDailyData();
+        dailyData = recordDailyResult(dailyData, dateKey, gameResult.score, gameResult.height, thresholds);
+        saveDailyData(dailyData);
+        const prevBest = dailyData.results[dateKey];
+        showDailyGameOver(app, {
+          score: gameResult.score, height: gameResult.height,
+          seconds: scene.getElapsedSeconds(), meatballs: gameResult.meatballs,
+          powerUps: scene.getPowerUpsCollected(), bestCombo: gameResult.combo,
+          bestStreak: scene.getBestStreak(), platforms: scene.getPlatformsPassed(),
+          medal: prevBest?.medal ?? null, thresholds, streak: dailyData.currentStreak,
+          isNewBest: prevBest?.score === gameResult.score,
+        }, onRestart, onHome, achNames);
+      } else {
+        showGameOver(app, {
+          score: gameResult.score, height: gameResult.height,
+          seconds: scene.getElapsedSeconds(), highScore: scene.getHighScore(),
+          meatballs: gameResult.meatballs, powerUps: scene.getPowerUpsCollected(),
+          bestCombo: gameResult.combo, bestStreak: scene.getBestStreak(),
+          platforms: scene.getPlatformsPassed(), isCustomRun: isCustom,
+        }, onRestart, onHome, achNames);
+      }
     }
   };
   return gameLoopFn;

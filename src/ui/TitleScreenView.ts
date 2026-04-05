@@ -18,6 +18,7 @@ import type { RunConfig } from "../systems/CustomRunConfig";
 import { MultiplayerMenu } from "../multiplayer/MultiplayerMenu";
 import { loadCosmetics, TINT_COLORS } from "../systems/Cosmetics";
 import { getUITheme } from "./ThemeUI";
+import { DailyChallengeScreen } from "./DailyChallengeScreen";
 
 export function showTitleScreen(
   app: Application,
@@ -70,20 +71,9 @@ export function showTitleScreen(
   cursorY += 108;
 
   // Subtitle
-  const subtitleText = new Text({
-    text: "A pasta-themed endless jumper",
-    style: new TextStyle({
-      fontFamily: "monospace",
-      fontSize: 13,
-      fill: uiTheme.text,
-      fontWeight: "bold",
-      align: "center",
-      stroke: { color: "#000000", width: 2 },
-    }),
-  });
-  subtitleText.x = GAME_WIDTH / 2;
-  subtitleText.y = cursorY;
-  subtitleText.anchor.set(0.5, 0);
+  const subtitleText = new Text({ text: "A pasta-themed endless jumper",
+    style: new TextStyle({ fontFamily: "monospace", fontSize: 13, fill: uiTheme.text, fontWeight: "bold", align: "center", stroke: { color: "#000000", width: 2 } }) });
+  subtitleText.x = GAME_WIDTH / 2; subtitleText.y = cursorY; subtitleText.anchor.set(0.5, 0);
   contentGroup.addChild(subtitleText);
   cursorY += 20;
 
@@ -184,6 +174,8 @@ export function showTitleScreen(
   const playButton = makeButton("Tap to Play", cursorY, uiTheme.buttonBg, uiTheme.text, 20);
   const promptText = playButton.text;
   cursorY += btnH + btnSpacing;
+  const dailyButton = makeButton("Daily Challenge", cursorY, uiTheme.buttonBg, uiTheme.accent, 15);
+  cursorY += btnH + btnSpacing;
   const mpButton = makeButton("Multiplayer", cursorY, uiTheme.buttonBg, uiTheme.accent, 16);
   cursorY += btnH + btnSpacing;
   const howButton = makeButton("How to Play", cursorY, uiTheme.buttonBg, uiTheme.text, 15);
@@ -214,16 +206,9 @@ export function showTitleScreen(
   fsButton.text.on("pointertap", handleFs);
   cursorY += btnH + btnSpacing + 4;
 
-  // Input hint — device-appropriate
-  const kbHint = new Text({
-    text: "ontouchstart" in window ? "Tilt or tap left/right to move" : "Arrow keys / WASD to move",
-    style: new TextStyle({
-      fontFamily: "monospace",
-      fontSize: 12,
-      fill: "#ddccbb",
-      stroke: { color: "#000000", width: 2 },
-    }),
-  });
+  // Input hint
+  const hintStr = "ontouchstart" in window ? "Tilt or tap left/right to move" : "Arrow keys / WASD to move";
+  const kbHint = new Text({ text: hintStr, style: new TextStyle({ fontFamily: "monospace", fontSize: 12, fill: "#ddccbb", stroke: { color: "#000000", width: 2 } }) });
   kbHint.x = GAME_WIDTH / 2; kbHint.y = cursorY; kbHint.anchor.set(0.5, 0);
   contentGroup.addChild(kbHint);
   cursorY += 38;
@@ -270,6 +255,27 @@ export function showTitleScreen(
   custButton.text.eventMode = "static";
   custButton.text.on("pointertap", showCust);
 
+  // Daily challenge screen
+  const dailyChallengeScreen = new DailyChallengeScreen();
+  const showDaily = (e: Event) => {
+    e.stopPropagation();
+    contentGroup.visible = false;
+    dailyChallengeScreen.show((config: RunConfig) => {
+      app.canvas.removeEventListener("click", startGame);
+      app.canvas.removeEventListener("touchstart", startGame);
+      window.removeEventListener("keydown", handleKey);
+      initAudio(); playMusic(0);
+      app.ticker.remove(titleTicker);
+      titleDestroyed = true; parallax.destroy();
+      app.stage.removeChild(titleContainer);
+      titleContainer.destroy({ children: true });
+      onStartGame(config);
+    });
+  };
+  dailyButton.bg.on("pointertap", showDaily);
+  dailyButton.text.eventMode = "static";
+  dailyButton.text.on("pointertap", showDaily);
+
   // Multiplayer
   let mpMenu: MultiplayerMenu | null = null;
   const cleanupTitle = () => {
@@ -298,6 +304,7 @@ export function showTitleScreen(
   // Restore content when sub-menus close
   explanationScreen.onClose = () => { contentGroup.visible = true; };
   customRunScreen.onClose = () => { contentGroup.visible = true; };
+  dailyChallengeScreen.onClose = () => { contentGroup.visible = true; };
   customizeScreen.onClose = () => {
     // Rebuild entire title screen to pick up theme changes
     app.ticker.remove(titleTicker);
@@ -310,28 +317,15 @@ export function showTitleScreen(
   titleContainer.addChild(explanationScreen.container);
   titleContainer.addChild(customRunScreen.container);
   titleContainer.addChild(customizeScreen.container);
+  titleContainer.addChild(dailyChallengeScreen.container);
 
-  // Stats display — below settings panel
+  // Stats display — compact, below settings
   const stats = loadStats();
   if (stats.totalGames > 0) {
-    const statsLines = [
-      `Games: ${stats.totalGames}`,
-      `Meatballs: ${stats.totalMeatballs}`,
-      `Best Zone: ${stats.maxZone + 1}`,
-    ].join("  ·  ");
-    const statsText = new Text({
-      text: statsLines,
-      style: new TextStyle({
-        fontFamily: "monospace",
-        fontSize: 11,
-        fill: "#ccbbaa",
-        stroke: { color: "#000000", width: 2 },
-      }),
-    });
-    statsText.x = GAME_WIDTH / 2;
-    statsText.y = cursorY + 160;
-    statsText.anchor.set(0.5, 0);
-    contentGroup.addChild(statsText);
+    const sl = `Games: ${stats.totalGames}  ·  Meatballs: ${stats.totalMeatballs}  ·  Best Zone: ${stats.maxZone + 1}`;
+    const st = new Text({ text: sl, style: new TextStyle({ fontFamily: "monospace", fontSize: 11, fill: "#ccbbaa", stroke: { color: "#000000", width: 2 } }) });
+    st.x = GAME_WIDTH / 2; st.y = cursorY + 160; st.anchor.set(0.5, 0);
+    contentGroup.addChild(st);
   }
 
   let scrollY = 0;
@@ -355,7 +349,7 @@ export function showTitleScreen(
   let started = false;
   const startGame = async () => {
     if (started) return;
-    if (explanationScreen.isActive() || customRunScreen.isActive() || customizeScreen.isActive()) return;
+    if (explanationScreen.isActive() || customRunScreen.isActive() || customizeScreen.isActive() || dailyChallengeScreen.isActive()) return;
     started = true;
 
     window.removeEventListener("keydown", handleKey);
@@ -391,7 +385,7 @@ export function showTitleScreen(
 
   // Keyboard still works
   const handleKey = (e: KeyboardEvent) => {
-    if (explanationScreen.isActive() || customRunScreen.isActive() || customizeScreen.isActive()) return;
+    if (explanationScreen.isActive() || customRunScreen.isActive() || customizeScreen.isActive() || dailyChallengeScreen.isActive()) return;
     if (e.key === "Enter" || e.key === " ") startGame();
   };
   window.addEventListener("keydown", handleKey);
