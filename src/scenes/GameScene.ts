@@ -280,22 +280,42 @@ export class GameScene {
 
     // Screen shake
     if (!this.gameContainer.parent) return;
+    let shakeX = 0, shakeY = 0;
     if (this.state.shakeState) {
       const sr = tickShake(this.state.shakeState);
-      this.gameContainer.x = sr.offsetX; this.gameContainer.y = sr.offsetY;
-    } else { this.gameContainer.x = 0; this.gameContainer.y = 0; }
+      shakeX = sr.offsetX; shakeY = sr.offsetY;
+    }
 
     const ctx = this.buildRenderContext();
-    if (renderDeathAnimation(ctx)) return;
+    if (renderDeathAnimation(ctx)) {
+      this.gameContainer.x = shakeX; this.gameContainer.y = shakeY;
+      return;
+    }
     this.weatherGfx = renderGameWorld(ctx);
     this.bossAttackGfx = ctx.bossAttackGfx;
     this.tickBossTransition();
+
+    // Smooth slow-mo: offset entire container so ALL elements interpolate together.
+    // camOffset shifts rendering to show a position between prev and current tick.
+    const alpha = this.interpAlpha;
+    const camOffset = alpha > 0 ? (this.state.camera.y - this.prevCamY) * (1 - alpha) : 0;
+    this.gameContainer.x = shakeX;
+    this.gameContainer.y = shakeY - camOffset;
+    // Parallax also needs the interpolated camera position
+    if (alpha > 0) {
+      const lerpCamY = this.prevCamY + (this.state.camera.y - this.prevCamY) * alpha;
+      this.parallax.update(lerpCamY);
+    }
+    // Player gets an additional offset for its own movement between ticks
+    if (alpha > 0) {
+      this.playerGfx.x += (this.prevPlayerX - this.state.player.x) * (1 - alpha);
+      this.playerGfx.y += (this.prevPlayerY - this.state.player.y) * (1 - alpha);
+    }
   }
 
   private buildRenderContext(): RenderContext {
     return {
-      state: this.state, interpAlpha: this.interpAlpha,
-      prevPlayerX: this.prevPlayerX, prevPlayerY: this.prevPlayerY, prevCamY: this.prevCamY,
+      state: this.state,
       parallax: this.parallax, particles: this.particles,
       effectRenderer: this.effectRenderer, gfxSync: this.gfxSync, trail: this.trail,
       floatingTextMgr: this.floatingTextMgr, gameContainer: this.gameContainer,

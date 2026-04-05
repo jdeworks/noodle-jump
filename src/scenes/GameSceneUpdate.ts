@@ -26,12 +26,6 @@ import { renderTentacles, renderKnifeAmmo, renderDebugHitboxes } from "./BossAre
 
 export interface RenderContext {
   state: GameWorldState;
-  /** Interpolation alpha 0–1: lerp between previous tick and current tick (for smooth slow-mo). */
-  interpAlpha: number;
-  /** Previous tick positions for lerp-based interpolation. */
-  prevPlayerX: number;
-  prevPlayerY: number;
-  prevCamY: number;
   parallax: ParallaxBackground;
   particles: ParticleManager;
   effectRenderer: EffectRenderer;
@@ -58,14 +52,6 @@ export interface RenderContext {
   inputX: number;
 }
 
-function lerp(a: number, b: number, t: number): number { return a + (b - a) * t; }
-
-/** Compute interpolated camera Y for smooth slow-mo rendering. */
-function interpCamY(ctx: RenderContext): number {
-  if (ctx.interpAlpha <= 0 || ctx.state.isDying) return ctx.state.camera.y;
-  return lerp(ctx.prevCamY, ctx.state.camera.y, ctx.interpAlpha);
-}
-
 /** Render the death animation. Returns true if in death state. */
 export function renderDeathAnimation(ctx: RenderContext): boolean {
   if (!ctx.state.isDying) return false;
@@ -74,9 +60,7 @@ export function renderDeathAnimation(ctx: RenderContext): boolean {
   ctx.playerGfx.scale.x = (1 - t * 0.6) * (1 + Math.sin(t * 20) * 0.15);
   ctx.playerGfx.scale.y = 1 - t * 0.8;
   ctx.playerGfx.alpha = t > 0.7 ? 1 - (t - 0.7) / 0.3 : 1;
-  const camY = interpCamY(ctx);
-  const interpY = lerp(ctx.prevPlayerY, ctx.state.player.y, ctx.interpAlpha);
-  ctx.playerGfx.y = worldToScreen(interpY, camY);
+  ctx.playerGfx.y = worldToScreen(ctx.state.player.y, ctx.state.camera.y);
   ctx.floatingTextMgr.update();
   ctx.particles.updateCrumbleParticles();
   return true;
@@ -93,23 +77,14 @@ export function renderGameWorld(ctx: RenderContext): Graphics[] {
     };
     theme.background = overrides[ctx.cosmeticTheme] ?? theme.background;
   }
-  // Interpolated camera for smooth slow-mo
-  const camY = interpCamY(ctx);
   ctx.parallax.applyTheme(theme, state.zoneState.currentZone);
   if (!state.debugConfig.disableParallax) {
-    ctx.parallax.update(camY);
+    ctx.parallax.update(state.camera.y);
   }
   ctx.parallax.container.visible = !state.debugConfig.disableParallax;
+  const camY = state.camera.y;
 
-  // Lerp between previous and current tick for smooth slow-mo (visual only)
-  const alpha = ctx.interpAlpha;
-  const interpState = alpha > 0 ? {
-    ...state,
-    player: { ...state.player, x: lerp(ctx.prevPlayerX, state.player.x, alpha), y: lerp(ctx.prevPlayerY, state.player.y, alpha) },
-    camera: { ...state.camera, y: camY },
-  } : state;
-
-  ctx.effectRenderer.renderPlayer(interpState, ctx.playerGfx, camY, ctx.particles, ctx.inputX, ctx.cosmeticTint, ctx.cosmeticTheme);
+  ctx.effectRenderer.renderPlayer(state, ctx.playerGfx, camY, ctx.particles, ctx.inputX, ctx.cosmeticTint, ctx.cosmeticTheme);
   renderPlatforms(state, ctx.gfxSync, theme, camY, ctx.cosmeticTheme);
   renderMeatballs(state, ctx.gfxSync, camY);
   renderPowerUps(state, ctx.gfxSync, camY);
@@ -149,8 +124,8 @@ export function renderGameWorld(ctx: RenderContext): Graphics[] {
   else if (speedEffect === "pepper_sneeze") ctx.trail.setTrailType("speed_sneeze");
   else ctx.trail.setTrailType(ctx.cosmeticTrail);
   ctx.trail.addPoint(
-    interpState.player.x + state.player.width / 2,
-    interpState.player.y + state.player.height + 6,
+    state.player.x + state.player.width / 2,
+    state.player.y + state.player.height + 6,
   );
   ctx.trail.update(camY);
 
