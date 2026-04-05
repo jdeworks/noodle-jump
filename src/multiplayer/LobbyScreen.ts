@@ -11,6 +11,8 @@ import { CHARACTERS, drawCharacter } from "../rendering/PlayerCharacters";
 import { getSelectedCharacter, setSelectedCharacter } from "../systems/CharacterSettings";
 import { loadCosmetics, COSMETICS } from "../systems/Cosmetics";
 import { getUITheme } from "../ui/ThemeUI";
+import { loadRunConfigFromStorage, loadDebugConfigFromStorage } from "../ui/CustomRunStorage";
+import { setDebugConfig } from "../config/debug";
 
 export type LobbyRole = "host" | "guest";
 
@@ -18,27 +20,12 @@ export interface LobbyCallbacks {
   onStart: (seed: number, mode: string, touchControls: boolean, remoteChar?: string, remoteCosmetics?: { tint?: string; trail?: string; theme?: string }) => void;
 }
 
-const HEADER_STYLE = new TextStyle({
-  fontFamily: "monospace",
-  fontSize: 24,
-  fill: "#ffffff",
-  fontWeight: "bold",
-  stroke: { color: "#000000", width: 3 },
-});
-
-const LABEL_STYLE = new TextStyle({
-  fontFamily: "monospace",
-  fontSize: 16,
-  fill: "#ffffff",
-  stroke: { color: "#000000", width: 2 },
-});
-
-const STATUS_STYLE = new TextStyle({
-  fontFamily: "monospace",
-  fontSize: 14,
-  fill: "#aaaaaa",
-  stroke: { color: "#000000", width: 2 },
-});
+const HEADER_STYLE = new TextStyle({ fontFamily: "monospace", fontSize: 24,
+  fill: "#ffffff", fontWeight: "bold", stroke: { color: "#000000", width: 3 } });
+const LABEL_STYLE = new TextStyle({ fontFamily: "monospace", fontSize: 16,
+  fill: "#ffffff", stroke: { color: "#000000", width: 2 } });
+const STATUS_STYLE = new TextStyle({ fontFamily: "monospace", fontSize: 14,
+  fill: "#aaaaaa", stroke: { color: "#000000", width: 2 } });
 
 export class LobbyScreen {
   readonly container = new Container();
@@ -54,6 +41,7 @@ export class LobbyScreen {
   private remoteChar = "chef";
   private remoteCosmetics: { tint?: string; trail?: string; theme?: string } = {};
   private selectedTheme = "theme_default";
+  private useCustomRun = false;
 
   private p1StatusText: Text;
   private p2StatusText: Text;
@@ -183,7 +171,7 @@ export class LobbyScreen {
     const THEMES = COSMETICS.filter(c => c.type === "theme");
     const themeLabel = new Text({
       text: `Theme: ${THEMES.find(t => t.id === this.selectedTheme)?.name ?? "Classic"}`,
-      style: new TextStyle({ fontFamily: "monospace", fontSize: 14,
+      style: new TextStyle({ fontFamily: "monospace", fontSize: 13,
         fill: "#ccaaff", stroke: { color: "#000000", width: 2 } }),
     });
     themeLabel.x = GAME_WIDTH / 2; themeLabel.y = 360; themeLabel.anchor.set(0.5, 0.5);
@@ -199,8 +187,26 @@ export class LobbyScreen {
       });
     }
 
+    // Custom run toggle (host only — uses saved custom run settings)
+    const customLabel = new Text({
+      text: "Custom Run: OFF",
+      style: new TextStyle({ fontFamily: "monospace", fontSize: 13,
+        fill: "#888888", stroke: { color: "#000000", width: 2 } }),
+    });
+    customLabel.x = GAME_WIDTH / 2; customLabel.y = 385; customLabel.anchor.set(0.5, 0.5);
+    this.container.addChild(customLabel);
+    if (role === "host") {
+      customLabel.eventMode = "static"; customLabel.cursor = "pointer";
+      customLabel.text = "Custom Run: OFF (tap)";
+      customLabel.on("pointertap", () => {
+        this.useCustomRun = !this.useCustomRun;
+        customLabel.text = this.useCustomRun ? "Custom Run: ON (saved settings)" : "Custom Run: OFF (tap)";
+        customLabel.style.fill = this.useCustomRun ? "#44ff44" : "#888888";
+      });
+    }
+
     // Ready button
-    const readyBtnY = 410;
+    const readyBtnY = 420;
     const readyBg = new Graphics();
     readyBg.roundRect(GAME_WIDTH / 2 - 100, readyBtnY - 20, 200, 40, 10);
     readyBg.fill({ color: 0x2a6e3f, alpha: 0.9 });
@@ -212,13 +218,8 @@ export class LobbyScreen {
 
     const readyText = new Text({
       text: "Ready",
-      style: new TextStyle({
-        fontFamily: "monospace",
-        fontSize: 18,
-        fill: "#ffffff",
-        fontWeight: "bold",
-        stroke: { color: "#000000", width: 2 },
-      }),
+      style: new TextStyle({ fontFamily: "monospace", fontSize: 18,
+        fill: "#ffffff", fontWeight: "bold", stroke: { color: "#000000", width: 2 } }),
     });
     readyText.x = GAME_WIDTH / 2;
     readyText.y = readyBtnY;
@@ -250,17 +251,12 @@ export class LobbyScreen {
     readyText.on("pointertap", toggleReady);
 
     // Start button (host only)
-    const startBtnY = 480;
+    const startBtnY = 490;
     this.startBtn = new Graphics();
     this.startText = new Text({
       text: "Start Game",
-      style: new TextStyle({
-        fontFamily: "monospace",
-        fontSize: 20,
-        fill: "#ffffff",
-        fontWeight: "bold",
-        stroke: { color: "#000000", width: 2 },
-      }),
+      style: new TextStyle({ fontFamily: "monospace", fontSize: 20,
+        fill: "#ffffff", fontWeight: "bold", stroke: { color: "#000000", width: 2 } }),
     });
     this.startText.x = GAME_WIDTH / 2;
     this.startText.y = startBtnY;
@@ -275,10 +271,12 @@ export class LobbyScreen {
 
       const startGame = () => {
         if (!this.hostReady || !this.guestReady) return;
+        // Apply custom run settings if enabled
+        if (this.useCustomRun) setDebugConfig(loadDebugConfigFromStorage());
         const seed = Math.floor(Math.random() * 0xffffffff);
         this.sync.sendGameEvent({
           type: "start",
-          payload: { seed, mode: this.mode, touchControls: this.touchControls, character: this.localChar, theme: this.selectedTheme },
+          payload: { seed, mode: this.mode, touchControls: this.touchControls, character: this.localChar, theme: this.selectedTheme, customRun: this.useCustomRun },
         });
         this.remoteCosmetics.theme = this.selectedTheme;
         this.callbacks.onStart(seed, this.mode, this.touchControls, this.remoteChar, this.remoteCosmetics);
@@ -374,7 +372,7 @@ export class LobbyScreen {
 
     if (this.role === "host") {
       const canStart = this.hostReady && this.guestReady;
-      this.renderStartButton(460, canStart);
+      this.renderStartButton(490, canStart);
       this.startText.alpha = canStart ? 1 : 0.4;
     }
   }

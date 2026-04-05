@@ -12,7 +12,7 @@ import { resetRNG } from "../systems/RNG";
 import { resetRendererState } from "../scenes/EntityRenderer";
 import { createDefaultRunConfig, type RunConfig } from "../systems/CustomRunConfig";
 import { DEBUG_MODE } from "../config/constants";
-import { setDebugConfig, createDebugConfig } from "../config/debug";
+import { createDebugConfig, setDebugConfig } from "../config/debug";
 import { showTitleScreen } from "../ui/TitleScreenView";
 import { launchGame } from "../scenes/GameLauncher";
 import { ConnectionManager } from "./ConnectionManager";
@@ -89,8 +89,7 @@ export class OnlineSession {
       onDataChannel: () => {}, onRoom: () => {},
     });
 
-    // Create game scene with shared seed
-    setDebugConfig(createDebugConfig());
+    // Don't reset debug config — lobby may have applied custom run settings
     const runConfig: RunConfig = { ...createDefaultRunConfig(), seed: config.seed };
     this.scene = new GameScene(runConfig);
     // Apply shared theme from lobby
