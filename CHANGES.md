@@ -129,6 +129,7 @@ intent: Implement Daily Challenge (date-seeded runs, medals, streaks, achievemen
 - progress: Extract TitleScreenMenus and PauseMenu for LOC limits | src/ui/TitleScreenMenus.ts, src/scenes/PauseMenu.ts
 
 ## [2026-04-05T15:10] session-dc01 | status: completed | mode: full | type: add
+
 files_touched: src/systems/DailyChallengeState.ts, src/systems/ShadowRecorder.ts, src/systems/ShadowPlayback.ts, src/ui/DailyChallengeScreen.ts, src/ui/DailyGameOverView.ts, src/ui/TitleScreenView.ts, src/ui/TitleScreenMenus.ts, src/scenes/GameLauncher.ts, src/scenes/GameLoopTicker.ts, src/scenes/PauseMenu.ts, src/systems/Achievements.ts, TASKS.md
 symbols_added: generateDailyConfig, getMedalThresholds, getMedal, recordDailyResult, calculateStreak, getDailyConfigSummary, getTodayDateKey, getMedalsInRange, loadDailyData, saveDailyData, DailyChallengeScreen, showDailyGameOver, createShadowRecorder, getSampleCount, getFrame, saveLastShadow, saveBestShadow, saveDailyShadow, loadLastShadow, loadBestShadow, loadDailyShadow, createShadowPlayback, getShadowContext, setupTitleMenus, createPauseMenu
 symbols_removed: (none)
@@ -137,15 +138,24 @@ reason: Daily Challenge (date-seeded config, medals, streaks, 5 achievements, de
 health_snapshot: LOC=28097, tests=447, complexity=ok
 
 ## [2026-04-05T15:15] session-dc02 | status: started | mode: full | type: fix
+
 intent: Increase daily challenge difficulty — higher thresholds, more modifiers, platinum+diamond medals
+
 - progress: Higher base thresholds (5k/15k/30k/50k/80k), add platinum+diamond medals, randomize game speed/platform type/spawn rates/quick zones/only-negative-powerups | src/systems/DailyChallengeState.ts, src/ui/DailyChallengeScreen.ts, src/ui/DailyGameOverView.ts, src/systems/Achievements.ts, src/scenes/GameLauncher.ts, tests/daily-challenge-state.test.ts
 - progress: Flat thresholds, balanced modifier pools (90-day analysis), mode-based shadow slots, fullscreen to corner icon | src/systems/DailyChallengeState.ts, src/systems/ShadowRecorder.ts, src/scenes/GameLauncher.ts, src/scenes/GameLoopTicker.ts, src/ui/TitleScreenView.ts
 - progress: Fix shadow standing at start during countdown, daily best score on retry | src/scenes/GameLoopTicker.ts, src/ui/DailyGameOverView.ts
 
 ## [2026-04-05T15:40] session-dc02 | status: completed | mode: full | type: fix
+
 files_touched: src/systems/DailyChallengeState.ts, src/systems/ShadowRecorder.ts, src/systems/Achievements.ts, src/scenes/GameLauncher.ts, src/scenes/GameLoopTicker.ts, src/ui/DailyChallengeScreen.ts, src/ui/DailyGameOverView.ts, src/ui/TitleScreenView.ts, tests/daily-challenge-state.test.ts, tests/shadow-recorder.test.ts
 symbols_added: generateDailyModifiers, generateDailyDebugConfig, DailyModifiers, getShadowKey, getShadowSlot, saveShadow, loadShadow, ShadowMode
 symbols_removed: saveLastShadow, saveBestShadow, saveDailyShadow, loadLastShadow, loadBestShadow, loadDailyShadow (replaced by mode-based saveShadow/loadShadow)
 tests_added: (updated existing: tests/daily-challenge-state.test.ts, tests/shadow-recorder.test.ts — added getShadowSlot tests)
 reason: Harder daily challenges (platinum+diamond medals, more modifiers, flat thresholds), mode-based shadow slots (normal/daily/custom), shadow countdown fix, daily best score display.
 health_snapshot: LOC=28200, tests=451, complexity=ok
+
+## [2026-04-05T12:00] session-dc03 | status: started | mode: full | type: fix
+
+intent: Make game frame-rate independent — decouple physics from display refresh rate using delta-time
+
+- progress: Delta-time game loop in GameScene.update(), timer scaling in GameLoop/GameLoopBoss/GameLoopTick, boss patternTick scaling | src/scenes/GameScene.ts, src/scenes/GameLoop.ts, src/scenes/GameLoopBoss.ts, src/scenes/GameLoopTick.ts, src/entities/bosses/\*.ts, src/entities/Projectile.ts, src/systems/Weather.ts, src/systems/PlatformEffects.ts, src/systems/ScreenShake.ts, src/systems/Score.ts, src/systems/EnemySpawner.ts, src/systems/Hazards.ts, src/systems/PowerUpEffects.ts, src/entities/Collectible.ts, src/entities/PowerUpEffectApply.ts, src/scenes/GameLoopHelpers.ts, src/entities/Platform.ts, src/config/constants.ts

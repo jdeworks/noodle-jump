@@ -7,6 +7,7 @@ A pasta-themed endless jumper built with PixiJS and TypeScript.
 ## Features
 
 ### Gameplay
+
 - **13 playable characters** — 10 base (Chef, Goblin, Grandma, Robot, Ninja, Princess, Alien, Viking, Pirate, Wizard) + 3 unlockable (Neon Chef, Nyan Cat, Skeleton) — each with a unique projectile
 - **13 power-ups** — 8 positive (spring, tornado, rocket, lasagna layers, sneeze, magnet, pasta shield, gnocchi bounce) and 5 negative (chili pepper, soggy noodle, garlic breath, burnt toast, minestrone soup)
 - **11 platform types** — static, breaking, brittle, moving, conveyor, spring, ice, crumbling, teleport, weighted, lasagna
@@ -18,6 +19,7 @@ A pasta-themed endless jumper built with PixiJS and TypeScript.
 - Progressive difficulty scaling with zone-specific mechanics
 
 ### Multiplayer
+
 - **Local co-op** — split-screen on one device (P1: WASD, P2: Arrow keys)
   - Best Height — both play until dead, ghost mode after first death, highest height wins
   - First to Die — first player to die loses, fast rounds
@@ -28,6 +30,7 @@ A pasta-themed endless jumper built with PixiJS and TypeScript.
   - Lobby with ready-up, interpolated remote player rendering
 
 ### Audio
+
 - Unique music track per zone with smooth crossfade transitions
 - Boss battle music
 - Per-power-up SFX (13 unique sounds)
@@ -36,6 +39,7 @@ A pasta-themed endless jumper built with PixiJS and TypeScript.
 - Volume sliders for SFX and music
 
 ### UI & Meta
+
 - Tutorial overlay for first play
 - How to Play screen with all mechanics explained
 - Custom runs — configurable seed, enemies, power-ups, difficulty, practice mode
@@ -48,12 +52,14 @@ A pasta-themed endless jumper built with PixiJS and TypeScript.
 - Debug mode with presets for testing specific features
 
 ### Technical
+
 - Tilt controls on mobile, keyboard (arrow keys / WASD) on desktop
 - Touch controls (tap left/right half) as tilt alternative
 - PWA — installable, works offline via service worker
 - Haptic feedback on mobile (impacts, power-ups, death)
 - Seeded RNG for deterministic/reproducible runs
 - 420 tests across 57 test files
+- Frame-rate independent — delta-time game loop ensures consistent speed at any refresh rate (60Hz, 144Hz, etc.)
 - Modular architecture — pure logic separated from PixiJS rendering
 
 ## Development
@@ -106,7 +112,7 @@ This project was built across 12+ Claude Code sessions (~160 commits). Below are
 
 **What was tried:** Longer durations, different easing curves, scaling the sprite. All looked wrong because the physics and animation were in conflict.
 
-**Fix:** Complete rewrite of the collision-to-jump flow. Phased animation: hold the player on the platform during squash (6 frames), *then* fire the jump during stretch (8 frames) with eased keyframe curves. Required separating the "landed" event from the "jump" event.
+**Fix:** Complete rewrite of the collision-to-jump flow. Phased animation: hold the player on the platform during squash (6 frames), _then_ fire the jump during stretch (8 frames) with eased keyframe curves. Required separating the "landed" event from the "jump" event.
 
 **Side effect:** The squash hold froze ALL physics including horizontal movement, so the player couldn't slide into meatballs during the hold. Fix: only freeze vertical position, keep horizontal movement and collection active.
 
@@ -127,7 +133,7 @@ This project was built across 12+ Claude Code sessions (~160 commits). Below are
 
 **Problem:** Zones never switched. User climbed 2000 height with no zone change.
 
-**Root cause:** `platformsPassed` was calculated as `platforms.filter(p => p.y > player.y).length` — counting platforms *currently in memory* below the player. But platforms get **pruned** as the player climbs, so the count dropped instead of growing.
+**Root cause:** `platformsPassed` was calculated as `platforms.filter(p => p.y > player.y).length` — counting platforms _currently in memory_ below the player. But platforms get **pruned** as the player climbs, so the count dropped instead of growing.
 
 **Fix:** Changed to a cumulative counter that increments whenever the player passes a new highest point. But this introduced new issues across later sessions — the counter included broken platforms, kept counting during boss transitions, and accumulated stale height gaps after boss fights. Each required its own fix.
 
@@ -142,7 +148,7 @@ This project was built across 12+ Claude Code sessions (~160 commits). Below are
 
 **User feedback that forced the rethink:** "What does this even do?" after iteration 3. The AI kept trying to make the original concept work instead of asking what the player actually needs.
 
-**Takeaway:** When a mechanic takes 3+ attempts, the concept might be wrong, not the implementation. Step back and ask what the player experience should *feel* like.
+**Takeaway:** When a mechanic takes 3+ attempts, the concept might be wrong, not the implementation. Step back and ask what the player experience should _feel_ like.
 
 ### 6. Catastrophic staged-changes data loss
 
@@ -168,7 +174,7 @@ This project was built across 12+ Claude Code sessions (~160 commits). Below are
 
 **Problem:** The meatball magnet power-up didn't visibly attract meatballs despite correct attraction code.
 
-**Root cause:** `updateMeatballPositions()` snapped meatballs back to their platform positions every frame. It ran *after* `attractMeatballs()`, overwriting the pull. The magnet moved them, then the position sync moved them back.
+**Root cause:** `updateMeatballPositions()` snapped meatballs back to their platform positions every frame. It ran _after_ `attractMeatballs()`, overwriting the pull. The magnet moved them, then the position sync moved them back.
 
 **Fix:** Skip platform position sync when magnet is active.
 

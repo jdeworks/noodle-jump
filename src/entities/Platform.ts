@@ -62,8 +62,8 @@ export interface PlatformState {
   id: number;
   originX: number;
   moveDirection: number;
-  /** Tick when this platform was spawned (used for timed self-destruct). */
-  spawnTick?: number;
+  /** Elapsed ms when this platform was spawned (used for timed self-destruct). */
+  spawnTimeMs?: number;
   /** Conveyor push direction: -1 = left, 1 = right. */
   conveyorDir?: -1 | 1;
   /** Crumbling countdown timer (ticks remaining, starts on landing). */
@@ -80,8 +80,7 @@ let nextPlatformId = 0;
 
 function randomWidth(): number {
   return (
-    PLATFORM_WIDTH_MIN +
-    random() * (PLATFORM_WIDTH_MAX - PLATFORM_WIDTH_MIN)
+    PLATFORM_WIDTH_MIN + random() * (PLATFORM_WIDTH_MAX - PLATFORM_WIDTH_MIN)
   );
 }
 
@@ -224,15 +223,19 @@ export function generatePlatforms(
     const maxX = GAME_WIDTH - width - PLATFORM_HORIZONTAL_MARGIN;
     const x = PLATFORM_HORIZONTAL_MARGIN + random() * Math.max(0, maxX);
 
-    let type = forcePlatformType ? (forcePlatformType as PlatformType) : rollType(difficulty);
+    let type = forcePlatformType
+      ? (forcePlatformType as PlatformType)
+      : rollType(difficulty);
 
     // Never two consecutive unreliable platforms (brittle, crumbling, breaking)
-    const isUnreliable = type === "brittle" || type === "crumbling" || type === "breaking";
+    const isUnreliable =
+      type === "brittle" || type === "crumbling" || type === "breaking";
     if (lastWasUnlandable && isUnreliable && !forcePlatformType) {
       type = "static";
     }
 
-    lastWasUnlandable = type === "brittle" || type === "crumbling" || type === "breaking";
+    lastWasUnlandable =
+      type === "brittle" || type === "crumbling" || type === "breaking";
 
     platforms.push(makePlatform(x, y, width, type));
   }

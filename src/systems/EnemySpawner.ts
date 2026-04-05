@@ -32,15 +32,19 @@ export function trySpawnEnemy(
   cameraY: number,
   platformsPassed: number,
   spawnMultiplier = 1.0,
+  speedScale = 1,
 ): { spawner: SpawnerState; enemy: EnemyState | null } {
-  const ticks = spawner.ticksSinceLastSpawn + 1;
+  const ticks = spawner.ticksSinceLastSpawn + speedScale;
 
   if (platformsPassed < ENEMY_SPAWN_MIN_PLATFORMS) {
     return { spawner: { ticksSinceLastSpawn: ticks }, enemy: null };
   }
 
   // spawnMultiplier > 1 = faster spawns (2x = half interval, 3x = third)
-  const adjustedInterval = Math.max(1, Math.ceil(ENEMY_SPAWN_INTERVAL / spawnMultiplier));
+  const adjustedInterval = Math.max(
+    1,
+    Math.ceil(ENEMY_SPAWN_INTERVAL / spawnMultiplier),
+  );
   if (ticks < adjustedInterval) {
     return { spawner: { ticksSinceLastSpawn: ticks }, enemy: null };
   }

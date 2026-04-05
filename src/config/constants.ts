@@ -127,7 +127,7 @@ export const STAGNANT_KILL_START_TICKS = 300; // 5 seconds — platforms start c
 export const STAGNANT_CRUMBLE_INTERVAL = 40; // ticks between forced crumbles
 
 // ── Lasagna platforms ─────────────────────────────────────────────────────
-export const LASAGNA_TTL_TICKS = 300; // 5 seconds at 60fps
+export const LASAGNA_TTL_MS = 5000; // 5 seconds (wall-clock)
 
 // ── Countdown ─────────────────────────────────────────────────────────────
 export const COUNTDOWN_TICKS = 180; // 3 seconds
@@ -169,8 +169,12 @@ export const ZONE_THRESHOLDS = DEBUG_MODE
 
 // ── Colors (placeholder until pixel art) ────────────────────────────────────
 export const COLORS = {
-  background: [0xfff8e7, 0xd4e6f1, 0x1a1a2e, 0xe8f0ff, 0x2a0a00, 0xffeeff, 0xfff5d4] as const,
-  platform: [0xd4a574, 0x7fb3d8, 0x6c3483, 0x88bbdd, 0x884422, 0xee88cc, 0xeebb44] as const,
+  background: [
+    0xfff8e7, 0xd4e6f1, 0x1a1a2e, 0xe8f0ff, 0x2a0a00, 0xffeeff, 0xfff5d4,
+  ] as const,
+  platform: [
+    0xd4a574, 0x7fb3d8, 0x6c3483, 0x88bbdd, 0x884422, 0xee88cc, 0xeebb44,
+  ] as const,
   platformBreaking: 0x8b6914, // wet pasta brown
   platformBrittle: 0xc4a882, // pale/crumbly pasta
   platformLasagna: 0xff8c00, // orange cheese — matches lasagna power-up

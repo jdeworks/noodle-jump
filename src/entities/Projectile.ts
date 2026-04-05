@@ -63,8 +63,8 @@ export function updateProjectiles(
         ...p,
         x: p.x + p.vx * speedScale,
         y: p.y + p.vy * speedScale,
-        life: p.life - 1,
-        alive: p.life - 1 > 0,
+        life: p.life - speedScale,
+        alive: p.life - speedScale > 0,
       };
     })
     .filter((p) => p.alive);
@@ -104,9 +104,9 @@ export function checkProjectileEnemyCollisions(
     }
   }
 
-  const updatedProjectiles = projectiles.map((p) =>
-    consumedProjectileIds.has(p.id) ? { ...p, alive: false } : p,
-  ).filter((p) => p.alive);
+  const updatedProjectiles = projectiles
+    .map((p) => (consumedProjectileIds.has(p.id) ? { ...p, alive: false } : p))
+    .filter((p) => p.alive);
 
   return { projectiles: updatedProjectiles, hitEnemyIds };
 }

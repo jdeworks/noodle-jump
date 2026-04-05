@@ -13,9 +13,10 @@ import {
  * Check if shield absorbs a negative power-up hit.
  * Returns updated effect (consumed if absorbed) and whether it absorbed.
  */
-export function tryShieldAbsorb(
-  effect: ActiveEffect | null,
-): { effect: ActiveEffect | null; absorbed: boolean } {
+export function tryShieldAbsorb(effect: ActiveEffect | null): {
+  effect: ActiveEffect | null;
+  absorbed: boolean;
+} {
   if (!effect || effect.type !== "pasta_shield") {
     return { effect, absorbed: false };
   }
@@ -61,11 +62,14 @@ export function createMinestroneFlood(playerY: number): MinestroneState {
 }
 
 /** Tick the minestrone flood — rises toward the player. */
-export function tickMinestroneFlood(state: MinestroneState): MinestroneState {
+export function tickMinestroneFlood(
+  state: MinestroneState,
+  speedScale = 1,
+): MinestroneState {
   if (!state.active) return state;
   return {
     ...state,
-    floodY: state.floodY - state.riseSpeed,
+    floodY: state.floodY - state.riseSpeed * speedScale,
   };
 }
 

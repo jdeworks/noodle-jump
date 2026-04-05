@@ -77,7 +77,10 @@ export function applyPowerUp(
     case "meatball_magnet":
       return {
         player,
-        effect: { type: "meatball_magnet", ticksRemaining: MEATBALL_MAGNET_DURATION },
+        effect: {
+          type: "meatball_magnet",
+          ticksRemaining: MEATBALL_MAGNET_DURATION,
+        },
       };
 
     case "pasta_shield":
@@ -89,13 +92,19 @@ export function applyPowerUp(
     case "gnocchi_bounce":
       return {
         player,
-        effect: { type: "gnocchi_bounce", ticksRemaining: GNOCCHI_BOUNCE_DURATION },
+        effect: {
+          type: "gnocchi_bounce",
+          ticksRemaining: GNOCCHI_BOUNCE_DURATION,
+        },
       };
 
     case "minestrone_soup":
       return {
         player,
-        effect: { type: "minestrone_soup", ticksRemaining: MINESTRONE_SOUP_DURATION },
+        effect: {
+          type: "minestrone_soup",
+          ticksRemaining: MINESTRONE_SOUP_DURATION,
+        },
       };
 
     // Negative power-ups — no velocity boost, just debuff effects
@@ -147,8 +156,9 @@ export interface TickEffectResult {
 export function tickEffect(
   player: PlayerState,
   effect: ActiveEffect,
+  speedScale = 1,
 ): TickEffectResult {
-  const remaining = effect.ticksRemaining - 1;
+  const remaining = effect.ticksRemaining - speedScale;
 
   if (remaining <= 0) {
     return { player, effect: null, spawnPlatform: false };

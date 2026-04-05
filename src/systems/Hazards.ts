@@ -44,12 +44,15 @@ export function tickWind(system: WindSystem, cameraY: number): WindSystem {
   // Spawn zones ahead of the camera (player moves toward lower Y)
   const spawnHorizon = cameraY - GAME_HEIGHT * 2;
   while (nextSpawnY > spawnHorizon) {
-    zones = [...zones, {
-      direction: random() > 0.5 ? 1 : -1,
-      strength: WIND_GUST_FORCE,
-      y: nextSpawnY,
-      height: WIND_ZONE_HEIGHT,
-    }];
+    zones = [
+      ...zones,
+      {
+        direction: random() > 0.5 ? 1 : -1,
+        strength: WIND_GUST_FORCE,
+        y: nextSpawnY,
+        height: WIND_ZONE_HEIGHT,
+      },
+    ];
     // Random gap to the next zone
     nextSpawnY -= WIND_ZONE_SPACING + random() * WIND_ZONE_SPACING;
   }
@@ -57,7 +60,7 @@ export function tickWind(system: WindSystem, cameraY: number): WindSystem {
   // Prune zones only when platforms at their level would also be gone
   // Platforms are pruned at camera.y + GAME_HEIGHT + 400
   const pruneY = cameraY + GAME_HEIGHT + 400;
-  zones = zones.filter(z => z.y < pruneY);
+  zones = zones.filter((z) => z.y < pruneY);
 
   return { zones, nextSpawnY };
 }
@@ -66,13 +69,14 @@ export function tickWind(system: WindSystem, cameraY: number): WindSystem {
 export function applyWindForce(
   player: PlayerState,
   zones: WindZone[],
+  speedScale = 1,
 ): PlayerState {
   let dx = 0;
   const playerBottom = player.y + player.height;
   for (const zone of zones) {
     const zoneBottom = zone.y + zone.height;
     if (playerBottom >= zone.y && player.y <= zoneBottom) {
-      dx += zone.direction * zone.strength;
+      dx += zone.direction * zone.strength * speedScale;
     }
   }
   if (dx === 0) return player;

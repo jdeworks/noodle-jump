@@ -20,12 +20,12 @@ export type MeatballVariant =
 
 /** Zone-to-meatball variant mapping. */
 const ZONE_VARIANTS: MeatballVariant[] = [
-  "meatball",        // Zone 1: Kitchen
-  "fishball",        // Zone 2: Ocean
-  "meteor",          // Zone 3: Space
-  "snowball",        // Zone 4: Freezer
-  "fireball",        // Zone 5: Volcano
-  "gummy",           // Zone 6: Candy
+  "meatball", // Zone 1: Kitchen
+  "fishball", // Zone 2: Ocean
+  "meteor", // Zone 3: Space
+  "snowball", // Zone 4: Freezer
+  "fireball", // Zone 5: Volcano
+  "gummy", // Zone 6: Candy
   "golden_meatball", // Zone 7: Final Kitchen
 ];
 
@@ -100,8 +100,7 @@ export function collectMeatballs(
   const sweepLeft = Math.min(px, playerX) - pad;
   const sweepRight = Math.max(px + playerWidth, playerX + playerWidth) + pad;
   const sweepTop = Math.min(py, playerY) - pad;
-  const sweepBottom =
-    Math.max(py + playerHeight, playerY + playerHeight) + pad;
+  const sweepBottom = Math.max(py + playerHeight, playerY + playerHeight) + pad;
 
   let collected = 0;
   const updated = meatballs.map((m) => {
@@ -152,6 +151,7 @@ export function attractMeatballs(
   playerY: number,
   playerWidth: number,
   meatballs: CollectibleState[],
+  speedScale = 1,
 ): CollectibleState[] {
   const cx = playerX + playerWidth / 2;
   const cy = playerY;
@@ -163,7 +163,7 @@ export function attractMeatballs(
     if (dist > MEATBALL_MAGNET_RADIUS || dist < 1) return m;
     // Inverse-square-ish: very strong up close, weaker at distance (like a real magnet)
     const t = 1 - dist / MEATBALL_MAGNET_RADIUS;
-    const strength = 3 + 18 * t * t; // 3 at edge, 21 at point-blank
+    const strength = (3 + 18 * t * t) * speedScale; // 3 at edge, 21 at point-blank
     return {
       ...m,
       x: m.x + (dx / dist) * strength,

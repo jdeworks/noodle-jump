@@ -14,7 +14,7 @@ import { GAME_HEIGHT, GAME_WIDTH } from "../config/constants";
 
 const KNIFE_REGEN_TICKS = 90; // 1.5 seconds per knife
 
-const BOSS_GRACE_TICKS = 120; // 2 seconds of invulnerability after boss spawns
+import { checkSkillKill, checkStompKill, isBossInGrace } from "./GameLoopBossDamage";
 
 /** Queue a boss spawn on zone change — actual spawn deferred until transition ends. */
 export function maybeSpawnBoss(
@@ -23,7 +23,12 @@ export function maybeSpawnBoss(
 ): GameWorldState {
   // forceBossAtPlatforms: trigger boss at a specific platform count
   const forceAt = s.debugConfig.forceBossAtPlatforms;
-  if (forceAt > 0 && !s.activeBoss && s.pendingBossZone === null && s.platformsPassed >= forceAt) {
+  if (
+    forceAt > 0 &&
+    !s.activeBoss &&
+    s.pendingBossZone === null &&
+    s.platformsPassed >= forceAt
+  ) {
     // Only trigger once — set forceBossAtPlatforms to 0 after triggering
     s = { ...s, debugConfig: { ...s.debugConfig, forceBossAtPlatforms: 0 } };
     return { ...s, pendingBossZone: s.zoneState.currentZone };
@@ -42,23 +47,23 @@ export function spawnPendingBoss(
 ): GameWorldState {
   if (s.pendingBossZone === null || s.activeBoss) return s;
   // forceBossType overrides the zone-based boss selection
-  const bossType = s.debugConfig.forceBossType ?? getBossForZone(s.pendingBossZone);
+  const bossType =
+    s.debugConfig.forceBossType ?? getBossForZone(s.pendingBossZone);
   const behavior = bossType ? getBossBehavior(bossType) : undefined;
   if (!bossType || !behavior) return { ...s, pendingBossZone: null };
 
   // Compute the ideal boss-arena camera position, then smoothly transition.
-  const distFromCamera = Math.abs(s.player.y - (s.camera.y + GAME_HEIGHT * 0.5));
-  const lockedCameraY = distFromCamera < GAME_HEIGHT
-    ? s.player.y - GAME_HEIGHT * 0.5
-    : s.camera.y;
+  const distFromCamera = Math.abs(
+    s.player.y - (s.camera.y + GAME_HEIGHT * 0.5),
+  );
+  const lockedCameraY =
+    distFromCamera < GAME_HEIGHT ? s.player.y - GAME_HEIGHT * 0.5 : s.camera.y;
   const camera = { ...s.camera, bossTargetY: lockedCameraY };
 
   // Spawn boss away from the player (opposite side of screen)
   const boss = behavior.create(lockedCameraY, s.platforms);
   const playerSide = s.player.x < GAME_WIDTH / 2 ? "left" : "right";
-  const safeX = playerSide === "left"
-    ? GAME_WIDTH - boss.width - 20
-    : 20;
+  const safeX = playerSide === "left" ? GAME_WIDTH - boss.width - 20 : 20;
   const spawnedBoss = { ...boss, x: safeX, patternTick: 0 };
 
   // Convert arena platforms to boss-safe types (no teleport, spring, lasagna)
@@ -70,8 +75,16 @@ export function spawnPendingBoss(
   );
 
   // Convert arena power-ups to boss-safe types
-  const BOSS_SAFE_TYPES = new Set(["pasta_shield", "meatball_magnet", "gnocchi_bounce"]);
-  const BOSS_REPLACEMENTS = ["pasta_shield", "gnocchi_bounce", "meatball_magnet"];
+  const BOSS_SAFE_TYPES = new Set([
+    "pasta_shield",
+    "meatball_magnet",
+    "gnocchi_bounce",
+  ]);
+  const BOSS_REPLACEMENTS = [
+    "pasta_shield",
+    "gnocchi_bounce",
+    "meatball_magnet",
+  ];
   let replIdx = 0;
   const safePowerUps = s.powerUps.map((pu) => {
     if (pu.collected || BOSS_SAFE_TYPES.has(pu.type)) return pu;
@@ -94,16 +107,19 @@ export function spawnPendingBoss(
     enemies: [],
     projectiles: [],
     // Cancel movement effects so player doesn't fly out of the arena, but keep shield
-    activeEffect: s.activeEffect?.type === "pasta_shield" ? s.activeEffect : null,
+    activeEffect:
+      s.activeEffect?.type === "pasta_shield" ? s.activeEffect : null,
     player: { ...s.player, vy: Math.max(s.player.vy, -10) },
   };
 }
 
 const BOSS_DEATH_TICKS = 90; // 1.5 second death animation
-const SKILL_KILL_POINTS = 5000;
 
 /** Clean up after boss is fully dead — resume normal gameplay. */
-function finishBossKill(s: GameWorldState, events: GameEvent[]): GameWorldState {
+function finishBossKill(
+  s: GameWorldState,
+  events: GameEvent[],
+): GameWorldState {
   const bossType = s.activeBoss?.type ?? "unknown";
   const highestSurviving = s.platforms
     .filter((p) => !p.broken)
@@ -122,8 +138,12 @@ function finishBossKill(s: GameWorldState, events: GameEvent[]): GameWorldState 
     highestPlatformY: resumeY,
     highestPlayerY: s.player.y,
     bossesDefeated: s.bossesDefeated + 1,
-    meatballs: s.meatballs.filter((m) => m.collected || survivingPlatIds.has(m.platformId)),
-    powerUps: s.powerUps.filter((pu) => pu.collected || survivingPlatIds.has(pu.platformId)),
+    meatballs: s.meatballs.filter(
+      (m) => m.collected || survivingPlatIds.has(m.platformId),
+    ),
+    powerUps: s.powerUps.filter(
+      (pu) => pu.collected || survivingPlatIds.has(pu.platformId),
+    ),
   };
 }
 
@@ -136,7 +156,7 @@ export function tickBoss(
 
   // Death animation — tick down, then clean up
   if (!s.activeBoss.alive) {
-    const ticks = (s.activeBoss.deathTicks ?? 0) - 1;
+    const ticks = (s.activeBoss.deathTicks ?? 0) - s.gameSpeedScale;
     if (ticks <= 0) {
       return finishBossKill(s, events);
     }
@@ -163,7 +183,12 @@ export function tickBoss(
 
   const boss = s.activeBoss!;
   const bossResult = behavior.tick(
-    boss, s.player, s.platforms, s.animTick, s.gameSpeedScale, s.debugConfig.bossAttackMultiplier,
+    boss,
+    s.player,
+    s.platforms,
+    s.animTick,
+    s.gameSpeedScale,
+    s.debugConfig.bossAttackMultiplier,
   );
   s = { ...s, activeBoss: bossResult.boss };
 
@@ -178,74 +203,28 @@ export function tickBoss(
     };
   }
 
-  // Skill kill: only when boss is MID-JUMP (progress >= 0) and target platform is broken/breaks
-  const BREAKABLE_TYPES = new Set(["breaking", "brittle", "crumbling"]);
-  const bossArc = bossResult.boss.jumpArc;
-  const bossTargetPlatId = bossArc?.targetPlatformId;
-  const bossIsJumping = bossArc != null && bossArc.progress >= 0;
-  if (bossIsJumping && bossTargetPlatId != null && bossResult.boss.alive) {
-    const targetPlat = s.platforms.find((p) => p.id === bossTargetPlatId);
-    if (targetPlat && BREAKABLE_TYPES.has(targetPlat.type)) {
-      let skillKilled = false;
-      if (targetPlat.broken) {
-        const dmgResult = damageBoss({ ...bossResult.boss, health: 1 });
-        s = { ...s, activeBoss: { ...dmgResult.boss, deathTicks: BOSS_DEATH_TICKS, jumpArc: undefined } };
-        skillKilled = true;
-      } else {
-        const pBot = s.player.y + s.player.height;
-        const onPlatX = s.player.x + s.player.width > targetPlat.x && s.player.x < targetPlat.x + targetPlat.width;
-        const onPlatY = pBot >= targetPlat.y && pBot <= targetPlat.y + 12;
-        if (onPlatX && onPlatY) {
-          s = {
-            ...s,
-            platforms: s.platforms.map((p) => p.id === bossTargetPlatId ? { ...p, broken: true } : p),
-          };
-          const dmgResult = damageBoss({ ...bossResult.boss, health: 1 });
-          s = { ...s, activeBoss: { ...dmgResult.boss, deathTicks: BOSS_DEATH_TICKS, jumpArc: undefined } };
-          skillKilled = true;
-        }
-      }
-      if (skillKilled) {
-        s = { ...s, scoreState: { ...s.scoreState, points: s.scoreState.points + SKILL_KILL_POINTS } };
-        events.push({ type: "skillKill" });
-      }
-    }
-  }
-  // During preview, if target platform breaks, just pick a new target instead of dying
-  if (bossArc && bossArc.progress < 0 && bossTargetPlatId != null && bossResult.boss.alive) {
-    const targetPlat = s.platforms.find((p) => p.id === bossTargetPlatId);
-    if (!targetPlat || targetPlat.broken) {
-      // Target gone — cancel preview, boss will pick a new target next cycle
-      s = { ...s, activeBoss: { ...bossResult.boss, jumpArc: undefined } };
-    }
-  }
-
-  // Stomp skill kill: player lands on top of hovering bosses (kraken, ufo)
-  const STOMP_BOSSES = new Set(["chef_rival", "kraken", "ufo"]);
-  const inGrace = bossResult.boss.patternTick <= BOSS_GRACE_TICKS;
-  if (!inGrace && s.activeBoss?.alive && STOMP_BOSSES.has(s.activeBoss.type)) {
-    const b = s.activeBoss;
-    const pad = 4;
-    const overlapX = s.player.x + s.player.width - pad > b.x && s.player.x + pad < b.x + b.width;
-    const playerBottom = s.player.y + s.player.height;
-    const stompY = playerBottom >= b.y && playerBottom <= b.y + b.height * 0.4 && s.player.vy > 0;
-    if (overlapX && stompY) {
-      const dmgResult = damageBoss({ ...s.activeBoss, health: 1 });
-      s = { ...s, activeBoss: { ...dmgResult.boss, deathTicks: BOSS_DEATH_TICKS } };
-      s = { ...s, player: { ...s.player, vy: -12 }, bossStomps: s.bossStomps + 1 };
-      s = { ...s, scoreState: { ...s.scoreState, points: s.scoreState.points + SKILL_KILL_POINTS } };
-      events.push({ type: "skillKill" });
-    }
-  }
+  // Skill kill and stomp checks
+  s = checkSkillKill(s, bossResult, events);
+  s = checkStompKill(s, bossResult.boss.patternTick, events);
+  const inGrace = isBossInGrace(bossResult.boss.patternTick);
 
   // Check contact damage (e.g. chef rival, kraken from below) — skip during grace period
-  if (!inGrace && s.activeBoss?.alive && behavior.checkPlayerContact(s.activeBoss, s.player)) {
+  if (
+    !inGrace &&
+    s.activeBoss?.alive &&
+    behavior.checkPlayerContact(s.activeBoss, s.player)
+  ) {
     if (s.activeEffect?.type === "pasta_shield") {
       const shield = tryShieldAbsorb(s.activeEffect);
       s = { ...s, activeEffect: shield.effect };
     } else if (!s.isDying && !s.practiceMode && !s.debugConfig.invincible) {
-      s = { ...s, isDying: true, squashTicks: 0, pendingJumpVy: 0,
-        ghostDeathHeight: s.ghostDeathHeight || s.scoreState.height };
+      s = {
+        ...s,
+        isDying: true,
+        squashTicks: 0,
+        pendingJumpVy: 0,
+        ghostDeathHeight: s.ghostDeathHeight || s.scoreState.height,
+      };
       if (!s.isGhost) events.push({ type: "died" });
     }
   }
@@ -254,14 +233,17 @@ export function tickBoss(
   if (s.pendingTentacles.length > 0) {
     let platforms = s.platforms;
     const remaining = s.pendingTentacles
-      .map((t) => ({ ...t, ticksLeft: t.ticksLeft - 1 }))
+      .map((t) => ({ ...t, ticksLeft: t.ticksLeft - s.gameSpeedScale }))
       .filter((t) => {
         if (t.ticksLeft <= 0) {
           // Timer expired — apply platform damage
           platforms = platforms.map((p) =>
             p.id === t.platformId ? applyTentacleAttack(p, t.side) : p,
           );
-          events.push({ type: "platformCrumbled", platform: platforms.find((p) => p.id === t.platformId)! });
+          events.push({
+            type: "platformCrumbled",
+            platform: platforms.find((p) => p.id === t.platformId)!,
+          });
           return false;
         }
         return true;
@@ -275,17 +257,28 @@ export function tickBoss(
       // Don't apply damage immediately — queue as pending tentacle
       const plat = s.platforms.find((p) => p.id === atk.targetPlatformId);
       if (plat) {
-        const side: "left" | "right" = atk.x < plat.x + plat.width / 2 ? "left" : "right";
+        const side: "left" | "right" =
+          atk.x < plat.x + plat.width / 2 ? "left" : "right";
         // Tentacle gets faster over time: starts at 6 sec, min 2.5 sec
         const attackNum = s.activeBoss?.jumpCooldown ?? 0;
         // bossAttackMultiplier > 1 = faster attacks (2x = half duration)
         const baseTicks = Math.max(150, 360 - attackNum * 20); // 6s → 2.5s
-        const totalTicks = Math.max(60, Math.ceil(baseTicks / s.debugConfig.bossAttackMultiplier));
+        const totalTicks = Math.max(
+          60,
+          Math.ceil(baseTicks / s.debugConfig.bossAttackMultiplier),
+        );
         s = {
           ...s,
           pendingTentacles: [
             ...s.pendingTentacles,
-            { platformId: plat.id, x: atk.x, targetY: plat.y, ticksLeft: totalTicks, totalTicks, side },
+            {
+              platformId: plat.id,
+              x: atk.x,
+              targetY: plat.y,
+              ticksLeft: totalTicks,
+              totalTicks,
+              side,
+            },
           ],
         };
         events.push({ type: "tentacleGrab", platformId: plat.id });
@@ -328,8 +321,13 @@ export function tickBoss(
         const shield = tryShieldAbsorb(s.activeEffect);
         s = { ...s, activeEffect: shield.effect };
       } else if (!s.isDying && !s.practiceMode && !s.debugConfig.invincible) {
-        s = { ...s, isDying: true, squashTicks: 0, pendingJumpVy: 0,
-          ghostDeathHeight: s.ghostDeathHeight || s.scoreState.height };
+        s = {
+          ...s,
+          isDying: true,
+          squashTicks: 0,
+          pendingJumpVy: 0,
+          ghostDeathHeight: s.ghostDeathHeight || s.scoreState.height,
+        };
         if (!s.isGhost) events.push({ type: "died" });
       }
     }
@@ -349,7 +347,14 @@ export function tickBoss(
       });
       if (dmg.killed) {
         // Start death animation — cleanup happens when deathTicks reaches 0
-        s = { ...s, activeBoss: { ...dmg.boss, deathTicks: BOSS_DEATH_TICKS, jumpArc: undefined } };
+        s = {
+          ...s,
+          activeBoss: {
+            ...dmg.boss,
+            deathTicks: BOSS_DEATH_TICKS,
+            jumpArc: undefined,
+          },
+        };
       }
     }
   }
@@ -363,7 +368,7 @@ export function tickBoss(
 export function tickKnifeAmmo(s: GameWorldState): GameWorldState {
   if (s.knifeAmmo >= s.knifeAmmoMax) return s;
 
-  const regenTimer = s.knifeRegenTimer - 1;
+  const regenTimer = s.knifeRegenTimer - s.gameSpeedScale;
   if (regenTimer <= 0) {
     const newAmmo = s.knifeAmmo + 1;
     return {

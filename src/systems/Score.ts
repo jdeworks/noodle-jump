@@ -75,9 +75,9 @@ export function addMeatballScore(state: ScoreState, count: number): ScoreState {
 }
 
 /** Tick down combo timer. Call once per frame. */
-export function tickCombo(state: ScoreState): ScoreState {
+export function tickCombo(state: ScoreState, speedScale = 1): ScoreState {
   if (state.comboTimer <= 0) return state;
-  const timer = state.comboTimer - 1;
+  const timer = state.comboTimer - speedScale;
   if (timer <= 0) {
     return { ...state, comboTimer: 0, comboCount: 0, comboMultiplier: 1 };
   }

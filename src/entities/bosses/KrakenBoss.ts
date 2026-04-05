@@ -20,10 +20,16 @@ export const krakenBehavior: BossBehavior = {
       type: "kraken",
       x: GAME_WIDTH / 2 - WIDTH / 2,
       y: cameraY + 40,
-      width: WIDTH, height: HEIGHT,
-      health: HEALTH, maxHealth: HEALTH,
-      phase: 0, alive: true, patternTick: 0,
-      currentPlatformId: null, jumpCooldown: 0, vy: 0,
+      width: WIDTH,
+      height: HEIGHT,
+      health: HEALTH,
+      maxHealth: HEALTH,
+      phase: 0,
+      alive: true,
+      patternTick: 0,
+      currentPlatformId: null,
+      jumpCooldown: 0,
+      vy: 0,
     };
   },
 
@@ -38,11 +44,15 @@ export const krakenBehavior: BossBehavior = {
     if (!boss.alive) return { boss, attacks: [] };
 
     let { x, y, patternTick } = boss;
-    patternTick++;
+    const prevTick = patternTick;
+    patternTick += speedScale;
 
     // Drift toward player horizontally
     const targetX = player.x - boss.width / 2;
-    x += Math.sign(targetX - x) * Math.min(Math.abs(targetX - x), 0.6) * speedScale;
+    x +=
+      Math.sign(targetX - x) *
+      Math.min(Math.abs(targetX - x), 0.6) *
+      speedScale;
     // Stay near player vertically — slow upward (stompable), normal downward
     const targetY = player.y - 200;
     const diff = targetY - y;
@@ -55,42 +65,59 @@ export const krakenBehavior: BossBehavior = {
     // Tentacle attack — first attack right after grace (tick 121), then escalating
     const GRACE = 120;
     const attackCount = boss.jumpCooldown; // reuse jumpCooldown as attack counter
-    const baseInterval = Math.max(MIN_ATTACK_INTERVAL, BASE_ATTACK_INTERVAL - attackCount * INTERVAL_REDUCTION);
+    const baseInterval = Math.max(
+      MIN_ATTACK_INTERVAL,
+      BASE_ATTACK_INTERVAL - attackCount * INTERVAL_REDUCTION,
+    );
     // attackMultiplier: >1 = faster attacks (shorter interval)
     const interval = Math.max(30, Math.ceil(baseInterval / attackMultiplier));
     const ticksSinceGrace = patternTick - GRACE;
-    const shouldAttack = patternTick === GRACE + 1
-      || (ticksSinceGrace > 0 && ticksSinceGrace % interval === 0);
+    const prevTicksSinceGrace = prevTick - GRACE;
+    const shouldAttack =
+      (prevTick < GRACE + 1 && patternTick >= GRACE + 1) ||
+      (ticksSinceGrace > 0 &&
+        Math.floor(ticksSinceGrace / interval) >
+          Math.floor(Math.max(0, prevTicksSinceGrace) / interval));
     if (shouldAttack) {
       const alive = platforms.filter((p) => !p.broken);
       // Phase 1: shrink platforms that are still wide — pick randomly
       const shrinkable = alive.filter((p) => p.width > MIN_PLATFORM_WIDTH + 15);
       // Phase 2: all platforms are slivers — destroy lowest first
-      const slivers = shrinkable.length === 0
-        ? alive.sort((a, b) => b.y - a.y) // lowest (highest Y) first
-        : [];
+      const slivers =
+        shrinkable.length === 0
+          ? alive.sort((a, b) => b.y - a.y) // lowest (highest Y) first
+          : [];
 
-      const target = shrinkable.length > 0
-        ? shrinkable[Math.floor(random() * shrinkable.length)]
-        : slivers[0] ?? null;
+      const target =
+        shrinkable.length > 0
+          ? shrinkable[Math.floor(random() * shrinkable.length)]
+          : (slivers[0] ?? null);
 
       if (target) {
         const side = random() > 0.5 ? "left" : "right";
-        const attackX = side === "left"
-          ? target.x + target.width * 0.15
-          : target.x + target.width * 0.85;
+        const attackX =
+          side === "left"
+            ? target.x + target.width * 0.15
+            : target.x + target.width * 0.85;
         attacks.push({
           type: "tentacle",
           x: attackX,
           y: target.y,
-          vx: 0, vy: 0,
+          vx: 0,
+          vy: 0,
           targetPlatformId: target.id,
         });
       }
     }
 
     return {
-      boss: { ...boss, x, y, patternTick, jumpCooldown: attackCount + attacks.length },
+      boss: {
+        ...boss,
+        x,
+        y,
+        patternTick,
+        jumpCooldown: attackCount + attacks.length,
+      },
       attacks,
     };
   },
@@ -99,17 +126,25 @@ export const krakenBehavior: BossBehavior = {
     if (!boss.alive) return false;
     // Player hitting from below = damage to player
     const pad = 4;
-    const overlapX = player.x + player.width - pad > boss.x && player.x + pad < boss.x + boss.width;
+    const overlapX =
+      player.x + player.width - pad > boss.x &&
+      player.x + pad < boss.x + boss.width;
     const playerBottom = player.y + player.height;
     // Only kill player if they hit from below (moving upward into the kraken)
-    const hitsFromBelow = overlapX && playerBottom > boss.y + pad && player.y < boss.y + boss.height * 0.5;
+    const hitsFromBelow =
+      overlapX &&
+      playerBottom > boss.y + pad &&
+      player.y < boss.y + boss.height * 0.5;
     return hitsFromBelow;
   },
 };
 
 /** Apply tentacle attack — remove one third of the platform's INITIAL width.
  *  After 3 chunks the platform is destroyed. */
-export function applyTentacleAttack(platform: PlatformState, side?: "left" | "right"): PlatformState {
+export function applyTentacleAttack(
+  platform: PlatformState,
+  side?: "left" | "right",
+): PlatformState {
   const initW = platform.initialWidth ?? platform.width;
   const chunkSize = Math.floor(initW / 3);
 
@@ -121,7 +156,12 @@ export function applyTentacleAttack(platform: PlatformState, side?: "left" | "ri
   const newWidth = platform.width - chunkSize;
   const removeSide = side ?? (random() > 0.5 ? "left" : "right");
   if (removeSide === "left") {
-    return { ...platform, x: platform.x + chunkSize, width: newWidth, initialWidth: initW };
+    return {
+      ...platform,
+      x: platform.x + chunkSize,
+      width: newWidth,
+      initialWidth: initW,
+    };
   }
   return { ...platform, width: newWidth, initialWidth: initW };
 }

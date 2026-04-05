@@ -18,9 +18,10 @@ import {
 export function applyConveyorForce(
   player: PlayerState,
   platform: PlatformState,
+  speedScale = 1,
 ): PlayerState {
   const dir = platform.conveyorDir ?? 1;
-  let x = player.x + PLATFORM_CONVEYOR_SPEED * dir;
+  let x = player.x + PLATFORM_CONVEYOR_SPEED * dir * speedScale;
   // Screen wrap
   if (x + player.width < 0) x = GAME_WIDTH;
   else if (x > GAME_WIDTH) x = -player.width;
@@ -50,14 +51,17 @@ export function startCrumbleTimer(platform: PlatformState): PlatformState {
 }
 
 /** Tick the crumble timer. Returns updated platform and whether it broke. */
-export function tickCrumbleTimer(platform: PlatformState): {
+export function tickCrumbleTimer(
+  platform: PlatformState,
+  speedScale = 1,
+): {
   platform: PlatformState;
   broke: boolean;
 } {
   if (platform.crumbleTimer == null || platform.broken) {
     return { platform, broke: false };
   }
-  const timer = platform.crumbleTimer - 1;
+  const timer = platform.crumbleTimer - speedScale;
   if (timer <= 0) {
     return {
       platform: { ...platform, broken: true, crumbleTimer: 0 },
@@ -75,6 +79,7 @@ export function applyWeightedTilt(
   platform: PlatformState,
   playerX: number,
   playerWidth: number,
+  speedScale = 1,
 ): PlatformState {
   const platformCenter = platform.x + platform.width / 2;
   const playerCenter = playerX + playerWidth / 2;
@@ -83,7 +88,8 @@ export function applyWeightedTilt(
 
   let tiltAngle = platform.tiltAngle ?? 0;
   const targetTilt = normalizedOffset * PLATFORM_WEIGHTED_MAX_TILT;
-  tiltAngle += (targetTilt - tiltAngle) * PLATFORM_WEIGHTED_TILT_RATE * 3;
+  tiltAngle +=
+    (targetTilt - tiltAngle) * PLATFORM_WEIGHTED_TILT_RATE * 3 * speedScale;
   tiltAngle = Math.max(
     -PLATFORM_WEIGHTED_MAX_TILT,
     Math.min(PLATFORM_WEIGHTED_MAX_TILT, tiltAngle),
@@ -96,9 +102,11 @@ export function applyWeightedTilt(
 export function applyWeightedSlide(
   player: PlayerState,
   platform: PlatformState,
+  speedScale = 1,
 ): PlayerState {
   const tilt = platform.tiltAngle ?? 0;
-  const slideForce = Math.sin(tilt) * PLATFORM_WEIGHTED_SLIDE_SPEED;
+  const slideForce =
+    Math.sin(tilt) * PLATFORM_WEIGHTED_SLIDE_SPEED * speedScale;
   return { ...player, x: player.x + slideForce };
 }
 
@@ -122,13 +130,14 @@ export function resolveTeleport(
 
   // Pick the closest teleport platform above the player (prefer upward travel)
   const above = candidates.filter((p) => p.y < landedPlatform.y);
-  const target = above.length > 0
-    ? above.reduce((best, p) =>
-        Math.abs(p.y - landedPlatform.y) < Math.abs(best.y - landedPlatform.y)
-          ? p
-          : best,
-      )
-    : candidates[0]; // fallback to any
+  const target =
+    above.length > 0
+      ? above.reduce((best, p) =>
+          Math.abs(p.y - landedPlatform.y) < Math.abs(best.y - landedPlatform.y)
+            ? p
+            : best,
+        )
+      : candidates[0]; // fallback to any
 
   return {
     player: {

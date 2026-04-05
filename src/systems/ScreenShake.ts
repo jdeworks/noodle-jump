@@ -16,8 +16,8 @@ export interface ShakeResult {
   offsetY: number;
 }
 
-export function tickShake(state: ShakeState): ShakeResult {
-  const remaining = state.ticksRemaining - 1;
+export function tickShake(state: ShakeState, speedScale = 1): ShakeResult {
+  const remaining = state.ticksRemaining - speedScale;
   if (remaining <= 0) {
     return { state: null, offsetX: 0, offsetY: 0 };
   }

@@ -2,9 +2,7 @@
 
 import type { GameWorldState } from "./GameState";
 import type { GameEvent } from "./GameLoopTypes";
-import {
-  collectMeatballs,
-} from "../entities/Collectible";
+import { collectMeatballs } from "../entities/Collectible";
 import {
   collectPowerUps,
   applyPowerUp,
@@ -21,7 +19,6 @@ import {
 } from "../systems/PlatformEffects";
 import {
   tryShieldAbsorb,
-
   createMinestroneFlood,
   tickMinestroneFlood,
   isPlayerInFlood,
@@ -124,8 +121,17 @@ export function tickPlatformCollisions(
       });
     }
     const landedId = collision.landedPlatform?.id ?? null;
-    if (collision.edgeLanding && s.stagnantTicks < 300 && landedId !== null && !s.closeCallPlatformIds.includes(landedId)) {
-      s = { ...s, scoreState: addCloseCallBonus(s.scoreState), closeCallPlatformIds: [...s.closeCallPlatformIds, landedId] };
+    if (
+      collision.edgeLanding &&
+      s.stagnantTicks < 300 &&
+      landedId !== null &&
+      !s.closeCallPlatformIds.includes(landedId)
+    ) {
+      s = {
+        ...s,
+        scoreState: addCloseCallBonus(s.scoreState),
+        closeCallPlatformIds: [...s.closeCallPlatformIds, landedId],
+      };
     }
   }
 
@@ -154,7 +160,7 @@ export function tickPlatformCollisions(
     let anyBroke = false;
     const platforms = s.platforms.map((p) => {
       if (p.type !== "crumbling" || p.crumbleTimer == null) return p;
-      const result = tickCrumbleTimer(p);
+      const result = tickCrumbleTimer(p, s.gameSpeedScale);
       if (result.broke) {
         anyBroke = true;
         events.push({ type: "platformCrumbled", platform: p });
@@ -183,17 +189,25 @@ export function tickPlatformEffects(s: GameWorldState): GameWorldState {
   );
 
   if (standingOn?.type === "conveyor") {
-    return { ...s, player: applyConveyorForce(s.player, standingOn) };
+    return {
+      ...s,
+      player: applyConveyorForce(s.player, standingOn, s.gameSpeedScale),
+    };
   }
   if (standingOn?.type === "ice") {
     return { ...s, player: applyIcePhysics(s.player) };
   }
   if (standingOn?.type === "weighted") {
-    const tilted = applyWeightedTilt(standingOn, s.player.x, s.player.width);
+    const tilted = applyWeightedTilt(
+      standingOn,
+      s.player.x,
+      s.player.width,
+      s.gameSpeedScale,
+    );
     return {
       ...s,
       platforms: s.platforms.map((p) => (p.id === tilted.id ? tilted : p)),
-      player: applyWeightedSlide(s.player, tilted),
+      player: applyWeightedSlide(s.player, tilted, s.gameSpeedScale),
     };
   }
   return s;
@@ -202,7 +216,10 @@ export function tickPlatformEffects(s: GameWorldState): GameWorldState {
 /** Tick minestrone flood rising and stopping. */
 export function tickFlood(s: GameWorldState): GameWorldState {
   if (s.minestroneFlood?.active) {
-    const updatedFlood = tickMinestroneFlood(s.minestroneFlood);
+    const updatedFlood = tickMinestroneFlood(
+      s.minestroneFlood,
+      s.gameSpeedScale,
+    );
     s = { ...s, minestroneFlood: updatedFlood };
     if (isPlayerInFlood(s.player.y, s.player.height, updatedFlood)) {
       s = {
@@ -211,10 +228,7 @@ export function tickFlood(s: GameWorldState): GameWorldState {
       };
     }
   }
-  if (
-    s.minestroneFlood?.active &&
-    s.activeEffect?.type !== "minestrone_soup"
-  ) {
+  if (s.minestroneFlood?.active && s.activeEffect?.type !== "minestrone_soup") {
     s = { ...s, minestroneFlood: stopMinestroneFlood(s.minestroneFlood) };
   }
   return s;
@@ -334,19 +348,27 @@ export function tickStagnation(
     };
   }
 
-  s = { ...s, stagnantTicks: s.stagnantTicks + 1 };
+  const prevStagnant = s.stagnantTicks;
+  s = { ...s, stagnantTicks: s.stagnantTicks + s.gameSpeedScale };
 
-  if (s.stagnantTicks === STAGNANT_WARNING_1_TICKS) {
+  if (
+    prevStagnant < STAGNANT_WARNING_1_TICKS &&
+    s.stagnantTicks >= STAGNANT_WARNING_1_TICKS
+  ) {
     s = { ...s, shakeState: createShake(3, 30) };
     events.push({ type: "stagnantWarning", level: 1 });
   }
-  if (s.stagnantTicks === STAGNANT_WARNING_2_TICKS) {
+  if (
+    prevStagnant < STAGNANT_WARNING_2_TICKS &&
+    s.stagnantTicks >= STAGNANT_WARNING_2_TICKS
+  ) {
     s = { ...s, shakeState: createShake(5, 20) };
     events.push({ type: "stagnantWarning", level: 2 });
   }
   if (
     s.stagnantTicks > STAGNANT_KILL_START_TICKS &&
-    s.stagnantTicks % STAGNANT_CRUMBLE_INTERVAL === 0
+    Math.floor(s.stagnantTicks / STAGNANT_CRUMBLE_INTERVAL) >
+      Math.floor(prevStagnant / STAGNANT_CRUMBLE_INTERVAL)
   ) {
     const intact = s.platforms
       .filter((p) => !p.broken && p.type !== "lasagna")

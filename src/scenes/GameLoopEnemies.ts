@@ -26,7 +26,10 @@ export function tickEnemies(
   if (!s.enemiesEnabled) return s;
   if (s.inBossFight) {
     // During boss fights: still tick projectiles (knives need to fly), skip enemies/wind
-    s = { ...s, projectiles: updateProjectiles(s.projectiles, s.gameSpeedScale) };
+    s = {
+      ...s,
+      projectiles: updateProjectiles(s.projectiles, s.gameSpeedScale),
+    };
     return s;
   }
 
@@ -37,6 +40,7 @@ export function tickEnemies(
     s.camera.y,
     s.platformsPassed,
     s.debugConfig.enemySpawnMultiplier,
+    s.gameSpeedScale,
   );
   s = { ...s, enemySpawner: spawnResult.spawner };
   if (spawnResult.enemy) {
@@ -51,10 +55,7 @@ export function tickEnemies(
 
   // Projectile-enemy collisions — killed enemies become meatballs
   if (s.projectiles.length > 0 && s.enemies.length > 0) {
-    const projResult = checkProjectileEnemyCollisions(
-      s.projectiles,
-      s.enemies,
-    );
+    const projResult = checkProjectileEnemyCollisions(s.projectiles, s.enemies);
     s = {
       ...s,
       projectiles: projResult.projectiles,
@@ -111,8 +112,13 @@ export function tickEnemies(
     } else if (!s.practiceMode && !s.debugConfig.invincible) {
       // Player dies
       events.push({ type: "enemyHitPlayer" });
-      s = { ...s, isDying: true, squashTicks: 0, pendingJumpVy: 0,
-        ghostDeathHeight: s.ghostDeathHeight || s.scoreState.height };
+      s = {
+        ...s,
+        isDying: true,
+        squashTicks: 0,
+        pendingJumpVy: 0,
+        ghostDeathHeight: s.ghostDeathHeight || s.scoreState.height,
+      };
       if (!s.isGhost) events.push({ type: "died" });
     }
   }
@@ -128,7 +134,10 @@ export function tickEnemies(
     const windResult = tickWind(s.windSystem, s.camera.y);
     s = { ...s, windSystem: windResult };
     if (windResult.zones.length > 0 && !s.isDying) {
-      s = { ...s, player: applyWindForce(s.player, windResult.zones) };
+      s = {
+        ...s,
+        player: applyWindForce(s.player, windResult.zones, s.gameSpeedScale),
+      };
     }
   }
 

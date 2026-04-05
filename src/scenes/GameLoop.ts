@@ -4,99 +4,27 @@ import type { GameWorldState } from "./GameState";
 import type { GameEvent, TickResult } from "./GameLoopTypes";
 import { updatePlayer } from "../entities/Player";
 import { updatePlatforms } from "../entities/Platform";
-import {
-  updateMeatballPositions,
-  attractMeatballs,
-} from "../entities/Collectible";
-import {
-  tickEffect,
-  updatePowerUpPositions,
-} from "../entities/PowerUp";
-import {
-  applyGnocchiBounce,
-  hasGnocchiBounce,
-} from "../systems/PowerUpEffects";
-import { createProjectile } from "../entities/Projectile";
+import { updateMeatballPositions, attractMeatballs } from "../entities/Collectible";
+import { tickEffect, updatePowerUpPositions } from "../entities/PowerUp";
+import { applyGnocchiBounce, hasGnocchiBounce } from "../systems/PowerUpEffects";
 import { tickWeather, changeWeatherZone } from "../systems/Weather";
 import { tickDayNight } from "../systems/DayNight";
 import { updateCamera, isPlayerDead } from "../systems/Camera";
-import {
-  updateHeightScore,
-  tickCombo,
-  saveHighScore,
-} from "../systems/Score";
+import { updateHeightScore, tickCombo, saveHighScore } from "../systems/Score";
 import { getDifficulty } from "../systems/Difficulty";
 import { tickShake } from "../systems/ScreenShake";
 import { updateZone } from "../systems/Zone";
-import {
-  GARLIC_BREATH_JUMP_MULTIPLIER,
-  DEATH_ANIMATION_TICKS,
-  COUNTDOWN_TICKS,
-  SQUASH_HOLD_FRAMES,
-  SQUASH_TOTAL_FRAMES,
-  GAME_HEIGHT,
-  GAME_WIDTH,
-  ZONE_THRESHOLDS,
-} from "../config/constants";
+import { GARLIC_BREATH_JUMP_MULTIPLIER, DEATH_ANIMATION_TICKS, SQUASH_HOLD_FRAMES, SQUASH_TOTAL_FRAMES, GAME_HEIGHT, GAME_WIDTH, ZONE_THRESHOLDS } from "../config/constants";
 import { maybeSpawnBoss, tickBoss, tickKnifeAmmo } from "./GameLoopBoss";
 import { getBossForZone } from "../entities/Boss";
 import { tickEnemies } from "./GameLoopEnemies";
 import { updateProjectiles } from "../entities/Projectile";
-import {
-  spawnLasagnaPlatform,
-  expireLasagnaPlatforms,
-  maybeGeneratePlatforms,
-  prune,
-  rescuePlayer,
-} from "./GameLoopHelpers";
-import {
-  tickPlatformCollisions,
-  tickPlatformEffects,
+import { spawnLasagnaPlatform, rescuePlayer, tickEndOfFrame } from "./GameLoopHelpers";
+import { tickPlatformCollisions, tickPlatformEffects, tickFlood, tickMeatballCollection, tickPowerUpCollection, tickStagnation } from "./GameLoopTick";
 
-  tickFlood,
-  tickMeatballCollection,
-  tickPowerUpCollection,
-  tickStagnation,
-} from "./GameLoopTick";
-
-// Re-export types so existing consumers keep working
+// Re-export types and actions so existing consumers keep working
 export type { GameEvent, TickResult } from "./GameLoopTypes";
-
-const KNIFE_REGEN_TICKS = 90; // 1.5 seconds per knife
-
-/** Start the countdown before gameplay. */
-export function startCountdown(state: GameWorldState): GameWorldState {
-  return { ...state, countdownTicks: COUNTDOWN_TICKS };
-}
-
-/** Toggle pause state. */
-export function togglePause(state: GameWorldState): GameWorldState {
-  return { ...state, paused: !state.paused };
-}
-
-/** Throw a projectile (knife) from the player toward a target position. */
-export function throwProjectile(
-  state: GameWorldState,
-  targetX: number,
-  targetY: number,
-): GameWorldState {
-  if (state.gameOver || state.isDying) return state;
-  if (!state.enemiesEnabled && !state.inBossFight) return state;
-  const infinite = state.debugConfig.infiniteKnives;
-  if (!infinite && state.knifeAmmo <= 0) return state;
-  const playerCX = state.player.x + state.player.width / 2;
-  const playerCY = state.player.y + state.player.height / 2;
-  const proj = createProjectile(playerCX, playerCY, targetX, targetY);
-  const newAmmo = infinite ? state.knifeAmmo : state.knifeAmmo - 1;
-  return {
-    ...state,
-    projectiles: [...state.projectiles, proj],
-    knifeAmmo: newAmmo,
-    // Start regen if not already running — never reset existing progress
-    knifeRegenTimer: infinite ? 0
-      : state.knifeRegenTimer > 0 ? state.knifeRegenTimer : KNIFE_REGEN_TICKS,
-  };
-}
+export { startCountdown, togglePause, throwProjectile } from "./GameLoopActions";
 
 /**
  * Advance the game world by one tick. Pure function — no side effects.
@@ -114,14 +42,21 @@ export function tickGameWorld(
 
   // Countdown phase — update visuals but don't move player
   if (state.countdownTicks > 0) {
-    const difficulty = getDifficulty(state.platformsPassed, state.runConfig.difficultyMultiplier);
+    const difficulty = getDifficulty(
+      state.platformsPassed,
+      state.runConfig.difficultyMultiplier,
+    );
     const platforms = updatePlatforms(
       state.platforms,
       difficulty.movingSpeedMultiplier * state.gameSpeedScale,
     );
     const platMap = new Map(platforms.map((p) => [p.id, p]));
     const powerUps = updatePowerUpPositions(state.powerUps, platforms, platMap);
-    const meatballs = updateMeatballPositions(state.meatballs, platforms, platMap);
+    const meatballs = updateMeatballPositions(
+      state.meatballs,
+      platforms,
+      platMap,
+    );
     const camera = updateCamera(state.camera, state.player.y);
     return {
       state: {
@@ -130,15 +65,17 @@ export function tickGameWorld(
         powerUps,
         meatballs,
         camera,
-        countdownTicks: state.countdownTicks - 1,
+        countdownTicks: state.countdownTicks - state.gameSpeedScale,
         animTick: state.animTick + 1,
       },
       events,
     };
   }
 
-  if (state.isDying) { // Death animation
-    const ss = state.gameSpeedScale, dyingTicks = state.dyingTicks + 1;
+  if (state.isDying) {
+    // Death animation
+    const ss = state.gameSpeedScale,
+      dyingTicks = state.dyingTicks + ss;
     const player = {
       ...state.player,
       vy: state.player.vy + 0.45 * ss,
@@ -149,30 +86,68 @@ export function tickGameWorld(
       if (state.isGhost) {
         const camTop = state.camera.y;
         const camBot = camTop + GAME_HEIGHT;
-        const vis = state.platforms.filter((p) => !p.broken && p.y >= camTop && p.y <= camBot);
-        let rescue = vis.length > 0 ? vis.sort((a, b) => a.y - b.y)[0]
-          : state.platforms.filter((p) => !p.broken).sort((a, b) => a.y - b.y)[0];
+        const vis = state.platforms.filter(
+          (p) => !p.broken && p.y >= camTop && p.y <= camBot,
+        );
+        let rescue =
+          vis.length > 0
+            ? vis.sort((a, b) => a.y - b.y)[0]
+            : state.platforms
+                .filter((p) => !p.broken)
+                .sort((a, b) => a.y - b.y)[0];
         let plats = state.platforms;
         if (!rescue) {
-          rescue = { x: GAME_WIDTH / 2 - 50, y: camTop + GAME_HEIGHT * 0.6, width: 100, height: 15,
-            type: "static" as const, broken: false, id: Date.now(), originX: GAME_WIDTH / 2 - 50, moveDirection: 0 };
+          rescue = {
+            x: GAME_WIDTH / 2 - 50,
+            y: camTop + GAME_HEIGHT * 0.6,
+            width: 100,
+            height: 15,
+            type: "static" as const,
+            broken: false,
+            id: Date.now(),
+            originX: GAME_WIDTH / 2 - 50,
+            moveDirection: 0,
+          };
           plats = [...plats, rescue];
         }
         const ph = Math.max(0, Math.floor(state.ghostDeathHeight * 0.9));
         // Don't push "died" event to avoid repeated death sounds
-        return { state: { ...state, platforms: plats, player: { ...state.player,
-          x: rescue.x + rescue.width / 2 - state.player.width / 2,
-          y: rescue.y - state.player.height, vy: -12, isJumping: true,
-        }, isDying: false, dyingTicks: 0, stagnantTicks: 0, ghostDeathHeight: ph,
-        // Clear boss fight so ghost player isn't immediately killed again
-        activeBoss: null, inBossFight: false, bossAttacks: [] }, events };
+        return {
+          state: {
+            ...state,
+            platforms: plats,
+            player: {
+              ...state.player,
+              x: rescue.x + rescue.width / 2 - state.player.width / 2,
+              y: rescue.y - state.player.height,
+              vy: -12,
+              isJumping: true,
+            },
+            isDying: false,
+            dyingTicks: 0,
+            stagnantTicks: 0,
+            ghostDeathHeight: ph,
+            // Clear boss fight so ghost player isn't immediately killed again
+            activeBoss: null,
+            inBossFight: false,
+            bossAttacks: [],
+          },
+          events,
+        };
       }
       const isCustom = state.runConfig.seed !== 0 || state.practiceMode;
-      const isNewRecord = isCustom ? false : saveHighScore(state.scoreState.points);
+      const isNewRecord = isCustom
+        ? false
+        : saveHighScore(state.scoreState.points);
       events.push({ type: "gameOver", isNewRecord });
       return {
-        state: { ...state, player, dyingTicks, gameOver: true,
-          highScore: isNewRecord ? state.scoreState.points : state.highScore },
+        state: {
+          ...state,
+          player,
+          dyingTicks,
+          gameOver: true,
+          highScore: isNewRecord ? state.scoreState.points : state.highScore,
+        },
         events,
       };
     }
@@ -190,8 +165,12 @@ export function tickGameWorld(
 
   // Active power-up effect tick
   if (s.activeEffect) {
-    const effectResult = tickEffect(s.player, s.activeEffect);
-    s = { ...s, player: effectResult.player, activeEffect: effectResult.effect };
+    const effectResult = tickEffect(s.player, s.activeEffect, s.gameSpeedScale);
+    s = {
+      ...s,
+      player: effectResult.player,
+      activeEffect: effectResult.effect,
+    };
     if (!s.activeEffect) {
       events.push({ type: "effectEnded" });
     }
@@ -202,10 +181,16 @@ export function tickGameWorld(
   }
 
   // Update moving platforms
-  const difficulty = getDifficulty(s.platformsPassed, s.runConfig.difficultyMultiplier);
+  const difficulty = getDifficulty(
+    s.platformsPassed,
+    s.runConfig.difficultyMultiplier,
+  );
   s = {
     ...s,
-    platforms: updatePlatforms(s.platforms, difficulty.movingSpeedMultiplier * s.gameSpeedScale),
+    platforms: updatePlatforms(
+      s.platforms,
+      difficulty.movingSpeedMultiplier * s.gameSpeedScale,
+    ),
   };
 
   // Sync positions to platforms (skip meatballs when magnet active)
@@ -221,8 +206,7 @@ export function tickGameWorld(
     powerUps: updatePowerUpPositions(s.powerUps, s.platforms, platMap),
   };
 
-  const inSquashHold =
-    s.squashTicks > SQUASH_TOTAL_FRAMES - SQUASH_HOLD_FRAMES;
+  const inSquashHold = s.squashTicks > SQUASH_TOTAL_FRAMES - SQUASH_HOLD_FRAMES;
   const isSquashTransition = !inSquashHold && s.pendingJumpVy !== 0;
 
   if (inSquashHold) {
@@ -248,11 +232,21 @@ export function tickGameWorld(
   } else {
     const adjustedInputX =
       s.activeEffect?.type === "chili_pepper" ? -inputX : inputX;
-    s = { ...s, player: updatePlayer(s.player, adjustedInputX, s.gameSpeedScale) };
+    s = {
+      ...s,
+      player: updatePlayer(s.player, adjustedInputX, s.gameSpeedScale),
+    };
   }
 
   // Platform collisions, effects, flood
-  s = tickPlatformCollisions(s, events, previousX, previousY, inSquashHold, isSquashTransition);
+  s = tickPlatformCollisions(
+    s,
+    events,
+    previousX,
+    previousY,
+    inSquashHold,
+    isSquashTransition,
+  );
   s = tickPlatformEffects(s);
   s = tickFlood(s);
 
@@ -265,16 +259,18 @@ export function tickGameWorld(
         s.player.y,
         s.player.width,
         s.meatballs,
+        s.gameSpeedScale,
       ),
     };
   }
 
   // Collections and scoring
   s = tickMeatballCollection(s, events, previousX, previousY);
-  s = { ...s, scoreState: tickCombo(s.scoreState) };
+  s = { ...s, scoreState: tickCombo(s.scoreState, s.gameSpeedScale) };
   s = tickPowerUpCollection(s, events, previousX, previousY);
   // Ghost mode: freeze height only after first death (ghostDeathHeight > 0)
-  if (!s.isGhost || !s.ghostDeathHeight) s = { ...s, scoreState: updateHeightScore(s.scoreState, s.player.y) };
+  if (!s.isGhost || !s.ghostDeathHeight)
+    s = { ...s, scoreState: updateHeightScore(s.scoreState, s.player.y) };
 
   // Stagnation and zone transitions
   s = tickStagnation(s, events);
@@ -286,11 +282,17 @@ export function tickGameWorld(
   if (qzt > 0) {
     // Quick zones: count from the starting zone's platform threshold, not from 0
     const startZone = s.runConfig.startingZone || 0;
-    const startPlat = startZone > 0 ? (ZONE_THRESHOLDS[Math.min(startZone, ZONE_THRESHOLDS.length - 1)] || 0) : 0;
+    const startPlat =
+      startZone > 0
+        ? ZONE_THRESHOLDS[Math.min(startZone, ZONE_THRESHOLDS.length - 1)] || 0
+        : 0;
     const elapsed = Math.max(0, s.platformsPassed - startPlat);
     const directZone = Math.min(6, startZone + Math.floor(elapsed / qzt));
     const changed = directZone !== s.zoneState.currentZone;
-    zoneResult = { state: { currentZone: directZone, platformsPassed: s.platformsPassed }, changed };
+    zoneResult = {
+      state: { currentZone: directZone, platformsPassed: s.platformsPassed },
+      changed,
+    };
   } else {
     zoneResult = updateZone(s.zoneState, s.platformsPassed);
   }
@@ -309,7 +311,10 @@ export function tickGameWorld(
         to: s.zoneState.currentZone,
       });
     }
-    s = { ...s, weather: changeWeatherZone(s.weather, s.zoneState.currentZone) };
+    s = {
+      ...s,
+      weather: changeWeatherZone(s.weather, s.zoneState.currentZone),
+    };
   }
 
   // Boss spawning (deferred until zone transition ends) + tick
@@ -324,11 +329,14 @@ export function tickGameWorld(
   s = { ...s, dayNight: tickDayNight(s.dayNight) };
 
   // Camera
-  s = { ...s, camera: updateCamera(s.camera, s.player.y, s.inBossFight, s.gameSpeedScale) };
+  s = {
+    ...s,
+    camera: updateCamera(s.camera, s.player.y, s.inBossFight, s.gameSpeedScale),
+  };
 
   // Screen shake
   if (s.shakeState) {
-    const shakeResult = tickShake(s.shakeState);
+    const shakeResult = tickShake(s.shakeState, s.gameSpeedScale);
     s = { ...s, shakeState: shakeResult.state };
   }
 
@@ -347,7 +355,10 @@ export function tickGameWorld(
 
   // Update projectiles even when enemies are disabled (needed for boss fights)
   if (!s.enemiesEnabled && s.projectiles.length > 0) {
-    s = { ...s, projectiles: updateProjectiles(s.projectiles, s.gameSpeedScale) };
+    s = {
+      ...s,
+      projectiles: updateProjectiles(s.projectiles, s.gameSpeedScale),
+    };
   }
 
   // Death check — always uses camera.highestY (fixed reference point)
@@ -356,36 +367,19 @@ export function tickGameWorld(
     if (s.practiceMode || s.debugConfig.invincible) {
       s = rescuePlayer(s);
     } else {
-      s = { ...s, isDying: true, squashTicks: 0, pendingJumpVy: 0,
-        ghostDeathHeight: s.ghostDeathHeight || s.scoreState.height };
+      s = {
+        ...s,
+        isDying: true,
+        squashTicks: 0,
+        pendingJumpVy: 0,
+        ghostDeathHeight: s.ghostDeathHeight || s.scoreState.height,
+      };
       if (!s.isGhost) events.push({ type: "died" });
     }
   }
 
-  // Generate new platforms + prune old
-  s = maybeGeneratePlatforms(s);
-  s = expireLasagnaPlatforms(s, events);
-  s = prune(s);
-
-  // Decrement squash ticks
-  if (s.squashTicks > 0) {
-    s = { ...s, squashTicks: s.squashTicks - 1 };
-  }
-
-  // Decrement spring flash
-  if (s.springFlashTicks > 0) {
-    s = { ...s, springFlashTicks: s.springFlashTicks - 1 };
-    if (s.springFlashTicks === 0) {
-      events.push({ type: "effectEnded" });
-    }
-  }
-
-  // Decrement pickup flash
-  if (s.pickupFlashTicks > 0) {
-    s = { ...s, pickupFlashTicks: s.pickupFlashTicks - 1 };
-  }
-
-  s = { ...s, animTick: s.animTick + 1 };
+  // End-of-tick housekeeping: generate/prune platforms, visual timers
+  s = tickEndOfFrame(s, events);
 
   return { state: s, events };
 }

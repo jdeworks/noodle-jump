@@ -14,13 +14,13 @@ export type WeatherType =
 
 /** Zone-to-weather mapping. */
 const ZONE_WEATHER: WeatherType[] = [
-  "steam",          // Zone 1: Kitchen
-  "bubbles",        // Zone 2: Ocean
-  "stars",          // Zone 3: Space
-  "snow",           // Zone 4: Freezer
-  "embers",         // Zone 5: Volcano
+  "steam", // Zone 1: Kitchen
+  "bubbles", // Zone 2: Ocean
+  "stars", // Zone 3: Space
+  "snow", // Zone 4: Freezer
+  "embers", // Zone 5: Volcano
   "sugar_crystals", // Zone 6: Candy
-  "sparkles",       // Zone 7: Final Kitchen
+  "sparkles", // Zone 7: Final Kitchen
 ];
 
 export interface WeatherParticle {
@@ -61,7 +61,10 @@ export function tickWeather(state: WeatherState, speedScale = 1): WeatherState {
   const particles = [...state.particles];
 
   // Spawn
-  if (particles.length < config.maxParticles && Math.random() < config.spawnRate) {
+  if (
+    particles.length < config.maxParticles &&
+    Math.random() < config.spawnRate
+  ) {
     particles.push(spawnWeatherParticle(config));
   }
 
@@ -73,7 +76,7 @@ export function tickWeather(state: WeatherState, speedScale = 1): WeatherState {
       x: p.x + p.vx * speedScale,
       y: p.y + p.vy * speedScale,
       alpha: p.alpha - config.fadeRate * speedScale,
-      life: p.life - 1,
+      life: p.life - speedScale,
     };
     if (updated.life > 0 && updated.alpha > 0) {
       // Wrap horizontally
@@ -202,13 +205,16 @@ const WEATHER_CONFIGS: Partial<Record<WeatherType, WeatherConfig>> = {
 
 function spawnWeatherParticle(config: WeatherConfig): WeatherParticle {
   const angle = config.direction + (Math.random() - 0.5) * 2 * config.dirSpread;
-  const speed = config.minSpeed + Math.random() * (config.maxSpeed - config.minSpeed);
+  const speed =
+    config.minSpeed + Math.random() * (config.maxSpeed - config.minSpeed);
   return {
     x: Math.random() * GAME_WIDTH,
     y: Math.random() * GAME_HEIGHT,
     vx: Math.cos(angle) * speed,
     vy: Math.sin(angle) * speed,
-    size: config.sizeRange[0] + Math.random() * (config.sizeRange[1] - config.sizeRange[0]),
+    size:
+      config.sizeRange[0] +
+      Math.random() * (config.sizeRange[1] - config.sizeRange[0]),
     alpha: 0.3 + Math.random() * 0.3,
     life: config.lifetime + Math.floor(Math.random() * 20),
   };
