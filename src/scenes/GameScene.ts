@@ -234,6 +234,9 @@ export class GameScene {
     // Speed >= 1: multiple ticks per frame for fast-forward.
     const speed = this.state.debugConfig.gameSpeed;
     const inputX = externalInputX ?? this.input.inputX;
+    // Always set gameSpeedScale upfront — prevents stale values from leaking
+    const scale = speed < 1 ? speed : 1;
+    this.state = { ...this.state, gameSpeedScale: scale };
 
     if (speed >= 1) {
       // Fast-forward: run multiple full-speed ticks
@@ -241,17 +244,14 @@ export class GameScene {
       const ticksThisFrame = Math.floor(this.speedAccumulator);
       this.speedAccumulator -= ticksThisFrame;
       for (let t = 0; t < ticksThisFrame; t++) {
-        this.state = { ...this.state, gameSpeedScale: 1 };
         const result = tickGameWorld(this.state, inputX);
-        this.state = result.state;
+        this.state = { ...result.state, gameSpeedScale: 1 };
         handleEvents(result.events, this.eventDeps());
         if (this.state.gameOver) break;
       }
     } else {
-      // Slow-mo: tick every frame with scaled velocities
-      this.state = { ...this.state, gameSpeedScale: speed };
       const result = tickGameWorld(this.state, inputX);
-      this.state = result.state;
+      this.state = { ...result.state, gameSpeedScale: scale };
       handleEvents(result.events, this.eventDeps());
     }
 
