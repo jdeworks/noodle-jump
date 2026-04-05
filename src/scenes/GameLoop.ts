@@ -36,6 +36,7 @@ import {
   SQUASH_TOTAL_FRAMES,
   GAME_HEIGHT,
   GAME_WIDTH,
+  ZONE_THRESHOLDS,
 } from "../config/constants";
 import { maybeSpawnBoss, tickBoss, tickKnifeAmmo } from "./GameLoopBoss";
 import { getBossForZone } from "../entities/Boss";
@@ -283,9 +284,11 @@ export function tickGameWorld(
   const qzt = s.debugConfig.quickZoneTransitions;
   let zoneResult: { state: typeof s.zoneState; changed: boolean };
   if (qzt > 0) {
-    // Never go below the starting zone — progress forward from there
+    // Quick zones: count from the starting zone's platform threshold, not from 0
     const startZone = s.runConfig.startingZone || 0;
-    const directZone = Math.min(6, Math.max(startZone, Math.floor(s.platformsPassed / qzt)));
+    const startPlat = startZone > 0 ? (ZONE_THRESHOLDS[Math.min(startZone, ZONE_THRESHOLDS.length - 1)] || 0) : 0;
+    const elapsed = Math.max(0, s.platformsPassed - startPlat);
+    const directZone = Math.min(6, startZone + Math.floor(elapsed / qzt));
     const changed = directZone !== s.zoneState.currentZone;
     zoneResult = { state: { currentZone: directZone, platformsPassed: s.platformsPassed }, changed };
   } else {
