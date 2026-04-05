@@ -11,6 +11,8 @@ const MEDAL_COLORS: Record<Medal, string> = {
   bronze: "#cd7f32",
   silver: "#c0c0c0",
   gold: "#ffd700",
+  platinum: "#88ddff",
+  diamond: "#bb66ff",
 };
 
 export interface DailyGameOverStats {
@@ -23,7 +25,7 @@ export interface DailyGameOverStats {
   bestStreak: number;
   platforms: number;
   medal: Medal | null;
-  thresholds: { bronze: number; silver: number; gold: number };
+  thresholds: { bronze: number; silver: number; gold: number; platinum: number; diamond: number };
   streak: number;
   isNewBest: boolean;
 }
@@ -55,12 +57,16 @@ export function showDailyGameOver(
   const title = new Text({
     text: titleStr,
     style: new TextStyle({
-      fontFamily: "monospace", fontSize: 20,
+      fontFamily: "monospace",
+      fontSize: 20,
       fill: stats.medal ? MEDAL_COLORS[stats.medal] : uiT.text,
-      fontWeight: "bold", stroke: { color: "#000000", width: 3 },
+      fontWeight: "bold",
+      stroke: { color: "#000000", width: 3 },
     }),
   });
-  title.x = GAME_WIDTH / 2; title.y = y; title.anchor.set(0.5, 0);
+  title.x = GAME_WIDTH / 2;
+  title.y = y;
+  title.anchor.set(0.5, 0);
   app.stage.addChild(title);
   y += 36;
 
@@ -68,16 +74,21 @@ export function showDailyGameOver(
   const scoreText = new Text({
     text: `Score: ${stats.score}`,
     style: new TextStyle({
-      fontFamily: "monospace", fontSize: 22, fill: uiT.accent,
-      fontWeight: "bold", stroke: { color: "#000000", width: 2 },
+      fontFamily: "monospace",
+      fontSize: 22,
+      fill: uiT.accent,
+      fontWeight: "bold",
+      stroke: { color: "#000000", width: 2 },
     }),
   });
-  scoreText.x = GAME_WIDTH / 2; scoreText.y = y; scoreText.anchor.set(0.5, 0);
+  scoreText.x = GAME_WIDTH / 2;
+  scoreText.y = y;
+  scoreText.anchor.set(0.5, 0);
   app.stage.addChild(scoreText);
   y += 34;
 
   // Medal thresholds with checkmarks
-  const medals: Medal[] = ["bronze", "silver", "gold"];
+  const medals: Medal[] = ["bronze", "silver", "gold", "platinum", "diamond"];
   for (const m of medals) {
     const threshold = stats.thresholds[m];
     const achieved = stats.score >= threshold;
@@ -86,12 +97,15 @@ export function showDailyGameOver(
     const row = new Text({
       text: `${check} ${label}: ${threshold.toLocaleString()}`,
       style: new TextStyle({
-        fontFamily: "monospace", fontSize: 14,
+        fontFamily: "monospace",
+        fontSize: 14,
         fill: achieved ? MEDAL_COLORS[m] : uiT.textDim,
         fontWeight: achieved ? "bold" : "normal",
       }),
     });
-    row.x = GAME_WIDTH / 2; row.y = y; row.anchor.set(0.5, 0);
+    row.x = GAME_WIDTH / 2;
+    row.y = y;
+    row.anchor.set(0.5, 0);
     app.stage.addChild(row);
     y += 22;
   }
@@ -108,10 +122,15 @@ export function showDailyGameOver(
   const breakdown = new Text({
     text: lines.join("\n"),
     style: new TextStyle({
-      fontFamily: "monospace", fontSize: 13, fill: uiT.text, lineHeight: 20,
+      fontFamily: "monospace",
+      fontSize: 13,
+      fill: uiT.text,
+      lineHeight: 20,
     }),
   });
-  breakdown.x = GAME_WIDTH / 2; breakdown.y = y; breakdown.anchor.set(0.5, 0);
+  breakdown.x = GAME_WIDTH / 2;
+  breakdown.y = y;
+  breakdown.anchor.set(0.5, 0);
   app.stage.addChild(breakdown);
   y += lines.length * 20 + 12;
 
@@ -120,10 +139,15 @@ export function showDailyGameOver(
     const streakText = new Text({
       text: `Daily Streak: ${stats.streak} day${stats.streak > 1 ? "s" : ""}`,
       style: new TextStyle({
-        fontFamily: "monospace", fontSize: 15, fill: uiT.accent, fontWeight: "bold",
+        fontFamily: "monospace",
+        fontSize: 15,
+        fill: uiT.accent,
+        fontWeight: "bold",
       }),
     });
-    streakText.x = GAME_WIDTH / 2; streakText.y = y; streakText.anchor.set(0.5, 0);
+    streakText.x = GAME_WIDTH / 2;
+    streakText.y = y;
+    streakText.anchor.set(0.5, 0);
     app.stage.addChild(streakText);
     y += 26;
   }
@@ -133,12 +157,19 @@ export function showDailyGameOver(
     const achText = new Text({
       text: "UNLOCKED: " + achievements.join(", "),
       style: new TextStyle({
-        fontFamily: "monospace", fontSize: 13, fill: uiT.accent, fontWeight: "bold",
+        fontFamily: "monospace",
+        fontSize: 13,
+        fill: uiT.accent,
+        fontWeight: "bold",
         stroke: { color: "#000000", width: 2 },
-        wordWrap: true, wordWrapWidth: GAME_WIDTH - 40, align: "center",
+        wordWrap: true,
+        wordWrapWidth: GAME_WIDTH - 40,
+        align: "center",
       }),
     });
-    achText.x = GAME_WIDTH / 2; achText.y = y; achText.anchor.set(0.5, 0);
+    achText.x = GAME_WIDTH / 2;
+    achText.y = y;
+    achText.anchor.set(0.5, 0);
     app.stage.addChild(achText);
     y += 26;
   }
@@ -146,22 +177,41 @@ export function showDailyGameOver(
 
   // Buttons
   let buttonTapped = false;
-  const suppress = () => { buttonTapped = true; setTimeout(() => { buttonTapped = false; }, 300); };
+  const suppress = () => {
+    buttonTapped = true;
+    setTimeout(() => {
+      buttonTapped = false;
+    }, 300);
+  };
 
   // Share
   const shareText = new Text({
     text: "Share Score",
-    style: new TextStyle({ fontFamily: "monospace", fontSize: 14, fill: "#44aaff", fontWeight: "bold" }),
+    style: new TextStyle({
+      fontFamily: "monospace",
+      fontSize: 14,
+      fill: "#44aaff",
+      fontWeight: "bold",
+    }),
   });
-  shareText.x = GAME_WIDTH / 2; shareText.y = y; shareText.anchor.set(0.5, 0);
-  shareText.eventMode = "static"; shareText.cursor = "pointer";
+  shareText.x = GAME_WIDTH / 2;
+  shareText.y = y;
+  shareText.anchor.set(0.5, 0);
+  shareText.eventMode = "static";
+  shareText.cursor = "pointer";
   shareText.on("pointertap", (e: Event) => {
-    e.stopPropagation(); suppress();
+    e.stopPropagation();
+    suppress();
     const medalStr = stats.medal ? ` (${stats.medal} medal)` : "";
     const msg = `Daily Challenge${medalStr}: ${stats.score} pts | Height: ${stats.height} | Streak: ${stats.streak}`;
     navigator.clipboard.writeText(msg).then(
-      () => { shareText.text = "Copied!"; shareText.style.fill = "#66cc66"; },
-      () => { shareText.text = "Copy failed"; },
+      () => {
+        shareText.text = "Copied!";
+        shareText.style.fill = "#66cc66";
+      },
+      () => {
+        shareText.text = "Copy failed";
+      },
     );
   });
   app.stage.addChild(shareText);
@@ -173,17 +223,24 @@ export function showDailyGameOver(
   restartBg.fill({ color: uiT.buttonBg, alpha: 0.7 });
   restartBg.roundRect(GAME_WIDTH / 2 - 100, y - 2, 200, 36, 8);
   restartBg.stroke({ width: 1.5, color: uiT.buttonBorder, alpha: 0.5 });
-  restartBg.eventMode = "static"; restartBg.cursor = "pointer";
+  restartBg.eventMode = "static";
+  restartBg.cursor = "pointer";
   app.stage.addChild(restartBg);
   const restartText = new Text({
     text: "Play Again",
     style: new TextStyle({
-      fontFamily: "monospace", fontSize: 18, fill: "#ffffff",
-      fontWeight: "bold", stroke: { color: "#000000", width: 2 },
+      fontFamily: "monospace",
+      fontSize: 18,
+      fill: "#ffffff",
+      fontWeight: "bold",
+      stroke: { color: "#000000", width: 2 },
     }),
   });
-  restartText.x = GAME_WIDTH / 2; restartText.y = y + 16; restartText.anchor.set(0.5, 0.5);
-  restartText.eventMode = "static"; restartText.cursor = "pointer";
+  restartText.x = GAME_WIDTH / 2;
+  restartText.y = y + 16;
+  restartText.anchor.set(0.5, 0.5);
+  restartText.eventMode = "static";
+  restartText.cursor = "pointer";
   app.stage.addChild(restartText);
   y += 44;
 
@@ -191,17 +248,33 @@ export function showDailyGameOver(
   const homeText = new Text({
     text: "Home",
     style: new TextStyle({
-      fontFamily: "monospace", fontSize: 16, fill: uiT.text, fontWeight: "bold",
+      fontFamily: "monospace",
+      fontSize: 16,
+      fill: uiT.text,
+      fontWeight: "bold",
       stroke: { color: "#000000", width: 2 },
     }),
   });
-  homeText.x = GAME_WIDTH / 2; homeText.y = y; homeText.anchor.set(0.5, 0);
-  homeText.eventMode = "static"; homeText.cursor = "pointer";
+  homeText.x = GAME_WIDTH / 2;
+  homeText.y = y;
+  homeText.anchor.set(0.5, 0);
+  homeText.eventMode = "static";
+  homeText.cursor = "pointer";
   app.stage.addChild(homeText);
 
   let acted = false;
-  const handleRestart = () => { if (buttonTapped || acted) return; acted = true; onRestart(); };
-  const handleHome = (e: Event) => { e.stopPropagation(); suppress(); if (acted) return; acted = true; onHome(); };
+  const handleRestart = () => {
+    if (buttonTapped || acted) return;
+    acted = true;
+    onRestart();
+  };
+  const handleHome = (e: Event) => {
+    e.stopPropagation();
+    suppress();
+    if (acted) return;
+    acted = true;
+    onHome();
+  };
 
   setTimeout(() => {
     app.canvas.addEventListener("pointerup", handleRestart);

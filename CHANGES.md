@@ -135,3 +135,7 @@ symbols_removed: (none)
 tests_added: tests/daily-challenge-state.test.ts, tests/shadow-recorder.test.ts, tests/shadow-playback.test.ts
 reason: Daily Challenge (date-seeded config, medals, streaks, 5 achievements, dedicated game-over screen) and Shadow Replay (records all runs, plays ghost on next run via RemotePlayerRenderer).
 health_snapshot: LOC=28097, tests=447, complexity=ok
+
+## [2026-04-05T15:15] session-dc02 | status: started | mode: full | type: fix
+intent: Increase daily challenge difficulty — higher thresholds, more modifiers, platinum+diamond medals
+- progress: Higher base thresholds (5k/15k/30k/50k/80k), add platinum+diamond medals, randomize game speed/platform type/spawn rates/quick zones/only-negative-powerups | src/systems/DailyChallengeState.ts, src/ui/DailyChallengeScreen.ts, src/ui/DailyGameOverView.ts, src/systems/Achievements.ts, src/scenes/GameLauncher.ts, tests/daily-challenge-state.test.ts

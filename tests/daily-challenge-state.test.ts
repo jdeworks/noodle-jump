@@ -45,11 +45,13 @@ describe("DailyChallengeState", () => {
     expect(differs).toBe(true);
   });
 
-  test("getMedalThresholds returns bronze < silver < gold", () => {
+  test("getMedalThresholds returns bronze < silver < gold < platinum < diamond", () => {
     const config = generateDailyConfig(42);
     const t = getMedalThresholds(config);
     expect(t.bronze).toBeLessThan(t.silver);
     expect(t.silver).toBeLessThan(t.gold);
+    expect(t.gold).toBeLessThan(t.platinum);
+    expect(t.platinum).toBeLessThan(t.diamond);
     expect(t.bronze).toBeGreaterThan(0);
   });
 
@@ -66,29 +68,31 @@ describe("DailyChallengeState", () => {
   });
 
   test("getMedal returns correct medal", () => {
-    const t = { bronze: 3000, silver: 10000, gold: 25000 };
+    const t = { bronze: 5000, silver: 15000, gold: 30000, platinum: 50000, diamond: 80000 };
     expect(getMedal(0, t)).toBeNull();
-    expect(getMedal(2999, t)).toBeNull();
-    expect(getMedal(3000, t)).toBe("bronze");
-    expect(getMedal(9999, t)).toBe("bronze");
-    expect(getMedal(10000, t)).toBe("silver");
-    expect(getMedal(25000, t)).toBe("gold");
-    expect(getMedal(99999, t)).toBe("gold");
+    expect(getMedal(4999, t)).toBeNull();
+    expect(getMedal(5000, t)).toBe("bronze");
+    expect(getMedal(14999, t)).toBe("bronze");
+    expect(getMedal(15000, t)).toBe("silver");
+    expect(getMedal(30000, t)).toBe("gold");
+    expect(getMedal(50000, t)).toBe("platinum");
+    expect(getMedal(80000, t)).toBe("diamond");
+    expect(getMedal(99999, t)).toBe("diamond");
   });
 
   test("recordDailyResult updates best score", () => {
     let data = createDailyData();
-    const t = { bronze: 3000, silver: 10000, gold: 25000 };
-    data = recordDailyResult(data, "2026-04-05", 5000, 200, t);
-    expect(data.results["2026-04-05"].score).toBe(5000);
+    const t = { bronze: 5000, silver: 15000, gold: 30000, platinum: 50000, diamond: 80000 };
+    data = recordDailyResult(data, "2026-04-05", 6000, 200, t);
+    expect(data.results["2026-04-05"].score).toBe(6000);
     expect(data.results["2026-04-05"].medal).toBe("bronze");
     // Higher score replaces
-    data = recordDailyResult(data, "2026-04-05", 12000, 400, t);
-    expect(data.results["2026-04-05"].score).toBe(12000);
+    data = recordDailyResult(data, "2026-04-05", 16000, 400, t);
+    expect(data.results["2026-04-05"].score).toBe(16000);
     expect(data.results["2026-04-05"].medal).toBe("silver");
     // Lower score doesn't replace
     data = recordDailyResult(data, "2026-04-05", 4000, 100, t);
-    expect(data.results["2026-04-05"].score).toBe(12000);
+    expect(data.results["2026-04-05"].score).toBe(16000);
   });
 
   test("calculateStreak counts consecutive days", () => {
@@ -123,9 +127,24 @@ describe("DailyChallengeState", () => {
 
   test("getMedalsInRange collects medal types", () => {
     const results: Record<string, DailyResult> = {
-      "2026-04-05": { date: "2026-04-05", score: 30000, height: 500, medal: "gold" },
-      "2026-04-04": { date: "2026-04-04", score: 5000, height: 200, medal: "bronze" },
-      "2026-04-03": { date: "2026-04-03", score: 12000, height: 300, medal: "silver" },
+      "2026-04-05": {
+        date: "2026-04-05",
+        score: 30000,
+        height: 500,
+        medal: "gold",
+      },
+      "2026-04-04": {
+        date: "2026-04-04",
+        score: 5000,
+        height: 200,
+        medal: "bronze",
+      },
+      "2026-04-03": {
+        date: "2026-04-03",
+        score: 12000,
+        height: 300,
+        medal: "silver",
+      },
     };
     const medals = getMedalsInRange(results, "2026-04-05", 7);
     expect(medals.size).toBe(3);
@@ -136,7 +155,7 @@ describe("DailyChallengeState", () => {
 
   test("recordDailyResult tracks streak correctly", () => {
     let data = createDailyData();
-    const t = { bronze: 1000, silver: 5000, gold: 10000 };
+    const t = { bronze: 1000, silver: 5000, gold: 10000, platinum: 20000, diamond: 40000 };
     data = recordDailyResult(data, "2026-04-03", 2000, 100, t);
     expect(data.currentStreak).toBe(1);
     data = recordDailyResult(data, "2026-04-04", 3000, 150, t);

@@ -19,8 +19,9 @@ import { resetRendererState } from "./EntityRenderer";
 import { stopMusic, killBossMusic } from "../systems/Audio";
 import { showTitleScreen } from "../ui/TitleScreenView";
 import { createGameLoopTicker } from "./GameLoopTicker";
-import { resetDebugConfig } from "../config/debug";
+import { resetDebugConfig, setDebugConfig, getDebugConfig } from "../config/debug";
 import { createPauseMenu } from "./PauseMenu";
+import { generateDailyDebugConfig } from "../systems/DailyChallengeState";
 import {
   createShadowRecorder,
   loadLastShadow,
@@ -151,6 +152,11 @@ export async function launchGame(
   activeRunConfig = runConfig; // remember for restart
   // Reset debug config for normal play so custom run presets don't leak
   if (!runConfig) resetDebugConfig();
+  // Daily challenge: apply generated modifiers (game speed, platform type, spawn rates, etc.)
+  if (runConfig?.isDailyChallenge) {
+    const dailyOverrides = generateDailyDebugConfig(runConfig.seed);
+    setDebugConfig({ ...getDebugConfig(), ...dailyOverrides });
+  }
   requestWakeLock();
   const scene = new GameScene(runConfig);
   activeScene = scene;
