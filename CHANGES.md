@@ -106,3 +106,7 @@ symbols_removed: (none)
 tests_added: tests/multiplayer/sdp-compressor.test.ts, tests/multiplayer/game-sync.test.ts, tests/multiplayer/local-input.test.ts, tests/multiplayer/multiplayer-session.test.ts, tests/multiplayer/interpolation-buffer.test.ts, tests/multiplayer/lobby-session.test.ts
 reason: Full multiplayer networking layer — all 5 stages complete. Dual signaling (Nostr + manual SDP), local co-op split-screen, online P2P with interpolation, lobby with ready-up, and title screen integration.
 health_snapshot: LOC=19800, tests=383, complexity=ok
+
+## [2026-04-05T14:50] session-dc01 | status: started | mode: full | type: add
+intent: Implement Daily Challenge (date-seeded runs, medals, streaks, achievements) and Shadow Replay (record/playback ghost on all runs)
+- progress: Pure logic — DailyChallengeState (config gen, medals, streaks), ShadowRecorder, ShadowPlayback + tests | src/systems/DailyChallengeState.ts, src/systems/ShadowRecorder.ts, src/systems/ShadowPlayback.ts, tests/daily-challenge-state.test.ts, tests/shadow-recorder.test.ts, tests/shadow-playback.test.ts
