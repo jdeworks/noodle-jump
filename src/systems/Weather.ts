@@ -54,7 +54,7 @@ export function getWeatherType(zone: number): WeatherType {
 }
 
 /** Tick the weather — spawn new particles and update existing. */
-export function tickWeather(state: WeatherState): WeatherState {
+export function tickWeather(state: WeatherState, speedScale = 1): WeatherState {
   const config = WEATHER_CONFIGS[state.type];
   if (!config) return state;
 
@@ -70,9 +70,9 @@ export function tickWeather(state: WeatherState): WeatherState {
   for (const p of particles) {
     const updated: WeatherParticle = {
       ...p,
-      x: p.x + p.vx,
-      y: p.y + p.vy,
-      alpha: p.alpha - config.fadeRate,
+      x: p.x + p.vx * speedScale,
+      y: p.y + p.vy * speedScale,
+      alpha: p.alpha - config.fadeRate * speedScale,
       life: p.life - 1,
     };
     if (updated.life > 0 && updated.alpha > 0) {

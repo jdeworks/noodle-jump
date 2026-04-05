@@ -26,7 +26,7 @@ export function tickEnemies(
   if (!s.enemiesEnabled) return s;
   if (s.inBossFight) {
     // During boss fights: still tick projectiles (knives need to fly), skip enemies/wind
-    s = { ...s, projectiles: updateProjectiles(s.projectiles) };
+    s = { ...s, projectiles: updateProjectiles(s.projectiles, s.gameSpeedScale) };
     return s;
   }
 
@@ -44,10 +44,10 @@ export function tickEnemies(
   }
 
   // Update enemies
-  s = { ...s, enemies: updateEnemies(s.enemies) };
+  s = { ...s, enemies: updateEnemies(s.enemies, s.gameSpeedScale) };
 
   // Update projectiles
-  s = { ...s, projectiles: updateProjectiles(s.projectiles) };
+  s = { ...s, projectiles: updateProjectiles(s.projectiles, s.gameSpeedScale) };
 
   // Projectile-enemy collisions — killed enemies become meatballs
   if (s.projectiles.length > 0 && s.enemies.length > 0) {

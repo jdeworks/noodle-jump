@@ -32,23 +32,23 @@ export function createPlayer(x: number, y: number): PlayerState {
 }
 
 /** Apply horizontal input, gravity, and movement. Called each fixed timestep. */
-export function updatePlayer(player: PlayerState, inputX: number): PlayerState {
+export function updatePlayer(player: PlayerState, inputX: number, speedScale = 1): PlayerState {
   let { x, y, vx, vy } = player;
 
   // Horizontal movement from input
   vx = inputX * PLAYER_MAX_HORIZONTAL_SPEED;
 
-  // Gravity
-  vy += GRAVITY;
+  // Gravity (scaled for slow-mo)
+  vy += GRAVITY * speedScale;
 
   // Cap fall speed to prevent tunneling through platforms
   if (vy > PLAYER_HEIGHT * 0.9) {
     vy = PLAYER_HEIGHT * 0.9;
   }
 
-  // Apply velocity
-  x += vx;
-  y += vy;
+  // Apply velocity (scaled for slow-mo)
+  x += vx * speedScale;
+  y += vy * speedScale;
 
   // Screen wrap (left/right)
   if (x + player.width < 0) {

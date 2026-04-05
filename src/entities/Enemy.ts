@@ -59,12 +59,12 @@ export function createEnemy(
 }
 
 /** Update all enemies — move horizontally, bounce off walls. */
-export function updateEnemies(enemies: EnemyState[]): EnemyState[] {
+export function updateEnemies(enemies: EnemyState[], speedScale = 1): EnemyState[] {
   return enemies.map((e) => {
     if (!e.alive) return e;
 
     let { x, vx } = e;
-    x += vx;
+    x += vx * speedScale;
 
     // Bounce off screen edges
     if (x + e.width > GAME_WIDTH) {

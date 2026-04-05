@@ -27,10 +27,11 @@ export function updateCamera(
   camera: CameraState,
   playerY: number,
   inBossFight = false,
+  speedScale = 1,
 ): CameraState {
   // Smooth transition toward boss arena position (even during boss fight)
   if (camera.bossTargetY !== null) {
-    const BOSS_LERP = 0.06;
+    const BOSS_LERP = 0.06 * speedScale;
     const y = camera.y + (camera.bossTargetY - camera.y) * BOSS_LERP;
     const highestY = Math.min(camera.highestY, y);
     // Snap when close enough
@@ -51,8 +52,8 @@ export function updateCamera(
     return camera;
   }
 
-  // Lerp toward target
-  const y = camera.y + (targetY - camera.y) * CAMERA_LERP_SPEED;
+  // Lerp toward target (scaled for slow-mo)
+  const y = camera.y + (targetY - camera.y) * CAMERA_LERP_SPEED * speedScale;
 
   // Track the highest point reached
   const highestY = Math.min(camera.highestY, y);

@@ -116,7 +116,7 @@ export function tickGameWorld(
     const difficulty = getDifficulty(state.platformsPassed, state.runConfig.difficultyMultiplier);
     const platforms = updatePlatforms(
       state.platforms,
-      difficulty.movingSpeedMultiplier,
+      difficulty.movingSpeedMultiplier * state.gameSpeedScale,
     );
     const platMap = new Map(platforms.map((p) => [p.id, p]));
     const powerUps = updatePowerUpPositions(state.powerUps, platforms, platMap);
@@ -136,13 +136,12 @@ export function tickGameWorld(
     };
   }
 
-  // Death animation
-  if (state.isDying) {
-    const dyingTicks = state.dyingTicks + 1;
+  if (state.isDying) { // Death animation
+    const ss = state.gameSpeedScale, dyingTicks = state.dyingTicks + 1;
     const player = {
       ...state.player,
-      vy: state.player.vy + 0.45,
-      y: state.player.y + state.player.vy,
+      vy: state.player.vy + 0.45 * ss,
+      y: state.player.y + state.player.vy * ss,
     };
     if (dyingTicks >= DEATH_ANIMATION_TICKS) {
       // Ghost mode: rescue player instead of game over, freeze scoring
@@ -205,7 +204,7 @@ export function tickGameWorld(
   const difficulty = getDifficulty(s.platformsPassed, s.runConfig.difficultyMultiplier);
   s = {
     ...s,
-    platforms: updatePlatforms(s.platforms, difficulty.movingSpeedMultiplier),
+    platforms: updatePlatforms(s.platforms, difficulty.movingSpeedMultiplier * s.gameSpeedScale),
   };
 
   // Sync positions to platforms (skip meatballs when magnet active)
@@ -248,10 +247,10 @@ export function tickGameWorld(
   } else {
     const adjustedInputX =
       s.activeEffect?.type === "chili_pepper" ? -inputX : inputX;
-    s = { ...s, player: updatePlayer(s.player, adjustedInputX) };
+    s = { ...s, player: updatePlayer(s.player, adjustedInputX, s.gameSpeedScale) };
   }
 
-  // Safety: push player out if embedded inside a platform (moving platform clipping during squash hold)
+  // Push player out if embedded inside a platform (moving platform clipping during squash hold)
   if (!inSquashHold && !isSquashTransition && s.player.vy >= 0) {
     for (const p of s.platforms) {
       if (p.broken) continue;
@@ -327,12 +326,12 @@ export function tickGameWorld(
 
   // Weather + day/night (skip if disabled via debug config)
   if (!s.debugConfig.disableWeather) {
-    s = { ...s, weather: tickWeather(s.weather) };
+    s = { ...s, weather: tickWeather(s.weather, s.gameSpeedScale) };
   }
   s = { ...s, dayNight: tickDayNight(s.dayNight) };
 
   // Camera
-  s = { ...s, camera: updateCamera(s.camera, s.player.y, s.inBossFight) };
+  s = { ...s, camera: updateCamera(s.camera, s.player.y, s.inBossFight, s.gameSpeedScale) };
 
   // Screen shake
   if (s.shakeState) {
@@ -355,7 +354,7 @@ export function tickGameWorld(
 
   // Update projectiles even when enemies are disabled (needed for boss fights)
   if (!s.enemiesEnabled && s.projectiles.length > 0) {
-    s = { ...s, projectiles: updateProjectiles(s.projectiles) };
+    s = { ...s, projectiles: updateProjectiles(s.projectiles, s.gameSpeedScale) };
   }
 
   // Death check — always uses camera.highestY (fixed reference point)

@@ -54,14 +54,15 @@ export function createProjectile(
 /** Update all projectiles — move and decrement lifetime. */
 export function updateProjectiles(
   projectiles: ProjectileState[],
+  speedScale = 1,
 ): ProjectileState[] {
   return projectiles
     .map((p) => {
       if (!p.alive) return p;
       return {
         ...p,
-        x: p.x + p.vx,
-        y: p.y + p.vy,
+        x: p.x + p.vx * speedScale,
+        y: p.y + p.vy * speedScale,
         life: p.life - 1,
         alive: p.life - 1 > 0,
       };

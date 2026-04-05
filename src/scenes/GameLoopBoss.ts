@@ -304,13 +304,14 @@ export function tickBoss(
   }
 
   // Update boss attack projectiles
+  const ss = s.gameSpeedScale;
   s = {
     ...s,
     bossAttacks: s.bossAttacks
       .map((a) => ({
         ...a,
-        x: a.x + a.vx,
-        y: a.y + a.vy,
+        x: a.x + a.vx * ss,
+        y: a.y + a.vy * ss,
         alive: a.alive && a.y < s.camera.y + GAME_HEIGHT + 100,
       }))
       .filter((a) => a.alive),

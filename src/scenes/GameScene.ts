@@ -53,14 +53,8 @@ export class GameScene {
   private hitboxGfx = new Graphics();
   private tentacleGfx = new Graphics();
   private floatingTextMgr = new FloatingTextManager();
-  /** Game speed accumulator — fractional ticks carried between frames. */
+  /** Game speed accumulator for fast-forward (speed > 1x). */
   private speedAccumulator = 0;
-  /** Interpolation alpha for smooth slow-mo rendering (lerp between prev and current). */
-  private interpAlpha = 0;
-  /** Previous tick snapshot for interpolation (player + camera positions). */
-  private prevPlayerX = 0;
-  private prevPlayerY = 0;
-  private prevCamY = 0;
 
   constructor(runConfig?: RunConfig) {
     clearCharCache();
@@ -77,10 +71,6 @@ export class GameScene {
     this.cosmeticTint = TINT_COLORS[cosmetics.equipped.tint ?? "tint_none"] ?? 0xffffff;
     this.cosmeticTheme = cosmetics.equipped.theme ?? "theme_default";
     this.gfxSync.setTheme(this.cosmeticTheme);
-
-    this.prevPlayerX = this.state.player.x;
-    this.prevPlayerY = this.state.player.y;
-    this.prevCamY = this.state.camera.y;
 
     this.parallax = new ParallaxBackground();
     this.parallax.setCosmeticTheme(this.cosmeticTheme);
@@ -239,34 +229,31 @@ export class GameScene {
     if (this.destroyed || this.state.gameOver || this.state.paused) return;
     if (externalInputX === undefined) this.input.update();
 
-    // Game speed: accumulate fractional ticks, run multiple or skip ticks
+    // Game speed: always tick every frame for smooth rendering.
+    // Speed < 1: one tick with scaled velocities (slow-mo at 60fps).
+    // Speed >= 1: multiple ticks per frame for fast-forward.
     const speed = this.state.debugConfig.gameSpeed;
-    this.speedAccumulator += speed;
-    const ticksThisFrame = Math.floor(this.speedAccumulator);
-    this.speedAccumulator -= ticksThisFrame;
-
     const inputX = externalInputX ?? this.input.inputX;
 
-    // Snapshot interpolation: before ticking, promote current→prev
-    if (ticksThisFrame > 0) {
-      this.prevPlayerX = this.state.player.x;
-      this.prevPlayerY = this.state.player.y;
-      this.prevCamY = this.state.camera.y;
-    }
-    for (let t = 0; t < ticksThisFrame; t++) {
-      // For multi-tick frames, prev = state before LAST tick
-      if (t === ticksThisFrame - 1 && t > 0) {
-        this.prevPlayerX = this.state.player.x;
-        this.prevPlayerY = this.state.player.y;
-        this.prevCamY = this.state.camera.y;
+    if (speed >= 1) {
+      // Fast-forward: run multiple full-speed ticks
+      this.speedAccumulator += speed;
+      const ticksThisFrame = Math.floor(this.speedAccumulator);
+      this.speedAccumulator -= ticksThisFrame;
+      for (let t = 0; t < ticksThisFrame; t++) {
+        this.state = { ...this.state, gameSpeedScale: 1 };
+        const result = tickGameWorld(this.state, inputX);
+        this.state = result.state;
+        handleEvents(result.events, this.eventDeps());
+        if (this.state.gameOver) break;
       }
+    } else {
+      // Slow-mo: tick every frame with scaled velocities
+      this.state = { ...this.state, gameSpeedScale: speed };
       const result = tickGameWorld(this.state, inputX);
       this.state = result.state;
       handleEvents(result.events, this.eventDeps());
-      if (this.state.gameOver) break;
     }
-    // Alpha: how far between prev tick and current tick (0 = at prev, 1 = at current)
-    this.interpAlpha = speed < 1 ? this.speedAccumulator : 0;
 
     this.gfxSync.syncAll(
       this.state.platforms,
@@ -299,15 +286,12 @@ export class GameScene {
     this.tickBossTransition();
   }
 
-  private lerp(a: number, b: number, t: number): number { return a + (b - a) * t; }
-
   private buildRenderContext(): RenderContext {
-    const a = this.interpAlpha;
     return {
       state: this.state,
-      camY: a > 0 ? this.lerp(this.prevCamY, this.state.camera.y, a) : this.state.camera.y,
-      interpPlayerX: a > 0 ? this.lerp(this.prevPlayerX, this.state.player.x, a) : this.state.player.x,
-      interpPlayerY: a > 0 ? this.lerp(this.prevPlayerY, this.state.player.y, a) : this.state.player.y,
+      camY: this.state.camera.y,
+      interpPlayerX: this.state.player.x,
+      interpPlayerY: this.state.player.y,
       parallax: this.parallax, particles: this.particles,
       effectRenderer: this.effectRenderer, gfxSync: this.gfxSync, trail: this.trail,
       floatingTextMgr: this.floatingTextMgr, gameContainer: this.gameContainer,

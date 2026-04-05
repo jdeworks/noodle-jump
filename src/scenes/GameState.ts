@@ -132,6 +132,8 @@ export interface GameWorldState {
   ghostDeathHeight: number;
   /** Apply height penalty on practice-mode rescue (timed multiplayer). */
   deathPenaltyEnabled: boolean;
+  /** Current speed scale for velocities (1.0 = normal, <1 = slow-mo). Set by GameScene. */
+  gameSpeedScale: number;
 }
 
 /** Create the initial game world state for a new game. */
@@ -236,5 +238,6 @@ export function createInitialState(runConfig?: RunConfig): GameWorldState {
     isGhost: false,
     ghostDeathHeight: 0,
     deathPenaltyEnabled: false,
+    gameSpeedScale: 1,
   };
 }
