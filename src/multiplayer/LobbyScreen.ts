@@ -1,8 +1,7 @@
 /**
  * Multiplayer lobby — supports 2-24 players.
- * Shows player list, ready-up with countdown timer, mode/theme/custom run controls.
- * Only the HOST runs the countdown timer and triggers game start.
- * Guests display the countdown but never trigger start themselves.
+ * Host is single source of truth for countdown. Guests display host state.
+ * Mesh broadcasts ready events peer-to-peer; host relays countdown to all.
  */
 
 import { Container, Graphics, Text, TextStyle } from "pixi.js";
@@ -21,33 +20,26 @@ import { getPeerColor } from "./OnlineResults";
 function serializeForSync(cfg: RunConfig): Record<string, unknown> { return { ...cfg, enabledPowerUps: [...cfg.enabledPowerUps] }; }
 function deserializeFromSync(d: Record<string, unknown>): RunConfig { return { ...createDefaultRunConfig(), ...d, enabledPowerUps: new Set(d.enabledPowerUps as string[] ?? []) }; }
 
-/** Load player name from localStorage, default to empty string. */
 export function getPlayerName(): string { try { return localStorage.getItem("nj-player-name") ?? ""; } catch { return ""; } }
 export function setPlayerName(name: string): void { try { localStorage.setItem("nj-player-name", name); } catch { /* */ } }
 
 export type LobbyRole = "host" | "guest";
 
 export interface LobbyCallbacks {
-  onStart: (
-    seed: number, mode: string, touchControls: boolean,
+  onStart: (seed: number, mode: string, touchControls: boolean,
     remotePeers: Map<string, { character: string; cosmetics?: RemoteCosmetics; name?: string }>,
-    sharedRunConfig?: RunConfig,
-  ) => void;
+    sharedRunConfig?: RunConfig) => void;
 }
 
 interface LobbyPlayer {
-  peerId: string;
-  character: string;
-  cosmetics: RemoteCosmetics;
-  ready: boolean;
-  colorIndex: number;
-  name: string;
+  peerId: string; character: string; cosmetics: RemoteCosmetics;
+  ready: boolean; colorIndex: number; name: string; announced: boolean;
 }
 
 const HEADER = new TextStyle({ fontFamily: "monospace", fontSize: 22, fill: "#ffffff", fontWeight: "bold", stroke: { color: "#000000", width: 3 } });
 const LABEL = new TextStyle({ fontFamily: "monospace", fontSize: 14, fill: "#ffffff", stroke: { color: "#000000", width: 2 } });
-const STATUS = new TextStyle({ fontFamily: "monospace", fontSize: 12, fill: "#aaaaaa", stroke: { color: "#000000", width: 2 } });
 const SMALL = new TextStyle({ fontFamily: "monospace", fontSize: 11, fill: "#aaaaaa", stroke: { color: "#000000", width: 2 } });
+const STATUS = new TextStyle({ fontFamily: "monospace", fontSize: 12, fill: "#aaaaaa", stroke: { color: "#000000", width: 2 } });
 
 const COUNTDOWN_LONG = 15_000;
 const COUNTDOWN_SHORT = 3_000;
@@ -57,7 +49,6 @@ export class LobbyScreen {
   private role: LobbyRole;
   private sync: GameSync;
   private callbacks: LobbyCallbacks;
-
   private localName = getPlayerName();
   private localChar = getSelectedCharacter();
   private mode = (() => { try { return localStorage.getItem("nj-lobby-mode") ?? "best-height"; } catch { return "best-height"; } })();
@@ -65,14 +56,12 @@ export class LobbyScreen {
   private selectedTheme = "theme_default";
   private useCustomRun = false;
   private sharedRunConfig: RunConfig | null = null;
-
   private remotePlayers = new Map<string, LobbyPlayer>();
   private localReady = false;
-  private countdownEndTime = -1; // wall-clock time when countdown expires; -1 = not counting
+  private countdownEndTime = -1;
   private countdownInterval: ReturnType<typeof setInterval> | null = null;
   private starting = false;
   private nextColorIndex = 1;
-
   private playerListContainer = new Container();
   private countdownText: Text;
   private readyText: Text;
@@ -83,17 +72,15 @@ export class LobbyScreen {
   constructor(role: LobbyRole, sync: GameSync, callbacks: LobbyCallbacks) {
     this.role = role; this.sync = sync; this.callbacks = callbacks;
     const uiT = getUITheme(); const cx = GAME_WIDTH / 2;
-
     const bg = new Graphics(); bg.rect(0, 0, GAME_WIDTH, GAME_HEIGHT); bg.fill({ color: uiT.bg, alpha: 0.95 }); this.container.addChild(bg);
     const title = new Text({ text: "LOBBY", style: HEADER });
     title.x = cx; title.y = 35; title.anchor.set(0.5, 0.5); this.container.addChild(title);
-
     this.playerCountText = new Text({ text: "Players: 1", style: STATUS });
     this.playerCountText.x = cx; this.playerCountText.y = 55; this.playerCountText.anchor.set(0.5, 0.5); this.container.addChild(this.playerCountText);
     this.playerListContainer.y = 340; this.container.addChild(this.playerListContainer);
     let y = 75;
 
-    // Player name (tap to edit via prompt)
+    // Name
     this.nameLabel = new Text({ text: this.localName ? `Name: ${this.localName} (tap)` : "Set Name (tap)",
       style: new TextStyle({ fontFamily: "monospace", fontSize: 12, fill: "#66ccff", stroke: { color: "#000000", width: 2 } }) });
     this.nameLabel.x = cx; this.nameLabel.y = y; this.nameLabel.anchor.set(0.5, 0.5);
@@ -107,7 +94,7 @@ export class LobbyScreen {
     });
     this.container.addChild(this.nameLabel); y += 20;
 
-    // Character picker
+    // Character
     const charLabel = new Text({ text: `Character: ${CHARACTERS.find(c => c.id === this.localChar)?.name ?? "Chef"} (tap)`,
       style: new TextStyle({ fontFamily: "monospace", fontSize: 12, fill: "#ffcc44", stroke: { color: "#000000", width: 2 } }) });
     charLabel.x = cx; charLabel.y = y; charLabel.anchor.set(0.5, 0.5);
@@ -120,23 +107,21 @@ export class LobbyScreen {
     });
     this.container.addChild(charLabel); y += 22;
 
-    // Mode selection
+    // Mode
     const MODES = ["best-height", "first-to-die", "timed-2min"] as const;
-    const MODE_LABELS: Record<string, string> = { "best-height": "Best Height", "first-to-die": "First to Die", "timed-2min": "Timed (2 min)" };
-    const modeLabel = new Text({ text: `Mode: ${MODE_LABELS[this.mode]}`, style: LABEL });
+    const ML: Record<string, string> = { "best-height": "Best Height", "first-to-die": "First to Die", "timed-2min": "Timed (2 min)" };
+    const modeLabel = new Text({ text: `Mode: ${ML[this.mode]}`, style: LABEL });
     modeLabel.x = cx; modeLabel.y = y; modeLabel.anchor.set(0.5, 0.5); this.container.addChild(modeLabel);
     if (role === "host") {
-      modeLabel.eventMode = "static"; modeLabel.cursor = "pointer";
-      modeLabel.text = `Mode: ${MODE_LABELS[this.mode]} (tap)`;
+      modeLabel.eventMode = "static"; modeLabel.cursor = "pointer"; modeLabel.text += " (tap)";
       modeLabel.on("pointertap", () => {
-        const idx = MODES.indexOf(this.mode as typeof MODES[number]);
-        this.mode = MODES[(idx + 1) % MODES.length];
+        const i = MODES.indexOf(this.mode as typeof MODES[number]);
+        this.mode = MODES[(i + 1) % MODES.length];
         try { localStorage.setItem("nj-lobby-mode", this.mode); } catch { /* */ }
-        modeLabel.text = `Mode: ${MODE_LABELS[this.mode]} (tap)`;
+        modeLabel.text = `Mode: ${ML[this.mode]} (tap)`;
         this.sync.sendGameEvent({ type: "ready", payload: { mode: this.mode } });
       });
-    }
-    y += 20;
+    } y += 20;
 
     // Touch controls
     const touchLabel = new Text({ text: "Touch Controls: OFF (tap)", style: SMALL });
@@ -150,7 +135,7 @@ export class LobbyScreen {
     });
     this.container.addChild(touchLabel); y += 20;
 
-    // Theme picker (host)
+    // Theme (host)
     const THEMES = COSMETICS.filter(c => c.type === "theme");
     const themeLabel = new Text({ text: `Theme: ${THEMES.find(t => t.id === this.selectedTheme)?.name ?? "Classic"}`,
       style: new TextStyle({ fontFamily: "monospace", fontSize: 11, fill: "#ccaaff", stroke: { color: "#000000", width: 2 } }) });
@@ -158,8 +143,8 @@ export class LobbyScreen {
     if (role === "host") {
       themeLabel.eventMode = "static"; themeLabel.cursor = "pointer"; themeLabel.text += " (tap)";
       themeLabel.on("pointertap", () => {
-        const idx = THEMES.findIndex(t => t.id === this.selectedTheme);
-        this.selectedTheme = THEMES[(idx + 1) % THEMES.length].id;
+        const i = THEMES.findIndex(t => t.id === this.selectedTheme);
+        this.selectedTheme = THEMES[(i + 1) % THEMES.length].id;
         themeLabel.text = `Theme: ${THEMES.find(t => t.id === this.selectedTheme)?.name ?? "Classic"} (tap)`;
         this.sync.sendGameEvent({ type: "ready", payload: { theme: this.selectedTheme } });
       });
@@ -169,7 +154,7 @@ export class LobbyScreen {
     const customLabel = new Text({ text: "Custom Run: OFF", style: SMALL });
     customLabel.x = cx; customLabel.y = y; customLabel.anchor.set(0.5, 0.5); this.container.addChild(customLabel);
     if (role === "host") {
-      customLabel.eventMode = "static"; customLabel.cursor = "pointer"; customLabel.text = "Custom Run: OFF (tap)";
+      customLabel.eventMode = "static"; customLabel.cursor = "pointer"; customLabel.text += " (tap)";
       customLabel.on("pointertap", () => {
         this.useCustomRun = !this.useCustomRun;
         customLabel.text = this.useCustomRun ? "Custom Run: ON" : "Custom Run: OFF (tap)";
@@ -179,37 +164,33 @@ export class LobbyScreen {
     } y += 30;
 
     // Ready button
-    this.readyBg = new Graphics();
-    this.drawReadyBtn(cx, y, false);
+    this.readyBg = new Graphics(); this.drawReadyBtn(cx, y, false);
     this.readyBg.eventMode = "static"; this.readyBg.cursor = "pointer"; this.container.addChild(this.readyBg);
     this.readyText = new Text({ text: "Ready", style: new TextStyle({ fontFamily: "monospace", fontSize: 16, fill: "#ffffff", fontWeight: "bold", stroke: { color: "#000000", width: 2 } }) });
     this.readyText.x = cx; this.readyText.y = y; this.readyText.anchor.set(0.5, 0.5);
     this.readyText.eventMode = "static"; this.readyText.cursor = "pointer"; this.container.addChild(this.readyText);
-    const toggleReady = () => { if (this.starting) return; this.toggleReady(); };
-    this.readyBg.on("pointertap", toggleReady); this.readyText.on("pointertap", toggleReady);
-    y += 30;
+    const toggle = () => { if (!this.starting) this.toggleReady(); };
+    this.readyBg.on("pointertap", toggle); this.readyText.on("pointertap", toggle); y += 30;
 
     // Countdown text
     this.countdownText = new Text({ text: "", style: new TextStyle({ fontFamily: "monospace", fontSize: 20, fill: "#ffdd44", fontWeight: "bold", stroke: { color: "#000000", width: 3 } }) });
     this.countdownText.x = cx; this.countdownText.y = y; this.countdownText.anchor.set(0.5, 0.5); this.container.addChild(this.countdownText);
 
-    // Guest settings listener
-    const onSettingsChanged = () => {
+    const onSettings = () => {
       const tn = THEMES.find(t => t.id === this.selectedTheme)?.name ?? "Classic";
       themeLabel.text = role === "host" ? `Theme: ${tn} (tap)` : `Theme: ${tn}`;
-      modeLabel.text = role === "host" ? `Mode: ${MODE_LABELS[this.mode]} (tap)` : `Mode: ${MODE_LABELS[this.mode]}`;
+      modeLabel.text = role === "host" ? `Mode: ${ML[this.mode]} (tap)` : `Mode: ${ML[this.mode]}`;
       customLabel.text = this.useCustomRun ? "Custom Run: ON" : "Custom Run: OFF";
       customLabel.style.fill = this.useCustomRun ? "#44ff44" : "#aaaaaa";
     };
 
     this.sync.on({
       onRemotePosition: () => {},
-      onRemoteEvent: (event: GameSyncEvent, peerId: string) => this.handleRemoteEvent(event, peerId, onSettingsChanged),
+      onRemoteEvent: (ev: GameSyncEvent, pid: string) => this.handleEvent(ev, pid, onSettings),
     });
-
     this.renderPlayerList();
-    // Delay broadcast slightly so Trystero actions are ready
     setTimeout(() => this.broadcastLocal(), 200);
+    setTimeout(() => this.broadcastLocal(), 1000); // retry in case first was too early
   }
 
   private drawReadyBtn(cx: number, y: number, isReady: boolean): void {
@@ -220,12 +201,12 @@ export class LobbyScreen {
     this.readyBg.stroke({ width: 1.5, color: isReady ? 0xbb4444 : 0x44bb66, alpha: 0.5 });
   }
 
+  /** Broadcast full local state to all peers. */
   private broadcastLocal(): void {
     const c = loadCosmetics();
     this.sync.sendGameEvent({ type: "ready", payload: {
       character: this.localChar, name: this.localName,
       tint: c.equipped.tint ?? "tint_none", trail: c.equipped.trail ?? "trail_none",
-      theme: this.selectedTheme, mode: this.mode, customRun: this.useCustomRun,
       ready: this.localReady, role: this.role,
     } });
   }
@@ -234,44 +215,41 @@ export class LobbyScreen {
     this.localReady = !this.localReady;
     this.readyText.text = this.localReady ? "Not Ready" : "Ready";
     this.drawReadyBtn(GAME_WIDTH / 2, this.readyText.y, this.localReady);
-    this.sync.sendGameEvent({ type: "ready", payload: { ready: this.localReady, role: this.role, character: this.localChar, name: this.localName } });
-    this.evaluateCountdown();
+    this.broadcastLocal();
+    if (this.role === "host") this.evaluateCountdown();
   }
 
-  /** Only the host manages the countdown. Guests just display what the host tells them. */
+  /** Host only: evaluate whether to start/change/cancel countdown based on ready states. */
   private evaluateCountdown(): void {
-    if (this.starting || this.role !== "host") return;
-    const allReady = this.localReady && this.remotePlayers.size > 0 && [...this.remotePlayers.values()].every(p => p.ready);
-    const hostReady = this.localReady && this.remotePlayers.size > 0;
+    if (this.starting) return;
+    const hasRemotes = this.remotePlayers.size > 0;
+    const allReady = this.localReady && hasRemotes && [...this.remotePlayers.values()].every(p => p.ready);
 
     if (allReady) {
       if (this.countdownEndTime < 0) {
-        // No countdown running → start short
-        this.hostStartCountdown(COUNTDOWN_SHORT);
+        this.setCountdown(COUNTDOWN_SHORT);
       } else {
         const remain = this.countdownEndTime - performance.now();
-        if (remain > COUNTDOWN_SHORT) this.hostStartCountdown(COUNTDOWN_SHORT);
+        if (remain > COUNTDOWN_SHORT) this.setCountdown(COUNTDOWN_SHORT);
       }
-    } else if (hostReady && this.countdownEndTime < 0) {
-      this.hostStartCountdown(COUNTDOWN_LONG);
+    } else if (this.localReady && hasRemotes && this.countdownEndTime < 0) {
+      this.setCountdown(COUNTDOWN_LONG);
     } else if (!this.localReady) {
-      this.hostCancelCountdown();
+      this.setCountdown(0); // cancel
     }
   }
 
-  private hostStartCountdown(durationMs: number): void {
+  /** Host: set countdown and broadcast to all. secs=0 → cancel. */
+  private setCountdown(durationMs: number): void {
     this.cancelLocalTimer();
+    if (durationMs <= 0) {
+      this.countdownEndTime = -1; this.countdownText.text = "";
+      this.sync.sendGameEvent({ type: "zone", payload: { countdown: 0 } });
+      return;
+    }
     this.countdownEndTime = performance.now() + durationMs;
     this.countdownInterval = setInterval(() => this.tickCountdown(), 100);
-    // Tell guests to display countdown
-    this.sync.sendGameEvent({ type: "ready", payload: { countdownSecs: Math.ceil(durationMs / 1000) } });
-  }
-
-  private hostCancelCountdown(): void {
-    this.cancelLocalTimer();
-    this.countdownEndTime = -1;
-    this.countdownText.text = "";
-    this.sync.sendGameEvent({ type: "ready", payload: { countdownSecs: 0 } });
+    this.sync.sendGameEvent({ type: "zone", payload: { countdown: Math.ceil(durationMs / 1000) } });
   }
 
   private cancelLocalTimer(): void {
@@ -286,53 +264,56 @@ export class LobbyScreen {
     if (remain <= 0) this.doStart();
   }
 
-  /** Guest: display countdown from host broadcast (secs = 0 means cancel). */
-  private guestShowCountdown(secs: number): void {
-    this.cancelLocalTimer();
-    if (secs <= 0) { this.countdownEndTime = -1; this.countdownText.text = ""; return; }
-    this.countdownEndTime = performance.now() + secs * 1000;
-    this.countdownInterval = setInterval(() => {
-      const remain = Math.max(0, this.countdownEndTime - performance.now());
-      const s = Math.ceil(remain / 1000);
-      this.countdownText.text = s > 0 ? `Starting in ${s}...` : "";
-      if (remain <= 0) { this.cancelLocalTimer(); this.countdownText.text = "Waiting for host..."; }
-    }, 100);
-  }
-
   private doStart(): void {
     this.starting = true; this.cancelLocalTimer();
     const seed = Math.floor(Math.random() * 0xffffffff);
     const runCfg = this.useCustomRun ? loadRunConfigFromStorage() : null;
     const dbgCfg = this.useCustomRun ? loadDebugConfigFromStorage() : null;
     if (dbgCfg) setDebugConfig(dbgCfg);
-    this.sync.sendGameEvent({
-      type: "start",
-      payload: { seed, mode: this.mode, touchControls: this.touchControls, character: this.localChar,
-        name: this.localName, theme: this.selectedTheme, runCfg: runCfg ? serializeForSync(runCfg) : null, dbgCfg },
-    });
-    const remotePeers = new Map<string, { character: string; cosmetics?: RemoteCosmetics; name?: string }>();
-    for (const [id, p] of this.remotePlayers) {
-      remotePeers.set(id, { character: p.character, cosmetics: { ...p.cosmetics, theme: this.selectedTheme }, name: p.name });
-    }
-    this.callbacks.onStart(seed, this.mode, this.touchControls, remotePeers, runCfg ? { ...runCfg, seed } : undefined);
+    this.sync.sendGameEvent({ type: "start", payload: { seed, mode: this.mode, touchControls: this.touchControls,
+      character: this.localChar, name: this.localName, theme: this.selectedTheme,
+      runCfg: runCfg ? serializeForSync(runCfg) : null, dbgCfg } });
+    const rp = new Map<string, { character: string; cosmetics?: RemoteCosmetics; name?: string }>();
+    for (const [id, p] of this.remotePlayers) rp.set(id, { character: p.character, cosmetics: { ...p.cosmetics, theme: this.selectedTheme }, name: p.name });
+    this.callbacks.onStart(seed, this.mode, this.touchControls, rp, runCfg ? { ...runCfg, seed } : undefined);
   }
 
-  private handleRemoteEvent(event: GameSyncEvent, peerId: string, onSettingsChanged: () => void): void {
+  private handleEvent(event: GameSyncEvent, peerId: string, onSettings: () => void): void {
+    // Ensure peer exists
     if (!this.remotePlayers.has(peerId)) {
-      this.remotePlayers.set(peerId, { peerId, character: "chef", cosmetics: {}, ready: false, colorIndex: this.nextColorIndex++, name: "" });
-      this.renderPlayerList();
+      this.remotePlayers.set(peerId, { peerId, character: "chef", cosmetics: {}, ready: false, colorIndex: this.nextColorIndex++, name: "", announced: false });
     }
     const peer = this.remotePlayers.get(peerId)!;
 
-    if (event.type === "ready") {
-      // Re-announce on first contact from a new peer
-      if (!peer.character || peer.character === "chef") this.broadcastLocal();
+    // On first real contact, announce ourselves back (once per peer)
+    if (!peer.announced && event.type === "ready") {
+      peer.announced = true;
+      this.broadcastLocal();
+    }
 
+    // "zone" type = countdown broadcast from host (reusing existing event type to avoid protocol change)
+    if (event.type === "zone" && event.payload.countdown !== undefined) {
+      const secs = event.payload.countdown as number;
+      this.cancelLocalTimer();
+      if (secs <= 0) { this.countdownEndTime = -1; this.countdownText.text = ""; }
+      else {
+        this.countdownEndTime = performance.now() + secs * 1000;
+        this.countdownInterval = setInterval(() => {
+          const r = Math.max(0, this.countdownEndTime - performance.now());
+          const s = Math.ceil(r / 1000);
+          this.countdownText.text = s > 0 ? `Starting in ${s}...` : "Waiting for host...";
+          if (r <= 0) this.cancelLocalTimer();
+        }, 100);
+      }
+      return;
+    }
+
+    if (event.type === "ready") {
+      // Settings (guests accept from host)
       if (this.role === "guest") {
-        if (event.payload.mode) { this.mode = event.payload.mode as string; onSettingsChanged(); }
-        if (event.payload.theme) { this.selectedTheme = event.payload.theme as string; onSettingsChanged(); }
-        if (event.payload.customRun !== undefined) { this.useCustomRun = event.payload.customRun as boolean; onSettingsChanged(); }
-        if (event.payload.countdownSecs !== undefined) this.guestShowCountdown(event.payload.countdownSecs as number);
+        if (event.payload.mode) { this.mode = event.payload.mode as string; onSettings(); }
+        if (event.payload.theme) { this.selectedTheme = event.payload.theme as string; onSettings(); }
+        if (event.payload.customRun !== undefined) { this.useCustomRun = event.payload.customRun as boolean; onSettings(); }
       }
       if (event.payload.touchControls !== undefined) this.touchControls = event.payload.touchControls as boolean;
       if (event.payload.character) {
@@ -341,7 +322,10 @@ export class LobbyScreen {
         if (event.payload.trail) peer.cosmetics.trail = event.payload.trail as string;
       }
       if (event.payload.name !== undefined) peer.name = (event.payload.name as string).slice(0, 12);
-      if (event.payload.ready !== undefined) { peer.ready = event.payload.ready as boolean; this.evaluateCountdown(); }
+      if (event.payload.ready !== undefined) {
+        peer.ready = event.payload.ready as boolean;
+        if (this.role === "host") this.evaluateCountdown();
+      }
       this.renderPlayerList();
     }
 
@@ -353,13 +337,11 @@ export class LobbyScreen {
       if (event.payload.theme) this.selectedTheme = event.payload.theme as string;
       if (event.payload.dbgCfg) setDebugConfig({ ...createDebugConfig(), ...(event.payload.dbgCfg as Partial<DebugConfig>) });
       if (event.payload.runCfg) this.sharedRunConfig = { ...deserializeFromSync(event.payload.runCfg as Record<string, unknown>), seed };
-      const remotePeers = new Map<string, { character: string; cosmetics?: RemoteCosmetics; name?: string }>();
-      const hostName = (event.payload.name as string) ?? "";
-      remotePeers.set(peerId, { character: (event.payload.character as string) ?? "chef", cosmetics: { theme: this.selectedTheme }, name: hostName });
-      for (const [id, p] of this.remotePlayers) {
-        if (id !== peerId) remotePeers.set(id, { character: p.character, cosmetics: { ...p.cosmetics, theme: this.selectedTheme }, name: p.name });
-      }
-      this.callbacks.onStart(seed, mode, tc, remotePeers, this.sharedRunConfig ?? undefined);
+      const rp = new Map<string, { character: string; cosmetics?: RemoteCosmetics; name?: string }>();
+      const hn = (event.payload.name as string) ?? "";
+      rp.set(peerId, { character: (event.payload.character as string) ?? "chef", cosmetics: { theme: this.selectedTheme }, name: hn });
+      for (const [id, p] of this.remotePlayers) { if (id !== peerId) rp.set(id, { character: p.character, cosmetics: { ...p.cosmetics, theme: this.selectedTheme }, name: p.name }); }
+      this.callbacks.onStart(seed, mode, tc, rp, this.sharedRunConfig ?? undefined);
     }
   }
 
@@ -378,14 +360,11 @@ export class LobbyScreen {
   private renderPlayerRow(parent: Container, cx: number, y: number, label: string, charId: string, ready: boolean, colorIdx: number): void {
     const dot = new Graphics(); dot.circle(cx - 120, y, 4); dot.fill(getPeerColor(colorIdx)); parent.addChild(dot);
     const gfx = new Graphics(); gfx.x = cx - 100; gfx.y = y - 10; drawCharacter(gfx, 16, 20, charId); parent.addChild(gfx);
-    const name = new Text({ text: label, style: new TextStyle({ fontFamily: "monospace", fontSize: 11, fill: "#ffffff", stroke: { color: "#000000", width: 1 } }) });
-    name.x = cx - 75; name.y = y; name.anchor.set(0, 0.5); parent.addChild(name);
-    const status = new Text({ text: ready ? "Ready" : "...", style: new TextStyle({ fontFamily: "monospace", fontSize: 11, fill: ready ? "#44ff44" : "#888888", stroke: { color: "#000000", width: 1 } }) });
-    status.x = cx + 80; status.y = y; status.anchor.set(0, 0.5); parent.addChild(status);
+    const nm = new Text({ text: label, style: new TextStyle({ fontFamily: "monospace", fontSize: 11, fill: "#ffffff", stroke: { color: "#000000", width: 1 } }) });
+    nm.x = cx - 75; nm.y = y; nm.anchor.set(0, 0.5); parent.addChild(nm);
+    const st = new Text({ text: ready ? "Ready" : "...", style: new TextStyle({ fontFamily: "monospace", fontSize: 11, fill: ready ? "#44ff44" : "#888888", stroke: { color: "#000000", width: 1 } }) });
+    st.x = cx + 80; st.y = y; st.anchor.set(0, 0.5); parent.addChild(st);
   }
 
-  destroy(): void {
-    this.cancelLocalTimer();
-    this.container.destroy({ children: true });
-  }
+  destroy(): void { this.cancelLocalTimer(); this.container.destroy({ children: true }); }
 }

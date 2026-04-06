@@ -175,6 +175,7 @@ intent: Fix lobby countdown timer, game-over "You Win" for all, add player names
 - progress: Fix countdown — only host runs timer/triggers start, guests display synced countdown, cancel on unready | src/multiplayer/LobbyScreen.ts
 - progress: Fix results — use lastKnownHeight for remote peers instead of deathHeight (was 0 for alive players), correct winner determination | src/multiplayer/OnlineSession.ts, src/multiplayer/OnlineResults.ts
 - progress: Add player names — localStorage persistence, shared via lobby events, shown in player list + leaderboard + results | src/multiplayer/LobbyScreen.ts, src/multiplayer/OnlineSession.ts, src/multiplayer/MultiplayerMenu.ts
+- progress: Fix full lobby sync — countdown on separate "zone" event, announced flag prevents re-broadcast loop, host is single authority for countdown, double-broadcast on init for reliability | src/multiplayer/LobbyScreen.ts
 
 ## [2026-04-06T10:25] session-fs01 | status: completed | mode: full | type: fix
 
