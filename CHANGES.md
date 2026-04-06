@@ -167,3 +167,12 @@ intent: Fix fullscreen scaling on PC, resolve prettier formatter conflict, resea
 - progress: Stage 2 — Multi-peer OnlineSession with Map&lt;peerId, RemotePeer&gt;, LiveLeaderboard, OnlineResults leaderboard | src/multiplayer/OnlineSession.ts, src/multiplayer/OnlineResults.ts (new), src/multiplayer/LiveLeaderboard.ts (new)
 - progress: Stage 3 — Lobby redesign with N-player list, 15s/3s countdown timer, settings above player list | src/multiplayer/LobbyScreen.ts, src/multiplayer/MultiplayerMenu.ts, src/multiplayer/index.ts, src/multiplayer/RemotePlayerRenderer.ts
 - progress: Stage 5 — Multi-peer tests (position routing, death tracking, leaderboard sorting, countdown logic) | tests/multiplayer/multi-peer.test.ts (new)
+
+## [2026-04-06T10:25] session-fs01 | status: completed | mode: full | type: fix
+
+files_touched: index.html, .prettierrc (new), TASKS.md, src/multiplayer/GameSync.ts, src/multiplayer/NostrSignaling.ts, src/multiplayer/OnlineSession.ts, src/multiplayer/OnlineResults.ts (new), src/multiplayer/LiveLeaderboard.ts (new), src/multiplayer/LobbyScreen.ts, src/multiplayer/MultiplayerMenu.ts, src/multiplayer/RemotePlayerRenderer.ts, src/multiplayer/index.ts, tests/multiplayer/multi-peer.test.ts (new)
+symbols_added: OnlineResults (showOnlineResults, getPeerColor, PlayerResult), LiveLeaderboard, RemotePeer, OnlineSessionConfig.remotePeers, LobbyPlayer, COUNTDOWN_LONG, COUNTDOWN_SHORT
+symbols_removed: remoteRenderer (single instance), remoteDead/remoteDeathHeight (single values), LobbyCallbacks.onStart old signature (remoteChar/remoteCos → remotePeers Map)
+tests_added: tests/multiplayer/multi-peer.test.ts (10 tests — position routing, death tracking, leaderboard sorting, countdown logic, peer colors)
+reason: Fullscreen scaling fix, prettier config, and full N-player multiplayer implementation (GameSync peerId routing, lobby with countdown timer, live leaderboard, sorted results).
+health_snapshot: LOC=29200, tests=461, complexity=ok
