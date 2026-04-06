@@ -259,6 +259,8 @@ export class MultiplayerMenu implements MenuContext {
           touchControls, remotePeers, sync, sharedRunConfig, localName: getPlayerName() });
         session.start();
       },
+      onKicked: () => { this.container.removeChild(lobby.container); lobby.destroy();
+        this.connection?.disconnect(); this.showMainMenu(); },
     }, roomCode);
     this.container.addChild(lobby.container);
   }

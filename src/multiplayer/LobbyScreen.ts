@@ -31,6 +31,7 @@ export interface LobbyCallbacks {
   onStart: (seed: number, mode: string, touchControls: boolean,
     remotePeers: Map<string, { character: string; cosmetics?: RemoteCosmetics; name?: string }>,
     sharedRunConfig?: RunConfig) => void;
+  onKicked?: () => void;
 }
 
 interface LobbyPlayer {
@@ -165,13 +166,11 @@ export class LobbyScreen {
     this.countdownText = new Text({ text: "", style: new TextStyle({ fontFamily: "monospace", fontSize: 22, fill: "#ffdd44", fontWeight: "bold", stroke: { color: "#000000", width: 3 } }) });
     this.countdownText.x = cx; this.countdownText.y = y; this.countdownText.anchor.set(0.5, 0.5); this.container.addChild(this.countdownText);
 
-    const onSettings = () => {
-      const tn = THEMES.find(t => t.id === this.selectedTheme)?.name ?? "Classic";
+    const onSettings = () => { const tn = THEMES.find(t => t.id === this.selectedTheme)?.name ?? "Classic";
       themeLabel.text = role === "host" ? `Theme: ${tn} (tap)` : `Theme: ${tn}`;
       modeLabel.text = role === "host" ? `Mode: ${ML[this.mode]} (tap)` : `Mode: ${ML[this.mode]}`;
       customLabel.text = this.useCustomRun ? "Custom Run: ON" : "Custom Run: OFF";
-      customLabel.style.fill = this.useCustomRun ? "#44ff44" : "#aaaaaa";
-    };
+      customLabel.style.fill = this.useCustomRun ? "#44ff44" : "#aaaaaa"; };
 
     this.sync.on({
       onRemotePosition: () => {},
@@ -285,12 +284,12 @@ export class LobbyScreen {
     setTimeout(() => this.callbacks.onStart(this.pendingSeed, this.mode, this.touchControls, rp, this.pendingRunCfg ? { ...this.pendingRunCfg, seed: this.pendingSeed } : undefined), Math.max(0, startAt - Date.now()));
   }
 
-  private guestLaunchAt(localStartTime: number): void {
+  private guestLaunchAt(t: number): void {
     if (this.guestLaunched) return; this.guestLaunched = true; this.countdownText.text = "GO!";
     const rp = new Map<string, { character: string; cosmetics?: RemoteCosmetics; name?: string }>();
     rp.set(this.prepareHostId, { character: this.prepareHostChar, cosmetics: { theme: this.selectedTheme, tint: this.prepareHostTint, trail: this.prepareHostTrail }, name: this.prepareHostName });
     for (const [id, p] of this.remotePlayers) { if (id !== this.prepareHostId) rp.set(id, { character: p.character, cosmetics: { ...p.cosmetics, theme: this.selectedTheme }, name: p.name }); }
-    setTimeout(() => this.callbacks.onStart(this.pendingSeed, this.mode, this.touchControls, rp, this.sharedRunConfig ?? undefined), Math.max(0, localStartTime - Date.now()));
+    setTimeout(() => this.callbacks.onStart(this.pendingSeed, this.mode, this.touchControls, rp, this.sharedRunConfig ?? undefined), Math.max(0, t - Date.now()));
   }
 
   private handleEvent(event: GameSyncEvent, peerId: string, onSettings: () => void): void {
@@ -306,9 +305,11 @@ export class LobbyScreen {
 
     // Kick event from host
     if (event.type === "zone" && event.payload.kick) {
-      const kickedId = event.payload.kick as string;
-      if (kickedId === selfId) { this.countdownText.text = "Kicked by host"; this.starting = true; return; }
-      this.remotePlayers.delete(kickedId); this.renderPlayerList(); return;
+      const kid = event.payload.kick as string;
+      if (kid === selfId) { this.starting = true; this.guestLaunched = true;
+        this.sync.on({ onRemotePosition: () => {}, onRemoteEvent: () => {} });
+        this.countdownText.text = "Kicked by host"; setTimeout(() => this.callbacks.onKicked?.(), 1500); return; }
+      this.remotePlayers.delete(kid); this.renderPlayerList(); return;
     }
     if (event.type === "zone" && event.payload.countdown !== undefined) {
       const secs = event.payload.countdown as number; this.cancelLocalTimer();
@@ -361,10 +362,7 @@ export class LobbyScreen {
     }
   }
 
-  private kickPlayer(id: string): void {
-    this.remotePlayers.delete(id); this.sync.sendGameEvent({ type: "zone", payload: { kick: id } });
-    this.renderPlayerList(); if (this.role === "host") this.evaluateCountdown();
-  }
+  private kickPlayer(id: string): void { this.remotePlayers.delete(id); this.sync.sendGameEvent({ type: "zone", payload: { kick: id } }); this.renderPlayerList(); this.evaluateCountdown(); }
 
   private renderPlayerList(): void {
     this.playerListContainer.removeChildren();
