@@ -15,6 +15,7 @@ interface LeaderboardEntry {
   label: string;
   height: number;
   dead: boolean;
+  disconnected: boolean;
   isLocal: boolean;
   colorIndex: number;
 }
@@ -35,7 +36,7 @@ export class LiveLeaderboard {
   }
 
   addPlayer(peerId: string, label: string, colorIndex: number, isLocal: boolean): void {
-    this.entries.set(peerId, { peerId, label, height: 0, dead: false, isLocal, colorIndex });
+    this.entries.set(peerId, { peerId, label, height: 0, dead: false, disconnected: false, isLocal, colorIndex });
   }
 
   removePlayer(peerId: string): void {
@@ -50,6 +51,11 @@ export class LiveLeaderboard {
   setDead(peerId: string, dead: boolean): void {
     const e = this.entries.get(peerId);
     if (e) e.dead = dead;
+  }
+
+  setDisconnected(peerId: string): void {
+    const e = this.entries.get(peerId);
+    if (e) { e.disconnected = true; e.dead = true; }
   }
 
   /** Call each frame; internally throttles to UPDATE_MS. */
@@ -99,7 +105,8 @@ export class LiveLeaderboard {
       row.visible = true;
       dot.visible = true;
       row.y = y;
-      row.text = `${i + 1}. ${e.label} ${e.height}m${e.dead ? " ✗" : ""}`;
+      const suffix = e.disconnected ? " left" : e.dead ? " ✗" : "";
+      row.text = `${i + 1}. ${e.label} ${e.height}m${suffix}`;
       row.style.fill = e.isLocal ? "#ffdd44" : "#ffffff";
       row.style.fontWeight = e.isLocal ? "bold" : "normal";
 

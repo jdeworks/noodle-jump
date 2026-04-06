@@ -1,6 +1,6 @@
 /** Service Worker — cache-first for assets, network-first for API. */
 
-const CACHE_NAME = "noodle-jump-1775471940";
+const CACHE_NAME = "noodle-jump-1775473360";
 const ASSETS_TO_CACHE = ["./", "./index.html"];
 
 self.addEventListener("install", (event) => {

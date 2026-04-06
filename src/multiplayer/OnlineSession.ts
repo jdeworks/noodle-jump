@@ -30,8 +30,9 @@ interface RemotePeer {
   renderer: RemotePlayerRenderer;
   interpolation: InterpolationBuffer;
   dead: boolean;
+  disconnected: boolean;
   deathHeight: number;
-  lastKnownHeight: number; // continuously updated from interpolation
+  lastKnownHeight: number;
   character: string;
   cosmetics?: RemoteCosmetics;
   colorIndex: number;
@@ -154,7 +155,7 @@ export class OnlineSession {
     const label = name || peerId.slice(0, 6);
     const peer: RemotePeer = {
       renderer, interpolation: new InterpolationBuffer(),
-      dead: false, deathHeight: 0, lastKnownHeight: 0,
+      dead: false, disconnected: false, deathHeight: 0, lastKnownHeight: 0,
       character, cosmetics, colorIndex, name: label,
     };
     this.peers.set(peerId, peer);
@@ -231,9 +232,13 @@ export class OnlineSession {
     // Update leaderboard with local height
     this.leaderboard.updateHeight("__local__", state.scoreState.height);
 
-    // Render all remote peers + track live height
+    // Render all remote peers + track live height + detect disconnects
     for (const [peerId, peer] of this.peers) {
-      if (!peer.interpolation.isReady) continue;
+      if (!peer.disconnected && peer.interpolation.isReady && peer.interpolation.msSinceLastUpdate > 3000) {
+        peer.disconnected = true; peer.dead = true; peer.renderer.hide();
+        this.leaderboard.setDisconnected(peerId); this.showToast(`${peer.name} left`);
+      }
+      if (peer.disconnected || !peer.interpolation.isReady) continue;
       const rs = peer.interpolation.getState();
       peer.renderer.update(rs, state.camera.y, state.player.y);
       const h = Math.abs(Math.round(rs.y / 10));
@@ -247,7 +252,7 @@ export class OnlineSession {
         this.spectateText = new Text({ text: "", style: new TextStyle({ fontFamily: "monospace", fontSize: 16, fill: "#ffdd44", fontWeight: "bold", align: "center", stroke: { color: "#000000", width: 3 } }) });
         this.spectateText.x = GAME_WIDTH / 2; this.spectateText.y = 50; this.spectateText.anchor.set(0.5, 0.5); this.app.stage.addChild(this.spectateText);
       }
-      const alive = [...this.peers.values()].filter((p) => !p.dead).length;
+      const alive = [...this.peers.values()].filter((p) => !p.dead && !p.disconnected).length;
       this.spectateText.text = `Spectating — ${alive} player${alive !== 1 ? "s" : ""} remaining`;
     }
     if (this.countdownText && this.countdownDim) this.countdownAnim.update(this.scene.getCountdownSeconds(), this.countdownText, this.countdownDim);
@@ -262,13 +267,8 @@ export class OnlineSession {
       if (remain <= 0 && !this.resultsShown) { this.resultsShown = true; this.showResults(); return; }
     }
 
-    // Connection quality (worst of all peers)
-    if (this.connDot) {
-      let worstMs = 0;
-      for (const p of this.peers.values()) worstMs = Math.max(worstMs, p.interpolation.msSinceLastUpdate);
-      const c = worstMs < 200 ? 0x44ff44 : worstMs < 500 ? 0xffcc00 : 0xff4444;
-      this.connDot.clear(); this.connDot.circle(GAME_WIDTH - 15, 15, 6); this.connDot.fill(c);
-    }
+    if (this.connDot) { let w = 0; for (const p of this.peers.values()) if (!p.disconnected) w = Math.max(w, p.interpolation.msSinceLastUpdate);
+      const c = w < 200 ? 0x44ff44 : w < 500 ? 0xffcc00 : 0xff4444; this.connDot.clear(); this.connDot.circle(GAME_WIDTH - 15, 15, 6); this.connDot.fill(c); }
     this.fpsFrames++; const now = performance.now();
     if (now - this.fpsLast >= 500 && this.fpsText) { this.fpsText.text = `FPS: ${Math.round(this.fpsFrames / ((now - this.fpsLast) / 1000))}`; this.fpsFrames = 0; this.fpsLast = now; }
     if (this.toastTimer > 0 && --this.toastTimer === 0) this.deathToast.visible = false;
@@ -276,10 +276,7 @@ export class OnlineSession {
     if (this.mode !== "timed-2min" && this.localDead && this.allRemoteDead() && !this.resultsShown) { this.resultsShown = true; this.showResults(); }
   }
 
-  private allRemoteDead(): boolean {
-    if (this.peers.size === 0) return false;
-    for (const p of this.peers.values()) if (!p.dead) return false; return true;
-  }
+  private allRemoteDead(): boolean { if (this.peers.size === 0) return false; for (const p of this.peers.values()) if (!p.dead && !p.disconnected) return false; return true; }
 
   private handleRemoteEvent(event: GameSyncEvent, peerId: string): void {
     if (event.type === "death") {
