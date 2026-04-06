@@ -162,3 +162,4 @@ intent: Fix fullscreen scaling on PC, resolve prettier formatter conflict, resea
 
 - progress: Fullscreen CSS — lift max-width:500px via :fullscreen pseudo-class, black letterbox bars | index.html
 - progress: Add .prettierrc with printWidth:100 to prevent post-edit hook from inflating files past LOC limit | .prettierrc
+- progress: Large multiplayer research — Trystero mesh viable for 24 data-only peers (~70kbps), detailed 5-stage implementation plan | TASKS.md
