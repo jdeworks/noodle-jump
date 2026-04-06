@@ -178,6 +178,7 @@ intent: Fix lobby countdown timer, game-over "You Win" for all, add player names
 - progress: Fix full lobby sync — countdown on separate "zone" event, announced flag prevents re-broadcast loop, host is single authority for countdown, double-broadcast on init for reliability | src/multiplayer/LobbyScreen.ts
 - progress: Fix start timing — host sends "start" with 500ms delay, both host+guests wait before launching; fix tie detection for 1st place only; increase lobby button spacing for mobile (32-40px) | src/multiplayer/LobbyScreen.ts, src/multiplayer/OnlineResults.ts, tests/multiplayer/multi-peer.test.ts
 - progress: Fix guest-to-guest sync via 3s heartbeat; add room code copy button in lobby; private mode note as 2-player only | src/multiplayer/LobbyScreen.ts, src/multiplayer/MultiplayerMenu.ts, src/multiplayer/ConnectFlows.ts
+- progress: Barrier-based synchronized start — host sends prepare, all peers respond, then host sends go and everyone starts simultaneously | src/multiplayer/LobbyScreen.ts
 
 ## [2026-04-06T10:25] session-fs01 | status: completed | mode: full | type: fix
 

@@ -280,22 +280,28 @@ export class LobbyScreen {
     if (remain <= 0) this.doStart();
   }
 
+  /** Barrier sync: prepare → all respond → go. */
   private doStart(): void {
-    this.starting = true; this.cancelLocalTimer();
-    const seed = Math.floor(Math.random() * 0xffffffff);
-    const runCfg = this.useCustomRun ? loadRunConfigFromStorage() : null;
-    const dbgCfg = this.useCustomRun ? loadDebugConfigFromStorage() : null;
-    if (dbgCfg) setDebugConfig(dbgCfg);
-    // Send start event FIRST, then both host and guests launch after a sync delay
-    const START_DELAY = 500; // ms buffer for network latency
-    this.sync.sendGameEvent({ type: "start", payload: { seed, mode: this.mode, touchControls: this.touchControls,
-      character: this.localChar, name: this.localName, theme: this.selectedTheme,
-      startIn: START_DELAY, runCfg: runCfg ? serializeForSync(runCfg) : null, dbgCfg } });
+    this.starting = true; this.cancelLocalTimer(); this.countdownText.text = "Syncing...";
+    this.pendingSeed = Math.floor(Math.random() * 0xffffffff);
+    this.pendingRunCfg = this.useCustomRun ? loadRunConfigFromStorage() : null;
+    const dc = this.useCustomRun ? loadDebugConfigFromStorage() : null; if (dc) setDebugConfig(dc);
+    this.preparedPeers = new Set();
+    this.sync.sendGameEvent({ type: "start", payload: { phase: "prepare", seed: this.pendingSeed, mode: this.mode, touchControls: this.touchControls, character: this.localChar, name: this.localName, theme: this.selectedTheme, runCfg: this.pendingRunCfg ? serializeForSync(this.pendingRunCfg) : null, dbgCfg: dc } });
+    this.barrierTimeout = setTimeout(() => this.sendGo(), 1500);
+  }
+  private pendingSeed = 0; private pendingRunCfg: RunConfig | null = null;
+  private preparedPeers = new Set<string>(); private barrierTimeout: ReturnType<typeof setTimeout> | null = null;
+  private prepareHostId = ""; private prepareHostChar = "chef"; private prepareHostName = "";
+
+  private onPrepared(peerId: string): void { this.preparedPeers.add(peerId); if (this.preparedPeers.size >= this.remotePlayers.size) this.sendGo(); }
+  private sendGo(): void {
+    if (this.barrierTimeout) { clearTimeout(this.barrierTimeout); this.barrierTimeout = null; }
+    this.sync.sendGameEvent({ type: "start", payload: { phase: "go" } });
     this.countdownText.text = "GO!";
     const rp = new Map<string, { character: string; cosmetics?: RemoteCosmetics; name?: string }>();
     for (const [id, p] of this.remotePlayers) rp.set(id, { character: p.character, cosmetics: { ...p.cosmetics, theme: this.selectedTheme }, name: p.name });
-    // Host also waits the same delay before launching
-    setTimeout(() => this.callbacks.onStart(seed, this.mode, this.touchControls, rp, runCfg ? { ...runCfg, seed } : undefined), START_DELAY);
+    this.callbacks.onStart(this.pendingSeed, this.mode, this.touchControls, rp, this.pendingRunCfg ? { ...this.pendingRunCfg, seed: this.pendingSeed } : undefined);
   }
 
   private handleEvent(event: GameSyncEvent, peerId: string, onSettings: () => void): void {
@@ -311,60 +317,56 @@ export class LobbyScreen {
       this.broadcastLocal();
     }
 
-    // "zone" type = countdown broadcast from host (reusing existing event type to avoid protocol change)
+    // Countdown broadcast from host
     if (event.type === "zone" && event.payload.countdown !== undefined) {
-      const secs = event.payload.countdown as number;
-      this.cancelLocalTimer();
-      if (secs <= 0) { this.countdownEndTime = -1; this.countdownText.text = ""; }
-      else {
+      const secs = event.payload.countdown as number; this.cancelLocalTimer();
+      if (secs <= 0) { this.countdownEndTime = -1; this.countdownText.text = ""; } else {
         this.countdownEndTime = performance.now() + secs * 1000;
         this.countdownInterval = setInterval(() => {
-          const r = Math.max(0, this.countdownEndTime - performance.now());
-          const s = Math.ceil(r / 1000);
+          const r = Math.max(0, this.countdownEndTime - performance.now()), s = Math.ceil(r / 1000);
           this.countdownText.text = s > 0 ? `Starting in ${s}...` : "Waiting for host...";
           if (r <= 0) this.cancelLocalTimer();
         }, 100);
-      }
-      return;
+      } return;
     }
 
     if (event.type === "ready") {
-      // Settings (guests accept from host)
+      const pl = event.payload;
       if (this.role === "guest") {
-        if (event.payload.mode) { this.mode = event.payload.mode as string; onSettings(); }
-        if (event.payload.theme) { this.selectedTheme = event.payload.theme as string; onSettings(); }
-        if (event.payload.customRun !== undefined) { this.useCustomRun = event.payload.customRun as boolean; onSettings(); }
+        if (pl.mode) { this.mode = pl.mode as string; onSettings(); }
+        if (pl.theme) { this.selectedTheme = pl.theme as string; onSettings(); }
+        if (pl.customRun !== undefined) { this.useCustomRun = pl.customRun as boolean; onSettings(); }
       }
-      if (event.payload.touchControls !== undefined) this.touchControls = event.payload.touchControls as boolean;
-      if (event.payload.character) {
-        peer.character = event.payload.character as string;
-        if (event.payload.tint) peer.cosmetics.tint = event.payload.tint as string;
-        if (event.payload.trail) peer.cosmetics.trail = event.payload.trail as string;
-      }
-      if (event.payload.name !== undefined) peer.name = (event.payload.name as string).slice(0, 12);
-      if (event.payload.ready !== undefined) {
-        peer.ready = event.payload.ready as boolean;
-        if (this.role === "host") this.evaluateCountdown();
-      }
+      if (pl.touchControls !== undefined) this.touchControls = pl.touchControls as boolean;
+      if (pl.character) { peer.character = pl.character as string; if (pl.tint) peer.cosmetics.tint = pl.tint as string; if (pl.trail) peer.cosmetics.trail = pl.trail as string; }
+      if (pl.name !== undefined) peer.name = (pl.name as string).slice(0, 12);
+      if (pl.ready !== undefined) { peer.ready = pl.ready as boolean; if (this.role === "host") this.evaluateCountdown(); }
       this.renderPlayerList();
     }
 
     if (event.type === "start" && this.role === "guest") {
-      this.starting = true; this.cancelLocalTimer(); this.countdownText.text = "GO!";
-      const seed = event.payload.seed as number;
-      const mode = (event.payload.mode as string) || "best-height";
-      const tc = (event.payload.touchControls as boolean) ?? this.touchControls;
-      const startIn = (event.payload.startIn as number) ?? 0;
-      if (event.payload.theme) this.selectedTheme = event.payload.theme as string;
-      if (event.payload.dbgCfg) setDebugConfig({ ...createDebugConfig(), ...(event.payload.dbgCfg as Partial<DebugConfig>) });
-      if (event.payload.runCfg) this.sharedRunConfig = { ...deserializeFromSync(event.payload.runCfg as Record<string, unknown>), seed };
-      const rp = new Map<string, { character: string; cosmetics?: RemoteCosmetics; name?: string }>();
-      const hn = (event.payload.name as string) ?? "";
-      rp.set(peerId, { character: (event.payload.character as string) ?? "chef", cosmetics: { theme: this.selectedTheme }, name: hn });
-      for (const [id, p] of this.remotePlayers) { if (id !== peerId) rp.set(id, { character: p.character, cosmetics: { ...p.cosmetics, theme: this.selectedTheme }, name: p.name }); }
-      // Sync: wait the remaining startIn delay so all peers launch together
-      setTimeout(() => this.callbacks.onStart(seed, mode, tc, rp, this.sharedRunConfig ?? undefined), Math.max(0, startIn - 50));
+      const phase = (event.payload.phase as string) ?? "go";
+      if (phase === "prepare") {
+        this.starting = true; this.cancelLocalTimer(); this.countdownText.text = "Syncing...";
+        this.pendingSeed = event.payload.seed as number;
+        this.mode = (event.payload.mode as string) || "best-height";
+        this.touchControls = (event.payload.touchControls as boolean) ?? this.touchControls;
+        if (event.payload.theme) this.selectedTheme = event.payload.theme as string;
+        if (event.payload.dbgCfg) setDebugConfig({ ...createDebugConfig(), ...(event.payload.dbgCfg as Partial<DebugConfig>) });
+        if (event.payload.runCfg) this.sharedRunConfig = { ...deserializeFromSync(event.payload.runCfg as Record<string, unknown>), seed: this.pendingSeed };
+        this.prepareHostId = peerId; this.prepareHostChar = (event.payload.character as string) ?? "chef";
+        this.prepareHostName = (event.payload.name as string) ?? "";
+        this.sync.sendGameEvent({ type: "score", payload: { prepared: true } });
+      } else if (phase === "go") {
+        this.countdownText.text = "GO!";
+        const rp = new Map<string, { character: string; cosmetics?: RemoteCosmetics; name?: string }>();
+        rp.set(this.prepareHostId, { character: this.prepareHostChar, cosmetics: { theme: this.selectedTheme }, name: this.prepareHostName });
+        for (const [id, p] of this.remotePlayers) { if (id !== this.prepareHostId) rp.set(id, { character: p.character, cosmetics: { ...p.cosmetics, theme: this.selectedTheme }, name: p.name }); }
+        this.callbacks.onStart(this.pendingSeed, this.mode, this.touchControls, rp, this.sharedRunConfig ?? undefined);
+      }
     }
+    // Host collects barrier responses
+    if (event.type === "score" && event.payload.prepared && this.role === "host") this.onPrepared(peerId);
   }
 
   private renderPlayerList(): void {
@@ -389,8 +391,8 @@ export class LobbyScreen {
   }
 
   destroy(): void {
-    this.cancelLocalTimer();
-    if (this.heartbeatInterval) { clearInterval(this.heartbeatInterval); this.heartbeatInterval = null; }
+    this.cancelLocalTimer(); if (this.heartbeatInterval) clearInterval(this.heartbeatInterval);
+    if (this.barrierTimeout) clearTimeout(this.barrierTimeout);
     this.container.destroy({ children: true });
   }
 }
