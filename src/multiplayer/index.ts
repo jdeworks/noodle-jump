@@ -46,6 +46,8 @@ export { RemotePlayerRenderer } from "./RemotePlayerRenderer";
 export { OnlineSession, type OnlineRole, type OnlineSessionConfig } from "./OnlineSession";
 export {
   LobbyScreen,
+  getPlayerName,
+  setPlayerName,
   type LobbyRole,
   type LobbyCallbacks,
 } from "./LobbyScreen";

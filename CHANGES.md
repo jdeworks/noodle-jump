@@ -168,6 +168,14 @@ intent: Fix fullscreen scaling on PC, resolve prettier formatter conflict, resea
 - progress: Stage 3 — Lobby redesign with N-player list, 15s/3s countdown timer, settings above player list | src/multiplayer/LobbyScreen.ts, src/multiplayer/MultiplayerMenu.ts, src/multiplayer/index.ts, src/multiplayer/RemotePlayerRenderer.ts
 - progress: Stage 5 — Multi-peer tests (position routing, death tracking, leaderboard sorting, countdown logic) | tests/multiplayer/multi-peer.test.ts (new)
 
+## [2026-04-06T11:00] session-fs02 | status: started | mode: full | type: fix
+
+intent: Fix lobby countdown timer, game-over "You Win" for all, add player names
+
+- progress: Fix countdown — only host runs timer/triggers start, guests display synced countdown, cancel on unready | src/multiplayer/LobbyScreen.ts
+- progress: Fix results — use lastKnownHeight for remote peers instead of deathHeight (was 0 for alive players), correct winner determination | src/multiplayer/OnlineSession.ts, src/multiplayer/OnlineResults.ts
+- progress: Add player names — localStorage persistence, shared via lobby events, shown in player list + leaderboard + results | src/multiplayer/LobbyScreen.ts, src/multiplayer/OnlineSession.ts, src/multiplayer/MultiplayerMenu.ts
+
 ## [2026-04-06T10:25] session-fs01 | status: completed | mode: full | type: fix
 
 files_touched: index.html, .prettierrc (new), TASKS.md, src/multiplayer/GameSync.ts, src/multiplayer/NostrSignaling.ts, src/multiplayer/OnlineSession.ts, src/multiplayer/OnlineResults.ts (new), src/multiplayer/LiveLeaderboard.ts (new), src/multiplayer/LobbyScreen.ts, src/multiplayer/MultiplayerMenu.ts, src/multiplayer/RemotePlayerRenderer.ts, src/multiplayer/index.ts, tests/multiplayer/multi-peer.test.ts (new)

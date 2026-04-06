@@ -9,7 +9,7 @@ import { GAME_WIDTH, GAME_HEIGHT } from "../config/constants";
 import { getUITheme } from "../ui/ThemeUI";
 import { ConnectionManager } from "./ConnectionManager";
 import { GameSync } from "./GameSync";
-import { LobbyScreen } from "./LobbyScreen";
+import { LobbyScreen, getPlayerName } from "./LobbyScreen";
 import { OnlineSession } from "./OnlineSession";
 import { launchLocalCoop } from "./LocalCoopLauncher";
 import { showModePicker } from "./ModePickerScreen";
@@ -266,7 +266,7 @@ export class MultiplayerMenu implements MenuContext {
         this.container.visible = false;
         const session = new OnlineSession({
           app: this.app, connection: this.connection!, seed, role, mode,
-          touchControls, remotePeers, sync, sharedRunConfig,
+          touchControls, remotePeers, sync, sharedRunConfig, localName: getPlayerName(),
         });
         session.start();
       },

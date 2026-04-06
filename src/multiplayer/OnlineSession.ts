@@ -18,7 +18,7 @@ import { ConnectionManager } from "./ConnectionManager";
 import { GameSync, type PlayerSyncState, type GameSyncEvent } from "./GameSync";
 import { InterpolationBuffer } from "./InterpolationBuffer";
 import { RemotePlayerRenderer, type RemoteCosmetics } from "./RemotePlayerRenderer";
-import { LobbyScreen } from "./LobbyScreen";
+import { LobbyScreen, getPlayerName } from "./LobbyScreen";
 import { setTouchControlsForced } from "../systems/TiltSettings";
 import { CountdownAnim } from "./CountdownAnim";
 import { showOnlineResults, getPeerColor, type PlayerResult } from "./OnlineResults";
@@ -31,9 +31,11 @@ interface RemotePeer {
   interpolation: InterpolationBuffer;
   dead: boolean;
   deathHeight: number;
+  lastKnownHeight: number; // continuously updated from interpolation
   character: string;
   cosmetics?: RemoteCosmetics;
   colorIndex: number;
+  name: string;
 }
 
 export interface OnlineSessionConfig {
@@ -43,10 +45,11 @@ export interface OnlineSessionConfig {
   role: OnlineRole;
   mode?: string;
   touchControls?: boolean;
-  /** Map of peerId → { character, cosmetics } for all known remote peers. */
-  remotePeers?: Map<string, { character: string; cosmetics?: RemoteCosmetics }>;
+  /** Map of peerId → { character, cosmetics, name } for all known remote peers. */
+  remotePeers?: Map<string, { character: string; cosmetics?: RemoteCosmetics; name?: string }>;
   sync?: GameSync;
   sharedRunConfig?: RunConfig;
+  localName?: string;
 }
 
 export class OnlineSession {
@@ -59,6 +62,7 @@ export class OnlineSession {
   private seed: number;
   private touchControls: boolean;
   private mode: string;
+  private localName: string;
   private timerDurationMs = -1;
   private timerStartTime = 0;
   private timerText: Text | null = null;
@@ -90,6 +94,7 @@ export class OnlineSession {
     this.seed = config.seed;
     this.touchControls = config.touchControls ?? false;
     this.mode = config.mode ?? "best-height";
+    this.localName = config.localName ?? "";
     this.sync = config.sync ?? new GameSync();
     this.leaderboard = new LiveLeaderboard();
 
@@ -118,12 +123,13 @@ export class OnlineSession {
     // Initialize remote peers
     if (config.remotePeers) {
       for (const [peerId, info] of config.remotePeers) {
-        this.addPeer(peerId, info.character, info.cosmetics);
+        this.addPeer(peerId, info.character, info.cosmetics, info.name);
       }
     }
 
     // Local player in leaderboard
-    this.leaderboard.addPlayer("__local__", "You", this.nextColorIndex++, true);
+    const localLabel = config.localName || "You";
+    this.leaderboard.addPlayer("__local__", localLabel, this.nextColorIndex++, true);
 
     this.deathToast = this.makeToast();
     this.fpsText = this.makeFps();
@@ -137,21 +143,22 @@ export class OnlineSession {
     this.setupSync();
   }
 
-  private addPeer(peerId: string, character = "chef", cosmetics?: RemoteCosmetics): RemotePeer {
+  private addPeer(peerId: string, character = "chef", cosmetics?: RemoteCosmetics, name?: string): RemotePeer {
     if (this.peers.has(peerId)) return this.peers.get(peerId)!;
     const colorIndex = this.nextColorIndex++;
-    const disableTrail = this.peers.size >= 7; // Skip trails after 8 peers
+    const disableTrail = this.peers.size >= 7;
     const cos = disableTrail ? { tint: cosmetics?.tint } : cosmetics;
     const renderer = new RemotePlayerRenderer(character, cos);
     renderer.hide();
     this.app.stage.addChild(renderer.container);
+    const label = name || peerId.slice(0, 6);
     const peer: RemotePeer = {
       renderer, interpolation: new InterpolationBuffer(),
-      dead: false, deathHeight: 0, character, cosmetics, colorIndex,
+      dead: false, deathHeight: 0, lastKnownHeight: 0,
+      character, cosmetics, colorIndex, name: label,
     };
     this.peers.set(peerId, peer);
-    const shortId = peerId.slice(0, 6);
-    this.leaderboard.addPlayer(peerId, shortId, colorIndex, false);
+    this.leaderboard.addPlayer(peerId, label, colorIndex, false);
     return peer;
   }
 
@@ -224,13 +231,14 @@ export class OnlineSession {
     // Update leaderboard with local height
     this.leaderboard.updateHeight("__local__", state.scoreState.height);
 
-    // Render all remote peers
+    // Render all remote peers + track live height
     for (const [peerId, peer] of this.peers) {
       if (!peer.interpolation.isReady) continue;
       const rs = peer.interpolation.getState();
       peer.renderer.update(rs, state.camera.y, state.player.y);
       const h = Math.abs(Math.round(rs.y / 10));
-      this.leaderboard.updateHeight(peerId, h);
+      peer.lastKnownHeight = Math.max(peer.lastKnownHeight, h);
+      this.leaderboard.updateHeight(peerId, peer.lastKnownHeight);
     }
 
     // Spectate mode label
@@ -278,10 +286,9 @@ export class OnlineSession {
       let peer = this.peers.get(peerId);
       if (!peer) peer = this.addPeer(peerId);
       peer.dead = true;
-      peer.deathHeight = (event.payload.height as number) || 0;
+      peer.deathHeight = (event.payload.height as number) || peer.lastKnownHeight;
       this.leaderboard.setDead(peerId, true);
-      const shortId = peerId.slice(0, 6);
-      this.showToast(`${shortId} died at ${peer.deathHeight}m!`);
+      this.showToast(`${peer.name} died at ${peer.deathHeight}m!`);
     }
     if (event.type === "ready" && event.payload.paused !== undefined && this.pause) {
       const shouldPause = event.payload.paused as boolean;
@@ -294,15 +301,15 @@ export class OnlineSession {
   private showResults(): void {
     if (this.gameLoop) { this.app.ticker.remove(this.gameLoop); this.gameLoop = null; }
     this.scene.forceStop(); this.sync.stopSending();
+    const localH = this.localDead ? this.localDeathHeight : this.scene.getMaxHeight();
     const results: PlayerResult[] = [{
-      peerId: "__local__", label: `You (${this.role})`, height: this.localDeathHeight || this.scene.getMaxHeight(),
+      peerId: "__local__", label: this.localName || `You (${this.role})`, height: localH,
       score: this.scene.getScore(), isLocal: true, color: getPeerColor(0),
     }];
     for (const [id, p] of this.peers) {
-      results.push({
-        peerId: id, label: id.slice(0, 6), height: p.deathHeight,
-        score: 0, isLocal: false, color: getPeerColor(p.colorIndex),
-      });
+      // Use deathHeight if dead, otherwise lastKnownHeight from live tracking
+      const h = p.dead ? (p.deathHeight || p.lastKnownHeight) : p.lastKnownHeight;
+      results.push({ peerId: id, label: p.name, height: h, score: 0, isLocal: false, color: getPeerColor(p.colorIndex) });
     }
     showOnlineResults(this.app, results, this.mode, () => this.returnToLobby(), () => this.goHome());
   }
@@ -316,8 +323,8 @@ export class OnlineSession {
 
     const lobby = new LobbyScreen(this.role, sync, {
       onStart: (seed, _mode, _tc, rp, sharedRunConfig) => {
-        this.app.stage.removeChild(lobby.container);
-        lobby.destroy();
+        this.app.stage.removeChild(lobby.container); lobby.destroy();
+        this.localName = getPlayerName();
         this.startNewGame(seed, sync, _mode, _tc, rp, sharedRunConfig);
       },
     });
@@ -326,7 +333,7 @@ export class OnlineSession {
 
   private startNewGame(
     newSeed: number, sync: GameSync, mode: string, tc: boolean,
-    remotePeers?: Map<string, { character: string; cosmetics?: RemoteCosmetics }>, sharedRunConfig?: RunConfig,
+    remotePeers?: Map<string, { character: string; cosmetics?: RemoteCosmetics; name?: string }>, sharedRunConfig?: RunConfig,
   ): void {
     this.seed = newSeed; this.localDead = false; this.localDeathHeight = 0;
     this.resultsShown = false; this.sync = sync; this.mode = mode;
@@ -341,8 +348,8 @@ export class OnlineSession {
     else if (this.scene.input.needsTiltPermission) this.scene.input.requestTiltPermission();
     this.app.stage.addChild(this.scene.container);
     this.leaderboard = new LiveLeaderboard();
-    this.leaderboard.addPlayer("__local__", "You", this.nextColorIndex++, true);
-    if (remotePeers) for (const [pid, info] of remotePeers) this.addPeer(pid, info.character, info.cosmetics);
+    this.leaderboard.addPlayer("__local__", this.localName || "You", this.nextColorIndex++, true);
+    if (remotePeers) for (const [pid, info] of remotePeers) this.addPeer(pid, info.character, info.cosmetics, info.name);
     this.deathToast = this.makeToast(); this.fpsText = this.makeFps();
     this.connDot = new Graphics(); this.connDot.circle(GAME_WIDTH - 15, 15, 6); this.connDot.fill(0x44ff44);
     this.makeCountdown(); this.app.stage.addChild(this.deathToast);
