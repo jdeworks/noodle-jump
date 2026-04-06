@@ -17,7 +17,6 @@ import { createDefaultRunConfig, type RunConfig } from "../systems/CustomRunConf
 import type { RemoteCosmetics } from "./RemotePlayerRenderer";
 import { getPeerColor } from "./OnlineResults";
 import { copyToClipboard, showHtmlToast } from "./HtmlOverlay";
-import { selfId } from "./NostrSignaling";
 
 function serializeForSync(cfg: RunConfig): Record<string, unknown> { return { ...cfg, enabledPowerUps: [...cfg.enabledPowerUps] }; }
 function deserializeFromSync(d: Record<string, unknown>): RunConfig { return { ...createDefaultRunConfig(), ...d, enabledPowerUps: new Set(d.enabledPowerUps as string[] ?? []) }; }
@@ -263,37 +262,51 @@ export class LobbyScreen {
     if (remain <= 0) this.doStart();
   }
 
-  /** Barrier sync with RTT compensation: prepare → all respond → go with per-peer delays. */
+  /** Wall-clock sync: host picks a future Date.now() timestamp, all peers wait for it independently. */
   private doStart(): void {
     this.starting = true; this.cancelLocalTimer(); this.countdownText.text = "Syncing...";
     this.pendingSeed = Math.floor(Math.random() * 0xffffffff);
     this.pendingRunCfg = this.useCustomRun ? loadRunConfigFromStorage() : null;
     const dc = this.useCustomRun ? loadDebugConfigFromStorage() : null; if (dc) setDebugConfig(dc);
-    this.preparedPeers = new Set(); this.peerRTTs = new Map(); this.prepareSentAt = performance.now();
-    this.sync.sendGameEvent({ type: "start", payload: { phase: "prepare", seed: this.pendingSeed, mode: this.mode, touchControls: this.touchControls, character: this.localChar, name: this.localName, theme: this.selectedTheme, runCfg: this.pendingRunCfg ? serializeForSync(this.pendingRunCfg) : null, dbgCfg: dc } });
-    this.barrierTimeout = setTimeout(() => this.sendGo(), 1500);
+    this.preparedPeers = new Set();
+    // Pick a wall-clock start time 1.5s in the future — all peers wait for this independently
+    this.startAtWall = Date.now() + 1500;
+    const cos = loadCosmetics();
+    this.sync.sendGameEvent({ type: "start", payload: { phase: "prepare", seed: this.pendingSeed, mode: this.mode,
+      touchControls: this.touchControls, character: this.localChar, name: this.localName, theme: this.selectedTheme,
+      tint: cos.equipped.tint ?? "tint_none", trail: cos.equipped.trail ?? "trail_none",
+      startAt: this.startAtWall, runCfg: this.pendingRunCfg ? serializeForSync(this.pendingRunCfg) : null, dbgCfg: dc } });
+    // Fallback: if not all peers respond by startAt, start anyway
+    this.barrierTimeout = setTimeout(() => this.launchAtWallTime(), 2000);
   }
   private pendingSeed = 0; private pendingRunCfg: RunConfig | null = null;
   private preparedPeers = new Set<string>(); private barrierTimeout: ReturnType<typeof setTimeout> | null = null;
   private prepareHostId = ""; private prepareHostChar = "chef"; private prepareHostName = "";
-  private prepareSentAt = 0; private peerRTTs = new Map<string, number>();
+  private prepareHostTint = ""; private prepareHostTrail = ""; private startAtWall = 0; private guestLaunched = false;
 
   private onPrepared(peerId: string): void {
-    this.preparedPeers.add(peerId); this.peerRTTs.set(peerId, performance.now() - this.prepareSentAt);
-    if (this.preparedPeers.size >= this.remotePlayers.size) this.sendGo();
-  }
-  private sendGo(): void {
+    this.preparedPeers.add(peerId);
+    if (this.preparedPeers.size < this.remotePlayers.size) return;
     if (this.barrierTimeout) { clearTimeout(this.barrierTimeout); this.barrierTimeout = null; }
-    const maxRTT = Math.max(50, ...[...this.peerRTTs.values()]);
-    const delays: Record<string, number> = {};
-    for (const [id, rtt] of this.peerRTTs) delays[id] = Math.round((maxRTT - rtt) / 2);
-    // Host biased to 0.7× maxRTT (not 0.5×) — compensates for upload/download asymmetry
-    const hostDelay = Math.round(maxRTT * 0.7);
-    this.sync.sendGameEvent({ type: "start", payload: { phase: "go", delays } });
+    this.sync.sendGameEvent({ type: "start", payload: { phase: "go" } });
+    this.launchAtWallTime();
+  }
+  private launchAtWallTime(): void {
+    if (this.barrierTimeout) { clearTimeout(this.barrierTimeout); this.barrierTimeout = null; }
     this.countdownText.text = "GO!";
     const rp = new Map<string, { character: string; cosmetics?: RemoteCosmetics; name?: string }>();
     for (const [id, p] of this.remotePlayers) rp.set(id, { character: p.character, cosmetics: { ...p.cosmetics, theme: this.selectedTheme }, name: p.name });
-    setTimeout(() => this.callbacks.onStart(this.pendingSeed, this.mode, this.touchControls, rp, this.pendingRunCfg ? { ...this.pendingRunCfg, seed: this.pendingSeed } : undefined), hostDelay);
+    const delay = Math.max(0, this.startAtWall - Date.now());
+    setTimeout(() => this.callbacks.onStart(this.pendingSeed, this.mode, this.touchControls, rp, this.pendingRunCfg ? { ...this.pendingRunCfg, seed: this.pendingSeed } : undefined), delay);
+  }
+
+  private guestScheduleLaunch(): void {
+    if (this.guestLaunched) return; this.guestLaunched = true; this.countdownText.text = "GO!";
+    const rp = new Map<string, { character: string; cosmetics?: RemoteCosmetics; name?: string }>();
+    rp.set(this.prepareHostId, { character: this.prepareHostChar, cosmetics: { theme: this.selectedTheme, tint: this.prepareHostTint, trail: this.prepareHostTrail }, name: this.prepareHostName });
+    for (const [id, p] of this.remotePlayers) { if (id !== this.prepareHostId) rp.set(id, { character: p.character, cosmetics: { ...p.cosmetics, theme: this.selectedTheme }, name: p.name }); }
+    const delay = Math.max(0, this.startAtWall - Date.now());
+    setTimeout(() => this.callbacks.onStart(this.pendingSeed, this.mode, this.touchControls, rp, this.sharedRunConfig ?? undefined), delay);
   }
 
   private handleEvent(event: GameSyncEvent, peerId: string, onSettings: () => void): void {
@@ -340,26 +353,17 @@ export class LobbyScreen {
       const phase = (event.payload.phase as string) ?? "go";
       if (phase === "prepare") {
         this.starting = true; this.cancelLocalTimer(); this.countdownText.text = "Syncing...";
-        this.pendingSeed = event.payload.seed as number;
-        this.mode = (event.payload.mode as string) || "best-height";
-        this.touchControls = (event.payload.touchControls as boolean) ?? this.touchControls;
+        this.pendingSeed = event.payload.seed as number; this.startAtWall = (event.payload.startAt as number) || (Date.now() + 1000);
+        this.mode = (event.payload.mode as string) || "best-height"; this.touchControls = (event.payload.touchControls as boolean) ?? this.touchControls;
         if (event.payload.theme) this.selectedTheme = event.payload.theme as string;
         if (event.payload.dbgCfg) setDebugConfig({ ...createDebugConfig(), ...(event.payload.dbgCfg as Partial<DebugConfig>) });
         if (event.payload.runCfg) this.sharedRunConfig = { ...deserializeFromSync(event.payload.runCfg as Record<string, unknown>), seed: this.pendingSeed };
         this.prepareHostId = peerId; this.prepareHostChar = (event.payload.character as string) ?? "chef";
-        this.prepareHostName = (event.payload.name as string) ?? "";
+        this.prepareHostName = (event.payload.name as string) ?? ""; this.prepareHostTint = (event.payload.tint as string) ?? ""; this.prepareHostTrail = (event.payload.trail as string) ?? "";
         this.sync.sendGameEvent({ type: "score", payload: { prepared: true } });
-      } else if (phase === "go") {
-        this.countdownText.text = "GO!";
-        const rp = new Map<string, { character: string; cosmetics?: RemoteCosmetics; name?: string }>();
-        rp.set(this.prepareHostId, { character: this.prepareHostChar, cosmetics: { theme: this.selectedTheme }, name: this.prepareHostName });
-        for (const [id, p] of this.remotePlayers) { if (id !== this.prepareHostId) rp.set(id, { character: p.character, cosmetics: { ...p.cosmetics, theme: this.selectedTheme }, name: p.name }); }
-        const myDelay = ((event.payload.delays as Record<string, number>) ?? {})[selfId] ?? 0;
-        const launch = () => this.callbacks.onStart(this.pendingSeed, this.mode, this.touchControls, rp, this.sharedRunConfig ?? undefined);
-        if (myDelay > 0) setTimeout(launch, myDelay); else launch();
-      }
+        this.guestScheduleLaunch(); // launch at wall-clock startAt time
+      } else if (phase === "go" && !this.guestLaunched) { this.guestScheduleLaunch(); }
     }
-    // Host collects barrier responses
     if (event.type === "score" && event.payload.prepared && this.role === "host") this.onPrepared(peerId);
   }
 
