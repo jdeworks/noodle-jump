@@ -1,7 +1,7 @@
 /** Compact in-game leaderboard for multiplayer — shows live height rankings. */
 
 import { Container, Graphics, Text, TextStyle } from "pixi.js";
-import { getPeerColor } from "./OnlineResults";
+import { getPeerColor } from "./PeerColors";
 
 const MAX_VISIBLE = 8;
 const UPDATE_MS = 500;

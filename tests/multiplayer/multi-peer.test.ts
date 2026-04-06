@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { encodePosition, decodePosition } from "../../src/multiplayer/GameSync";
 import { InterpolationBuffer } from "../../src/multiplayer/InterpolationBuffer";
-import { getPeerColor, type PlayerResult } from "../../src/multiplayer/OnlineResults";
+import { getPeerColor, type PlayerResult } from "../../src/multiplayer/PeerColors";
 
 describe("multi-peer position routing", () => {
   it("routes positions by peerId through separate interpolation buffers", () => {
