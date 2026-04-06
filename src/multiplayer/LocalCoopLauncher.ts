@@ -340,7 +340,7 @@ export async function launchLocalCoop(
       cleanupAndReset: () => {
         cleanupLocalCoop(app, scene1, scene2, input, gameLoop);
         const newSeed = Math.floor(Math.random() * 0xffffffff);
-        launchLocalCoop(app, newSeed, mode, p1Char, p2Char);
+        launchLocalCoop(app, newSeed, mode, p1Char, p2Char, runConfig);
       },
       cleanupAndGoHome: () => {
         cleanupLocalCoop(app, scene1, scene2, input, gameLoop);
