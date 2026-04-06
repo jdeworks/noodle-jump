@@ -104,8 +104,54 @@ describe("results leaderboard sorting", () => {
     ];
 
     const sorted = [...results].sort((a, b) => b.height - a.height);
-    const localRank = sorted.findIndex((r) => r.isLocal);
-    expect(localRank).toBe(1); // 2nd place
+    const localIdx = sorted.findIndex((r) => r.isLocal);
+    expect(localIdx).toBe(1); // 2nd place
+  });
+
+  it("detects tie for first place", () => {
+    const results: PlayerResult[] = [
+      { peerId: "local", label: "You", height: 1000, score: 100, isLocal: true, color: 0xff8833 },
+      { peerId: "a", label: "PeerA", height: 1000, score: 0, isLocal: false, color: 0x33cc55 },
+      { peerId: "b", label: "PeerB", height: 500, score: 0, isLocal: false, color: 0x3388ff },
+    ];
+
+    const sorted = [...results].sort((a, b) => b.height - a.height);
+    const localIdx = sorted.findIndex((r) => r.isLocal);
+    const localH = sorted[localIdx].height;
+    const topH = sorted[0].height;
+    const tiedForFirst = localH === topH && sorted.filter((r) => r.height === topH).length > 1;
+    expect(tiedForFirst).toBe(true);
+  });
+
+  it("does not tie when heights differ", () => {
+    const results: PlayerResult[] = [
+      { peerId: "local", label: "You", height: 999, score: 100, isLocal: true, color: 0xff8833 },
+      { peerId: "a", label: "PeerA", height: 1000, score: 0, isLocal: false, color: 0x33cc55 },
+    ];
+
+    const sorted = [...results].sort((a, b) => b.height - a.height);
+    const localIdx = sorted.findIndex((r) => r.isLocal);
+    const localH = sorted[localIdx].height;
+    const topH = sorted[0].height;
+    const tiedForFirst = localH === topH && sorted.filter((r) => r.height === topH).length > 1;
+    expect(tiedForFirst).toBe(false);
+  });
+
+  it("does not tie for non-first-place", () => {
+    const results: PlayerResult[] = [
+      { peerId: "local", label: "You", height: 500, score: 100, isLocal: true, color: 0xff8833 },
+      { peerId: "a", label: "PeerA", height: 1000, score: 0, isLocal: false, color: 0x33cc55 },
+      { peerId: "b", label: "PeerB", height: 500, score: 0, isLocal: false, color: 0x3388ff },
+    ];
+
+    const sorted = [...results].sort((a, b) => b.height - a.height);
+    const localIdx = sorted.findIndex((r) => r.isLocal);
+    const localH = sorted[localIdx].height;
+    const topH = sorted[0].height;
+    const tiedForFirst = localH === topH && sorted.filter((r) => r.height === topH).length > 1;
+    // Local is tied for 2nd/3rd at 500m, but NOT tied for first (1000m)
+    expect(tiedForFirst).toBe(false);
+    expect(localIdx).toBeGreaterThan(0);
   });
 });
 

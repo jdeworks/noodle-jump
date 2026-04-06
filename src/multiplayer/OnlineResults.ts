@@ -30,8 +30,12 @@ export function showOnlineResults(
 ): void {
   const cx = GAME_WIDTH / 2;
   const sorted = [...results].sort((a, b) => b.height - a.height);
-  const localRank = sorted.findIndex((r) => r.isLocal);
-  const winner = localRank === 0 ? "You Win!" : localRank === sorted.length - 1 ? "You Lose!" : `#${localRank + 1}`;
+  const localIdx = sorted.findIndex((r) => r.isLocal);
+  const localH = sorted[localIdx]?.height ?? 0;
+  const topH = sorted[0]?.height ?? 0;
+  // Tie only matters for 1st place — if local matches top height, it's a tie
+  const tiedForFirst = localH === topH && sorted.filter((r) => r.height === topH).length > 1;
+  const winner = tiedForFirst ? "It's a Tie!" : localIdx === 0 ? "You Win!" : `#${localIdx + 1}`;
 
   const bg = new Graphics();
   bg.rect(0, 0, GAME_WIDTH, GAME_HEIGHT);
@@ -42,7 +46,7 @@ export function showOnlineResults(
     text: mode === "timed-2min" ? `Time's Up! ${winner}` : winner,
     style: new TextStyle({
       fontFamily: "monospace", fontSize: 26, fontWeight: "bold",
-      fill: localRank === 0 ? "#44ff44" : "#ffdd44",
+      fill: tiedForFirst ? "#ffdd44" : localIdx === 0 ? "#44ff44" : "#ff8866",
       stroke: { color: "#000000", width: 4 },
     }),
   });
