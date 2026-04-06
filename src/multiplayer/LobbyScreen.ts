@@ -285,9 +285,10 @@ export class LobbyScreen {
   private sendGo(): void {
     if (this.barrierTimeout) { clearTimeout(this.barrierTimeout); this.barrierTimeout = null; }
     const maxRTT = Math.max(50, ...[...this.peerRTTs.values()]);
-    const delays: Record<string, number> = {}; // per-peer: slower=0, faster=positive
+    const delays: Record<string, number> = {};
     for (const [id, rtt] of this.peerRTTs) delays[id] = Math.round((maxRTT - rtt) / 2);
-    const hostDelay = Math.round(maxRTT / 2);
+    // Host biased to 0.7× maxRTT (not 0.5×) — compensates for upload/download asymmetry
+    const hostDelay = Math.round(maxRTT * 0.7);
     this.sync.sendGameEvent({ type: "start", payload: { phase: "go", delays } });
     this.countdownText.text = "GO!";
     const rp = new Map<string, { character: string; cosmetics?: RemoteCosmetics; name?: string }>();
