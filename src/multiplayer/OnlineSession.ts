@@ -336,6 +336,7 @@ export class OnlineSession {
   ): void {
     this.seed = newSeed; this.localDead = false; this.localDeathHeight = 0;
     this.resultsShown = false; this.sync = sync; this.mode = mode;
+    this.timerDurationMs = -1; this.timerStartTime = 0; this.timerText = null;
     this.touchControls = tc; this.nextColorIndex = 0; this.peers.clear();
     setDebugConfig(createDebugConfig());
     const rc = sharedRunConfig ? { ...sharedRunConfig, seed: newSeed } : { ...createDefaultRunConfig(), seed: newSeed };
