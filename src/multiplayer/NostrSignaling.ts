@@ -11,6 +11,18 @@ import type { SignalingCallbacks, SignalingStrategy } from "./SignalingStrategy"
 
 const APP_ID = "noodle-jump-mp";
 
+// Suppress Trystero's internal "peer error" console.error for closed connections.
+// This fires when the library tries to send to a peer that has disconnected — expected behavior.
+const _origError = console.error;
+let _suppressed = false;
+function suppressTrysteroPeerErrors(): void {
+  if (_suppressed) return; _suppressed = true;
+  console.error = (...args: unknown[]) => {
+    if (typeof args[0] === "string" && args[0].includes("Trystero peer error")) return;
+    _origError.apply(console, args);
+  };
+}
+
 const RTC_CONFIG: RTCConfiguration = {
   iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
 };
@@ -44,6 +56,7 @@ export class NostrSignaling implements SignalingStrategy {
   }
 
   async createRoom(): Promise<string> {
+    suppressTrysteroPeerErrors();
     const code = generateRoomCode();
     this.callbacks?.onStateChange("waiting");
 
@@ -57,6 +70,7 @@ export class NostrSignaling implements SignalingStrategy {
   }
 
   async joinRoom(code: string): Promise<void> {
+    suppressTrysteroPeerErrors();
     this.callbacks?.onStateChange("connecting");
 
     this.room = joinRoom(
