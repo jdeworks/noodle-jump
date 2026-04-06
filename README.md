@@ -24,10 +24,14 @@ A pasta-themed endless jumper built with PixiJS and TypeScript.
   - Best Height — both play until dead, ghost mode after first death, highest height wins
   - First to Die — first player to die loses, fast rounds
   - Timed (2 min) — both play for 2 minutes with respawn and -10% height penalty on death
-- **Online multiplayer** — peer-to-peer via WebRTC
-  - Quick Connect — uses public Nostr relays for signaling
-  - Private Connect — manual SDP exchange, no external servers
-  - Lobby with ready-up, interpolated remote player rendering
+- **Online multiplayer (2-24 players)** — peer-to-peer mesh via WebRTC
+  - Quick Connect — uses public Nostr relays for signaling, shareable room code
+  - Private Connect — manual SDP exchange, no external servers (2 players)
+  - N-player lobby with player names, ready-up countdown (15s/3s), host kick, room code copy
+  - Clock-offset synchronized start — all players begin within ~20ms of each other
+  - Live leaderboard overlay, color-coded remote player shadows
+  - Graceful disconnect handling — leavers show as "left" with 0m height
+  - All three modes work online: Best Height, First to Die, Timed (2 min)
 
 ### Audio
 
@@ -58,7 +62,7 @@ A pasta-themed endless jumper built with PixiJS and TypeScript.
 - PWA — installable, works offline via service worker
 - Haptic feedback on mobile (impacts, power-ups, death)
 - Seeded RNG for deterministic/reproducible runs
-- 420 tests across 57 test files
+- 464 tests across 59 test files
 - Frame-rate independent — delta-time game loop ensures consistent speed at any refresh rate (60Hz, 144Hz, etc.)
 - Modular architecture — pure logic separated from PixiJS rendering
 
@@ -78,7 +82,7 @@ npx vite build   # outputs to docs/ for GitHub Pages
 ### Tests & Quality
 
 ```bash
-npx vitest run    # 406 tests
+npx vitest run    # 464 tests
 npx tsc --noEmit  # type check
 npx eslint src    # lint
 make health       # LOC budget + file size checks
@@ -259,6 +263,26 @@ This project was built across 12+ Claude Code sessions (~160 commits). Below are
 **Fix:** Reduced point density (record every 2nd frame), reduced max points (80→40), and the bezier shapes are now reasonable at ~240 per frame. The real FPS fix was the player sprite leak (lesson 13), not the beziers — once that was fixed, 240 bezier shapes per frame ran fine.
 
 **Takeaway:** PixiJS bezier tessellation is 3-5x more expensive than simple rect fills. For particle/trail effects with many shapes, profile before using curves. If you need curves, reduce point count aggressively.
+
+### 17. N-player multiplayer start sync — five wrong approaches before clock offsets
+
+**Problem:** In multiplayer, the host consistently started 50-200ms before guests. The initial jump peak was visibly desynchronized across players.
+
+**Attempt 1: Fixed delay.** Host sends "start in 500ms", all peers wait 500ms. Failed because the 500ms starts ticking on the host's clock, and by the time guests receive the message, some of that 500ms has already passed. Guests always start late.
+
+**Attempt 2: Barrier pattern.** Host sends "prepare", waits for all "prepared" responses, then sends "go". Everyone starts on "go". Failed because the host starts on the same tick it sends "go" — the message hasn't reached guests yet.
+
+**Attempt 3: Barrier + host delay.** Same barrier, but host waits 100ms after sending "go". Better, but the 100ms is a guess. On fast connections the host was late, on slow connections it was early.
+
+**Attempt 4: RTT-compensated delays.** Measure round-trip time during the barrier. Send per-peer delay hints in "go" so faster peers wait longer. Failed because RTT/2 ≠ actual one-way latency (upload and download speeds differ). The host was still consistently early because its upload was faster than the measured RTT suggested.
+
+**Attempt 5: Biased host delay (0.7× RTT).** Increased host delay multiplier to compensate for asymmetric connections. Better but still ~50ms off — the bias factor was another guess.
+
+**What finally worked: Clock offset measurement.** During the "prepare" phase, guests send their `Date.now()`. Host calculates each guest's clock offset: `guestTime - hostTime - RTT/2`. Host picks a future start time (next clean second boundary), then sends each guest their start time converted to their local clock. All peers independently wait for their local `Date.now()` to hit their target. The only remaining error is NTP clock skew (~10-20ms), which is imperceptible.
+
+**Key insight:** The approaches that failed all tried to compensate for network latency using timing tricks. The approach that worked acknowledged that you can't measure one-way latency accurately, and instead measured the thing you actually need: the *clock difference* between peers.
+
+**Takeaway:** For P2P game sync without a central server, measure clock offsets rather than trying to estimate or compensate for network latency. RTT-based approaches fail due to asymmetric connections. Wall-clock agreement with measured offsets gives ~20ms accuracy with minimal code.
 
 ---
 
