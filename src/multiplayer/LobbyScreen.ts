@@ -210,24 +210,14 @@ export class LobbyScreen {
     if (this.role === "host") this.evaluateCountdown();
   }
 
-  /** Host only: evaluate whether to start/change/cancel countdown based on ready states. */
   private evaluateCountdown(): void {
     if (this.starting) return;
-    const hasRemotes = this.remotePlayers.size > 0;
-    const allReady = this.localReady && hasRemotes && [...this.remotePlayers.values()].every(p => p.ready);
-
-    if (allReady) {
-      if (this.countdownEndTime < 0) {
-        this.setCountdown(COUNTDOWN_SHORT);
-      } else {
-        const remain = this.countdownEndTime - performance.now();
-        if (remain > COUNTDOWN_SHORT) this.setCountdown(COUNTDOWN_SHORT);
-      }
-    } else if (this.localReady && hasRemotes && this.countdownEndTime < 0) {
-      this.setCountdown(COUNTDOWN_LONG);
-    } else if (!this.localReady) {
-      this.setCountdown(0); // cancel
-    }
+    const hr = this.remotePlayers.size > 0;
+    const all = this.localReady && hr && [...this.remotePlayers.values()].every(p => p.ready);
+    if (all) { if (this.countdownEndTime < 0) this.setCountdown(COUNTDOWN_SHORT);
+      else if (this.countdownEndTime - performance.now() > COUNTDOWN_SHORT) this.setCountdown(COUNTDOWN_SHORT);
+    } else if (this.localReady && hr && this.countdownEndTime < 0) { this.setCountdown(COUNTDOWN_LONG);
+    } else if (!this.localReady) { this.setCountdown(0); }
   }
 
   /** Host: set countdown and broadcast to all. secs=0 → cancel. */
@@ -287,12 +277,10 @@ export class LobbyScreen {
   }
   private sendGoWithOffsets(): void {
     if (this.barrierTimeout) { clearTimeout(this.barrierTimeout); this.barrierTimeout = null; }
-    const startAt = Math.ceil((Date.now() + 1000) / 1000) * 1000; // next clean second
-    const peerStartAt: Record<string, number> = {};
-    for (const [id, off] of this.peerOffsets) peerStartAt[id] = startAt + off; // convert to each guest's clock
-    this.sync.sendGameEvent({ type: "start", payload: { phase: "go", startAt, peerStartAt } });
-    this.countdownText.text = "GO!";
-    const rp = new Map<string, { character: string; cosmetics?: RemoteCosmetics; name?: string }>();
+    const startAt = Math.ceil((Date.now() + 1000) / 1000) * 1000;
+    const ps: Record<string, number> = {}; for (const [id, off] of this.peerOffsets) ps[id] = startAt + off;
+    this.sync.sendGameEvent({ type: "start", payload: { phase: "go", startAt, peerStartAt: ps } });
+    this.countdownText.text = "GO!"; const rp = new Map<string, { character: string; cosmetics?: RemoteCosmetics; name?: string }>();
     for (const [id, p] of this.remotePlayers) rp.set(id, { character: p.character, cosmetics: { ...p.cosmetics, theme: this.selectedTheme }, name: p.name });
     setTimeout(() => this.callbacks.onStart(this.pendingSeed, this.mode, this.touchControls, rp, this.pendingRunCfg ? { ...this.pendingRunCfg, seed: this.pendingSeed } : undefined), Math.max(0, startAt - Date.now()));
   }
@@ -309,16 +297,19 @@ export class LobbyScreen {
     // Ensure peer exists
     if (!this.remotePlayers.has(peerId)) {
       this.remotePlayers.set(peerId, { peerId, character: "chef", cosmetics: {}, ready: false, colorIndex: this.nextColorIndex++, name: "", announced: false });
+      if (this.role === "host" && this.localReady && this.countdownEndTime > 0) { // new player mid-countdown → unready
+        this.localReady = false; this.readyText.text = "Ready";
+        this.drawReadyBtn(GAME_WIDTH / 2, this.readyText.y, false); this.setCountdown(0); this.broadcastLocal(); }
     }
     const peer = this.remotePlayers.get(peerId)!;
+    if (!peer.announced && event.type === "ready") { peer.announced = true; this.broadcastLocal(); }
 
-    // On first real contact, announce ourselves back (once per peer)
-    if (!peer.announced && event.type === "ready") {
-      peer.announced = true;
-      this.broadcastLocal();
+    // Kick event from host
+    if (event.type === "zone" && event.payload.kick) {
+      const kickedId = event.payload.kick as string;
+      if (kickedId === selfId) { this.countdownText.text = "Kicked by host"; this.starting = true; return; }
+      this.remotePlayers.delete(kickedId); this.renderPlayerList(); return;
     }
-
-    // Countdown broadcast from host
     if (event.type === "zone" && event.payload.countdown !== undefined) {
       const secs = event.payload.countdown as number; this.cancelLocalTimer();
       if (secs <= 0) { this.countdownEndTime = -1; this.countdownText.text = ""; } else {
@@ -370,6 +361,11 @@ export class LobbyScreen {
     }
   }
 
+  private kickPlayer(id: string): void {
+    this.remotePlayers.delete(id); this.sync.sendGameEvent({ type: "zone", payload: { kick: id } });
+    this.renderPlayerList(); if (this.role === "host") this.evaluateCountdown();
+  }
+
   private renderPlayerList(): void {
     this.playerListContainer.removeChildren();
     const cx = GAME_WIDTH / 2; let y = 0;
@@ -377,18 +373,22 @@ export class LobbyScreen {
     hdr.x = cx; hdr.y = y; hdr.anchor.set(0.5, 0.5); this.playerListContainer.addChild(hdr); y += 16;
     this.renderPlayerRow(this.playerListContainer, cx, y, this.localName || "You", this.localChar, this.localReady, 0); y += 22;
     for (const p of this.remotePlayers.values()) {
-      this.renderPlayerRow(this.playerListContainer, cx, y, p.name || p.peerId.slice(0, 6), p.character, p.ready, p.colorIndex); y += 22;
+      this.renderPlayerRow(this.playerListContainer, cx, y, p.name || p.peerId.slice(0, 6), p.character, p.ready, p.colorIndex, this.role === "host" ? p.peerId : undefined);
+      y += 22;
     }
     this.playerCountText.text = `Players: ${1 + this.remotePlayers.size}`;
   }
 
-  private renderPlayerRow(parent: Container, cx: number, y: number, label: string, charId: string, ready: boolean, colorIdx: number): void {
-    const dot = new Graphics(); dot.circle(cx - 120, y, 4); dot.fill(getPeerColor(colorIdx)); parent.addChild(dot);
-    const gfx = new Graphics(); gfx.x = cx - 100; gfx.y = y - 10; drawCharacter(gfx, 16, 20, charId); parent.addChild(gfx);
-    const nm = new Text({ text: label, style: new TextStyle({ fontFamily: "monospace", fontSize: 11, fill: "#ffffff", stroke: { color: "#000000", width: 1 } }) });
-    nm.x = cx - 75; nm.y = y; nm.anchor.set(0, 0.5); parent.addChild(nm);
-    const st = new Text({ text: ready ? "Ready" : "...", style: new TextStyle({ fontFamily: "monospace", fontSize: 11, fill: ready ? "#44ff44" : "#888888", stroke: { color: "#000000", width: 1 } }) });
-    st.x = cx + 80; st.y = y; st.anchor.set(0, 0.5); parent.addChild(st);
+  private renderPlayerRow(p: Container, cx: number, y: number, label: string, charId: string, ready: boolean, ci: number, kickId?: string): void {
+    const d = new Graphics(); d.circle(cx - 120, y, 4); d.fill(getPeerColor(ci)); p.addChild(d);
+    const g = new Graphics(); g.x = cx - 100; g.y = y - 10; drawCharacter(g, 16, 20, charId); p.addChild(g);
+    const rs = new TextStyle({ fontFamily: "monospace", fontSize: 11, fill: "#ffffff", stroke: { color: "#000000", width: 1 } });
+    const n = new Text({ text: label, style: rs }); n.x = cx - 75; n.y = y; n.anchor.set(0, 0.5); p.addChild(n);
+    const s = new Text({ text: ready ? "Ready" : "...", style: new TextStyle({ ...rs, fill: ready ? "#44ff44" : "#888888" }) });
+    s.x = cx + 80; s.y = y; s.anchor.set(0, 0.5); p.addChild(s);
+    if (kickId) { const k = new Text({ text: "✕", style: new TextStyle({ ...rs, fontSize: 14, fill: "#ff4444" }) });
+      k.x = cx + 115; k.y = y; k.anchor.set(0.5, 0.5); k.eventMode = "static"; k.cursor = "pointer";
+      k.on("pointertap", () => this.kickPlayer(kickId)); p.addChild(k); }
   }
 
   destroy(): void {
