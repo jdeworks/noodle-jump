@@ -17,6 +17,7 @@ import { createDefaultRunConfig, type RunConfig } from "../systems/CustomRunConf
 import type { RemoteCosmetics } from "./RemotePlayerRenderer";
 import { getPeerColor } from "./OnlineResults";
 import { copyToClipboard, showHtmlToast } from "./HtmlOverlay";
+import { selfId } from "./NostrSignaling";
 
 function serializeForSync(cfg: RunConfig): Record<string, unknown> { return { ...cfg, enabledPowerUps: [...cfg.enabledPowerUps] }; }
 function deserializeFromSync(d: Record<string, unknown>): RunConfig { return { ...createDefaultRunConfig(), ...d, enabledPowerUps: new Set(d.enabledPowerUps as string[] ?? []) }; }
@@ -126,55 +127,37 @@ export class LobbyScreen {
     const ML: Record<string, string> = { "best-height": "Best Height", "first-to-die": "First to Die", "timed-2min": "Timed (2 min)" };
     const modeLabel = new Text({ text: `Mode: ${ML[this.mode]}`, style: LABEL });
     modeLabel.x = cx; modeLabel.y = y; modeLabel.anchor.set(0.5, 0.5); this.container.addChild(modeLabel);
-    if (role === "host") {
-      modeLabel.eventMode = "static"; modeLabel.cursor = "pointer"; modeLabel.text += " (tap)";
-      modeLabel.on("pointertap", () => {
-        const i = MODES.indexOf(this.mode as typeof MODES[number]);
-        this.mode = MODES[(i + 1) % MODES.length];
+    if (role === "host") { modeLabel.eventMode = "static"; modeLabel.cursor = "pointer"; modeLabel.text += " (tap)";
+      modeLabel.on("pointertap", () => { const i = MODES.indexOf(this.mode as typeof MODES[number]); this.mode = MODES[(i + 1) % MODES.length];
         try { localStorage.setItem("nj-lobby-mode", this.mode); } catch { /* */ }
-        modeLabel.text = `Mode: ${ML[this.mode]} (tap)`;
-        this.sync.sendGameEvent({ type: "ready", payload: { mode: this.mode } });
-      });
+        modeLabel.text = `Mode: ${ML[this.mode]} (tap)`; this.sync.sendGameEvent({ type: "ready", payload: { mode: this.mode } }); });
     } y += 34;
 
-    // Touch controls
     const touchLabel = new Text({ text: "Touch Controls: OFF (tap)", style: SMALL });
     touchLabel.x = cx; touchLabel.y = y; touchLabel.anchor.set(0.5, 0.5);
     touchLabel.eventMode = "static"; touchLabel.cursor = "pointer";
-    touchLabel.on("pointertap", () => {
-      this.touchControls = !this.touchControls;
+    touchLabel.on("pointertap", () => { this.touchControls = !this.touchControls;
       touchLabel.text = `Touch Controls: ${this.touchControls ? "ON" : "OFF"} (tap)`;
       touchLabel.style.fill = this.touchControls ? "#44ff44" : "#aaaaaa";
-      this.sync.sendGameEvent({ type: "ready", payload: { touchControls: this.touchControls } });
-    });
+      this.sync.sendGameEvent({ type: "ready", payload: { touchControls: this.touchControls } }); });
     this.container.addChild(touchLabel); y += 32;
 
-    // Theme (host)
     const THEMES = COSMETICS.filter(c => c.type === "theme");
     const themeLabel = new Text({ text: `Theme: ${THEMES.find(t => t.id === this.selectedTheme)?.name ?? "Classic"}`,
       style: new TextStyle({ fontFamily: "monospace", fontSize: 12, fill: "#ccaaff", stroke: { color: "#000000", width: 2 } }) });
     themeLabel.x = cx; themeLabel.y = y; themeLabel.anchor.set(0.5, 0.5); this.container.addChild(themeLabel);
-    if (role === "host") {
-      themeLabel.eventMode = "static"; themeLabel.cursor = "pointer"; themeLabel.text += " (tap)";
-      themeLabel.on("pointertap", () => {
-        const i = THEMES.findIndex(t => t.id === this.selectedTheme);
-        this.selectedTheme = THEMES[(i + 1) % THEMES.length].id;
+    if (role === "host") { themeLabel.eventMode = "static"; themeLabel.cursor = "pointer"; themeLabel.text += " (tap)";
+      themeLabel.on("pointertap", () => { const i = THEMES.findIndex(t => t.id === this.selectedTheme); this.selectedTheme = THEMES[(i + 1) % THEMES.length].id;
         themeLabel.text = `Theme: ${THEMES.find(t => t.id === this.selectedTheme)?.name ?? "Classic"} (tap)`;
-        this.sync.sendGameEvent({ type: "ready", payload: { theme: this.selectedTheme } });
-      });
+        this.sync.sendGameEvent({ type: "ready", payload: { theme: this.selectedTheme } }); });
     } y += 32;
-
-    // Custom run (host)
     const customLabel = new Text({ text: "Custom Run: OFF", style: SMALL });
     customLabel.x = cx; customLabel.y = y; customLabel.anchor.set(0.5, 0.5); this.container.addChild(customLabel);
-    if (role === "host") {
-      customLabel.eventMode = "static"; customLabel.cursor = "pointer"; customLabel.text += " (tap)";
-      customLabel.on("pointertap", () => {
-        this.useCustomRun = !this.useCustomRun;
+    if (role === "host") { customLabel.eventMode = "static"; customLabel.cursor = "pointer"; customLabel.text += " (tap)";
+      customLabel.on("pointertap", () => { this.useCustomRun = !this.useCustomRun;
         customLabel.text = this.useCustomRun ? "Custom Run: ON" : "Custom Run: OFF (tap)";
         customLabel.style.fill = this.useCustomRun ? "#44ff44" : "#aaaaaa";
-        this.sync.sendGameEvent({ type: "ready", payload: { customRun: this.useCustomRun } });
-      });
+        this.sync.sendGameEvent({ type: "ready", payload: { customRun: this.useCustomRun } }); });
     } y += 40;
 
     // Ready button
@@ -280,29 +263,36 @@ export class LobbyScreen {
     if (remain <= 0) this.doStart();
   }
 
-  /** Barrier sync: prepare → all respond → go. */
+  /** Barrier sync with RTT compensation: prepare → all respond → go with per-peer delays. */
   private doStart(): void {
     this.starting = true; this.cancelLocalTimer(); this.countdownText.text = "Syncing...";
     this.pendingSeed = Math.floor(Math.random() * 0xffffffff);
     this.pendingRunCfg = this.useCustomRun ? loadRunConfigFromStorage() : null;
     const dc = this.useCustomRun ? loadDebugConfigFromStorage() : null; if (dc) setDebugConfig(dc);
-    this.preparedPeers = new Set();
+    this.preparedPeers = new Set(); this.peerRTTs = new Map(); this.prepareSentAt = performance.now();
     this.sync.sendGameEvent({ type: "start", payload: { phase: "prepare", seed: this.pendingSeed, mode: this.mode, touchControls: this.touchControls, character: this.localChar, name: this.localName, theme: this.selectedTheme, runCfg: this.pendingRunCfg ? serializeForSync(this.pendingRunCfg) : null, dbgCfg: dc } });
     this.barrierTimeout = setTimeout(() => this.sendGo(), 1500);
   }
   private pendingSeed = 0; private pendingRunCfg: RunConfig | null = null;
   private preparedPeers = new Set<string>(); private barrierTimeout: ReturnType<typeof setTimeout> | null = null;
   private prepareHostId = ""; private prepareHostChar = "chef"; private prepareHostName = "";
+  private prepareSentAt = 0; private peerRTTs = new Map<string, number>();
 
-  private onPrepared(peerId: string): void { this.preparedPeers.add(peerId); if (this.preparedPeers.size >= this.remotePlayers.size) this.sendGo(); }
+  private onPrepared(peerId: string): void {
+    this.preparedPeers.add(peerId); this.peerRTTs.set(peerId, performance.now() - this.prepareSentAt);
+    if (this.preparedPeers.size >= this.remotePlayers.size) this.sendGo();
+  }
   private sendGo(): void {
     if (this.barrierTimeout) { clearTimeout(this.barrierTimeout); this.barrierTimeout = null; }
-    this.sync.sendGameEvent({ type: "start", payload: { phase: "go" } });
+    const maxRTT = Math.max(50, ...[...this.peerRTTs.values()]);
+    const delays: Record<string, number> = {}; // per-peer: slower=0, faster=positive
+    for (const [id, rtt] of this.peerRTTs) delays[id] = Math.round((maxRTT - rtt) / 2);
+    const hostDelay = Math.round(maxRTT / 2);
+    this.sync.sendGameEvent({ type: "start", payload: { phase: "go", delays } });
     this.countdownText.text = "GO!";
-    // Host delays own start by ~100ms to let "go" reach guests first
     const rp = new Map<string, { character: string; cosmetics?: RemoteCosmetics; name?: string }>();
     for (const [id, p] of this.remotePlayers) rp.set(id, { character: p.character, cosmetics: { ...p.cosmetics, theme: this.selectedTheme }, name: p.name });
-    setTimeout(() => this.callbacks.onStart(this.pendingSeed, this.mode, this.touchControls, rp, this.pendingRunCfg ? { ...this.pendingRunCfg, seed: this.pendingSeed } : undefined), 100);
+    setTimeout(() => this.callbacks.onStart(this.pendingSeed, this.mode, this.touchControls, rp, this.pendingRunCfg ? { ...this.pendingRunCfg, seed: this.pendingSeed } : undefined), hostDelay);
   }
 
   private handleEvent(event: GameSyncEvent, peerId: string, onSettings: () => void): void {
@@ -363,7 +353,9 @@ export class LobbyScreen {
         const rp = new Map<string, { character: string; cosmetics?: RemoteCosmetics; name?: string }>();
         rp.set(this.prepareHostId, { character: this.prepareHostChar, cosmetics: { theme: this.selectedTheme }, name: this.prepareHostName });
         for (const [id, p] of this.remotePlayers) { if (id !== this.prepareHostId) rp.set(id, { character: p.character, cosmetics: { ...p.cosmetics, theme: this.selectedTheme }, name: p.name }); }
-        this.callbacks.onStart(this.pendingSeed, this.mode, this.touchControls, rp, this.sharedRunConfig ?? undefined);
+        const myDelay = ((event.payload.delays as Record<string, number>) ?? {})[selfId] ?? 0;
+        const launch = () => this.callbacks.onStart(this.pendingSeed, this.mode, this.touchControls, rp, this.sharedRunConfig ?? undefined);
+        if (myDelay > 0) setTimeout(launch, myDelay); else launch();
       }
     }
     // Host collects barrier responses
