@@ -4,7 +4,10 @@
  * Handles connection state, auto-reconnect, and clean shutdown.
  */
 
-import type { SignalingStrategy, SignalingCallbacks } from "./SignalingStrategy";
+import type {
+  SignalingStrategy,
+  SignalingCallbacks,
+} from "./SignalingStrategy";
 import { NostrSignaling } from "./NostrSignaling";
 import type { Room } from "@trystero-p2p/nostr";
 
@@ -175,7 +178,9 @@ export class ConnectionManager {
     }
 
     this.setState("connected");
-    this.monitorConnection(pc);
+    // In Nostr mode, individual peer disconnects are normal (kick, leave).
+    // Only monitor connection in manual (2-player) mode.
+    if (this.mode === "manual") this.monitorConnection(pc);
   }
 
   private monitorConnection(pc: RTCPeerConnection): void {
@@ -187,9 +192,7 @@ export class ConnectionManager {
       } else if (state === "failed") {
         this.clearReconnectTimer();
         this.setState("failed");
-        this.callbacks?.onError(
-          "Connection lost. Could not reconnect.",
-        );
+        this.callbacks?.onError("Connection lost. Could not reconnect.");
       } else if (state === "connected" && this.state === "reconnecting") {
         this.clearReconnectTimer();
         this.setState("connected");

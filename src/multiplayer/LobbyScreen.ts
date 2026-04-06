@@ -309,7 +309,7 @@ export class LobbyScreen {
       if (kid === selfId) { this.starting = true; this.guestLaunched = true;
         this.sync.on({ onRemotePosition: () => {}, onRemoteEvent: () => {} });
         this.countdownText.text = "Kicked by host"; setTimeout(() => this.callbacks.onKicked?.(), 1500); return; }
-      this.remotePlayers.delete(kid); this.renderPlayerList(); return;
+      this.kickedIds.add(kid); this.remotePlayers.delete(kid); this.renderPlayerList(); return;
     }
     if (event.type === "zone" && event.payload.countdown !== undefined) {
       const secs = event.payload.countdown as number; this.cancelLocalTimer();
