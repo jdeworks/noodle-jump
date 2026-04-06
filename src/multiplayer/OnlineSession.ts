@@ -203,12 +203,9 @@ export class OnlineSession {
 
     const { PauseOverlay } = await import("./PauseOverlay");
     this.pause = new PauseOverlay(this.app, GAME_WIDTH, GAME_HEIGHT, () => this.goHome());
-    this.escapeHandler = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !this.resultsShown && this.pause) {
-        this.pause.toggle();
-        this.sync.sendGameEvent({ type: "ready", payload: { paused: this.pause.paused } });
-      }
-    };
+    const doPause = () => { if (!this.resultsShown && this.pause) { this.pause.toggle(); this.sync.sendGameEvent({ type: "ready", payload: { paused: this.pause.paused } }); } };
+    this.pause.onPauseTap(doPause);
+    this.escapeHandler = (e: KeyboardEvent) => { if (e.key === "Escape") doPause(); };
     window.addEventListener("keydown", this.escapeHandler);
     this.gameLoop = () => { this.tick(); };
     this.app.ticker.add(this.gameLoop);
@@ -304,9 +301,10 @@ export class OnlineSession {
       score: this.scene.getScore(), isLocal: true, color: getPeerColor(0),
     }];
     for (const [id, p] of this.peers) {
-      // Use deathHeight if dead, otherwise lastKnownHeight from live tracking
-      const h = p.dead ? (p.deathHeight || p.lastKnownHeight) : p.lastKnownHeight;
-      results.push({ peerId: id, label: p.name, height: h, score: 0, isLocal: false, color: getPeerColor(p.colorIndex) });
+      // Disconnected players get height 0 (can't win by leaving); dead use deathHeight
+      const h = p.disconnected ? 0 : p.dead ? (p.deathHeight || p.lastKnownHeight) : p.lastKnownHeight;
+      const lbl = p.disconnected ? `${p.name} (left)` : p.name;
+      results.push({ peerId: id, label: lbl, height: h, score: 0, isLocal: false, color: getPeerColor(p.colorIndex) });
     }
     showOnlineResults(this.app, results, this.mode, () => this.returnToLobby(), () => this.goHome());
   }
