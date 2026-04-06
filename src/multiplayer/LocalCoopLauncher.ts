@@ -163,9 +163,9 @@ export async function launchLocalCoop(
       app.canvas.style.aspectRatio = "400 / 700";
       showTitleScreen(app, (runConfig) => launchGame(app, runConfig)); }, 0);
   });
-  const midGameEscape = (e: KeyboardEvent) => {
-    if (e.key === "Escape" && !gameEnded) pauseOvl.toggle();
-  };
+  const doPause = () => { if (!gameEnded) pauseOvl.toggle(); };
+  pauseOvl.onPauseTap(doPause);
+  const midGameEscape = (e: KeyboardEvent) => { if (e.key === "Escape") doPause(); };
   window.addEventListener("keydown", midGameEscape);
 
   // Pause both scenes when tab/app is hidden (prevent desync)
