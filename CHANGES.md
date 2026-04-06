@@ -161,3 +161,4 @@ health_snapshot: LOC=28500, tests=451, complexity=ok
 intent: Fix fullscreen scaling on PC, resolve prettier formatter conflict, research large multiplayer
 
 - progress: Fullscreen CSS — lift max-width:500px via :fullscreen pseudo-class, black letterbox bars | index.html
+- progress: Add .prettierrc with printWidth:100 to prevent post-edit hook from inflating files past LOC limit | .prettierrc
