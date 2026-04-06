@@ -17,6 +17,7 @@ import { createDefaultRunConfig, type RunConfig } from "../systems/CustomRunConf
 import type { RemoteCosmetics } from "./RemotePlayerRenderer";
 import { getPeerColor } from "./OnlineResults";
 import { copyToClipboard, showHtmlToast } from "./HtmlOverlay";
+import { selfId } from "./NostrSignaling";
 
 function serializeForSync(cfg: RunConfig): Record<string, unknown> { return { ...cfg, enabledPowerUps: [...cfg.enabledPowerUps] }; }
 function deserializeFromSync(d: Record<string, unknown>): RunConfig { return { ...createDefaultRunConfig(), ...d, enabledPowerUps: new Set(d.enabledPowerUps as string[] ?? []) }; }
@@ -79,20 +80,12 @@ export class LobbyScreen {
     const bg = new Graphics(); bg.rect(0, 0, GAME_WIDTH, GAME_HEIGHT); bg.fill({ color: uiT.bg, alpha: 0.95 }); this.container.addChild(bg);
     const title = new Text({ text: "LOBBY", style: HEADER });
     title.x = cx; title.y = 30; title.anchor.set(0.5, 0.5); this.container.addChild(title);
-
-    // Room code display + copy button
-    if (this.roomCode) {
-      const codeText = new Text({ text: `Code: ${this.roomCode}`, style: new TextStyle({ fontFamily: "monospace", fontSize: 16, fill: "#ffdd44", fontWeight: "bold", letterSpacing: 2, stroke: { color: "#000000", width: 2 } }) });
-      codeText.x = cx; codeText.y = 52; codeText.anchor.set(0.5, 0.5);
-      codeText.eventMode = "static"; codeText.cursor = "pointer";
-      codeText.on("pointertap", async () => { if (await copyToClipboard(this.roomCode)) showHtmlToast("Code copied!"); });
-      this.container.addChild(codeText);
-    }
-
+    if (this.roomCode) { const ct = new Text({ text: `Code: ${this.roomCode}`, style: new TextStyle({ fontFamily: "monospace", fontSize: 16, fill: "#ffdd44", fontWeight: "bold", letterSpacing: 2, stroke: { color: "#000000", width: 2 } }) });
+      ct.x = cx; ct.y = 52; ct.anchor.set(0.5, 0.5); ct.eventMode = "static"; ct.cursor = "pointer";
+      ct.on("pointertap", async () => { if (await copyToClipboard(this.roomCode)) showHtmlToast("Code copied!"); }); this.container.addChild(ct); }
     this.playerCountText = new Text({ text: "Players: 1", style: STATUS });
     this.playerCountText.x = cx; this.playerCountText.y = 68; this.playerCountText.anchor.set(0.5, 0.5); this.container.addChild(this.playerCountText);
-    this.playerListContainer.y = 420; this.container.addChild(this.playerListContainer);
-    let y = 88;
+    this.playerListContainer.y = 420; this.container.addChild(this.playerListContainer); let y = 88;
 
     // Name
     this.nameLabel = new Text({ text: this.localName ? `Name: ${this.localName} (tap)` : "Set Name (tap)",
@@ -262,51 +255,54 @@ export class LobbyScreen {
     if (remain <= 0) this.doStart();
   }
 
-  /** Wall-clock sync: host picks a future Date.now() timestamp, all peers wait for it independently. */
+  /**
+   * Clock-offset sync: host measures each guest's clock offset, picks a shared start time,
+   * and tells each guest when to start in THEIR local clock.
+   */
   private doStart(): void {
     this.starting = true; this.cancelLocalTimer(); this.countdownText.text = "Syncing...";
     this.pendingSeed = Math.floor(Math.random() * 0xffffffff);
     this.pendingRunCfg = this.useCustomRun ? loadRunConfigFromStorage() : null;
     const dc = this.useCustomRun ? loadDebugConfigFromStorage() : null; if (dc) setDebugConfig(dc);
-    this.preparedPeers = new Set();
-    // Pick a wall-clock start time 1.5s in the future — all peers wait for this independently
-    this.startAtWall = Date.now() + 1500;
+    this.preparedPeers = new Set(); this.peerOffsets = new Map();
+    this.prepareSentAt = Date.now();
     const cos = loadCosmetics();
     this.sync.sendGameEvent({ type: "start", payload: { phase: "prepare", seed: this.pendingSeed, mode: this.mode,
       touchControls: this.touchControls, character: this.localChar, name: this.localName, theme: this.selectedTheme,
       tint: cos.equipped.tint ?? "tint_none", trail: cos.equipped.trail ?? "trail_none",
-      startAt: this.startAtWall, runCfg: this.pendingRunCfg ? serializeForSync(this.pendingRunCfg) : null, dbgCfg: dc } });
-    // Fallback: if not all peers respond by startAt, start anyway
-    this.barrierTimeout = setTimeout(() => this.launchAtWallTime(), 2000);
+      hostTime: this.prepareSentAt, runCfg: this.pendingRunCfg ? serializeForSync(this.pendingRunCfg) : null, dbgCfg: dc } });
+    this.barrierTimeout = setTimeout(() => this.sendGoWithOffsets(), 2000);
   }
   private pendingSeed = 0; private pendingRunCfg: RunConfig | null = null;
   private preparedPeers = new Set<string>(); private barrierTimeout: ReturnType<typeof setTimeout> | null = null;
   private prepareHostId = ""; private prepareHostChar = "chef"; private prepareHostName = "";
-  private prepareHostTint = ""; private prepareHostTrail = ""; private startAtWall = 0; private guestLaunched = false;
+  private prepareHostTint = ""; private prepareHostTrail = ""; private guestLaunched = false;
+  private prepareSentAt = 0; private peerOffsets = new Map<string, number>();
 
-  private onPrepared(peerId: string): void {
+  private onPrepared(peerId: string, guestTime: number): void {
     this.preparedPeers.add(peerId);
-    if (this.preparedPeers.size < this.remotePlayers.size) return;
-    if (this.barrierTimeout) { clearTimeout(this.barrierTimeout); this.barrierTimeout = null; }
-    this.sync.sendGameEvent({ type: "start", payload: { phase: "go" } });
-    this.launchAtWallTime();
+    const rtt = Date.now() - this.prepareSentAt;
+    this.peerOffsets.set(peerId, guestTime - this.prepareSentAt - rtt / 2);
+    if (this.preparedPeers.size >= this.remotePlayers.size) { if (this.barrierTimeout) { clearTimeout(this.barrierTimeout); this.barrierTimeout = null; } this.sendGoWithOffsets(); }
   }
-  private launchAtWallTime(): void {
+  private sendGoWithOffsets(): void {
     if (this.barrierTimeout) { clearTimeout(this.barrierTimeout); this.barrierTimeout = null; }
+    const startAt = Math.ceil((Date.now() + 1000) / 1000) * 1000; // next clean second
+    const peerStartAt: Record<string, number> = {};
+    for (const [id, off] of this.peerOffsets) peerStartAt[id] = startAt + off; // convert to each guest's clock
+    this.sync.sendGameEvent({ type: "start", payload: { phase: "go", startAt, peerStartAt } });
     this.countdownText.text = "GO!";
     const rp = new Map<string, { character: string; cosmetics?: RemoteCosmetics; name?: string }>();
     for (const [id, p] of this.remotePlayers) rp.set(id, { character: p.character, cosmetics: { ...p.cosmetics, theme: this.selectedTheme }, name: p.name });
-    const delay = Math.max(0, this.startAtWall - Date.now());
-    setTimeout(() => this.callbacks.onStart(this.pendingSeed, this.mode, this.touchControls, rp, this.pendingRunCfg ? { ...this.pendingRunCfg, seed: this.pendingSeed } : undefined), delay);
+    setTimeout(() => this.callbacks.onStart(this.pendingSeed, this.mode, this.touchControls, rp, this.pendingRunCfg ? { ...this.pendingRunCfg, seed: this.pendingSeed } : undefined), Math.max(0, startAt - Date.now()));
   }
 
-  private guestScheduleLaunch(): void {
+  private guestLaunchAt(localStartTime: number): void {
     if (this.guestLaunched) return; this.guestLaunched = true; this.countdownText.text = "GO!";
     const rp = new Map<string, { character: string; cosmetics?: RemoteCosmetics; name?: string }>();
     rp.set(this.prepareHostId, { character: this.prepareHostChar, cosmetics: { theme: this.selectedTheme, tint: this.prepareHostTint, trail: this.prepareHostTrail }, name: this.prepareHostName });
     for (const [id, p] of this.remotePlayers) { if (id !== this.prepareHostId) rp.set(id, { character: p.character, cosmetics: { ...p.cosmetics, theme: this.selectedTheme }, name: p.name }); }
-    const delay = Math.max(0, this.startAtWall - Date.now());
-    setTimeout(() => this.callbacks.onStart(this.pendingSeed, this.mode, this.touchControls, rp, this.sharedRunConfig ?? undefined), delay);
+    setTimeout(() => this.callbacks.onStart(this.pendingSeed, this.mode, this.touchControls, rp, this.sharedRunConfig ?? undefined), Math.max(0, localStartTime - Date.now()));
   }
 
   private handleEvent(event: GameSyncEvent, peerId: string, onSettings: () => void): void {
@@ -353,18 +349,25 @@ export class LobbyScreen {
       const phase = (event.payload.phase as string) ?? "go";
       if (phase === "prepare") {
         this.starting = true; this.cancelLocalTimer(); this.countdownText.text = "Syncing...";
-        this.pendingSeed = event.payload.seed as number; this.startAtWall = (event.payload.startAt as number) || (Date.now() + 1000);
+        this.pendingSeed = event.payload.seed as number;
         this.mode = (event.payload.mode as string) || "best-height"; this.touchControls = (event.payload.touchControls as boolean) ?? this.touchControls;
         if (event.payload.theme) this.selectedTheme = event.payload.theme as string;
         if (event.payload.dbgCfg) setDebugConfig({ ...createDebugConfig(), ...(event.payload.dbgCfg as Partial<DebugConfig>) });
         if (event.payload.runCfg) this.sharedRunConfig = { ...deserializeFromSync(event.payload.runCfg as Record<string, unknown>), seed: this.pendingSeed };
         this.prepareHostId = peerId; this.prepareHostChar = (event.payload.character as string) ?? "chef";
         this.prepareHostName = (event.payload.name as string) ?? ""; this.prepareHostTint = (event.payload.tint as string) ?? ""; this.prepareHostTrail = (event.payload.trail as string) ?? "";
-        this.sync.sendGameEvent({ type: "score", payload: { prepared: true } });
-        this.guestScheduleLaunch(); // launch at wall-clock startAt time
-      } else if (phase === "go" && !this.guestLaunched) { this.guestScheduleLaunch(); }
+        // Respond with our local clock so host can calculate offset
+        this.sync.sendGameEvent({ type: "score", payload: { prepared: true, guestTime: Date.now() } });
+      } else if (phase === "go" && !this.guestLaunched) {
+        // Host sends per-peer start times adjusted for clock offset
+        const peerStartAt = (event.payload.peerStartAt as Record<string, number>) ?? {};
+        const myStart = peerStartAt[selfId] ?? ((event.payload.startAt as number) ?? Date.now());
+        this.guestLaunchAt(myStart);
+      }
     }
-    if (event.type === "score" && event.payload.prepared && this.role === "host") this.onPrepared(peerId);
+    if (event.type === "score" && event.payload.prepared && this.role === "host") {
+      this.onPrepared(peerId, (event.payload.guestTime as number) ?? Date.now());
+    }
   }
 
   private renderPlayerList(): void {
