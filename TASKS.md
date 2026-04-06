@@ -195,3 +195,12 @@ mobile and 24 for desktop.
 5. Stage 5 (results & rematch) — polish
 
 Estimated total: ~650 LOC across 6-8 files. 3-4 sessions.
+
+### Future Improvements (not yet planned)
+
+- [ ] Host migration — when host disconnects, promote longest-connected guest to host
+- [ ] Reconnection — allow dropped peers to rejoin an in-progress game within a timeout
+- [ ] Spectator mode — late joiners can watch an in-progress game without playing
+- [ ] TURN relay fallback — for peers behind symmetric NAT that can't establish direct P2P
+- [ ] Lobby browser — list public rooms instead of requiring a code to join
+- [ ] Anti-cheat — validate position updates against physics (flag impossible jumps)

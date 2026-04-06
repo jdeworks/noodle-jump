@@ -286,6 +286,21 @@ This project was built across 12+ Claude Code sessions (~160 commits). Below are
 
 ---
 
+## Known Multiplayer Limitations
+
+The current multiplayer implementation is functional for casual play but has known gaps:
+
+- **Host disconnect = session dies.** There is no host migration — if the host leaves, all guests lose their connection. A future improvement would promote the longest-connected guest to host and re-establish the room.
+- **No reconnection.** If a player's connection drops briefly (e.g. switching WiFi), they're treated as disconnected after 3 seconds. There's no rejoin mechanism — they'd need to start a new game.
+- **Trystero console warnings.** When a peer disconnects, the Trystero library logs `"Trystero peer error: OperationError"` internally. We suppress these via a `console.error` filter, but the underlying library behavior can't be patched.
+- **Relay dependency for Quick Connect.** The Nostr relays (`nos.lol`, `relay.primal.net`) are public infrastructure. If they go down, Quick Connect stops working. Private Connect (manual SDP) has no external dependency.
+- **No spectator mode.** Late joiners can't watch an in-progress game. They'd need to wait for the next round.
+- **Mobile browser limits.** Some mobile browsers throttle WebRTC DataChannels when backgrounded, causing stale peer detection to trigger prematurely.
+
+See `TASKS.md` section 3 for the full implementation plan and future improvements.
+
+---
+
 ## Credits
 
 See [CREDITS.md](./CREDITS.md) for full music attribution.
