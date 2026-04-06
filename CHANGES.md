@@ -163,3 +163,6 @@ intent: Fix fullscreen scaling on PC, resolve prettier formatter conflict, resea
 - progress: Fullscreen CSS — lift max-width:500px via :fullscreen pseudo-class, black letterbox bars | index.html
 - progress: Add .prettierrc with printWidth:100 to prevent post-edit hook from inflating files past LOC limit | .prettierrc
 - progress: Large multiplayer research — Trystero mesh viable for 24 data-only peers (~70kbps), detailed 5-stage implementation plan | TASKS.md
+- progress: Stage 1 — Multi-peer GameSync with peerId routing, per-peer seq tracking; NostrSignaling multi-peer support | src/multiplayer/GameSync.ts, src/multiplayer/NostrSignaling.ts
+- progress: Stage 2 — Multi-peer OnlineSession with Map&lt;peerId, RemotePeer&gt;, LiveLeaderboard, OnlineResults leaderboard | src/multiplayer/OnlineSession.ts, src/multiplayer/OnlineResults.ts (new), src/multiplayer/LiveLeaderboard.ts (new)
+- progress: Stage 3 — Lobby redesign with N-player list, 15s/3s countdown timer, settings above player list | src/multiplayer/LobbyScreen.ts, src/multiplayer/MultiplayerMenu.ts, src/multiplayer/index.ts, src/multiplayer/RemotePlayerRenderer.ts

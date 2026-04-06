@@ -2,14 +2,12 @@
  * Quick Connect — signaling via public Nostr relays.
  * Convenient (6-char room code) but relays see IP addresses.
  * Uses Google STUN for ICE candidate discovery.
+ * Supports multiple peers in a single room.
  */
 
 import { joinRoom, selfId } from "@trystero-p2p/nostr";
 import type { Room } from "@trystero-p2p/nostr";
-import type {
-  SignalingCallbacks,
-  SignalingStrategy,
-} from "./SignalingStrategy";
+import type { SignalingCallbacks, SignalingStrategy } from "./SignalingStrategy";
 
 const APP_ID = "noodle-jump-mp";
 
@@ -18,10 +16,7 @@ const RTC_CONFIG: RTCConfiguration = {
 };
 
 /** Known-reliable Nostr relays — use fewer to avoid rate limiting. */
-const RELAY_URLS = [
-  "wss://nos.lol",
-  "wss://relay.primal.net",
-];
+const RELAY_URLS = ["wss://nos.lol", "wss://relay.primal.net"];
 
 /** Generate a random 6-character room code. */
 function generateRoomCode(): string {
@@ -38,15 +33,16 @@ export { selfId };
 export class NostrSignaling implements SignalingStrategy {
   private room: Room | null = null;
   private callbacks: SignalingCallbacks | null = null;
-  private peerId: string | null = null;
+  private peerIds = new Set<string>();
+
+  /** Callback for multi-peer tracking. */
+  onPeerJoin: ((id: string) => void) | null = null;
+  onPeerLeave: ((id: string) => void) | null = null;
 
   on(callbacks: SignalingCallbacks): void {
     this.callbacks = callbacks;
   }
 
-  /**
-   * Host creates a room. Returns a 6-char code for the guest.
-   */
   async createRoom(): Promise<string> {
     const code = generateRoomCode();
     this.callbacks?.onStateChange("waiting");
@@ -60,10 +56,6 @@ export class NostrSignaling implements SignalingStrategy {
     return code;
   }
 
-  /**
-   * Guest joins a room using the host's code.
-   * Connection happens automatically via Trystero.
-   */
   async joinRoom(code: string): Promise<void> {
     this.callbacks?.onStateChange("connecting");
 
@@ -85,35 +77,44 @@ export class NostrSignaling implements SignalingStrategy {
       await this.room.leave();
       this.room = null;
     }
-    this.peerId = null;
+    this.peerIds.clear();
     this.callbacks?.onStateChange("closed");
     this.callbacks = null;
+  }
+
+  /** Number of currently connected peers. */
+  get peerCount(): number {
+    return this.peerIds.size;
+  }
+
+  /** All connected peer IDs. */
+  get connectedPeers(): ReadonlySet<string> {
+    return this.peerIds;
   }
 
   private setupRoomHandlers(): void {
     if (!this.room) return;
 
     this.room.onPeerJoin((id) => {
-      this.peerId = id;
-      this.callbacks?.onStateChange("connecting");
+      this.peerIds.add(id);
+      this.onPeerJoin?.(id);
 
-      // Get the peer's RTCPeerConnection and its DataChannel via getPeers
       const peers = this.room?.getPeers();
       if (peers && peers[id]) {
         const pc = peers[id];
-
-        // Trystero manages its own DataChannels via makeAction.
-        // We expose the RTCPeerConnection for ConnectionManager,
-        // but actual data flows through Trystero's makeAction.
         this.callbacks?.onConnection(pc, null as unknown as RTCDataChannel);
-        this.callbacks?.onStateChange("connected");
+        if (this.peerIds.size === 1) {
+          this.callbacks?.onStateChange("connected");
+        }
       }
     });
 
     this.room.onPeerLeave((id) => {
-      if (id === this.peerId) {
+      this.peerIds.delete(id);
+      this.onPeerLeave?.(id);
+      if (this.peerIds.size === 0) {
         this.callbacks?.onStateChange("failed");
-        this.callbacks?.onError("Peer disconnected");
+        this.callbacks?.onError("All peers disconnected");
       }
     });
   }

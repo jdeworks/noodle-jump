@@ -2,6 +2,7 @@
  * Game state synchronization over WebRTC DataChannels.
  * Handles binary position encoding (20Hz) and reliable game events.
  * Works with both manual DataChannel and Trystero Room.
+ * Supports multiple peers — callbacks include peerId for routing.
  */
 
 import type { Room } from "@trystero-p2p/nostr";
@@ -32,8 +33,8 @@ export interface LobbyState {
 }
 
 export interface GameSyncCallbacks {
-  onRemotePosition: (state: PlayerSyncState) => void;
-  onRemoteEvent: (event: GameSyncEvent) => void;
+  onRemotePosition: (state: PlayerSyncState, peerId: string) => void;
+  onRemoteEvent: (event: GameSyncEvent, peerId: string) => void;
 }
 
 /** Binary format: 4 floats (x, y, vx, vy) + 1 uint8 (state) + 1 uint16 (seq) = 19 bytes */
@@ -78,23 +79,22 @@ export function decodePosition(buf: ArrayBuffer): PlayerSyncState {
   };
 }
 
+/** Fallback peerId for manual (single DataChannel) mode. */
+const MANUAL_PEER = "__manual__";
+
 export class GameSync {
   private callbacks: GameSyncCallbacks | null = null;
   private sendTimer: ReturnType<typeof setInterval> | null = null;
   private localState: PlayerSyncState | null = null;
-  private lastRemoteSeq = -1;
+  private lastRemoteSeq = new Map<string, number>();
   private seq = 0;
 
   // Manual mode (raw DataChannel)
   private channel: RTCDataChannel | null = null;
 
   // Nostr mode (Trystero actions)
-  private sendPos:
-    | ((data: ArrayBuffer) => Promise<void[]>)
-    | null = null;
-  private sendEventAction:
-    | ((data: string) => Promise<void[]>)
-    | null = null;
+  private sendPos: ((data: ArrayBuffer) => Promise<void[]>) | null = null;
+  private sendEventAction: ((data: string) => Promise<void[]>) | null = null;
 
   on(callbacks: GameSyncCallbacks): void {
     this.callbacks = callbacks;
@@ -108,10 +108,11 @@ export class GameSync {
     channel.onmessage = (event) => {
       const data = event.data;
       if (typeof data === "string") {
-        this.handleRemoteEvent(data);
+        this.handleRemoteEvent(data, MANUAL_PEER);
       } else {
         const buf = toArrayBuffer(data);
-        if (buf && buf.byteLength === POSITION_BUFFER_SIZE) this.handleRemotePosition(buf);
+        if (buf && buf.byteLength === POSITION_BUFFER_SIZE)
+          this.handleRemotePosition(buf, MANUAL_PEER);
       }
     };
   }
@@ -124,14 +125,15 @@ export class GameSync {
     this.sendPos = sendPos;
     this.sendEventAction = sendEvent;
 
-    onPos((data) => {
+    onPos((data: ArrayBuffer, peerId: string) => {
       const buf = toArrayBuffer(data);
-      if (buf && buf.byteLength === POSITION_BUFFER_SIZE) this.handleRemotePosition(buf);
+      if (buf && buf.byteLength === POSITION_BUFFER_SIZE)
+        this.handleRemotePosition(buf, peerId);
     });
 
-    onEvent((data) => {
+    onEvent((data: string, peerId: string) => {
       if (typeof data === "string") {
-        this.handleRemoteEvent(data);
+        this.handleRemoteEvent(data, peerId);
       }
     });
   }
@@ -185,7 +187,7 @@ export class GameSync {
     this.sendEventAction = null;
     this.callbacks = null;
     this.localState = null;
-    this.lastRemoteSeq = -1;
+    this.lastRemoteSeq.clear();
     this.seq = 0;
   }
 
@@ -198,20 +200,18 @@ export class GameSync {
     }
   }
 
-  private handleRemotePosition(buf: ArrayBuffer): void {
+  private handleRemotePosition(buf: ArrayBuffer, peerId: string): void {
     const state = decodePosition(buf);
-    // Drop stale packets (sequence number check)
-    if (state.seq <= this.lastRemoteSeq && this.lastRemoteSeq - state.seq < 1000) {
-      return;
-    }
-    this.lastRemoteSeq = state.seq;
-    this.callbacks?.onRemotePosition(state);
+    const lastSeq = this.lastRemoteSeq.get(peerId) ?? -1;
+    if (state.seq <= lastSeq && lastSeq - state.seq < 1000) return;
+    this.lastRemoteSeq.set(peerId, state.seq);
+    this.callbacks?.onRemotePosition(state, peerId);
   }
 
-  private handleRemoteEvent(data: string): void {
+  private handleRemoteEvent(data: string, peerId: string): void {
     try {
       const event = JSON.parse(data) as GameSyncEvent;
-      this.callbacks?.onRemoteEvent(event);
+      this.callbacks?.onRemoteEvent(event, peerId);
     } catch {
       // Ignore malformed events
     }

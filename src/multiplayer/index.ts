@@ -38,8 +38,17 @@ export {
   type MultiplayerResult,
 } from "./MultiplayerSession";
 export { launchLocalCoop } from "./LocalCoopLauncher";
-export { InterpolationBuffer, type InterpolatedState } from "./InterpolationBuffer";
+export {
+  InterpolationBuffer,
+  type InterpolatedState,
+} from "./InterpolationBuffer";
 export { RemotePlayerRenderer } from "./RemotePlayerRenderer";
-export { OnlineSession, type OnlineRole } from "./OnlineSession";
-export { LobbyScreen, type LobbyRole, type LobbyCallbacks } from "./LobbyScreen";
+export { OnlineSession, type OnlineRole, type OnlineSessionConfig } from "./OnlineSession";
+export {
+  LobbyScreen,
+  type LobbyRole,
+  type LobbyCallbacks,
+} from "./LobbyScreen";
 export { MultiplayerMenu } from "./MultiplayerMenu";
+export { showOnlineResults, getPeerColor, type PlayerResult as OnlinePlayerResult } from "./OnlineResults";
+export { LiveLeaderboard } from "./LiveLeaderboard";
