@@ -50,19 +50,6 @@ health_snapshot: LOC=<n>, tests=<n>, complexity=ok|warn|fail
 
 reason: Session interrupted without completion. Work continued across 42 commits (see git log). Staged changes caused silent breakage across subsequent sessions.
 
-## [2026-04-01T10:00] session-b3f7 | status: started | mode: full | type: fix
-
-intent: Fix drill safety, boss fight screen locking, music overlap, menu visibility, and double-tap zoom
-
-## [2026-04-01T10:30] session-b3f7 | status: completed | mode: full | type: fix
-
-files_touched: src/systems/PowerUpEffects.ts, src/systems/Camera.ts, src/scenes/GameLoop.ts, src/scenes/GameLoopHelpers.ts, src/systems/MusicPlayer.ts, src/systems/Audio.ts, src/scenes/GameLauncher.ts, src/services/PWA.ts, src/ui/TitleScreenView.ts, src/ui/ExplanationScreen.ts, src/ui/CustomRunScreen.ts, index.html, tests/camera.test.ts, tests/powerup-effects.test.ts
-symbols_added: killBossMusic
-symbols_removed: (none)
-tests_added: tests/camera.test.ts (boss lock), tests/powerup-effects.test.ts (drill safety)
-reason: Fixed drill destroying landing platforms, camera/platform-gen not locking during boss fights, music overlap on death/restart, title screen content visible behind sub-menus, and double-tap zoom on mobile.
-health_snapshot: LOC=9800, tests=689, complexity=ok
-
 ## [2026-04-01T12:00] session-a1d4 | status: started | mode: lean | type: add
 
 intent: Debug mode UI, boss fight overhaul, remove drill, fix music overlap
@@ -168,3 +155,9 @@ symbols_removed: LASAGNA_TTL_TICKS (replaced by LASAGNA_TTL_MS), spawnTick (repl
 tests_added: (none — existing 451 tests cover all modified logic)
 reason: Fixed frame-rate dependent game loop. Game speed was tied to display refresh rate (144Hz = 2.4x faster). Now uses delta-time via gameSpeedScale for consistent speed at any FPS with full visual fidelity.
 health_snapshot: LOC=28500, tests=451, complexity=ok
+
+## [2026-04-06T10:00] session-fs01 | status: started | mode: full | type: fix
+
+intent: Fix fullscreen scaling on PC, resolve prettier formatter conflict, research large multiplayer
+
+- progress: Fullscreen CSS — lift max-width:500px via :fullscreen pseudo-class, black letterbox bars | index.html

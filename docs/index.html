@@ -52,6 +52,16 @@
         touch-action: none;
       }
 
+      /* Fullscreen: lift width cap so canvas fills the screen (letterboxed) */
+      :fullscreen #game,
+      :-webkit-full-screen #game {
+        background: #000;
+      }
+      :fullscreen canvas,
+      :-webkit-full-screen canvas {
+        max-width: 100%;
+      }
+
       /* ── Orientation lock: show overlay when landscape ───────────────── */
       #rotate-message {
         display: none;

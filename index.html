@@ -14,7 +14,10 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="screen-orientation" content="portrait" />
     <link rel="manifest" href="/manifest.json" />
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍝</text></svg>" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍝</text></svg>"
+    />
     <title>Noodle Jump</title>
     <style>
       * {
@@ -47,6 +50,16 @@
         aspect-ratio: 400 / 700;
         object-fit: contain;
         touch-action: none;
+      }
+
+      /* Fullscreen: lift width cap so canvas fills the screen (letterboxed) */
+      :fullscreen #game,
+      :-webkit-full-screen #game {
+        background: #000;
+      }
+      :fullscreen canvas,
+      :-webkit-full-screen canvas {
+        max-width: 100%;
       }
 
       /* ── Orientation lock: show overlay when landscape ───────────────── */
