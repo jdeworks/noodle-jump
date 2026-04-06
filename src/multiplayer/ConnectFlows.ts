@@ -47,7 +47,7 @@ export interface MenuContext {
   ): number;
   showQuickConnect(): void;
   showPrivateConnect(): void;
-  enterLobby(role: "host" | "guest"): void;
+  enterLobby(role: "host" | "guest", roomCode?: string): void;
   showError(message: string): void;
 }
 
@@ -62,23 +62,20 @@ function makeBackground(): Graphics {
 export function setupConnectionCallbacks(
   ctx: MenuContext,
   role: "host" | "guest",
+  roomCode?: string,
 ): void {
   const conn = ctx.getConnection();
   if (!conn) return;
 
   conn.on({
     onStateChange: (state) => {
-      if (state === "connected") ctx.enterLobby(role);
+      if (state === "connected") ctx.enterLobby(role, roomCode);
     },
     onError: (error) => {
       ctx.showError(error);
     },
-    onDataChannel: () => {
-      // Channel ready — lobby will use GameSync
-    },
-    onRoom: () => {
-      // Room ready — lobby will use GameSync
-    },
+    onDataChannel: () => {},
+    onRoom: () => {},
   });
 }
 
@@ -100,8 +97,8 @@ export async function doQuickCreate(ctx: MenuContext): Promise<void> {
     const signaling = new NostrSignaling();
     const connection = new ConnectionManager();
     ctx.setConnection(connection);
-    setupConnectionCallbacks(ctx, "host");
     const code = await connection.createRoom(signaling, "nostr");
+    setupConnectionCallbacks(ctx, "host", code);
 
     statusText.text = "Room Code:";
 
@@ -172,7 +169,7 @@ export async function doQuickJoin(
     const signaling = new NostrSignaling();
     const connection = new ConnectionManager();
     ctx.setConnection(connection);
-    setupConnectionCallbacks(ctx, "guest");
+    setupConnectionCallbacks(ctx, "guest", code);
     await connection.joinRoom(signaling, "nostr", code);
   } catch {
     statusText.text = "Failed to connect.";

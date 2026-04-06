@@ -137,7 +137,7 @@ export class MultiplayerMenu implements MenuContext {
     });
 
     const pcInfo = new Text({
-      text: "No external servers. Exchange codes manually\nvia your own channel (Telegram, WhatsApp, etc.).",
+      text: "2 players only. No external servers.\nExchange codes via Telegram, WhatsApp, etc.",
       style: INFO_STYLE,
     });
     pcInfo.x = GAME_WIDTH / 2;
@@ -243,35 +243,23 @@ export class MultiplayerMenu implements MenuContext {
     );
   }
 
-  enterLobby(role: "host" | "guest"): void {
+  enterLobby(role: "host" | "guest", roomCode?: string): void {
     if (!this.connection) return;
-
     this.clearView();
     const sync = new GameSync();
-
-    const mode = this.connection.getMode();
-    if (mode === "nostr") {
-      const room = this.connection.getRoom();
-      if (room) sync.initWithRoom(room);
-    } else {
-      const channel = this.connection.getChannel();
-      if (channel) sync.initWithChannel(channel);
-    }
+    const connMode = this.connection.getMode();
+    if (connMode === "nostr") { const room = this.connection.getRoom(); if (room) sync.initWithRoom(room); }
+    else { const ch = this.connection.getChannel(); if (ch) sync.initWithChannel(ch); }
 
     const lobby = new LobbyScreen(role, sync, {
       onStart: (seed, mode, touchControls, remotePeers, sharedRunConfig) => {
-        this.container.removeChild(lobby.container);
-        lobby.destroy();
-        this.onLaunch?.();
-        this.container.visible = false;
-        const session = new OnlineSession({
-          app: this.app, connection: this.connection!, seed, role, mode,
-          touchControls, remotePeers, sync, sharedRunConfig, localName: getPlayerName(),
-        });
+        this.container.removeChild(lobby.container); lobby.destroy();
+        this.onLaunch?.(); this.container.visible = false;
+        const session = new OnlineSession({ app: this.app, connection: this.connection!, seed, role, mode,
+          touchControls, remotePeers, sync, sharedRunConfig, localName: getPlayerName() });
         session.start();
       },
-    });
-
+    }, roomCode);
     this.container.addChild(lobby.container);
   }
 

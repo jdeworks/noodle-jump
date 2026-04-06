@@ -16,6 +16,7 @@ import { setDebugConfig, createDebugConfig, type DebugConfig } from "../config/d
 import { createDefaultRunConfig, type RunConfig } from "../systems/CustomRunConfig";
 import type { RemoteCosmetics } from "./RemotePlayerRenderer";
 import { getPeerColor } from "./OnlineResults";
+import { copyToClipboard, showHtmlToast } from "./HtmlOverlay";
 
 function serializeForSync(cfg: RunConfig): Record<string, unknown> { return { ...cfg, enabledPowerUps: [...cfg.enabledPowerUps] }; }
 function deserializeFromSync(d: Record<string, unknown>): RunConfig { return { ...createDefaultRunConfig(), ...d, enabledPowerUps: new Set(d.enabledPowerUps as string[] ?? []) }; }
@@ -60,8 +61,10 @@ export class LobbyScreen {
   private localReady = false;
   private countdownEndTime = -1;
   private countdownInterval: ReturnType<typeof setInterval> | null = null;
+  private heartbeatInterval: ReturnType<typeof setInterval> | null = null;
   private starting = false;
   private nextColorIndex = 1;
+  private roomCode: string;
   private playerListContainer = new Container();
   private countdownText: Text;
   private readyText: Text;
@@ -69,16 +72,27 @@ export class LobbyScreen {
   private playerCountText: Text;
   private nameLabel: Text;
 
-  constructor(role: LobbyRole, sync: GameSync, callbacks: LobbyCallbacks) {
+  constructor(role: LobbyRole, sync: GameSync, callbacks: LobbyCallbacks, roomCode?: string) {
     this.role = role; this.sync = sync; this.callbacks = callbacks;
+    this.roomCode = roomCode ?? "";
     const uiT = getUITheme(); const cx = GAME_WIDTH / 2;
     const bg = new Graphics(); bg.rect(0, 0, GAME_WIDTH, GAME_HEIGHT); bg.fill({ color: uiT.bg, alpha: 0.95 }); this.container.addChild(bg);
     const title = new Text({ text: "LOBBY", style: HEADER });
-    title.x = cx; title.y = 35; title.anchor.set(0.5, 0.5); this.container.addChild(title);
+    title.x = cx; title.y = 30; title.anchor.set(0.5, 0.5); this.container.addChild(title);
+
+    // Room code display + copy button
+    if (this.roomCode) {
+      const codeText = new Text({ text: `Code: ${this.roomCode}`, style: new TextStyle({ fontFamily: "monospace", fontSize: 16, fill: "#ffdd44", fontWeight: "bold", letterSpacing: 2, stroke: { color: "#000000", width: 2 } }) });
+      codeText.x = cx; codeText.y = 52; codeText.anchor.set(0.5, 0.5);
+      codeText.eventMode = "static"; codeText.cursor = "pointer";
+      codeText.on("pointertap", async () => { if (await copyToClipboard(this.roomCode)) showHtmlToast("Code copied!"); });
+      this.container.addChild(codeText);
+    }
+
     this.playerCountText = new Text({ text: "Players: 1", style: STATUS });
-    this.playerCountText.x = cx; this.playerCountText.y = 55; this.playerCountText.anchor.set(0.5, 0.5); this.container.addChild(this.playerCountText);
+    this.playerCountText.x = cx; this.playerCountText.y = 68; this.playerCountText.anchor.set(0.5, 0.5); this.container.addChild(this.playerCountText);
     this.playerListContainer.y = 420; this.container.addChild(this.playerListContainer);
-    let y = 75;
+    let y = 88;
 
     // Name
     this.nameLabel = new Text({ text: this.localName ? `Name: ${this.localName} (tap)` : "Set Name (tap)",
@@ -190,7 +204,9 @@ export class LobbyScreen {
     });
     this.renderPlayerList();
     setTimeout(() => this.broadcastLocal(), 200);
-    setTimeout(() => this.broadcastLocal(), 1000); // retry in case first was too early
+    setTimeout(() => this.broadcastLocal(), 1000);
+    // Periodic heartbeat: re-announce every 3s so late-connecting peers discover each other
+    this.heartbeatInterval = setInterval(() => { if (!this.starting) this.broadcastLocal(); }, 3000);
   }
 
   private drawReadyBtn(cx: number, y: number, isReady: boolean): void {
@@ -372,5 +388,9 @@ export class LobbyScreen {
     st.x = cx + 80; st.y = y; st.anchor.set(0, 0.5); parent.addChild(st);
   }
 
-  destroy(): void { this.cancelLocalTimer(); this.container.destroy({ children: true }); }
+  destroy(): void {
+    this.cancelLocalTimer();
+    if (this.heartbeatInterval) { clearInterval(this.heartbeatInterval); this.heartbeatInterval = null; }
+    this.container.destroy({ children: true });
+  }
 }
