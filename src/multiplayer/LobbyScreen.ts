@@ -293,7 +293,7 @@ export class LobbyScreen {
   }
 
   private handleEvent(event: GameSyncEvent, peerId: string, onSettings: () => void): void {
-    // Ensure peer exists
+    if (this.kickedIds.has(peerId)) return;
     if (!this.remotePlayers.has(peerId)) {
       this.remotePlayers.set(peerId, { peerId, character: "chef", cosmetics: {}, ready: false, colorIndex: this.nextColorIndex++, name: "", announced: false });
       if (this.role === "host" && this.localReady && this.countdownEndTime > 0) { // new player mid-countdown → unready
@@ -362,7 +362,8 @@ export class LobbyScreen {
     }
   }
 
-  private kickPlayer(id: string): void { this.remotePlayers.delete(id); this.sync.sendGameEvent({ type: "zone", payload: { kick: id } }); this.renderPlayerList(); this.evaluateCountdown(); }
+  private kickedIds = new Set<string>();
+  private kickPlayer(id: string): void { this.kickedIds.add(id); this.remotePlayers.delete(id); this.sync.sendGameEvent({ type: "zone", payload: { kick: id } }); this.renderPlayerList(); this.evaluateCountdown(); }
 
   private renderPlayerList(): void {
     this.playerListContainer.removeChildren();

@@ -174,7 +174,7 @@ export class GameSync {
   sendGameEvent(event: GameSyncEvent): void {
     const json = JSON.stringify(event);
     if (this.sendEventAction) {
-      this.sendEventAction(json);
+      this.sendEventAction(json).catch(() => {}); // ignore disconnected peer errors
     } else if (this.channel?.readyState === "open") {
       this.channel.send(json);
     }
@@ -194,7 +194,7 @@ export class GameSync {
   private sendPosition(state: PlayerSyncState): void {
     const buf = encodePosition(state);
     if (this.sendPos) {
-      this.sendPos(buf);
+      this.sendPos(buf).catch(() => {}); // ignore disconnected peer errors
     } else if (this.channel?.readyState === "open") {
       this.channel.send(buf);
     }
