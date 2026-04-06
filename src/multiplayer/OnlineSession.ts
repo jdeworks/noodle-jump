@@ -224,6 +224,8 @@ export class OnlineSession {
       this.localDeathHeight = state.scoreState.height;
       this.sync.sendGameEvent({ type: "death", payload: { height: this.localDeathHeight } });
       this.leaderboard.setDead("__local__", true);
+      // first-to-die: local died first → show results immediately
+      if (this.mode === "first-to-die" && !this.resultsShown) { this.resultsShown = true; this.showResults(); return; }
     }
 
     // Update leaderboard with local height
@@ -234,6 +236,7 @@ export class OnlineSession {
       if (!peer.disconnected && peer.interpolation.isReady && peer.interpolation.msSinceLastUpdate > 3000) {
         peer.disconnected = true; peer.dead = true; peer.renderer.hide();
         this.leaderboard.setDisconnected(peerId); this.showToast(`${peer.name} left`);
+        if (this.mode === "first-to-die" && !this.resultsShown) { this.resultsShown = true; this.showResults(); return; }
       }
       if (peer.disconnected || !peer.interpolation.isReady) continue;
       const rs = peer.interpolation.getState();
@@ -270,7 +273,7 @@ export class OnlineSession {
     if (now - this.fpsLast >= 500 && this.fpsText) { this.fpsText.text = `FPS: ${Math.round(this.fpsFrames / ((now - this.fpsLast) / 1000))}`; this.fpsFrames = 0; this.fpsLast = now; }
     if (this.toastTimer > 0 && --this.toastTimer === 0) this.deathToast.visible = false;
     this.leaderboard.tick();
-    if (this.mode !== "timed-2min" && this.localDead && this.allRemoteDead() && !this.resultsShown) { this.resultsShown = true; this.showResults(); }
+    if (this.mode === "best-height" && this.localDead && this.allRemoteDead() && !this.resultsShown) { this.resultsShown = true; this.showResults(); }
   }
 
   private allRemoteDead(): boolean { if (this.peers.size === 0) return false; for (const p of this.peers.values()) if (!p.dead && !p.disconnected) return false; return true; }
@@ -283,6 +286,8 @@ export class OnlineSession {
       peer.deathHeight = (event.payload.height as number) || peer.lastKnownHeight;
       this.leaderboard.setDead(peerId, true);
       this.showToast(`${peer.name} died at ${peer.deathHeight}m!`);
+      // first-to-die: any death ends the game
+      if (this.mode === "first-to-die" && !this.resultsShown) { this.resultsShown = true; this.showResults(); return; }
     }
     if (event.type === "ready" && event.payload.paused !== undefined && this.pause) {
       const shouldPause = event.payload.paused as boolean;
@@ -298,13 +303,12 @@ export class OnlineSession {
     const localH = this.localDead ? this.localDeathHeight : this.scene.getMaxHeight();
     const results: PlayerResult[] = [{
       peerId: "__local__", label: this.localName || `You (${this.role})`, height: localH,
-      score: this.scene.getScore(), isLocal: true, color: getPeerColor(0),
+      score: this.scene.getScore(), isLocal: true, color: getPeerColor(0), dead: this.localDead,
     }];
     for (const [id, p] of this.peers) {
-      // Disconnected players get height 0 (can't win by leaving); dead use deathHeight
       const h = p.disconnected ? 0 : p.dead ? (p.deathHeight || p.lastKnownHeight) : p.lastKnownHeight;
       const lbl = p.disconnected ? `${p.name} (left)` : p.name;
-      results.push({ peerId: id, label: lbl, height: h, score: 0, isLocal: false, color: getPeerColor(p.colorIndex) });
+      results.push({ peerId: id, label: lbl, height: h, score: 0, isLocal: false, color: getPeerColor(p.colorIndex), dead: p.dead });
     }
     showOnlineResults(this.app, results, this.mode, () => this.returnToLobby(), () => this.goHome());
   }
@@ -338,7 +342,8 @@ export class OnlineSession {
     this.scene = new GameScene(rc);
     const firstCos = remotePeers?.values().next().value;
     if (firstCos?.cosmetics?.theme) this.scene.setCosmeticTheme(firstCos.cosmetics.theme as string);
-    this.scene.enableGhostMode(); this.scene.initInput(this.app.canvas);
+    if (this.mode === "timed-2min") this.scene.enableTimedRespawn(); else this.scene.enableGhostMode();
+    this.scene.initInput(this.app.canvas);
     if (tc) setTouchControlsForced(true);
     else if (this.scene.input.needsTiltPermission) this.scene.input.requestTiltPermission();
     this.app.stage.addChild(this.scene.container);

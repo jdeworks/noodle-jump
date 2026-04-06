@@ -10,6 +10,7 @@ export interface PlayerResult {
   score: number;
   isLocal: boolean;
   color: number;
+  dead?: boolean;
 }
 
 const PEER_COLORS = [
@@ -29,13 +30,20 @@ export function showOnlineResults(
   onLeave: () => void,
 ): void {
   const cx = GAME_WIDTH / 2;
-  const sorted = [...results].sort((a, b) => b.height - a.height);
-  const localIdx = sorted.findIndex((r) => r.isLocal);
-  const localH = sorted[localIdx]?.height ?? 0;
-  const topH = sorted[0]?.height ?? 0;
-  // Tie only matters for 1st place — if local matches top height, it's a tie
-  const tiedForFirst = localH === topH && sorted.filter((r) => r.height === topH).length > 1;
-  const winner = tiedForFirst ? "It's a Tie!" : localIdx === 0 ? "You Win!" : `#${localIdx + 1}`;
+  let sorted: PlayerResult[]; let winner: string;
+  if (mode === "first-to-die") {
+    // In first-to-die: survivors win, dead players lose. Sort: alive first, then by height.
+    sorted = [...results].sort((a, b) => (a.dead === b.dead ? b.height - a.height : a.dead ? 1 : -1));
+    const localR = results.find((r) => r.isLocal);
+    winner = localR?.dead ? "You Died First!" : "You Survived!";
+  } else {
+    sorted = [...results].sort((a, b) => b.height - a.height);
+    const localIdx = sorted.findIndex((r) => r.isLocal);
+    const localH = sorted[localIdx]?.height ?? 0; const topH = sorted[0]?.height ?? 0;
+    const tiedForFirst = localH === topH && sorted.filter((r) => r.height === topH).length > 1;
+    winner = tiedForFirst ? "It's a Tie!" : localIdx === 0 ? "You Win!" : `#${localIdx + 1}`;
+    if (mode === "timed-2min") winner = `Time's Up! ${winner}`;
+  }
 
   const bg = new Graphics();
   bg.rect(0, 0, GAME_WIDTH, GAME_HEIGHT);
@@ -46,7 +54,7 @@ export function showOnlineResults(
     text: mode === "timed-2min" ? `Time's Up! ${winner}` : winner,
     style: new TextStyle({
       fontFamily: "monospace", fontSize: 26, fontWeight: "bold",
-      fill: tiedForFirst ? "#ffdd44" : localIdx === 0 ? "#44ff44" : "#ff8866",
+      fill: winner.includes("Win") || winner.includes("Survived") ? "#44ff44" : winner.includes("Tie") ? "#ffdd44" : "#ff8866",
       stroke: { color: "#000000", width: 4 },
     }),
   });
