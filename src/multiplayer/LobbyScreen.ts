@@ -299,9 +299,10 @@ export class LobbyScreen {
     if (this.barrierTimeout) { clearTimeout(this.barrierTimeout); this.barrierTimeout = null; }
     this.sync.sendGameEvent({ type: "start", payload: { phase: "go" } });
     this.countdownText.text = "GO!";
+    // Host delays own start by ~100ms to let "go" reach guests first
     const rp = new Map<string, { character: string; cosmetics?: RemoteCosmetics; name?: string }>();
     for (const [id, p] of this.remotePlayers) rp.set(id, { character: p.character, cosmetics: { ...p.cosmetics, theme: this.selectedTheme }, name: p.name });
-    this.callbacks.onStart(this.pendingSeed, this.mode, this.touchControls, rp, this.pendingRunCfg ? { ...this.pendingRunCfg, seed: this.pendingSeed } : undefined);
+    setTimeout(() => this.callbacks.onStart(this.pendingSeed, this.mode, this.touchControls, rp, this.pendingRunCfg ? { ...this.pendingRunCfg, seed: this.pendingSeed } : undefined), 100);
   }
 
   private handleEvent(event: GameSyncEvent, peerId: string, onSettings: () => void): void {
