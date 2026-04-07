@@ -15,64 +15,14 @@ import {
   perfTestPreset,
 } from "../config/debug";
 
-// ── localStorage keys ───────────────────────────────────────────────────
-export const STORAGE_RUN_CONFIG = "noodle_custom_run";
-export const STORAGE_DEBUG_CONFIG = "noodle_debug_config";
-
-export function saveRunConfigToStorage(cfg: RunConfig): void {
-  try {
-    localStorage.setItem(
-      STORAGE_RUN_CONFIG,
-      JSON.stringify({
-        seed: cfg.seed,
-        enemiesEnabled: cfg.enemiesEnabled,
-        enabledPowerUps: [...cfg.enabledPowerUps],
-        startingZone: cfg.startingZone,
-        difficultyMultiplier: cfg.difficultyMultiplier,
-        practiceMode: cfg.practiceMode,
-      }),
-    );
-  } catch {
-    /* quota exceeded */
-  }
-}
-
-export function loadRunConfigFromStorage(): RunConfig {
-  try {
-    const raw = localStorage.getItem(STORAGE_RUN_CONFIG);
-    if (!raw) return createDefaultRunConfig();
-    const d = JSON.parse(raw);
-    return {
-      seed: d.seed ?? 0,
-      enemiesEnabled: d.enemiesEnabled ?? false,
-      enabledPowerUps: new Set(d.enabledPowerUps ?? ALL_POWER_UP_TYPES),
-      startingZone: d.startingZone ?? 0,
-      difficultyMultiplier: d.difficultyMultiplier ?? 1.0,
-      practiceMode: d.practiceMode ?? false,
-      isDailyChallenge: false,
-    };
-  } catch {
-    return createDefaultRunConfig();
-  }
-}
-
-export function saveDebugConfigToStorage(cfg: DebugConfig): void {
-  try {
-    localStorage.setItem(STORAGE_DEBUG_CONFIG, JSON.stringify(cfg));
-  } catch {
-    /* quota exceeded */
-  }
-}
-
-export function loadDebugConfigFromStorage(): DebugConfig {
-  try {
-    const raw = localStorage.getItem(STORAGE_DEBUG_CONFIG);
-    if (!raw) return createDebugConfig();
-    return { ...createDebugConfig(), ...JSON.parse(raw) };
-  } catch {
-    return createDebugConfig();
-  }
-}
+export {
+  STORAGE_RUN_CONFIG,
+  STORAGE_DEBUG_CONFIG,
+  saveRunConfigToStorage,
+  loadRunConfigFromStorage,
+  saveDebugConfigToStorage,
+  loadDebugConfigFromStorage,
+} from "../systems/CustomRunConfig";
 
 // ── Styles ──────────────────────────────────────────────────────────────
 export const LABEL_FONT = 14;

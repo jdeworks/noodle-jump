@@ -5,8 +5,11 @@
 
 import type { GameSync } from "./GameSync";
 import type { RemoteCosmetics } from "./RemotePlayerRenderer";
-import type { RunConfig } from "../systems/CustomRunConfig";
-import { loadRunConfigFromStorage, loadDebugConfigFromStorage } from "../ui/CustomRunStorage";
+import {
+  type RunConfig,
+  loadRunConfigFromStorage,
+  loadDebugConfigFromStorage,
+} from "../systems/CustomRunConfig";
 import { setDebugConfig } from "../config/debug";
 import { loadCosmetics } from "../systems/Cosmetics";
 

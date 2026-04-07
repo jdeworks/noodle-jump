@@ -9,8 +9,11 @@ import { CHARACTERS, drawCharacter } from "../rendering/PlayerCharacters";
 import { getSelectedCharacter, setSelectedCharacter } from "../systems/CharacterSettings";
 import { getUITheme } from "../ui/ThemeUI";
 import type { LocalCoopMode } from "./LocalCoopLauncher";
-import type { RunConfig } from "../systems/CustomRunConfig";
-import { loadRunConfigFromStorage, loadDebugConfigFromStorage } from "../ui/CustomRunStorage";
+import {
+  type RunConfig,
+  loadRunConfigFromStorage,
+  loadDebugConfigFromStorage,
+} from "../systems/CustomRunConfig";
 import { setDebugConfig } from "../config/debug";
 
 const MODES: LocalCoopMode[] = ["best-height", "first-to-die", "timed-2min"];
