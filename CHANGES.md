@@ -50,31 +50,6 @@ health_snapshot: LOC=<n>, tests=<n>, complexity=ok|warn|fail
 
 reason: Session interrupted without completion. Work continued across 42 commits (see git log). Staged changes caused silent breakage across subsequent sessions.
 
-## [2026-04-01T15:15] session-mp01 | status: started | mode: lean | type: add
-
-intent: Stage 1 — Multiplayer networking layer (signaling strategies, connection manager, game sync)
-
-- progress: SignalingStrategy interface, ManualSignaling (SDP compression via pako+base62), NostrSignaling (Trystero wrapper), ConnectionManager, GameSync (binary position + events) | src/multiplayer/SignalingStrategy.ts, src/multiplayer/ManualSignaling.ts, src/multiplayer/NostrSignaling.ts, src/multiplayer/ConnectionManager.ts, src/multiplayer/GameSync.ts, src/multiplayer/SDPCompressor.ts, src/multiplayer/index.ts
-- progress: Unit tests for SDP compression round-trip, base62 encoding, position encoding/decoding | tests/multiplayer/sdp-compressor.test.ts, tests/multiplayer/game-sync.test.ts
-- progress: LocalInput (split keyboard P1=WASD, P2=Arrows), MultiplayerSession (two states, shared seed, winner logic), LocalCoopLauncher (split-screen with masks, death toasts, results/rematch) | src/multiplayer/LocalInput.ts, src/multiplayer/MultiplayerSession.ts, src/multiplayer/LocalCoopLauncher.ts
-- progress: Added updateWithInput() to GameScene for external input control | src/scenes/GameScene.ts
-- progress: Tests for LocalInput and MultiplayerSession | tests/multiplayer/local-input.test.ts, tests/multiplayer/multiplayer-session.test.ts
-- progress: InterpolationBuffer (lerp+extrapolation for 20Hz→60FPS), RemotePlayerRenderer (ghost chef + off-screen arrows), OnlineSession (wires networking to game loop with death events, results, rematch) | src/multiplayer/InterpolationBuffer.ts, src/multiplayer/RemotePlayerRenderer.ts, src/multiplayer/OnlineSession.ts
-- progress: InterpolationBuffer tests | tests/multiplayer/interpolation-buffer.test.ts
-- progress: LobbyScreen (ready-up, host controls, start), MultiplayerMenu + ConnectFlows (create/join for Quick/Private Connect, DSGVO info text), Multiplayer button on title screen | src/multiplayer/LobbyScreen.ts, src/multiplayer/MultiplayerMenu.ts, src/multiplayer/ConnectFlows.ts, src/ui/TitleScreenView.ts
-- progress: Lobby/session integration tests | tests/multiplayer/lobby-session.test.ts
-- progress: Ghost tinting (orange/green), spectate after death, auto-aim shooting (E/Q and Space), mode selection in lobby, Escape to forfeit, FPS debug-only | src/multiplayer/\*.ts, src/scenes/GameScene.ts
-- progress: Ghost mode (keep playing after death, frozen scoring), mode picker for local co-op, game mode logic (first-to-die, timed 2min, best-height), connection quality dot | src/scenes/GameLoop.ts, src/scenes/GameState.ts, src/multiplayer/ModePickerScreen.ts, src/multiplayer/LocalCoopLauncher.ts, src/multiplayer/OnlineSession.ts, src/multiplayer/InterpolationBuffer.ts
-
-## [2026-04-01T16:22] session-mp01 | status: completed | mode: lean | type: add
-
-files_touched: src/multiplayer/SignalingStrategy.ts, src/multiplayer/ManualSignaling.ts, src/multiplayer/NostrSignaling.ts, src/multiplayer/SDPCompressor.ts, src/multiplayer/ConnectionManager.ts, src/multiplayer/GameSync.ts, src/multiplayer/LocalInput.ts, src/multiplayer/MultiplayerSession.ts, src/multiplayer/LocalCoopLauncher.ts, src/multiplayer/InterpolationBuffer.ts, src/multiplayer/RemotePlayerRenderer.ts, src/multiplayer/OnlineSession.ts, src/multiplayer/LobbyScreen.ts, src/multiplayer/MultiplayerMenu.ts, src/multiplayer/ConnectFlows.ts, src/multiplayer/index.ts, src/scenes/GameScene.ts, src/ui/TitleScreenView.ts, tests/multiplayer/\*.ts
-symbols_added: SignalingStrategy, ManualSignaling, NostrSignaling, SDPCompressor (compressSDP, decompressSDP, toBase62, fromBase62, compressDescription, decompressDescription), ConnectionManager, GameSync (encodePosition, decodePosition), LocalInput, MultiplayerSession, launchLocalCoop, InterpolationBuffer, RemotePlayerRenderer, OnlineSession, LobbyScreen, MultiplayerMenu, ConnectFlows (doQuickCreate, doQuickJoin, doPrivateCreate, doPrivateJoin, setupConnectionCallbacks), updateWithInput (GameScene)
-symbols_removed: (none)
-tests_added: tests/multiplayer/sdp-compressor.test.ts, tests/multiplayer/game-sync.test.ts, tests/multiplayer/local-input.test.ts, tests/multiplayer/multiplayer-session.test.ts, tests/multiplayer/interpolation-buffer.test.ts, tests/multiplayer/lobby-session.test.ts
-reason: Full multiplayer networking layer — all 5 stages complete. Dual signaling (Nostr + manual SDP), local co-op split-screen, online P2P with interpolation, lobby with ready-up, and title screen integration.
-health_snapshot: LOC=19800, tests=383, complexity=ok
-
 ## [2026-04-05T14:50] session-dc01 | status: started | mode: full | type: add
 
 intent: Implement Daily Challenge (date-seeded runs, medals, streaks, achievements) and Shadow Replay (record/playback ghost on all runs)

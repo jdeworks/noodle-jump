@@ -62,7 +62,7 @@ A pasta-themed endless jumper built with PixiJS and TypeScript.
 - PWA — installable, works offline via service worker
 - Haptic feedback on mobile (impacts, power-ups, death)
 - Seeded RNG for deterministic/reproducible runs
-- 464 tests across 59 test files
+- 487 tests across 61 test files
 - Frame-rate independent — delta-time game loop ensures consistent speed at any refresh rate (60Hz, 144Hz, etc.)
 - Modular architecture — pure logic separated from PixiJS rendering
 
@@ -82,7 +82,7 @@ npx vite build   # outputs to docs/ for GitHub Pages
 ### Tests & Quality
 
 ```bash
-npx vitest run    # 464 tests
+npx vitest run    # 487 tests
 npx tsc --noEmit  # type check
 npx eslint src    # lint
 make health       # LOC budget + file size checks

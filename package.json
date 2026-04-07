@@ -1,7 +1,11 @@
 {
-  "name": "my-game",
-  "version": "0.1.0",
-  "private": true,
+  "name": "noodle-jump",
+  "version": "1.0.0",
+  "license": "MIT",
+  "description": "A pasta-themed endless jumper built with PixiJS and TypeScript",
+  "author": "jdeworks",
+  "homepage": "https://jdeworks.github.io/noodle-jump/",
+  "repository": "github:jdeworks/noodle-jump",
   "type": "module",
   "scripts": {
     "dev": "vite",
