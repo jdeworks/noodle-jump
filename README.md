@@ -280,7 +280,7 @@ This project was built across 12+ Claude Code sessions (~160 commits). Below are
 
 **What finally worked: Clock offset measurement.** During the "prepare" phase, guests send their `Date.now()`. Host calculates each guest's clock offset: `guestTime - hostTime - RTT/2`. Host picks a future start time (next clean second boundary), then sends each guest their start time converted to their local clock. All peers independently wait for their local `Date.now()` to hit their target. The only remaining error is NTP clock skew (~10-20ms), which is imperceptible.
 
-**Key insight:** The approaches that failed all tried to compensate for network latency using timing tricks. The approach that worked acknowledged that you can't measure one-way latency accurately, and instead measured the thing you actually need: the *clock difference* between peers.
+**Key insight:** The approaches that failed all tried to compensate for network latency using timing tricks. The approach that worked acknowledged that you can't measure one-way latency accurately, and instead measured the thing you actually need: the _clock difference_ between peers.
 
 **Takeaway:** For P2P game sync without a central server, measure clock offsets rather than trying to estimate or compensate for network latency. RTT-based approaches fail due to asymmetric connections. Wall-clock agreement with measured offsets gives ~20ms accuracy with minimal code.
 
@@ -290,7 +290,7 @@ This project was built across 12+ Claude Code sessions (~160 commits). Below are
 
 The current multiplayer implementation is functional for casual play but has known gaps:
 
-- **Host disconnect = session dies.** There is no host migration — if the host leaves, all guests lose their connection. A future improvement would promote the longest-connected guest to host and re-establish the room.
+- **Host migration is automatic but not instant.** When the host disconnects, the lowest-peerId guest is auto-promoted within ~1-6 seconds (fast path via Trystero `onPeerLeave`, fallback via heartbeat timeout). The new host gains countdown/settings/kick control. If migration happens mid-start-sync, the start is aborted and the new host re-evaluates. Cascading host failures trigger repeated elections.
 - **No reconnection.** If a player's connection drops briefly (e.g. switching WiFi), they're treated as disconnected after 3 seconds. There's no rejoin mechanism — they'd need to start a new game.
 - **Trystero console warnings.** When a peer disconnects, the Trystero library logs `"Trystero peer error: OperationError"` internally. We suppress these via a `console.error` filter, but the underlying library behavior can't be patched.
 - **Relay dependency for Quick Connect.** The Nostr relays (`nos.lol`, `relay.primal.net`) are public infrastructure. If they go down, Quick Connect stops working. Private Connect (manual SDP) has no external dependency.

@@ -24,9 +24,7 @@ export const chefRivalBehavior: BossBehavior = {
     if (platforms && platforms.length > 0) {
       // Pick the topmost (lowest Y) non-broken platform in the visible arena
       const visible = platforms
-        .filter(
-          (p) => !p.broken && p.y >= cameraY && p.y < cameraY + GAME_HEIGHT,
-        )
+        .filter((p) => !p.broken && p.y >= cameraY && p.y < cameraY + GAME_HEIGHT)
         .sort((a, b) => a.y - b.y);
       if (visible.length > 0) {
         const plat = visible[0]; // topmost
@@ -63,16 +61,8 @@ export const chefRivalBehavior: BossBehavior = {
   ): BossTickResult {
     if (!boss.alive) return { boss, attacks: [] };
 
-    let {
-      x,
-      y,
-      vy,
-      jumpCooldown,
-      currentPlatformId,
-      patternTick,
-      jumpArc,
-      visitedPlatformIds,
-    } = boss;
+    let { x, y, vy, jumpCooldown, currentPlatformId, patternTick, jumpArc, visitedPlatformIds } =
+      boss;
     const visited = visitedPlatformIds ?? [];
     const breakIds: number[] = [];
     patternTick += speedScale;
@@ -88,14 +78,11 @@ export const chefRivalBehavior: BossBehavior = {
     }
 
     // ── Arc movement: boss follows a parabolic curve ──
-    const isJumping =
-      jumpArc != null && jumpArc.progress >= 0 && jumpArc.progress < 1;
+    const isJumping = jumpArc != null && jumpArc.progress >= 0 && jumpArc.progress < 1;
     if (isJumping) {
       const t = jumpArc!.progress;
       // For moving platform targets, update target position in real-time
-      const targetPlat = platforms.find(
-        (p) => p.id === jumpArc!.targetPlatformId,
-      );
+      const targetPlat = platforms.find((p) => p.id === jumpArc!.targetPlatformId);
       let tgtX = jumpArc!.targetX;
       let tgtY = jumpArc!.targetY;
       if (targetPlat && !targetPlat.broken) {
@@ -142,23 +129,15 @@ export const chefRivalBehavior: BossBehavior = {
     }
 
     // ── Cooldown and jump planning ──
-    const cooldown = jumpCooldown & 0xffff;
-    const jumpCount = jumpCooldown >> 16;
-    const newCooldown = Math.max(0, cooldown - speedScale);
-    const newCooldownInt = Math.max(0, Math.round(newCooldown));
+    // jumpCooldown is a plain float — no bitwise packing (was causing integer rounding
+    // that prevented the cooldown from decreasing at high framerates like 144Hz)
+    const newCooldown = Math.max(0, jumpCooldown - speedScale);
     const onGround = !isJumping;
     if (onGround) {
       // At PREVIEW_TICKS: pick target, show preview arc
-      if (
-        cooldown > PREVIEW_TICKS &&
-        newCooldown <= PREVIEW_TICKS &&
-        !jumpArc
-      ) {
+      if (jumpCooldown > PREVIEW_TICKS && newCooldown <= PREVIEW_TICKS && !jumpArc) {
         const allValid = platforms.filter(
-          (p) =>
-            !p.broken &&
-            p.id !== currentPlatformId &&
-            p.id !== jumpArc?.targetPlatformId,
+          (p) => !p.broken && p.id !== currentPlatformId && p.id !== jumpArc?.targetPlatformId,
         );
 
         let candidates = allValid.filter((p) => !visited.includes(p.id));
@@ -169,17 +148,12 @@ export const chefRivalBehavior: BossBehavior = {
         }
 
         if (candidates.length > 0) {
-          const newJumpCount = jumpCount + 1;
           let target: PlatformState;
 
           if (random() < 0.25) {
             const byPlayer = [...candidates].sort((a, b) => {
-              const da =
-                Math.abs(a.x + a.width / 2 - player.x) +
-                Math.abs(a.y - player.y);
-              const db =
-                Math.abs(b.x + b.width / 2 - player.x) +
-                Math.abs(b.y - player.y);
+              const da = Math.abs(a.x + a.width / 2 - player.x) + Math.abs(a.y - player.y);
+              const db = Math.abs(b.x + b.width / 2 - player.x) + Math.abs(b.y - player.y);
               return da - db;
             });
             target = byPlayer[0];
@@ -199,19 +173,13 @@ export const chefRivalBehavior: BossBehavior = {
             targetPlatformId: target.id,
           };
           visitedPlatformIds = [...newVisited, target.id];
-          jumpCooldown = (newJumpCount << 16) | newCooldownInt;
+          jumpCooldown = newCooldown;
         } else {
-          jumpCooldown = (jumpCount << 16) | newCooldownInt;
+          jumpCooldown = newCooldown;
         }
       }
       // At 0: start the actual jump — break crumbling/brittle platform on departure
-      else if (
-        cooldown > 0 &&
-        newCooldown <= 0 &&
-        jumpArc &&
-        jumpArc.progress < 0
-      ) {
-        // Break the platform the boss is leaving if it's breakable
+      else if (jumpCooldown > 0 && newCooldown <= 0 && jumpArc && jumpArc.progress < 0) {
         if (currentPlatformId != null) {
           const leavingPlat = platforms.find((p) => p.id === currentPlatformId);
           if (
@@ -223,17 +191,12 @@ export const chefRivalBehavior: BossBehavior = {
             breakIds.push(currentPlatformId);
           }
         }
-        // Now transfer to the target platform
         currentPlatformId = jumpArc.targetPlatformId ?? null;
         jumpArc = { ...jumpArc, startX: x, startY: y, progress: 0 };
-        const baseCd = Math.max(
-          MIN_JUMP_COOLDOWN,
-          BASE_JUMP_COOLDOWN - boss.phase * 10,
-        );
-        const cd = Math.max(30, Math.ceil(baseCd / attackMultiplier));
-        jumpCooldown = (jumpCount << 16) | cd;
+        const baseCd = Math.max(MIN_JUMP_COOLDOWN, BASE_JUMP_COOLDOWN - boss.phase * 10);
+        jumpCooldown = Math.max(30, Math.ceil(baseCd / attackMultiplier));
       } else {
-        jumpCooldown = (jumpCount << 16) | newCooldownInt;
+        jumpCooldown = newCooldown;
       }
     }
 
@@ -242,8 +205,7 @@ export const chefRivalBehavior: BossBehavior = {
     // Safety: if boss is off screen and not on a valid platform, teleport
     const arenaBottom = player.y + GAME_HEIGHT * 0.5 + 50;
     const onValidPlatform =
-      currentPlatformId != null &&
-      platforms.some((p) => p.id === currentPlatformId && !p.broken);
+      currentPlatformId != null && platforms.some((p) => p.id === currentPlatformId && !p.broken);
     if (!jumpArc && !onValidPlatform && y > arenaBottom) {
       const rescue = platforms
         .filter((p) => !p.broken && Math.abs(p.y - player.y) < 200)

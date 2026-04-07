@@ -4,10 +4,7 @@
  * Handles connection state, auto-reconnect, and clean shutdown.
  */
 
-import type {
-  SignalingStrategy,
-  SignalingCallbacks,
-} from "./SignalingStrategy";
+import type { SignalingStrategy, SignalingCallbacks } from "./SignalingStrategy";
 import { NostrSignaling } from "./NostrSignaling";
 import type { Room } from "@trystero-p2p/nostr";
 
@@ -63,10 +60,7 @@ export class ConnectionManager {
    * Create a game room as host.
    * Returns a code the guest needs to join.
    */
-  async createRoom(
-    strategy: SignalingStrategy,
-    mode: ConnectionMode,
-  ): Promise<string> {
+  async createRoom(strategy: SignalingStrategy, mode: ConnectionMode): Promise<string> {
     this.strategy = strategy;
     this.mode = mode;
     this.role = "host";
@@ -145,6 +139,11 @@ export class ConnectionManager {
     return null;
   }
 
+  /** Register a callback for when a peer leaves (fast detection for host migration). */
+  setOnPeerLeave(cb: ((peerId: string) => void) | null): void {
+    if (this.strategy instanceof NostrSignaling) this.strategy.onPeerLeave = cb;
+  }
+
   disconnect(): void {
     this.clearReconnectTimer();
     this.removeVisibilityHandler();
@@ -159,10 +158,7 @@ export class ConnectionManager {
     this.setState("disconnected");
   }
 
-  private handleConnection(
-    pc: RTCPeerConnection,
-    channel: RTCDataChannel,
-  ): void {
+  private handleConnection(pc: RTCPeerConnection, channel: RTCDataChannel): void {
     this.pc = pc;
 
     if (this.mode === "manual" && channel) {
@@ -205,9 +201,7 @@ export class ConnectionManager {
     this.reconnectTimer = setTimeout(() => {
       if (this.state === "reconnecting") {
         this.setState("failed");
-        this.callbacks?.onError(
-          "Connection lost. Could not reconnect within 5 seconds.",
-        );
+        this.callbacks?.onError("Connection lost. Could not reconnect within 5 seconds.");
       }
     }, RECONNECT_TIMEOUT_MS);
   }

@@ -8,9 +8,15 @@ import type { PlatformState } from "../src/entities/Platform";
 
 function makePlatform(overrides: Partial<PlatformState> = {}): PlatformState {
   return {
-    x: 100, y: 300, width: 100, height: 15,
-    type: "static", broken: false, id: 1,
-    originX: 100, moveDirection: 1,
+    x: 100,
+    y: 300,
+    width: 100,
+    height: 15,
+    type: "static",
+    broken: false,
+    id: 1,
+    originX: 100,
+    moveDirection: 1,
     ...overrides,
   };
 }
@@ -70,6 +76,47 @@ describe("ChefRivalBoss behavior", () => {
     const player = { ...createPlayer(110, 210), width: 32, height: 40 };
     expect(chefRivalBehavior.checkPlayerContact(boss, player)).toBe(true);
   });
+
+  test("cooldown decreases at high framerate (speedScale < 1)", () => {
+    const platforms = [
+      makePlatform({ id: 1, x: 50, y: -450, width: 100 }),
+      makePlatform({ id: 2, x: 200, y: -480, width: 100 }),
+      makePlatform({ id: 3, x: 100, y: -520, width: 100 }),
+    ];
+    let boss = chefRivalBehavior.create(-500, platforms);
+    const player = createPlayer(100, -400);
+    const initialCooldown = boss.jumpCooldown;
+
+    // Simulate 144Hz: speedScale ≈ 0.42
+    const speedScale = 60 / 144;
+    for (let i = 0; i < 10; i++) {
+      const result = chefRivalBehavior.tick(boss, player, platforms, i, speedScale);
+      boss = result.boss;
+    }
+
+    // Cooldown must have decreased — was stuck due to integer rounding before fix
+    expect(boss.jumpCooldown).toBeLessThan(initialCooldown);
+  });
+
+  test("boss eventually jumps after enough ticks", () => {
+    const platforms = [
+      makePlatform({ id: 1, x: 50, y: -450, width: 100 }),
+      makePlatform({ id: 2, x: 200, y: -480, width: 100 }),
+      makePlatform({ id: 3, x: 100, y: -520, width: 100 }),
+    ];
+    let boss = chefRivalBehavior.create(-500, platforms);
+    const player = createPlayer(100, -400);
+    let jumped = false;
+
+    // Run enough ticks for the boss to jump (at 60fps speedScale=1)
+    for (let i = 0; i < 300; i++) {
+      const result = chefRivalBehavior.tick(boss, player, platforms, i, 1);
+      if (result.boss.jumpArc && result.boss.jumpArc.progress >= 0) jumped = true;
+      boss = result.boss;
+    }
+
+    expect(jumped).toBe(true);
+  });
 });
 
 describe("KrakenBoss behavior", () => {
@@ -94,13 +141,21 @@ describe("KrakenBoss behavior", () => {
 
   test("checkPlayerContact false when player is far away", () => {
     const boss = krakenBehavior.create(-500);
-    const player = { ...createPlayer(boss.x + 200, boss.y + 200), width: 32, height: 40 };
+    const player = {
+      ...createPlayer(boss.x + 200, boss.y + 200),
+      width: 32,
+      height: 40,
+    };
     expect(krakenBehavior.checkPlayerContact(boss, player)).toBe(false);
   });
 
   test("checkPlayerContact true when player hits from below", () => {
     const boss = krakenBehavior.create(-500);
-    const player = { ...createPlayer(boss.x + 10, boss.y + 10), width: 32, height: 40 };
+    const player = {
+      ...createPlayer(boss.x + 10, boss.y + 10),
+      width: 32,
+      height: 40,
+    };
     expect(krakenBehavior.checkPlayerContact(boss, player)).toBe(true);
   });
 
@@ -138,7 +193,11 @@ describe("UFOBoss behavior", () => {
 
   test("checkPlayerContact true when player hits from below", () => {
     const boss = ufoBehavior.create(-500);
-    const player = { ...createPlayer(boss.x + 10, boss.y + 10), width: 32, height: 40 };
+    const player = {
+      ...createPlayer(boss.x + 10, boss.y + 10),
+      width: 32,
+      height: 40,
+    };
     expect(ufoBehavior.checkPlayerContact(boss, player)).toBe(true);
   });
 });

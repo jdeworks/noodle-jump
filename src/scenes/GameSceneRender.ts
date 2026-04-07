@@ -98,11 +98,7 @@ export function renderBoss(
 }
 
 /** Render the boss jump arc — dotted parabola preview + landing target X. */
-export function renderBossArc(
-  gfx: Graphics,
-  state: GameWorldState,
-  camY: number,
-): void {
+export function renderBossArc(gfx: Graphics, state: GameWorldState, camY: number): void {
   gfx.clear();
   const boss = state.activeBoss;
   if (!boss?.alive || !boss.jumpArc || boss.jumpArc.progress >= 1) {
@@ -130,11 +126,13 @@ export function renderBossArc(
 
     const invT0 = 1 - t0;
     const px0 = arc.startX + (arc.targetX - arc.startX) * t0 + boss.width / 2;
-    const py0 = invT0 * invT0 * arc.startY + 2 * invT0 * t0 * peakY + t0 * t0 * arc.targetY + boss.height / 2;
+    const py0 =
+      invT0 * invT0 * arc.startY + 2 * invT0 * t0 * peakY + t0 * t0 * arc.targetY + boss.height / 2;
 
     const invT1 = 1 - t1;
     const px1 = arc.startX + (arc.targetX - arc.startX) * t1 + boss.width / 2;
-    const py1 = invT1 * invT1 * arc.startY + 2 * invT1 * t1 * peakY + t1 * t1 * arc.targetY + boss.height / 2;
+    const py1 =
+      invT1 * invT1 * arc.startY + 2 * invT1 * t1 * peakY + t1 * t1 * arc.targetY + boss.height / 2;
 
     gfx.moveTo(px0, worldToScreen(py0, camY));
     gfx.lineTo(px1, worldToScreen(py1, camY));
@@ -145,9 +143,11 @@ export function renderBossArc(
   const tx = arc.targetX + boss.width / 2;
   const ty = worldToScreen(arc.targetY + boss.height, camY);
   const pulse = isPreview ? 6 + Math.sin(state.animTick * 0.15) * 2 : 6;
-  gfx.moveTo(tx - pulse, ty - pulse); gfx.lineTo(tx + pulse, ty + pulse);
+  gfx.moveTo(tx - pulse, ty - pulse);
+  gfx.lineTo(tx + pulse, ty + pulse);
   gfx.stroke({ width: 3, color: 0xff4444, alpha: markerAlpha });
-  gfx.moveTo(tx + pulse, ty - pulse); gfx.lineTo(tx - pulse, ty + pulse);
+  gfx.moveTo(tx + pulse, ty - pulse);
+  gfx.lineTo(tx - pulse, ty + pulse);
   gfx.stroke({ width: 3, color: 0xff4444, alpha: markerAlpha });
 }
 
@@ -194,8 +194,8 @@ const ARROWS_PER_ZONE = 4;
 
 /** Draw a filled chevron arrow pointing in `dir` at position (cx, cy). */
 function drawArrow(gfx: Graphics, cx: number, cy: number, dir: number, size: number): void {
-  const hw = size * 2;    // very wide horizontal spread
-  const hh = size * 1.3;  // tall vertical spread
+  const hw = size * 2; // very wide horizontal spread
+  const hh = size * 1.3; // tall vertical spread
   const thick = size * 0.7; // thick chevron arms
   gfx.moveTo(cx - dir * hw, cy - hh);
   gfx.lineTo(cx + dir * hw, cy);
@@ -208,11 +208,7 @@ function drawArrow(gfx: Graphics, cx: number, cy: number, dir: number, size: num
 }
 
 /** Render all visible wind zones — blue tint + large animated arrows. */
-export function renderWindOverlay(
-  gfx: Graphics,
-  state: GameWorldState,
-  camY: number,
-): void {
+export function renderWindOverlay(gfx: Graphics, state: GameWorldState, camY: number): void {
   gfx.clear();
   const { zones } = state.windSystem;
   if (zones.length === 0) {
@@ -242,24 +238,28 @@ export function renderWindOverlay(
     gfx.fill({ color: 0x88bbff, alpha: 0.14 });
 
     // Top and bottom border lines
-    gfx.moveTo(0, clampTop); gfx.lineTo(GAME_WIDTH, clampTop);
+    gfx.moveTo(0, clampTop);
+    gfx.lineTo(GAME_WIDTH, clampTop);
     gfx.stroke({ width: 2, color: 0xaaddff, alpha: 0.35 });
-    gfx.moveTo(0, clampBottom); gfx.lineTo(GAME_WIDTH, clampBottom);
+    gfx.moveTo(0, clampBottom);
+    gfx.lineTo(GAME_WIDTH, clampBottom);
     gfx.stroke({ width: 2, color: 0xaaddff, alpha: 0.35 });
 
     // Large animated arrows showing wind direction
     const zoneH = clampBottom - clampTop;
     const arrowSize = Math.min(30, zoneH * 0.3);
-    const spacing = GAME_WIDTH / (ARROWS_PER_ZONE + 1);
 
     for (let i = 0; i < ARROWS_PER_ZONE; i++) {
       const drift = ((t * 1.5 * dir + i * 80) % (GAME_WIDTH + 60)) - 30;
-      const x = dir > 0
-        ? ((drift % (GAME_WIDTH + 60)) + GAME_WIDTH + 60) % (GAME_WIDTH + 60) - 30
-        : GAME_WIDTH + 30 - ((((- drift) % (GAME_WIDTH + 60)) + GAME_WIDTH + 60) % (GAME_WIDTH + 60));
+      const x =
+        dir > 0
+          ? (((drift % (GAME_WIDTH + 60)) + GAME_WIDTH + 60) % (GAME_WIDTH + 60)) - 30
+          : GAME_WIDTH +
+            30 -
+            (((-drift % (GAME_WIDTH + 60)) + GAME_WIDTH + 60) % (GAME_WIDTH + 60));
 
       // Vertical position — distribute evenly within zone
-      const cy = clampTop + zoneH * (i + 1) / (ARROWS_PER_ZONE + 1);
+      const cy = clampTop + (zoneH * (i + 1)) / (ARROWS_PER_ZONE + 1);
       if (cy < clampTop + 10 || cy > clampBottom - 10) continue;
 
       drawArrow(gfx, x, cy, dir, arrowSize);

@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { encodePosition, decodePosition } from "../../src/multiplayer/GameSync";
 import { InterpolationBuffer } from "../../src/multiplayer/InterpolationBuffer";
 import { getPeerColor, type PlayerResult } from "../../src/multiplayer/PeerColors";
+import { electHost, computeRoleAfterMigration } from "../../src/multiplayer/HostElection";
 
 describe("multi-peer position routing", () => {
   it("routes positions by peerId through separate interpolation buffers", () => {
@@ -12,12 +13,16 @@ describe("multi-peer position routing", () => {
     // Simulate receiving from peer-a
     const posA = encodePosition({ x: 100, y: -500, vx: 2, vy: -10, state: 0, seq: 1 });
     const decodedA = decodePosition(posA);
-    buffers.get("peer-a")!.pushUpdate(decodedA.x, decodedA.y, decodedA.vx, decodedA.vy, decodedA.state);
+    buffers
+      .get("peer-a")!
+      .pushUpdate(decodedA.x, decodedA.y, decodedA.vx, decodedA.vy, decodedA.state);
 
     // Simulate receiving from peer-b
     const posB = encodePosition({ x: 300, y: -1000, vx: -1, vy: -8, state: 0, seq: 1 });
     const decodedB = decodePosition(posB);
-    buffers.get("peer-b")!.pushUpdate(decodedB.x, decodedB.y, decodedB.vx, decodedB.vy, decodedB.state);
+    buffers
+      .get("peer-b")!
+      .pushUpdate(decodedB.x, decodedB.y, decodedB.vx, decodedB.vy, decodedB.state);
 
     const stateA = buffers.get("peer-a")!.getState();
     const stateB = buffers.get("peer-b")!.getState();
@@ -41,7 +46,7 @@ describe("multi-peer position routing", () => {
     expect(accept("peer-a", 1)).toBe(true);
     expect(accept("peer-a", 2)).toBe(true);
     expect(accept("peer-a", 1)).toBe(false); // stale for peer-a
-    expect(accept("peer-b", 1)).toBe(true);  // fresh for peer-b
+    expect(accept("peer-b", 1)).toBe(true); // fresh for peer-b
     expect(accept("peer-b", 3)).toBe(true);
     expect(accept("peer-b", 2)).toBe(false); // stale for peer-b
   });
@@ -90,10 +95,10 @@ describe("results leaderboard sorting", () => {
     ];
 
     const sorted = [...results].sort((a, b) => b.height - a.height);
-    expect(sorted[0].peerId).toBe("a");    // 1200m
-    expect(sorted[1].peerId).toBe("c");    // 800m
+    expect(sorted[0].peerId).toBe("a"); // 1200m
+    expect(sorted[1].peerId).toBe("c"); // 800m
     expect(sorted[2].peerId).toBe("local"); // 500m
-    expect(sorted[3].peerId).toBe("b");    // 300m
+    expect(sorted[3].peerId).toBe("b"); // 300m
   });
 
   it("local rank is correct", () => {
@@ -186,7 +191,7 @@ describe("countdown timer logic", () => {
 
     // All ready → shrink to 3s
     remotePlayers[0].ready = true;
-    const allReady = localReady && remotePlayers.every(p => p.ready);
+    const allReady = localReady && remotePlayers.every((p) => p.ready);
     if (allReady && countdownDuration > COUNTDOWN_SHORT) {
       countdownDuration = COUNTDOWN_SHORT;
     }
@@ -203,5 +208,54 @@ describe("countdown timer logic", () => {
     }
     // Should stay at 2s
     expect(remaining).toBe(2_000);
+  });
+});
+
+describe("host migration", () => {
+  it("elects the lowest peerId when host disconnects", () => {
+    // Simulate: host "aaa" disconnects, remaining are self "ccc" and peer "bbb"
+    const remaining = ["ccc", "bbb"];
+    const newHost = electHost(remaining);
+    expect(newHost).toBe("bbb");
+  });
+
+  it("self becomes host when it has the lowest peerId", () => {
+    const result = computeRoleAfterMigration(["alpha", "delta", "gamma"], "alpha");
+    expect(result.localRole).toBe("host");
+    expect(result.newHostId).toBe("alpha");
+  });
+
+  it("self stays guest when another peer has lower id", () => {
+    const result = computeRoleAfterMigration(["alpha", "delta", "gamma"], "gamma");
+    expect(result.localRole).toBe("guest");
+    expect(result.newHostId).toBe("alpha");
+  });
+
+  it("sole remaining peer becomes host", () => {
+    const result = computeRoleAfterMigration(["solo-peer"], "solo-peer");
+    expect(result.localRole).toBe("host");
+  });
+
+  it("rapid successive disconnects converge to correct host", () => {
+    // Start: host=aaa, peers=bbb,ccc,ddd. aaa leaves → bbb is host.
+    let remaining = ["bbb", "ccc", "ddd"];
+    expect(electHost(remaining)).toBe("bbb");
+    // bbb also leaves → ccc is host.
+    remaining = ["ccc", "ddd"];
+    expect(electHost(remaining)).toBe("ccc");
+    // ccc leaves → ddd is solo host.
+    remaining = ["ddd"];
+    expect(electHost(remaining)).toBe("ddd");
+  });
+
+  it("all peers compute the same host independently", () => {
+    // 4 peers each compute election after host "aaa" leaves
+    const remaining = ["bbb", "ccc", "ddd"];
+    const resultFromBBB = electHost(remaining);
+    const resultFromCCC = electHost(remaining);
+    const resultFromDDD = electHost(remaining);
+    expect(resultFromBBB).toBe(resultFromCCC);
+    expect(resultFromCCC).toBe(resultFromDDD);
+    expect(resultFromBBB).toBe("bbb");
   });
 });

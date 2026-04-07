@@ -10,6 +10,7 @@ modes (best-height, first-to-die, timed-2min).
 ## What was done (session fs01 + fs02, 2026-04-06)
 
 ### Features shipped
+
 - Fullscreen scaling on PC (CSS `:fullscreen` lifts max-width)
 - `.prettierrc` with printWidth 100
 - N-player multiplayer: GameSync peerId routing, OnlineSession with `Map<peerId, RemotePeer>`,
@@ -27,6 +28,7 @@ modes (best-height, first-to-die, timed-2min).
 - Timer state properly reset on rematch
 
 ### Key files changed
+
 - `src/multiplayer/LobbyScreen.ts` (399 LOC) — lobby UI, countdown, clock sync, kick
 - `src/multiplayer/OnlineSession.ts` (399 LOC) — game session, peer management, disconnect
 - `src/multiplayer/GameSync.ts` — peerId routing, per-peer seq tracking
@@ -40,30 +42,24 @@ modes (best-height, first-to-die, timed-2min).
 - `tests/multiplayer/multi-peer.test.ts` — 13 tests for multi-peer logic
 
 ### Known issues / TODO (see TASKS.md section 3)
-- **Host disconnect kills session** — no host migration. Biggest gap.
+
+- ~~**Host disconnect kills session**~~ — **FIXED** (session hm01). Deterministic election auto-promotes lowest-peerId guest. Dual detection: fast (onPeerLeave ~1-2s) + heartbeat timeout (6s).
 - **No reconnection** — dropped peers can't rejoin
 - **No spectator mode** — late joiners can't watch
 - **Trystero console warnings** — suppressed via console.error filter but still internal
-- **LobbyScreen and OnlineSession both at 399 LOC** — at the limit, any new lobby/session
-  feature needs extraction first
+- ~~**LobbyScreen and OnlineSession both at 399 LOC**~~ — **FIXED**. Extracted into LobbyUI, LobbyEvents, LobbyPlayerList, LobbyCountdown, OnlineSessionHelpers, MenuViews.
 
 ### Test status
-- 464 tests across 59 files, all passing
+
+- 487 tests across 61 files, all passing
 - Pre-commit hook: LOC check + pixi import guard + typecheck + lint + tests + build
 - CI: same checks via GitHub Actions
 
 ## Suggested next priorities
 
-1. **Host migration** — when host disconnects, promote a guest. Requires:
-   - Electing new host (longest-connected peer)
-   - New host creates fresh Trystero room, broadcasts join code
-   - Other peers join new room, lobby state is restored
-   - Complex but critical for reliability
+1. **Reconnection** — allow dropped peers to rejoin within a timeout window
 
-2. **Reconnection** — allow dropped peers to rejoin within a timeout window
-
-3. **Performance profiling with 8+ players** — test shadow rendering, position sync
+2. **Performance profiling with 8+ players** — test shadow rendering, position sync
    at scale. May need adaptive quality (disable trails, simplify sprites)
 
-4. **Chef Rival boss jump bug** — only remaining known single-player bug (see
-   project_testing_status memory)
+3. ~~**Chef Rival boss jump bug**~~ — **FIXED** (session hm01). Integer rounding in jumpCooldown bitwise packing prevented cooldown decrease at 144Hz.

@@ -50,37 +50,6 @@ health_snapshot: LOC=<n>, tests=<n>, complexity=ok|warn|fail
 
 reason: Session interrupted without completion. Work continued across 42 commits (see git log). Staged changes caused silent breakage across subsequent sessions.
 
-## [2026-04-01T12:00] session-a1d4 | status: started | mode: lean | type: add
-
-intent: Debug mode UI, boss fight overhaul, remove drill, fix music overlap
-
-- progress: Enable DEBUG_MODE, add debug options to Custom Run screen | src/config/constants.ts, src/ui/CustomRunScreen.ts, src/scenes/GameState.ts
-- progress: Remove rigatoni drill from spawn lists | src/entities/PowerUp.ts, src/systems/CustomRunConfig.ts (removed: rigatoni_drill from POSITIVE_TYPES, ALL_POWER_UP_TYPES)
-- progress: Fix button text cursor on title screen | src/ui/TitleScreenView.ts
-- progress: Add localStorage persistence, presets, reset, scrolling to Custom Run | src/ui/CustomRunScreen.ts
-- progress: Wire forcePowerUpType into spawn system | src/entities/PowerUp.ts, src/scenes/GameLoopHelpers.ts
-- progress: Fix quick zone transitions formula (direct zone calc) | src/scenes/GameLoop.ts
-- progress: Fix boss Y-bounds (Kraken, UFO track player), ChefRival visibility constraint | src/entities/bosses/KrakenBoss.ts, src/entities/bosses/UFOBoss.ts, src/entities/bosses/ChefRivalBoss.ts
-- progress: Implement FPS counter in HUD | src/ui/HUD.ts
-- progress: Implement hitbox debug rendering (player, platforms, powerups, meatballs, enemies, boss) | src/scenes/GameScene.ts
-- progress: Fix knife rendering during boss fights, knife ammo as mini icons | src/scenes/GameScene.ts, src/scenes/EntityRenderer.ts
-- progress: Fix music overlap — track/cancel fade intervals, stop all music on death | src/systems/MusicPlayer.ts, src/scenes/GameLoopTicker.ts, src/scenes/GameSceneEvents.ts
-- progress: Boss fight arena — break off-screen platforms, boss grace period, safe powerups | src/scenes/GameLoopBoss.ts
-- progress: Fix activeBoss not nulled on kill (blocked subsequent bosses) | src/scenes/GameLoopBoss.ts
-- progress: Kraken rework — tentacle extend/hold/remove animation, escalating speed, edge-only, sliver-then-destroy | src/entities/bosses/KrakenBoss.ts, src/scenes/GameLoopBoss.ts, src/scenes/GameScene.ts, src/scenes/GameState.ts
-- progress: UFO aimed projectiles at player with spread shot | src/entities/bosses/UFOBoss.ts
-- progress: Split GameScene.ts and CustomRunScreen.ts for LOC limits | src/scenes/BossArenaRenderer.ts, src/ui/CustomRunStorage.ts
-- progress: Fix tests for drill removal and bossTestPreset change | tests/custom-run-config.test.ts, tests/debug-config.test.ts, tests/wiring.test.ts
-
-## [2026-04-01T14:10] session-a1d4 | status: completed | mode: lean | type: add
-
-files_touched: src/config/constants.ts, src/config/debug.ts, src/entities/PowerUp.ts, src/entities/bosses/ChefRivalBoss.ts, src/entities/bosses/KrakenBoss.ts, src/entities/bosses/UFOBoss.ts, src/scenes/GameLoop.ts, src/scenes/GameLoopBoss.ts, src/scenes/GameLoopHelpers.ts, src/scenes/GameLoopTicker.ts, src/scenes/GameScene.ts, src/scenes/GameSceneEvents.ts, src/scenes/GameSceneRender.ts, src/scenes/GameState.ts, src/systems/CustomRunConfig.ts, src/systems/MusicPlayer.ts, src/ui/CustomRunScreen.ts, src/ui/CustomRunStorage.ts, src/ui/HUD.ts, src/ui/TitleScreenView.ts, src/scenes/BossArenaRenderer.ts, tests/custom-run-config.test.ts, tests/debug-config.test.ts, tests/wiring.test.ts
-symbols_added: BossArenaRenderer (renderTentacles, renderKnifeAmmo, renderDebugHitboxes), CustomRunStorage (saveRunConfigToStorage, loadRunConfigFromStorage, saveDebugConfigToStorage, loadDebugConfigFromStorage, addSectionHeader, addRow, addToggleRow, addPresetRow, buildPresets, addPowerUpGrid, createBottomBar), pendingTentacles (GameWorldState)
-symbols_removed: rigatoni_drill (from POSITIVE_TYPES, ALL_POWER_UP_TYPES), infiniteKnives (from bossTestPreset)
-tests_added: (updated existing: tests/custom-run-config.test.ts, tests/debug-config.test.ts, tests/wiring.test.ts)
-reason: Added debug mode UI with presets/persistence, overhauled all 3 boss fights (grace period, arena locking, tentacle animations, aimed projectiles), removed drill power-up, fixed music overlap and knife rendering.
-health_snapshot: LOC=16124, tests=346, complexity=ok
-
 ## [2026-04-01T15:15] session-mp01 | status: started | mode: lean | type: add
 
 intent: Stage 1 — Multiplayer networking layer (signaling strategies, connection manager, game sync)
@@ -149,6 +118,7 @@ intent: Make game frame-rate independent — decouple physics from display refre
 - progress: Extracted GameLoopActions, GameLoopBossDamage, GameSceneHelpers to stay under LOC budget | src/scenes/GameLoopActions.ts (new), src/scenes/GameLoopBossDamage.ts (new), src/scenes/GameSceneHelpers.ts (new)
 
 ## [2026-04-05T12:30] session-dc03 | status: completed | mode: full | type: fix
+
 files_touched: src/scenes/GameScene.ts, src/scenes/GameLoop.ts, src/scenes/GameLoopBoss.ts, src/scenes/GameLoopTick.ts, src/scenes/GameLoopHelpers.ts, src/scenes/GameLoopEnemies.ts, src/scenes/GameLoopActions.ts (new), src/scenes/GameLoopBossDamage.ts (new), src/scenes/GameSceneHelpers.ts (new), src/entities/Projectile.ts, src/entities/Platform.ts, src/entities/Collectible.ts, src/entities/PowerUpEffectApply.ts, src/entities/bosses/UFOBoss.ts, src/entities/bosses/KrakenBoss.ts, src/entities/bosses/ChefRivalBoss.ts, src/systems/Weather.ts, src/systems/PlatformEffects.ts, src/systems/ScreenShake.ts, src/systems/Score.ts, src/systems/EnemySpawner.ts, src/systems/Hazards.ts, src/systems/PowerUpEffects.ts, src/config/constants.ts, README.md
 symbols_added: tickEndOfFrame, autoAimTarget, buildRenderContext, buildEventDeps, tickBossTransition, SceneComponents, checkSkillKill, checkStompKill, isBossInGrace, LASAGNA_TTL_MS, startCountdown (moved), togglePause (moved), throwProjectile (moved), KNIFE_REGEN_TICKS (moved)
 symbols_removed: LASAGNA_TTL_TICKS (replaced by LASAGNA_TTL_MS), spawnTick (replaced by spawnTimeMs on Platform), speedAccumulator (replaced by delta-time)
@@ -188,3 +158,25 @@ symbols_removed: remoteRenderer (single instance), remoteDead/remoteDeathHeight 
 tests_added: tests/multiplayer/multi-peer.test.ts (10 tests — position routing, death tracking, leaderboard sorting, countdown logic, peer colors)
 reason: Fullscreen scaling fix, prettier config, and full N-player multiplayer implementation (GameSync peerId routing, lobby with countdown timer, live leaderboard, sorted results).
 health_snapshot: LOC=29200, tests=461, complexity=ok
+
+## [2026-04-06T11:00] session-fs02 | status: completed | mode: full | type: fix
+
+files_touched: src/multiplayer/LobbyScreen.ts, src/multiplayer/OnlineSession.ts, src/multiplayer/OnlineResults.ts, src/multiplayer/MultiplayerMenu.ts, src/multiplayer/ConnectFlows.ts, tests/multiplayer/multi-peer.test.ts
+symbols_added: (none — iterations on existing)
+symbols_removed: (none)
+tests_added: (updated multi-peer.test.ts — 3 additional tests)
+reason: Fixed lobby countdown, game-over results, player names, room code copy, barrier-based synchronized start.
+health_snapshot: LOC=29300, tests=464, complexity=ok
+
+## [2026-04-07T09:15] session-hm01 | status: started | mode: full | type: add
+
+intent: Host migration — auto-promote guest when host disconnects/crashes/errors
+
+- progress: HostElection.ts — pure deterministic election logic (electHost, computeRoleAfterMigration) + 9 tests | src/multiplayer/HostElection.ts (new), tests/multiplayer/host-election.test.ts (new)
+- progress: LobbyCountdown.ts — extract countdown/start-sync from LobbyScreen into standalone class with abort() for migration + 6 tests | src/multiplayer/LobbyCountdown.ts (new), tests/multiplayer/lobby-countdown.test.ts (new)
+- progress: LobbyScreen rewrite — dual detection (onPeerLeave fast + heartbeat reliable), handleHostLoss, promoteToHost, host UI controls as instance fields | src/multiplayer/LobbyScreen.ts
+- progress: ConnectionManager.setOnPeerLeave + NostrSignaling wiring for fast host detection | src/multiplayer/ConnectionManager.ts, src/multiplayer/MultiplayerMenu.ts
+- progress: OnlineSession — electHost in returnToLobby, extract makeToast/makeFps to module-level, remove stale role label | src/multiplayer/OnlineSession.ts
+- progress: Migration integration tests — 6 host disconnect scenarios in multi-peer.test.ts | tests/multiplayer/multi-peer.test.ts
+- progress: Fix Chef Rival boss stuck — integer rounding in jumpCooldown bitwise packing prevented cooldown decrease at high framerates (144Hz). Removed bitwise packing, use plain float + 2 regression tests | src/entities/bosses/ChefRivalBoss.ts, tests/boss-behaviors.test.ts
+- progress: Fix custom run startup lag — removed persist() from every render() call. Now only persists on Start click or screen close. Was doing 2x JSON.stringify + 2x localStorage.setItem on every UI interaction | src/ui/CustomRunScreen.ts
