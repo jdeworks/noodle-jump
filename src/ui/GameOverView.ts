@@ -82,7 +82,8 @@ export function showGameOver(
     const notice = new Text({
       text: "(scores not saved to leaderboard)",
       style: new TextStyle({
-        fontFamily: "monospace", fontSize: 11,
+        fontFamily: "monospace",
+        fontSize: 11,
         fill: "#aa9988",
       }),
     });
@@ -110,12 +111,14 @@ export function showGameOver(
   const breakdown = new Text({
     text: breakdownLines.join("\n"),
     style: new TextStyle({
-      fontFamily: "monospace", fontSize: 13,
-      fill: uiT.text, lineHeight: 20,
+      fontFamily: "monospace",
+      fontSize: 13,
+      fill: uiT.text,
+      lineHeight: 20,
     }),
   });
   breakdown.x = GAME_WIDTH / 2;
-  breakdown.y = GAME_HEIGHT * 0.40;
+  breakdown.y = GAME_HEIGHT * 0.4;
   breakdown.anchor.set(0.5, 0.5);
   app.stage.addChild(breakdown);
 
@@ -124,15 +127,18 @@ export function showGameOver(
     const achText = new Text({
       text: "UNLOCKED: " + achievements.join(", "),
       style: new TextStyle({
-        fontFamily: "monospace", fontSize: 13,
-        fill: uiT.accent, fontWeight: "bold",
+        fontFamily: "monospace",
+        fontSize: 13,
+        fill: uiT.accent,
+        fontWeight: "bold",
         stroke: { color: "#000000", width: 2 },
-        wordWrap: true, wordWrapWidth: GAME_WIDTH - 40,
+        wordWrap: true,
+        wordWrapWidth: GAME_WIDTH - 40,
         align: "center",
       }),
     });
     achText.x = GAME_WIDTH / 2;
-    achText.y = GAME_HEIGHT * 0.60;
+    achText.y = GAME_HEIGHT * 0.6;
     achText.anchor.set(0.5, 0.5);
     app.stage.addChild(achText);
   }
@@ -141,7 +147,9 @@ export function showGameOver(
   let buttonTapped = false;
   const suppressRestart = () => {
     buttonTapped = true;
-    setTimeout(() => { buttonTapped = false; }, 300);
+    setTimeout(() => {
+      buttonTapped = false;
+    }, 300);
   };
 
   // Share button
@@ -154,8 +162,10 @@ export function showGameOver(
   const shareText = new Text({
     text: "Share Score",
     style: new TextStyle({
-      fontFamily: "monospace", fontSize: 16,
-      fill: "#44aaff", fontWeight: "bold",
+      fontFamily: "monospace",
+      fontSize: 16,
+      fill: "#44aaff",
+      fontWeight: "bold",
     }),
   });
   shareText.x = GAME_WIDTH / 2;
@@ -168,8 +178,13 @@ export function showGameOver(
     suppressRestart();
     const msg = `I scored ${stats.score} on Noodle Jump!\nHeight: ${stats.height} | Meatballs: ${stats.meatballs} | Combo: ${stats.bestCombo}x`;
     navigator.clipboard.writeText(msg).then(
-      () => { shareText.text = "Copied!"; shareText.style.fill = "#66cc66"; },
-      () => { shareText.text = "Copy failed"; },
+      () => {
+        shareText.text = "Copied!";
+        shareText.style.fill = "#66cc66";
+      },
+      () => {
+        shareText.text = "Copy failed";
+      },
     );
   };
   shareText.on("pointertap", handleShare);
@@ -189,8 +204,10 @@ export function showGameOver(
   const restartText = new Text({
     text: "Play Again",
     style: new TextStyle({
-      fontFamily: "monospace", fontSize: 20,
-      fill: "#ffffff", fontWeight: "bold",
+      fontFamily: "monospace",
+      fontSize: 20,
+      fill: "#ffffff",
+      fontWeight: "bold",
       stroke: { color: "#000000", width: 2 },
     }),
   });
@@ -212,8 +229,10 @@ export function showGameOver(
   const homeText = new Text({
     text: "Home",
     style: new TextStyle({
-      fontFamily: "monospace", fontSize: 16,
-      fill: uiT.text, fontWeight: "bold",
+      fontFamily: "monospace",
+      fontSize: 16,
+      fill: uiT.text,
+      fontWeight: "bold",
       stroke: { color: "#000000", width: 2 },
     }),
   });
@@ -228,7 +247,8 @@ export function showGameOver(
   const clearText = new Text({
     text: "[Clear saved data]",
     style: new TextStyle({
-      fontFamily: "monospace", fontSize: 12,
+      fontFamily: "monospace",
+      fontSize: 12,
       fill: "#887766",
     }),
   });
@@ -264,7 +284,10 @@ export function showGameOver(
   // Cleanup helper
   const cleanup = () => {
     if (fireworkTicker) app.ticker.remove(fireworkTicker);
-    if (fireworks) { fireworks.destroy(); fireworks = null; }
+    if (fireworks) {
+      fireworks.destroy();
+      fireworks = null;
+    }
     app.canvas.removeEventListener("pointerup", handleRestart);
     window.removeEventListener("keydown", handleRestart);
   };
@@ -290,8 +313,16 @@ export function showGameOver(
       window.addEventListener("keydown", handleRestart);
       restartBg.on("pointertap", handleRestart);
       restartText.on("pointertap", handleRestart);
-      homeBg.on("pointertap", (e: Event) => { e.stopPropagation(); suppressRestart(); handleHome(); });
-      homeText.on("pointertap", (e: Event) => { e.stopPropagation(); suppressRestart(); handleHome(); });
+      homeBg.on("pointertap", (e: Event) => {
+        e.stopPropagation();
+        suppressRestart();
+        handleHome();
+      });
+      homeText.on("pointertap", (e: Event) => {
+        e.stopPropagation();
+        suppressRestart();
+        handleHome();
+      });
     },
     isNewRecord ? 1500 : 300,
   );

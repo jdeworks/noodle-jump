@@ -4,7 +4,11 @@ import { formatShareMessage, generateShareURL } from "../src/services/Share";
 describe("Share", () => {
   test("formatShareMessage includes score", () => {
     const msg = formatShareMessage({
-      score: 12345, height: 500, meatballs: 20, combo: 3, zone: 2,
+      score: 12345,
+      height: 500,
+      meatballs: 20,
+      combo: 3,
+      zone: 2,
     });
     expect(msg).toContain("12,345");
     expect(msg).toContain("Space");
@@ -14,7 +18,11 @@ describe("Share", () => {
 
   test("formatShareMessage handles zone 0", () => {
     const msg = formatShareMessage({
-      score: 100, height: 10, meatballs: 1, combo: 1, zone: 0,
+      score: 100,
+      height: 10,
+      meatballs: 1,
+      combo: 1,
+      zone: 0,
     });
     expect(msg).toContain("Kitchen");
   });
@@ -26,7 +34,11 @@ describe("Share", () => {
     // Just test the function doesn't throw and returns a string
     try {
       const url = generateShareURL({
-        score: 5000, height: 200, meatballs: 10, combo: 2, zone: 1,
+        score: 5000,
+        height: 200,
+        meatballs: 10,
+        combo: 2,
+        zone: 1,
       });
       expect(typeof url).toBe("string");
       expect(url).toContain("score=");

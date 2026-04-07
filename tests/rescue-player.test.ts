@@ -37,14 +37,26 @@ describe("rescuePlayer", () => {
     const camTop = state.camera.y;
     const camMid = camTop + GAME_HEIGHT * 0.5;
     const breakingPlatform = {
-      x: 100, y: camMid - 20, width: 80, height: 15,
-      type: "breaking" as const, broken: false, id: 9990,
-      originX: 100, moveDirection: 0,
+      x: 100,
+      y: camMid - 20,
+      width: 80,
+      height: 15,
+      type: "breaking" as const,
+      broken: false,
+      id: 9990,
+      originX: 100,
+      moveDirection: 0,
     };
     const staticPlatform = {
-      x: 150, y: camMid + 10, width: 80, height: 15,
-      type: "static" as const, broken: false, id: 9991,
-      originX: 150, moveDirection: 0,
+      x: 150,
+      y: camMid + 10,
+      width: 80,
+      height: 15,
+      type: "static" as const,
+      broken: false,
+      id: 9991,
+      originX: 150,
+      moveDirection: 0,
     };
     state = { ...state, platforms: [breakingPlatform, staticPlatform] };
 

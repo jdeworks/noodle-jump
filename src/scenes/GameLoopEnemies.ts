@@ -8,10 +8,7 @@ import {
   checkEnemyPlayerCollision,
   killEnemy,
 } from "../entities/Enemy";
-import {
-  updateProjectiles,
-  checkProjectileEnemyCollisions,
-} from "../entities/Projectile";
+import { updateProjectiles, checkProjectileEnemyCollisions } from "../entities/Projectile";
 import { createMeatball } from "../entities/Collectible";
 import { trySpawnEnemy } from "../systems/EnemySpawner";
 import { tickWind, applyWindForce } from "../systems/Hazards";
@@ -19,10 +16,7 @@ import { tryShieldAbsorb } from "../systems/PowerUpEffects";
 import { GAME_HEIGHT } from "../config/constants";
 
 /** Tick enemies, projectiles, wind, and enemy-player interactions. */
-export function tickEnemies(
-  s: GameWorldState,
-  events: GameEvent[],
-): GameWorldState {
+export function tickEnemies(s: GameWorldState, events: GameEvent[]): GameWorldState {
   if (!s.enemiesEnabled) return s;
   if (s.inBossFight) {
     // During boss fights: still tick projectiles (knives need to fly), skip enemies/wind

@@ -26,7 +26,13 @@ export interface DailyGameOverStats {
   bestStreak: number;
   platforms: number;
   medal: Medal | null;
-  thresholds: { bronze: number; silver: number; gold: number; platinum: number; diamond: number };
+  thresholds: {
+    bronze: number;
+    silver: number;
+    gold: number;
+    platinum: number;
+    diamond: number;
+  };
   streak: number;
   isNewBest: boolean;
 }
@@ -72,17 +78,23 @@ export function showDailyGameOver(
   y += 36;
 
   // Score (this run + best today)
-  const scoreLabel = stats.bestScore > stats.score
-    ? `Score: ${stats.score}  |  Best: ${stats.bestScore}`
-    : `Score: ${stats.score}`;
+  const scoreLabel =
+    stats.bestScore > stats.score
+      ? `Score: ${stats.score}  |  Best: ${stats.bestScore}`
+      : `Score: ${stats.score}`;
   const scoreText = new Text({
     text: scoreLabel,
     style: new TextStyle({
-      fontFamily: "monospace", fontSize: stats.bestScore > stats.score ? 17 : 22,
-      fill: uiT.accent, fontWeight: "bold", stroke: { color: "#000000", width: 2 },
+      fontFamily: "monospace",
+      fontSize: stats.bestScore > stats.score ? 17 : 22,
+      fill: uiT.accent,
+      fontWeight: "bold",
+      stroke: { color: "#000000", width: 2 },
     }),
   });
-  scoreText.x = GAME_WIDTH / 2; scoreText.y = y; scoreText.anchor.set(0.5, 0);
+  scoreText.x = GAME_WIDTH / 2;
+  scoreText.y = y;
+  scoreText.anchor.set(0.5, 0);
   app.stage.addChild(scoreText);
   y += 34;
 

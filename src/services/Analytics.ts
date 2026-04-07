@@ -12,10 +12,7 @@ const eventQueue: AnalyticsEvent[] = [];
 let enabled = true;
 
 /** Track an event. Queued and sent in batches. */
-export function trackEvent(
-  name: string,
-  data?: Record<string, string | number | boolean>,
-): void {
+export function trackEvent(name: string, data?: Record<string, string | number | boolean>): void {
   if (!enabled) return;
   eventQueue.push({ name, data, timestamp: Date.now() });
 

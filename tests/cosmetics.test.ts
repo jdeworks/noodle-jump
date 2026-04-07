@@ -14,7 +14,11 @@ import {
 function defaultState(): CosmeticState {
   return {
     unlocked: new Set(["trail_none", "tint_none", "theme_default"]),
-    equipped: { trail: "trail_none", tint: "tint_none", theme: "theme_default" },
+    equipped: {
+      trail: "trail_none",
+      tint: "tint_none",
+      theme: "theme_default",
+    },
   };
 }
 

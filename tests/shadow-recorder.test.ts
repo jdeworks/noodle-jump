@@ -94,7 +94,11 @@ describe("ShadowRecorder", () => {
   });
 
   test("getShadowSlot returns daily for daily challenge", () => {
-    const config = { ...createDefaultRunConfig(), isDailyChallenge: true, seed: 12345 };
+    const config = {
+      ...createDefaultRunConfig(),
+      isDailyChallenge: true,
+      seed: 12345,
+    };
     expect(getShadowSlot(config).mode).toBe("daily");
   });
 

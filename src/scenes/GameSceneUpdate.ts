@@ -23,7 +23,6 @@ import { getSelectedCharacter } from "../systems/CharacterSettings";
 import { getProjectileVisual, projectileSpins } from "../rendering/sprites";
 import { renderTentacles, renderKnifeAmmo, renderDebugHitboxes } from "./BossArenaRenderer";
 
-
 export interface RenderContext {
   state: GameWorldState;
   /** Interpolated camera Y for smooth slow-mo. Equals state.camera.y when speed >= 1. */
@@ -77,8 +76,10 @@ export function renderGameWorld(ctx: RenderContext): Graphics[] {
   const theme = getInterpolatedTheme(state.platformsPassed);
   if (ctx.cosmeticTheme !== "theme_default") {
     const overrides: Record<string, number> = {
-      theme_neon: 0x080818, theme_pixel: 0x222222,
-      theme_candy: 0xffeef4, theme_dark: 0x0a0a14,
+      theme_neon: 0x080818,
+      theme_pixel: 0x222222,
+      theme_candy: 0xffeef4,
+      theme_dark: 0x0a0a14,
     };
     theme.background = overrides[ctx.cosmeticTheme] ?? theme.background;
   }
@@ -90,8 +91,19 @@ export function renderGameWorld(ctx: RenderContext): Graphics[] {
   ctx.parallax.container.visible = !state.debugConfig.disableParallax;
 
   // Create a view-only state with interpolated player position for the renderer
-  const renderState = { ...state, player: { ...state.player, x: ctx.interpPlayerX, y: ctx.interpPlayerY } };
-  ctx.effectRenderer.renderPlayer(renderState, ctx.playerGfx, camY, ctx.particles, ctx.inputX, ctx.cosmeticTint, ctx.cosmeticTheme);
+  const renderState = {
+    ...state,
+    player: { ...state.player, x: ctx.interpPlayerX, y: ctx.interpPlayerY },
+  };
+  ctx.effectRenderer.renderPlayer(
+    renderState,
+    ctx.playerGfx,
+    camY,
+    ctx.particles,
+    ctx.inputX,
+    ctx.cosmeticTint,
+    ctx.cosmeticTheme,
+  );
   renderPlatforms(state, ctx.gfxSync, theme, camY, ctx.cosmeticTheme);
   renderMeatballs(state, ctx.gfxSync, camY);
   renderPowerUps(state, ctx.gfxSync, camY);
@@ -110,7 +122,15 @@ export function renderGameWorld(ctx: RenderContext): Graphics[] {
   ctx.floatingTextMgr.update();
 
   // Boss + tentacles + ammo
-  const bossAttackGfx = renderBoss(state, ctx.bossGfx, ctx.bossHealthGfx, ctx.bossAttackGfx, ctx.gameContainer, camY, ctx.cosmeticTheme);
+  const bossAttackGfx = renderBoss(
+    state,
+    ctx.bossGfx,
+    ctx.bossHealthGfx,
+    ctx.bossAttackGfx,
+    ctx.gameContainer,
+    camY,
+    ctx.cosmeticTheme,
+  );
   renderBossArc(ctx.bossArcGfx, state, camY);
   renderTentacles(ctx.tentacleGfx, state, camY);
   renderKnifeAmmo(ctx.knifeAmmoIcons, ctx.knifeAmmoText, state, GAME_WIDTH);
@@ -121,8 +141,10 @@ export function renderGameWorld(ctx: RenderContext): Graphics[] {
     weatherGfx = renderWeather(state, ctx.weatherGfx, ctx.weatherContainer);
   }
   ctx.weatherContainer.visible = !state.debugConfig.disableWeather;
-  if (state.inBossFight) { ctx.windGfx.clear(); ctx.windGfx.visible = false; }
-  else renderWindOverlay(ctx.windGfx, state, camY);
+  if (state.inBossFight) {
+    ctx.windGfx.clear();
+    ctx.windGfx.visible = false;
+  } else renderWindOverlay(ctx.windGfx, state, camY);
 
   // Trail
   const speedEffect = state.activeEffect?.type;
@@ -144,8 +166,10 @@ export function renderGameWorld(ctx: RenderContext): Graphics[] {
   if (combo >= 2) {
     const a = Math.min(combo / 5, 1) * (0.3 + Math.sin(state.animTick * 0.1) * 0.2);
     const gw = 4 + combo;
-    ctx.comboGlowGfx.rect(0, 0, GAME_WIDTH, gw); ctx.comboGlowGfx.rect(0, GAME_HEIGHT - gw, GAME_WIDTH, gw);
-    ctx.comboGlowGfx.rect(0, 0, gw, GAME_HEIGHT); ctx.comboGlowGfx.rect(GAME_WIDTH - gw, 0, gw, GAME_HEIGHT);
+    ctx.comboGlowGfx.rect(0, 0, GAME_WIDTH, gw);
+    ctx.comboGlowGfx.rect(0, GAME_HEIGHT - gw, GAME_WIDTH, gw);
+    ctx.comboGlowGfx.rect(0, 0, gw, GAME_HEIGHT);
+    ctx.comboGlowGfx.rect(GAME_WIDTH - gw, 0, gw, GAME_HEIGHT);
     ctx.comboGlowGfx.fill({ color: 0xff8800, alpha: a });
   }
 

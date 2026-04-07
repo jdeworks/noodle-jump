@@ -148,12 +148,7 @@ export class EffectRenderer {
       for (let i = 0; i < 5; i++) {
         const bandY = GAME_HEIGHT * 0.15 + (i / 5) * GAME_HEIGHT * 0.7;
         const wobble = Math.sin(state.animTick * 0.02 + i * 1.5) * 30;
-        this.effectOverlay.ellipse(
-          GAME_WIDTH / 2 + wobble,
-          bandY,
-          GAME_WIDTH * 0.6,
-          60 + i * 10,
-        );
+        this.effectOverlay.ellipse(GAME_WIDTH / 2 + wobble, bandY, GAME_WIDTH * 0.6, 60 + i * 10);
         this.effectOverlay.fill({ color: 0x99cc55, alpha: fogAlpha * 0.3 });
       }
     } else if (type === "burnt_toast") {

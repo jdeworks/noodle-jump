@@ -14,14 +14,25 @@ import { ParticleManager } from "./ParticleManager";
 import { EffectRenderer } from "./EffectRenderer";
 import { GraphicsSync } from "./GraphicsSync";
 import { handleEvents } from "./GameSceneEvents";
-import { getMaxDuration } from "./effectDuration";
 import { TrailRenderer } from "../rendering/TrailRenderer";
+import {
+  getActiveEffectProgress as _effectProgress,
+  getCountdownSeconds as _countdownSec,
+  getZoneProgress as _zoneProgress,
+  checkNewHighScore as _checkHighScore,
+} from "./GameSceneAccessors";
 import { loadCosmetics, TINT_COLORS } from "../systems/Cosmetics";
 import { getSelectedCharacter } from "../systems/CharacterSettings";
 import { FloatingTextManager } from "./FloatingText";
 import { clearCharCache } from "./EffectPlayerRender";
 import { renderDeathAnimation, renderGameWorld } from "./GameSceneUpdate";
-import { buildRenderContext, buildEventDeps, tickBossTransition, autoAimTarget, type SceneComponents } from "./GameSceneHelpers";
+import {
+  buildRenderContext,
+  buildEventDeps,
+  tickBossTransition,
+  autoAimTarget,
+  type SceneComponents,
+} from "./GameSceneHelpers";
 
 export class GameScene {
   readonly container = new Container();
@@ -70,12 +81,9 @@ export class GameScene {
     this.trail = new TrailRenderer();
     const cosmetics = loadCosmetics();
     this.cosmeticTrail =
-      getSelectedCharacter() === "nyan_cat"
-        ? "trail_rainbow"
-        : cosmetics.equipped.trail;
+      getSelectedCharacter() === "nyan_cat" ? "trail_rainbow" : cosmetics.equipped.trail;
     this.trail.setTrailType(this.cosmeticTrail);
-    this.cosmeticTint =
-      TINT_COLORS[cosmetics.equipped.tint ?? "tint_none"] ?? 0xffffff;
+    this.cosmeticTint = TINT_COLORS[cosmetics.equipped.tint ?? "tint_none"] ?? 0xffffff;
     this.cosmeticTheme = cosmetics.equipped.theme ?? "theme_default";
     this.gfxSync.setTheme(this.cosmeticTheme);
 
@@ -83,8 +91,6 @@ export class GameScene {
     this.parallax.setCosmeticTheme(this.cosmeticTheme);
     this.container.addChild(this.parallax.container);
     this.container.addChild(this.gameContainer);
-    // Neon glow is handled by multi-layer alpha in ThemeSprites — no BlurFilter
-    // needed (BlurFilter on full scene kills FPS on mobile)
     this.gameContainer.addChild(this.particles.crumbleContainer);
     this.gameContainer.addChild(this.particles.dustContainer);
     this.gameContainer.addChild(this.particles.sneezeContainer);
@@ -98,7 +104,6 @@ export class GameScene {
 
     this.container.addChild(this.weatherContainer);
     this.container.addChild(this.effectRenderer.overlay);
-    // Wind overlay — on top of effects so arrows are clearly visible
     this.windGfx.visible = false;
     this.container.addChild(this.windGfx);
 
@@ -150,10 +155,7 @@ export class GameScene {
       this.gameContainer,
     );
 
-    this.parallax.applyTheme(
-      getInterpolatedTheme(0),
-      this.state.zoneState.currentZone,
-    );
+    this.parallax.applyTheme(getInterpolatedTheme(0), this.state.zoneState.currentZone);
   }
   /** Override the cosmetic theme (for multiplayer — host sets theme for all players). */
   setCosmeticTheme(theme: string): void {
@@ -258,38 +260,21 @@ export class GameScene {
   }
 
   getActiveEffectProgress(): number {
-    return this.state.activeEffect
-      ? this.state.activeEffect.ticksRemaining /
-          getMaxDuration(this.state.activeEffect.type)
-      : 0;
+    return _effectProgress(this.state);
   }
   getCountdownSeconds(): number | undefined {
-    return this.state.countdownTicks < 0
-      ? undefined
-      : Math.ceil(this.state.countdownTicks / 60);
+    return _countdownSec(this.state);
   }
   getZoneProgress(): number {
-    const th = [0, 80, 280, 500, 750, 1000, 1300],
-      z = this.state.zoneState.currentZone;
-    return z >= th.length - 1
-      ? 1
-      : Math.min(1, (this.state.platformsPassed - th[z]) / (th[z + 1] - th[z]));
+    return _zoneProgress(this.state);
   }
   checkNewHighScore(): boolean {
-    return (
-      !this.state.highScoreBeatShown &&
-      this.state.highScore > 0 &&
-      this.state.scoreState.points > this.state.highScore
-    );
+    return _checkHighScore(this.state);
   }
   handleThrow(screenX: number, screenY: number): void {
     if (!this.state.enemiesEnabled && !this.state.inBossFight) return;
     if (this.state.countdownTicks > 0) return; // don't throw during countdown
-    this.state = throwProjectile(
-      this.state,
-      screenX,
-      screenY + this.state.camera.y,
-    );
+    this.state = throwProjectile(this.state, screenX, screenY + this.state.camera.y);
   }
 
   /** Auto-aim throw — targets nearest boss or enemy. For local co-op. */
@@ -364,18 +349,33 @@ export class GameScene {
 
   private sceneComponents(): SceneComponents {
     return {
-      state: this.state, parallax: this.parallax, particles: this.particles,
-      effectRenderer: this.effectRenderer, gfxSync: this.gfxSync, trail: this.trail,
-      floatingTextMgr: this.floatingTextMgr, gameContainer: this.gameContainer,
-      playerGfx: this.playerGfx, weatherContainer: this.weatherContainer,
-      weatherGfx: this.weatherGfx, windGfx: this.windGfx, bossGfx: this.bossGfx,
-      bossArcGfx: this.bossArcGfx, bossHealthGfx: this.bossHealthGfx,
-      bossAttackGfx: this.bossAttackGfx, knifeAmmoText: this.knifeAmmoText,
-      knifeAmmoIcons: this.knifeAmmoIcons, hitboxGfx: this.hitboxGfx,
-      tentacleGfx: this.tentacleGfx, comboGlowGfx: this.comboGlowGfx,
-      cosmeticTrail: this.cosmeticTrail, cosmeticTint: this.cosmeticTint,
-      cosmeticTheme: this.cosmeticTheme, inputX: this.input.inputX,
-      container: this.container, zoneTransition: this.zoneTransition,
+      state: this.state,
+      parallax: this.parallax,
+      particles: this.particles,
+      effectRenderer: this.effectRenderer,
+      gfxSync: this.gfxSync,
+      trail: this.trail,
+      floatingTextMgr: this.floatingTextMgr,
+      gameContainer: this.gameContainer,
+      playerGfx: this.playerGfx,
+      weatherContainer: this.weatherContainer,
+      weatherGfx: this.weatherGfx,
+      windGfx: this.windGfx,
+      bossGfx: this.bossGfx,
+      bossArcGfx: this.bossArcGfx,
+      bossHealthGfx: this.bossHealthGfx,
+      bossAttackGfx: this.bossAttackGfx,
+      knifeAmmoText: this.knifeAmmoText,
+      knifeAmmoIcons: this.knifeAmmoIcons,
+      hitboxGfx: this.hitboxGfx,
+      tentacleGfx: this.tentacleGfx,
+      comboGlowGfx: this.comboGlowGfx,
+      cosmeticTrail: this.cosmeticTrail,
+      cosmeticTint: this.cosmeticTint,
+      cosmeticTheme: this.cosmeticTheme,
+      inputX: this.input.inputX,
+      container: this.container,
+      zoneTransition: this.zoneTransition,
     };
   }
 

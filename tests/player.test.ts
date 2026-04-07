@@ -1,10 +1,6 @@
 import { describe, test, expect } from "vitest";
 import { createPlayer, updatePlayer, playerJump } from "../src/entities/Player";
-import {
-  GRAVITY,
-  GAME_WIDTH,
-  PLAYER_MAX_HORIZONTAL_SPEED,
-} from "../src/config/constants";
+import { GRAVITY, GAME_WIDTH, PLAYER_MAX_HORIZONTAL_SPEED } from "../src/config/constants";
 
 describe("Player", () => {
   test("creates player at given position", () => {

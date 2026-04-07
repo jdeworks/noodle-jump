@@ -42,10 +42,7 @@ export function spawnDustPuff(
   }
 }
 
-export function updateDustParticles(
-  dustContainer: Container,
-  dustParticles: Particle[],
-): void {
+export function updateDustParticles(dustContainer: Container, dustParticles: Particle[]): void {
   for (let i = dustParticles.length - 1; i >= 0; i--) {
     const p = dustParticles[i];
     p.gfx.x += p.vx;
@@ -142,10 +139,7 @@ export function updateTornadoParticles(
     const angle = animTick * 0.12 + i * 0.8;
     const radius = 10 + (tornadoParticles.length - i) * 2;
     p.x = cx + Math.cos(angle) * radius;
-    p.y =
-      screenCy +
-      Math.sin(angle) * radius * 0.5 +
-      (tornadoParticles.length - i) * 1.5;
+    p.y = screenCy + Math.sin(angle) * radius * 0.5 + (tornadoParticles.length - i) * 1.5;
     p.alpha -= 0.015;
     p.scale.set(p.scale.x * 0.995);
 
@@ -157,10 +151,7 @@ export function updateTornadoParticles(
   }
 }
 
-export function clearGraphicsArray(
-  container: Container,
-  particles: Graphics[],
-): void {
+export function clearGraphicsArray(container: Container, particles: Graphics[]): void {
   for (const p of particles) {
     container.removeChild(p);
     p.destroy();

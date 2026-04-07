@@ -75,11 +75,7 @@ export function drawBoss(
         const tx = cx + (t - 2.5) * 9;
         const wave = Math.sin(animTick * 0.05 + t * 1.2) * 5;
         gfx.moveTo(tx, cy + 5);
-        gfx.bezierCurveTo(
-          tx + wave, cy + 15,
-          tx - wave, cy + 25,
-          tx + wave * 0.5, cy + 32,
-        );
+        gfx.bezierCurveTo(tx + wave, cy + 15, tx - wave, cy + 25, tx + wave * 0.5, cy + 32);
         gfx.stroke({ width: 3, color: 0x557799 });
         // Suction cups
         gfx.circle(tx + wave * 0.3, cy + 20, 1.5);
@@ -146,7 +142,8 @@ export function drawBossHealthBar(
   gfx.fill({ color: 0x000000, alpha: 0.5 });
   // Health fill
   const fillW = (health / maxHealth) * width;
-  const color = health / maxHealth > 0.5 ? 0xff4444 : health / maxHealth > 0.25 ? 0xffaa22 : 0xff2222;
+  const color =
+    health / maxHealth > 0.5 ? 0xff4444 : health / maxHealth > 0.25 ? 0xffaa22 : 0xff2222;
   gfx.roundRect(x, y, fillW, barH, 3);
   gfx.fill(color);
   // Border

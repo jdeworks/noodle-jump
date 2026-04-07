@@ -11,7 +11,12 @@ import {
 import type { ZoneTheme } from "./Zone";
 import { drawPlateWithPasta, drawBoilingPot } from "../rendering/ParallaxKitchen";
 import { drawVoidPortal } from "../rendering/ParallaxSpace";
-import { drawFreezer, drawVolcano, drawCandyLand, drawGoldenKitchen } from "../rendering/ParallaxLate";
+import {
+  drawFreezer,
+  drawVolcano,
+  drawCandyLand,
+  drawGoldenKitchen,
+} from "../rendering/ParallaxLate";
 
 // Fade speed: ~0.0055/frame at 60fps ≈ 3 seconds for full transition
 const FADE_SPEED = 0.0055;
@@ -129,9 +134,7 @@ export class ParallaxBackground {
       const rand = seededRandom(zone * 1000 + Math.round(config.speed * 1000));
 
       for (let i = 0; i < config.count; i++) {
-        const width =
-          PLATFORM_WIDTH_MIN +
-          rand() * (PLATFORM_WIDTH_MAX - PLATFORM_WIDTH_MIN);
+        const width = PLATFORM_WIDTH_MIN + rand() * (PLATFORM_WIDTH_MAX - PLATFORM_WIDTH_MIN);
         const x = rand() * (GAME_WIDTH - width);
         const baseY = -GAME_HEIGHT + rand() * GAME_HEIGHT * 3;
 
@@ -152,7 +155,9 @@ export class ParallaxBackground {
   }
 
   private cosmeticTheme = "theme_default";
-  setCosmeticTheme(theme: string): void { this.cosmeticTheme = theme; }
+  setCosmeticTheme(theme: string): void {
+    this.cosmeticTheme = theme;
+  }
 
   private drawGhostPlatform(gfx: Graphics, width: number): void {
     gfx.clear();
@@ -183,8 +188,7 @@ export class ParallaxBackground {
       for (const item of layer.items) {
         let screenY = item.baseY - cameraY * layer.speed;
         screenY =
-          (((screenY % (GAME_HEIGHT * 2)) + GAME_HEIGHT * 2) %
-            (GAME_HEIGHT * 2)) -
+          (((screenY % (GAME_HEIGHT * 2)) + GAME_HEIGHT * 2) % (GAME_HEIGHT * 2)) -
           GAME_HEIGHT * 0.5;
         item.gfx.y = screenY;
       }
@@ -207,8 +211,7 @@ export class ParallaxBackground {
         f.gfx.alpha = f.alpha;
         const screenY = f.baseY - cameraY * f.speed;
         const wrappedY =
-          (((screenY % (GAME_HEIGHT * 2)) + GAME_HEIGHT * 2) %
-            (GAME_HEIGHT * 2)) -
+          (((screenY % (GAME_HEIGHT * 2)) + GAME_HEIGHT * 2) % (GAME_HEIGHT * 2)) -
           GAME_HEIGHT * 0.3;
         f.gfx.y = wrappedY;
       }
@@ -216,8 +219,13 @@ export class ParallaxBackground {
 
     // Draw current features with fade-in
     const drawFeature = [
-      drawPlateWithPasta, drawBoilingPot, drawVoidPortal,
-      drawFreezer, drawVolcano, drawCandyLand, drawGoldenKitchen,
+      drawPlateWithPasta,
+      drawBoilingPot,
+      drawVoidPortal,
+      drawFreezer,
+      drawVolcano,
+      drawCandyLand,
+      drawGoldenKitchen,
     ][Math.min(this.featureZone, 6)];
     if (drawFeature) {
       const sizes = [110, 95, 100, 90, 105];
@@ -226,13 +234,14 @@ export class ParallaxBackground {
         const featureAlpha = this.cosmeticTheme === "theme_dark" ? 0.12 : 0.25;
         f.gfx.alpha = featureAlpha * this.featureFadeIn;
         const featureTints: Record<string, number> = {
-          theme_neon: 0x00ffff, theme_candy: 0xffaacc, theme_dark: 0x8866aa,
+          theme_neon: 0x00ffff,
+          theme_candy: 0xffaacc,
+          theme_dark: 0x8866aa,
         };
         f.gfx.tint = featureTints[this.cosmeticTheme] ?? 0xffffff;
         const screenY = f.baseY - cameraY * f.speed;
         const wrappedY =
-          (((screenY % (GAME_HEIGHT * 2)) + GAME_HEIGHT * 2) %
-            (GAME_HEIGHT * 2)) -
+          (((screenY % (GAME_HEIGHT * 2)) + GAME_HEIGHT * 2) % (GAME_HEIGHT * 2)) -
           GAME_HEIGHT * 0.3;
         f.gfx.y = wrappedY;
         drawFeature(f.gfx, sizes[i % sizes.length], this.animTick + i * 180);

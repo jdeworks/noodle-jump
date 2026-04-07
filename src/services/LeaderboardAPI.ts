@@ -20,12 +20,7 @@ export interface LeaderboardEntry {
 }
 
 /** Compute integrity hash for an entry. */
-function computeHash(
-  score: number,
-  height: number,
-  zone: number,
-  timestamp: number,
-): string {
+function computeHash(score: number, height: number, zone: number, timestamp: number): string {
   const raw = `${INTEGRITY_SALT}:${score}:${height}:${zone}:${timestamp}`;
   let h = 0;
   for (let i = 0; i < raw.length; i++) {
@@ -35,10 +30,7 @@ function computeHash(
 }
 
 function verifyEntry(entry: LeaderboardEntry): boolean {
-  return (
-    entry.hash ===
-    computeHash(entry.score, entry.height, entry.zone, entry.timestamp)
-  );
+  return entry.hash === computeHash(entry.score, entry.height, entry.zone, entry.timestamp);
 }
 
 /** Submit a score. Returns the rank (1-based) or null if it didn't make the top 10. */
@@ -68,9 +60,7 @@ export function submitScore(
   const trimmed = entries.slice(0, MAX_ENTRIES);
   saveEntries(trimmed);
 
-  const rank = trimmed.findIndex(
-    (e) => e.timestamp === timestamp && e.score === score,
-  );
+  const rank = trimmed.findIndex((e) => e.timestamp === timestamp && e.score === score);
   return rank >= 0 ? rank + 1 : null;
 }
 

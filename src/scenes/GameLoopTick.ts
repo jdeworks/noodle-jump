@@ -3,11 +3,7 @@
 import type { GameWorldState } from "./GameState";
 import type { GameEvent } from "./GameLoopTypes";
 import { collectMeatballs } from "../entities/Collectible";
-import {
-  collectPowerUps,
-  applyPowerUp,
-  isNegativePowerUp,
-} from "../entities/PowerUp";
+import { collectPowerUps, applyPowerUp, isNegativePowerUp } from "../entities/PowerUp";
 import { checkPlatformCollisions } from "../systems/Physics";
 import {
   tickCrumbleTimer,
@@ -57,9 +53,7 @@ export function tickPlatformCollisions(
   if (isFlying || inSquashHold || isSquashTransition) return s;
 
   const allBreaking = s.activeEffect?.type === "soggy_noodle";
-  const alreadyBroken = new Set(
-    s.platforms.filter((p) => p.broken).map((p) => p.id),
-  );
+  const alreadyBroken = new Set(s.platforms.filter((p) => p.broken).map((p) => p.id));
 
   // Burnt toast shrinks collision hitboxes
   let collisionPlatforms = s.platforms;
@@ -82,9 +76,7 @@ export function tickPlatformCollisions(
 
   // Map platform updates back
   if (s.activeEffect?.type === "burnt_toast") {
-    const brokenIds = new Set(
-      collision.platforms.filter((p) => p.broken).map((p) => p.id),
-    );
+    const brokenIds = new Set(collision.platforms.filter((p) => p.broken).map((p) => p.id));
     s = {
       ...s,
       platforms: s.platforms.map((p) =>
@@ -145,11 +137,7 @@ export function tickPlatformCollisions(
 
   // Teleport resolution
   if (collision.teleported && collision.landedPlatform) {
-    const teleResult = resolveTeleport(
-      s.player,
-      collision.landedPlatform,
-      s.platforms,
-    );
+    const teleResult = resolveTeleport(s.player, collision.landedPlatform, s.platforms);
     if (teleResult.targetPlatform) {
       s = { ...s, player: teleResult.player };
     }
@@ -198,12 +186,7 @@ export function tickPlatformEffects(s: GameWorldState): GameWorldState {
     return { ...s, player: applyIcePhysics(s.player) };
   }
   if (standingOn?.type === "weighted") {
-    const tilted = applyWeightedTilt(
-      standingOn,
-      s.player.x,
-      s.player.width,
-      s.gameSpeedScale,
-    );
+    const tilted = applyWeightedTilt(standingOn, s.player.x, s.player.width, s.gameSpeedScale);
     return {
       ...s,
       platforms: s.platforms.map((p) => (p.id === tilted.id ? tilted : p)),
@@ -216,10 +199,7 @@ export function tickPlatformEffects(s: GameWorldState): GameWorldState {
 /** Tick minestrone flood rising and stopping. */
 export function tickFlood(s: GameWorldState): GameWorldState {
   if (s.minestroneFlood?.active) {
-    const updatedFlood = tickMinestroneFlood(
-      s.minestroneFlood,
-      s.gameSpeedScale,
-    );
+    const updatedFlood = tickMinestroneFlood(s.minestroneFlood, s.gameSpeedScale);
     s = { ...s, minestroneFlood: updatedFlood };
     if (isPlayerInFlood(s.player.y, s.player.height, updatedFlood)) {
       s = {
@@ -330,10 +310,7 @@ export function tickPowerUpCollection(
 }
 
 /** Track height progress and apply stagnation penalties. */
-export function tickStagnation(
-  s: GameWorldState,
-  events: GameEvent[],
-): GameWorldState {
+export function tickStagnation(s: GameWorldState, events: GameEvent[]): GameWorldState {
   if (s.inBossFight || s.pendingBossZone !== null) return s;
 
   if (s.player.y < s.highestPlayerY) {
@@ -351,17 +328,11 @@ export function tickStagnation(
   const prevStagnant = s.stagnantTicks;
   s = { ...s, stagnantTicks: s.stagnantTicks + s.gameSpeedScale };
 
-  if (
-    prevStagnant < STAGNANT_WARNING_1_TICKS &&
-    s.stagnantTicks >= STAGNANT_WARNING_1_TICKS
-  ) {
+  if (prevStagnant < STAGNANT_WARNING_1_TICKS && s.stagnantTicks >= STAGNANT_WARNING_1_TICKS) {
     s = { ...s, shakeState: createShake(3, 30) };
     events.push({ type: "stagnantWarning", level: 1 });
   }
-  if (
-    prevStagnant < STAGNANT_WARNING_2_TICKS &&
-    s.stagnantTicks >= STAGNANT_WARNING_2_TICKS
-  ) {
+  if (prevStagnant < STAGNANT_WARNING_2_TICKS && s.stagnantTicks >= STAGNANT_WARNING_2_TICKS) {
     s = { ...s, shakeState: createShake(5, 20) };
     events.push({ type: "stagnantWarning", level: 2 });
   }
@@ -377,9 +348,7 @@ export function tickStagnation(
       const victim = intact[0];
       s = {
         ...s,
-        platforms: s.platforms.map((p) =>
-          p.id === victim.id ? { ...p, broken: true } : p,
-        ),
+        platforms: s.platforms.map((p) => (p.id === victim.id ? { ...p, broken: true } : p)),
         shakeState: createShake(4, 10),
       };
       events.push({ type: "platformCrumbled", platform: victim });

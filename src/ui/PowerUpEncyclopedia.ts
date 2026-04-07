@@ -72,9 +72,7 @@ export class PowerUpEncyclopedia {
 
       // Color indicator
       const dot = new Graphics();
-      const color = isCollected
-        ? (COLORS.powerups[type] ?? 0xffffff)
-        : 0x444444;
+      const color = isCollected ? (COLORS.powerups[type] ?? 0xffffff) : 0x444444;
       dot.circle(15, y + 7, 5);
       dot.fill(color);
       this.container.addChild(dot);

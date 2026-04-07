@@ -5,6 +5,7 @@ Understanding and implementing the update/render cycle.
 ## The core loop
 
 Every game runs a loop:
+
 1. **Process input** — read keyboard, mouse, touch, gamepad
 2. **Update state** — move entities, check collisions, apply rules
 3. **Render** — draw the current state to the screen
@@ -16,13 +17,14 @@ Never assume a fixed frame rate. Use delta time (time since last frame):
 
 ```typescript
 // WRONG — frame-rate dependent
-player.x += 5  // moves faster at 120 FPS, slower at 30 FPS
+player.x += 5; // moves faster at 120 FPS, slower at 30 FPS
 
 // RIGHT — frame-rate independent
-player.x += speed * deltaTime  // consistent speed at any FPS
+player.x += speed * deltaTime; // consistent speed at any FPS
 ```
 
 Most frameworks pass delta time to your update function:
+
 - Phaser: `update(time, delta)` — delta is in milliseconds
 - PixiJS: `app.ticker.add((ticker) => { ticker.deltaMS })`
 - Three.js: `clock.getDelta()` — returns seconds
@@ -35,16 +37,16 @@ Most frameworks pass delta time to your update function:
   More stable for physics-heavy games.
 
 ```typescript
-const FIXED_STEP = 1000 / 60  // 60 Hz
-let accumulator = 0
+const FIXED_STEP = 1000 / 60; // 60 Hz
+let accumulator = 0;
 
 function update(delta: number) {
-  accumulator += delta
+  accumulator += delta;
   while (accumulator >= FIXED_STEP) {
-    physicsUpdate(FIXED_STEP)  // always called with the same dt
-    accumulator -= FIXED_STEP
+    physicsUpdate(FIXED_STEP); // always called with the same dt
+    accumulator -= FIXED_STEP;
   }
-  render()  // render at actual frame rate
+  render(); // render at actual frame rate
 }
 ```
 

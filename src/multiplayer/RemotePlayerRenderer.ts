@@ -7,12 +7,7 @@
 import { Container, Graphics, Text, TextStyle } from "pixi.js";
 import { drawCharacter } from "../rendering/PlayerCharacters";
 import { worldToScreen } from "../systems/Camera";
-import {
-  GAME_WIDTH,
-  GAME_HEIGHT,
-  PLAYER_WIDTH,
-  PLAYER_HEIGHT,
-} from "../config/constants";
+import { GAME_WIDTH, GAME_HEIGHT, PLAYER_WIDTH, PLAYER_HEIGHT } from "../config/constants";
 import { TINT_COLORS } from "../systems/Cosmetics";
 import { TrailRenderer } from "../rendering/TrailRenderer";
 import type { InterpolatedState } from "./InterpolationBuffer";
@@ -44,8 +39,7 @@ export class RemotePlayerRenderer {
 
   constructor(characterId = "chef", cosmetics?: RemoteCosmetics) {
     this.characterId = characterId;
-    if (cosmetics?.tint)
-      this.cosmeticTint = TINT_COLORS[cosmetics.tint] ?? 0xffffff;
+    if (cosmetics?.tint) this.cosmeticTint = TINT_COLORS[cosmetics.tint] ?? 0xffffff;
     if (cosmetics?.trail && cosmetics.trail !== "trail_none") {
       this.trail = new TrailRenderer();
       this.trail.setTrailType(cosmetics.trail);
@@ -76,40 +70,25 @@ export class RemotePlayerRenderer {
   }
 
   /** Update the remote player position each frame. */
-  update(
-    remote: InterpolatedState,
-    localCameraY: number,
-    localPlayerY?: number,
-  ): void {
+  update(remote: InterpolatedState, localCameraY: number, localPlayerY?: number): void {
     const screenX = remote.x;
     const screenY = worldToScreen(remote.y, localCameraY);
 
     // Determine tint: is remote player above or below local player?
     const refY = localPlayerY ?? localCameraY;
     const heightDiff = refY - remote.y; // positive = remote is higher (lower Y = higher)
-    const tintColor =
-      heightDiff > 50
-        ? COLOR_ABOVE
-        : heightDiff < -50
-          ? COLOR_BELOW
-          : COLOR_SAME;
+    const tintColor = heightDiff > 50 ? COLOR_ABOVE : heightDiff < -50 ? COLOR_BELOW : COLOR_SAME;
 
-    const onScreen =
-      screenY > -PLAYER_HEIGHT && screenY < GAME_HEIGHT + PLAYER_HEIGHT;
+    const onScreen = screenY > -PLAYER_HEIGHT && screenY < GAME_HEIGHT + PLAYER_HEIGHT;
 
     if (onScreen) {
       this.chefGfx.visible = true;
       this.chefGfx.x = screenX;
       this.chefGfx.y = screenY;
-      this.chefGfx.tint =
-        this.cosmeticTint !== 0xffffff ? this.cosmeticTint : tintColor;
-      this.chefGfx.alpha =
-        remote.playerState >= 1 ? GHOST_DEAD_ALPHA : GHOST_ALPHA;
+      this.chefGfx.tint = this.cosmeticTint !== 0xffffff ? this.cosmeticTint : tintColor;
+      this.chefGfx.alpha = remote.playerState >= 1 ? GHOST_DEAD_ALPHA : GHOST_ALPHA;
       if (this.trail) {
-        this.trail.addPoint(
-          remote.x + PLAYER_WIDTH / 2,
-          remote.y + PLAYER_HEIGHT + 6,
-        );
+        this.trail.addPoint(remote.x + PLAYER_WIDTH / 2, remote.y + PLAYER_HEIGHT + 6);
         this.trail.update(localCameraY);
       }
 
@@ -131,28 +110,17 @@ export class RemotePlayerRenderer {
       const arrowY = aboveScreen ? ARROW_MARGIN : GAME_HEIGHT - ARROW_MARGIN;
 
       this.arrowGfx.clear();
-      this.arrowGfx.moveTo(
-        arrowX,
-        arrowY + (aboveScreen ? ARROW_SIZE : -ARROW_SIZE),
-      );
-      this.arrowGfx.lineTo(
-        arrowX - ARROW_SIZE * 0.7,
-        arrowY + (aboveScreen ? -2 : 2),
-      );
-      this.arrowGfx.lineTo(
-        arrowX + ARROW_SIZE * 0.7,
-        arrowY + (aboveScreen ? -2 : 2),
-      );
+      this.arrowGfx.moveTo(arrowX, arrowY + (aboveScreen ? ARROW_SIZE : -ARROW_SIZE));
+      this.arrowGfx.lineTo(arrowX - ARROW_SIZE * 0.7, arrowY + (aboveScreen ? -2 : 2));
+      this.arrowGfx.lineTo(arrowX + ARROW_SIZE * 0.7, arrowY + (aboveScreen ? -2 : 2));
       this.arrowGfx.closePath();
       this.arrowGfx.fill({ color: arrowColor, alpha: 0.85 });
 
       const label = aboveScreen ? `${distanceM}m` : `${distanceM}m`;
       this.distanceText.text = label;
-      this.distanceText.style.fill =
-        "#" + arrowColor.toString(16).padStart(6, "0");
+      this.distanceText.style.fill = "#" + arrowColor.toString(16).padStart(6, "0");
       this.distanceText.x = arrowX;
-      this.distanceText.y =
-        arrowY + (aboveScreen ? ARROW_SIZE + 12 : -ARROW_SIZE - 12);
+      this.distanceText.y = arrowY + (aboveScreen ? ARROW_SIZE + 12 : -ARROW_SIZE - 12);
     }
   }
 

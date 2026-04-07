@@ -9,18 +9,21 @@ Three tiers. All three are required in full mode. Tier 1 is required in lean mod
 Test what the code does. Every exported function, route, schema, and utility needs at least one test.
 
 **Rules:**
+
 - No feature is "done" until it has passing tests — this is not negotiable
 - Test the contract (inputs → outputs), not the implementation
 - Prefer integration tests over unit tests where they're not significantly slower
 - Use realistic fixtures, not `foo` / `bar` / `123`
 
 **What to test:**
+
 - Happy path (correct inputs → correct output)
 - Edge cases (empty arrays, null, zero, max values)
 - Error cases (invalid inputs → expected error)
 - Boundary conditions specific to your domain
 
 **What not to test:**
+
 - Third-party library internals
 - Framework boilerplate (e.g. that Express routes are registered)
 - Trivial getters/setters with no logic
@@ -33,6 +36,7 @@ Test how the code is shaped. These run as part of `make health` and enforce the 
 `.kit/code-health.md` automatically.
 
 **What's checked:**
+
 - File size within limits (warn at soft, fail at hard)
 - Function length within limits
 - No `console.log` in production source files
@@ -46,24 +50,24 @@ For conventions that can't be expressed in ESLint or the health script, write ex
 
 ```ts
 // tests/architecture/folder-conventions.test.ts
-import { globSync } from 'glob'
-import { describe, it, expect } from 'vitest'
+import { globSync } from "glob";
+import { describe, it, expect } from "vitest";
 
-describe('folder conventions', () => {
-  it('components/ only contains .tsx files', () => {
-    const files = globSync('src/components/**/*.*')
-    const nonTsx = files.filter(f => !f.endsWith('.tsx') && !f.endsWith('.test.tsx'))
-    expect(nonTsx).toEqual([])
-  })
+describe("folder conventions", () => {
+  it("components/ only contains .tsx files", () => {
+    const files = globSync("src/components/**/*.*");
+    const nonTsx = files.filter((f) => !f.endsWith(".tsx") && !f.endsWith(".test.tsx"));
+    expect(nonTsx).toEqual([]);
+  });
 
-  it('utils/ does not import from components/', () => {
-    const files = globSync('src/utils/**/*.ts')
+  it("utils/ does not import from components/", () => {
+    const files = globSync("src/utils/**/*.ts");
     for (const f of files) {
-      const content = readFileSync(f, 'utf8')
-      expect(content).not.toMatch(/from ['"].*\/components\//)
+      const content = readFileSync(f, "utf8");
+      expect(content).not.toMatch(/from ['"].*\/components\//);
     }
-  })
-})
+  });
+});
 ```
 
 Keep architecture tests fast — they should run in under 2 seconds total.
@@ -103,14 +107,14 @@ When you fix a bug, add a test that would have caught it:
 
 ```ts
 // src/billing/webhook.test.ts
-test('handles duplicate webhook events idempotently', () => {
+test("handles duplicate webhook events idempotently", () => {
   // This test was added after a bug where duplicate Stripe events caused double charges.
   // See CHANGES.md [2026-03-28] session-c3d4
-  const result1 = handleWebhook(event)
-  const result2 = handleWebhook(event) // same event again
-  expect(result1.processed).toBe(true)
-  expect(result2.processed).toBe(false) // duplicate skipped
-})
+  const result1 = handleWebhook(event);
+  const result2 = handleWebhook(event); // same event again
+  expect(result1.processed).toBe(true);
+  expect(result2.processed).toBe(false); // duplicate skipped
+});
 ```
 
 Log it in CHANGES.md with `tests_added:` so future sessions can verify it exists.
@@ -161,6 +165,7 @@ get denser test coverage. Areas that are stable stay lean.
 ## Test file location
 
 Co-locate tests with source by default:
+
 ```
 src/
   auth/

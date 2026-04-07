@@ -117,9 +117,7 @@ export class DailyChallengeScreen {
 
     // Today's best
     if (todayResult) {
-      const medalStr = todayResult.medal
-        ? ` — ${MEDAL_LABELS[todayResult.medal]} Medal!`
-        : "";
+      const medalStr = todayResult.medal ? ` — ${MEDAL_LABELS[todayResult.medal]} Medal!` : "";
       const bestText = new Text({
         text: `Today's Best: ${todayResult.score} pts${medalStr}`,
         style: new TextStyle({

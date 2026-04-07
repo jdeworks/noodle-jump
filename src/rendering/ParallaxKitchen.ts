@@ -2,11 +2,7 @@
 
 import type { Graphics } from "pixi.js";
 
-export function drawPlateWithPasta(
-  gfx: Graphics,
-  size: number,
-  animTick: number,
-): void {
+export function drawPlateWithPasta(gfx: Graphics, size: number, animTick: number): void {
   gfx.clear();
   const cx = size / 2;
   const plateY = size * 0.65;
@@ -38,39 +34,15 @@ export function drawPlateWithPasta(
   }
 
   // Plate
-  gfx.roundRect(
-    cx - size * 0.42,
-    plateY - size * 0.08,
-    size * 0.84,
-    size * 0.22,
-    size * 0.11,
-  );
+  gfx.roundRect(cx - size * 0.42, plateY - size * 0.08, size * 0.84, size * 0.22, size * 0.11);
   gfx.fill({ color: 0x000000, alpha: 0.08 });
-  gfx.roundRect(
-    cx - size * 0.4,
-    plateY - size * 0.1,
-    size * 0.8,
-    size * 0.2,
-    size * 0.1,
-  );
+  gfx.roundRect(cx - size * 0.4, plateY - size * 0.1, size * 0.8, size * 0.2, size * 0.1);
   gfx.fill(0xeeeeee);
-  gfx.roundRect(
-    cx - size * 0.3,
-    plateY - size * 0.06,
-    size * 0.6,
-    size * 0.12,
-    size * 0.06,
-  );
+  gfx.roundRect(cx - size * 0.3, plateY - size * 0.06, size * 0.6, size * 0.12, size * 0.06);
   gfx.fill(0xf8f8f8);
 
   // Sauce base
-  gfx.roundRect(
-    cx - size * 0.2,
-    plateY - size * 0.03,
-    size * 0.4,
-    size * 0.06,
-    size * 0.03,
-  );
+  gfx.roundRect(cx - size * 0.2, plateY - size * 0.03, size * 0.4, size * 0.06, size * 0.03);
   gfx.fill({ color: 0xcc3333, alpha: 0.4 });
 
   // Pasta pile — dense noodle strands
@@ -83,14 +55,7 @@ export function drawPlateWithPasta(
     const sy = pileCenter + (s % 3) * 1.5 - 2;
     const w = Math.sin(animTick * 0.015 + s) * 1.5;
     gfx.moveTo(sx - 12, sy + w);
-    gfx.bezierCurveTo(
-      sx - 4,
-      sy - 3 + w,
-      sx + 5,
-      sy + 2 - w,
-      sx + 12,
-      sy - 1 + w,
-    );
+    gfx.bezierCurveTo(sx - 4, sy - 3 + w, sx + 5, sy + 2 - w, sx + 12, sy - 1 + w);
     gfx.stroke({ width: 2, color: pastaColors[s % 5], alpha: 0.7 });
   }
   for (let s = 0; s < 10; s++) {
@@ -99,14 +64,7 @@ export function drawPlateWithPasta(
     const w = Math.sin(animTick * 0.02 + s * 0.8) * 2;
     const curl = Math.sin(s * 1.5) * 7;
     gfx.moveTo(sx - 8 + curl, sy + 2 + w);
-    gfx.bezierCurveTo(
-      sx + w * 2,
-      sy - 6,
-      sx + curl,
-      sy + 3,
-      sx + 10 - curl,
-      sy - 2 + w,
-    );
+    gfx.bezierCurveTo(sx + w * 2, sy - 6, sx + curl, sy + 3, sx + 10 - curl, sy - 2 + w);
     gfx.stroke({ width: 1.8, color: pastaColors[(s + 2) % 5], alpha: 0.85 });
   }
   for (let s = 0; s < 6; s++) {
@@ -123,27 +81,13 @@ export function drawPlateWithPasta(
     const hx = cx + (h - 1.5) * 16;
     const w = Math.sin(animTick * 0.013 + h * 1.8) * 3;
     gfx.moveTo(hx, pileCenter + 2);
-    gfx.bezierCurveTo(
-      hx + w + 5,
-      plateY + 8,
-      hx + w - 3,
-      plateY + 15,
-      hx + w + 3,
-      plateY + 22,
-    );
+    gfx.bezierCurveTo(hx + w + 5, plateY + 8, hx + w - 3, plateY + 15, hx + w + 3, plateY + 22);
     gfx.stroke({ width: 1.8, color: pastaColors[h % 5], alpha: 0.55 });
   }
 
   // Sauce drizzle
   gfx.moveTo(cx - 10, pileCenter - 8);
-  gfx.bezierCurveTo(
-    cx,
-    pileCenter - 14,
-    cx + 8,
-    pileCenter - 5,
-    cx + 14,
-    pileCenter - 10,
-  );
+  gfx.bezierCurveTo(cx, pileCenter - 14, cx + 8, pileCenter - 5, cx + 14, pileCenter - 10);
   gfx.stroke({ width: 2.5, color: 0xcc3333, alpha: 0.5 });
 
   // Falling strands
@@ -164,11 +108,7 @@ export function drawPlateWithPasta(
       for (let sp = 0; sp < 3; sp++) {
         const spAngle = (sp / 3) * Math.PI + Math.PI;
         const spDist = intensity * 5;
-        gfx.circle(
-          sx + Math.cos(spAngle) * spDist,
-          endY + Math.sin(spAngle) * spDist * 0.4,
-          1.2,
-        );
+        gfx.circle(sx + Math.cos(spAngle) * spDist, endY + Math.sin(spAngle) * spDist * 0.4, 1.2);
         gfx.fill({ color: 0xf0c050, alpha: 0.5 * (1 - intensity) });
       }
     }
@@ -196,11 +136,7 @@ export function drawPlateWithPasta(
   }
 }
 
-export function drawBoilingPot(
-  gfx: Graphics,
-  size: number,
-  animTick: number,
-): void {
+export function drawBoilingPot(gfx: Graphics, size: number, animTick: number): void {
   gfx.clear();
   const cx = size / 2;
 
@@ -208,8 +144,7 @@ export function drawBoilingPot(
   for (let layer = 0; layer < 3; layer++) {
     for (let s = 0; s < 4; s++) {
       const phase = (animTick * 0.006 + s * 0.25 + layer * 0.08) % 1;
-      const sx =
-        cx + (s - 1.5) * 14 + Math.sin(animTick * 0.02 + s * 2 + layer) * 12;
+      const sx = cx + (s - 1.5) * 14 + Math.sin(animTick * 0.02 + s * 2 + layer) * 12;
       const sy = size * 0.25 - phase * size * 0.6 - layer * 8;
       const puffR = 8 + (1 - phase) * 10 + layer * 3;
       gfx.circle(sx, sy, puffR);
@@ -237,13 +172,7 @@ export function drawBoilingPot(
 
   // Water surface
   const waterWobble = Math.sin(animTick * 0.06) * 2;
-  gfx.roundRect(
-    cx - size * 0.32,
-    size * 0.4 + waterWobble,
-    size * 0.64,
-    size * 0.06,
-    size * 0.03,
-  );
+  gfx.roundRect(cx - size * 0.32, size * 0.4 + waterWobble, size * 0.64, size * 0.06, size * 0.03);
   gfx.fill({ color: 0x88ccff, alpha: 0.6 });
 
   // Bubbles

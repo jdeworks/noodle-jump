@@ -63,7 +63,13 @@ describe("DailyChallengeState", () => {
   });
 
   test("getMedal returns correct medal", () => {
-    const t = { bronze: 5000, silver: 15000, gold: 30000, platinum: 50000, diamond: 80000 };
+    const t = {
+      bronze: 5000,
+      silver: 15000,
+      gold: 30000,
+      platinum: 50000,
+      diamond: 80000,
+    };
     expect(getMedal(0, t)).toBeNull();
     expect(getMedal(4999, t)).toBeNull();
     expect(getMedal(5000, t)).toBe("bronze");
@@ -77,7 +83,13 @@ describe("DailyChallengeState", () => {
 
   test("recordDailyResult updates best score", () => {
     let data = createDailyData();
-    const t = { bronze: 5000, silver: 15000, gold: 30000, platinum: 50000, diamond: 80000 };
+    const t = {
+      bronze: 5000,
+      silver: 15000,
+      gold: 30000,
+      platinum: 50000,
+      diamond: 80000,
+    };
     data = recordDailyResult(data, "2026-04-05", 6000, 200, t);
     expect(data.results["2026-04-05"].score).toBe(6000);
     expect(data.results["2026-04-05"].medal).toBe("bronze");
@@ -150,7 +162,13 @@ describe("DailyChallengeState", () => {
 
   test("recordDailyResult tracks streak correctly", () => {
     let data = createDailyData();
-    const t = { bronze: 1000, silver: 5000, gold: 10000, platinum: 20000, diamond: 40000 };
+    const t = {
+      bronze: 1000,
+      silver: 5000,
+      gold: 10000,
+      platinum: 20000,
+      diamond: 40000,
+    };
     data = recordDailyResult(data, "2026-04-03", 2000, 100, t);
     expect(data.currentStreak).toBe(1);
     data = recordDailyResult(data, "2026-04-04", 3000, 150, t);

@@ -26,8 +26,22 @@ describe("lobby and session integration", () => {
 
   it("sequence numbers prevent stale updates in the pipeline", () => {
     // Encode two positions with different sequence numbers
-    const p1 = encodePosition({ x: 100, y: 100, vx: 0, vy: 0, state: 0, seq: 5 });
-    const p2 = encodePosition({ x: 200, y: 200, vx: 0, vy: 0, state: 0, seq: 3 });
+    const p1 = encodePosition({
+      x: 100,
+      y: 100,
+      vx: 0,
+      vy: 0,
+      state: 0,
+      seq: 5,
+    });
+    const p2 = encodePosition({
+      x: 200,
+      y: 200,
+      vx: 0,
+      vy: 0,
+      state: 0,
+      seq: 3,
+    });
 
     const d1 = decodePosition(p1);
     const d2 = decodePosition(p2);

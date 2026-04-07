@@ -29,7 +29,13 @@ export type GameEvent =
   | { type: "highScoreBeat" }
   | { type: "landingStreak"; streak: number }
   | { type: "springBounce"; x: number; y: number }
-  | { type: "teleported"; fromX: number; fromY: number; toX: number; toY: number }
+  | {
+      type: "teleported";
+      fromX: number;
+      fromY: number;
+      toX: number;
+      toY: number;
+    }
   | { type: "enemyKilled"; enemyId: number; x: number; y: number }
   | { type: "enemyHitPlayer" }
   | { type: "projectileThrown" }

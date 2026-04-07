@@ -44,11 +44,11 @@ Define asset keys as constants to avoid typos:
 ```typescript
 // config/assets.ts
 export const ASSETS = {
-  PLAYER: 'player',
-  ENEMY: 'enemy',
-  JUMP_SFX: 'jump',
-  THEME_MUSIC: 'theme',
-} as const
+  PLAYER: "player",
+  ENEMY: "enemy",
+  JUMP_SFX: "jump",
+  THEME_MUSIC: "theme",
+} as const;
 ```
 
 ## Optimization

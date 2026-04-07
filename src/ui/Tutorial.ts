@@ -14,7 +14,10 @@ export class Tutorial {
 
   constructor() {
     this.steps = [
-      { text: "Tilt your device to move\n(or use Arrow keys / WASD)", icon: "move" },
+      {
+        text: "Tilt your device to move\n(or use Arrow keys / WASD)",
+        icon: "move",
+      },
       { text: "Jump on platforms\nto climb higher!", icon: "jump" },
       { text: "Collect meatballs\nfor bonus points!", icon: "collect" },
       { text: "Grab power-ups for\nspecial abilities!", icon: "powerup" },

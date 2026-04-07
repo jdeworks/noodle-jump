@@ -14,13 +14,28 @@ import { updateHeightScore, tickCombo, saveHighScore } from "../systems/Score";
 import { getDifficulty } from "../systems/Difficulty";
 import { tickShake } from "../systems/ScreenShake";
 import { updateZone } from "../systems/Zone";
-import { GARLIC_BREATH_JUMP_MULTIPLIER, DEATH_ANIMATION_TICKS, SQUASH_HOLD_FRAMES, SQUASH_TOTAL_FRAMES, GAME_HEIGHT, GAME_WIDTH, ZONE_THRESHOLDS } from "../config/constants";
+import {
+  GARLIC_BREATH_JUMP_MULTIPLIER,
+  DEATH_ANIMATION_TICKS,
+  SQUASH_HOLD_FRAMES,
+  SQUASH_TOTAL_FRAMES,
+  GAME_HEIGHT,
+  GAME_WIDTH,
+  ZONE_THRESHOLDS,
+} from "../config/constants";
 import { maybeSpawnBoss, tickBoss, tickKnifeAmmo } from "./GameLoopBoss";
 import { getBossForZone } from "../entities/Boss";
 import { tickEnemies } from "./GameLoopEnemies";
 import { updateProjectiles } from "../entities/Projectile";
 import { spawnLasagnaPlatform, rescuePlayer, tickEndOfFrame } from "./GameLoopHelpers";
-import { tickPlatformCollisions, tickPlatformEffects, tickFlood, tickMeatballCollection, tickPowerUpCollection, tickStagnation } from "./GameLoopTick";
+import {
+  tickPlatformCollisions,
+  tickPlatformEffects,
+  tickFlood,
+  tickMeatballCollection,
+  tickPowerUpCollection,
+  tickStagnation,
+} from "./GameLoopTick";
 
 // Re-export types and actions so existing consumers keep working
 export type { GameEvent, TickResult } from "./GameLoopTypes";
@@ -30,10 +45,7 @@ export { startCountdown, togglePause, throwProjectile } from "./GameLoopActions"
  * Advance the game world by one tick. Pure function — no side effects.
  * All side effects (audio, particles, rendering) are communicated via events.
  */
-export function tickGameWorld(
-  state: GameWorldState,
-  inputX: number,
-): TickResult {
+export function tickGameWorld(state: GameWorldState, inputX: number): TickResult {
   const events: GameEvent[] = [];
 
   if (state.gameOver || state.paused) {
@@ -42,21 +54,14 @@ export function tickGameWorld(
 
   // Countdown phase — update visuals but don't move player
   if (state.countdownTicks > 0) {
-    const difficulty = getDifficulty(
-      state.platformsPassed,
-      state.runConfig.difficultyMultiplier,
-    );
+    const difficulty = getDifficulty(state.platformsPassed, state.runConfig.difficultyMultiplier);
     const platforms = updatePlatforms(
       state.platforms,
       difficulty.movingSpeedMultiplier * state.gameSpeedScale,
     );
     const platMap = new Map(platforms.map((p) => [p.id, p]));
     const powerUps = updatePowerUpPositions(state.powerUps, platforms, platMap);
-    const meatballs = updateMeatballPositions(
-      state.meatballs,
-      platforms,
-      platMap,
-    );
+    const meatballs = updateMeatballPositions(state.meatballs, platforms, platMap);
     const camera = updateCamera(state.camera, state.player.y);
     return {
       state: {
@@ -86,15 +91,11 @@ export function tickGameWorld(
       if (state.isGhost) {
         const camTop = state.camera.y;
         const camBot = camTop + GAME_HEIGHT;
-        const vis = state.platforms.filter(
-          (p) => !p.broken && p.y >= camTop && p.y <= camBot,
-        );
+        const vis = state.platforms.filter((p) => !p.broken && p.y >= camTop && p.y <= camBot);
         let rescue =
           vis.length > 0
             ? vis.sort((a, b) => a.y - b.y)[0]
-            : state.platforms
-                .filter((p) => !p.broken)
-                .sort((a, b) => a.y - b.y)[0];
+            : state.platforms.filter((p) => !p.broken).sort((a, b) => a.y - b.y)[0];
         let plats = state.platforms;
         if (!rescue) {
           rescue = {
@@ -136,9 +137,7 @@ export function tickGameWorld(
         };
       }
       const isCustom = state.runConfig.seed !== 0 || state.practiceMode;
-      const isNewRecord = isCustom
-        ? false
-        : saveHighScore(state.scoreState.points);
+      const isNewRecord = isCustom ? false : saveHighScore(state.scoreState.points);
       events.push({ type: "gameOver", isNewRecord });
       return {
         state: {
@@ -181,16 +180,10 @@ export function tickGameWorld(
   }
 
   // Update moving platforms
-  const difficulty = getDifficulty(
-    s.platformsPassed,
-    s.runConfig.difficultyMultiplier,
-  );
+  const difficulty = getDifficulty(s.platformsPassed, s.runConfig.difficultyMultiplier);
   s = {
     ...s,
-    platforms: updatePlatforms(
-      s.platforms,
-      difficulty.movingSpeedMultiplier * s.gameSpeedScale,
-    ),
+    platforms: updatePlatforms(s.platforms, difficulty.movingSpeedMultiplier * s.gameSpeedScale),
   };
 
   // Sync positions to platforms (skip meatballs when magnet active)
@@ -230,8 +223,7 @@ export function tickGameWorld(
       pendingJumpVy: 0,
     };
   } else {
-    const adjustedInputX =
-      s.activeEffect?.type === "chili_pepper" ? -inputX : inputX;
+    const adjustedInputX = s.activeEffect?.type === "chili_pepper" ? -inputX : inputX;
     s = {
       ...s,
       player: updatePlayer(s.player, adjustedInputX, s.gameSpeedScale),
@@ -239,14 +231,7 @@ export function tickGameWorld(
   }
 
   // Platform collisions, effects, flood
-  s = tickPlatformCollisions(
-    s,
-    events,
-    previousX,
-    previousY,
-    inSquashHold,
-    isSquashTransition,
-  );
+  s = tickPlatformCollisions(s, events, previousX, previousY, inSquashHold, isSquashTransition);
   s = tickPlatformEffects(s);
   s = tickFlood(s);
 
@@ -283,9 +268,7 @@ export function tickGameWorld(
     // Quick zones: count from the starting zone's platform threshold, not from 0
     const startZone = s.runConfig.startingZone || 0;
     const startPlat =
-      startZone > 0
-        ? ZONE_THRESHOLDS[Math.min(startZone, ZONE_THRESHOLDS.length - 1)] || 0
-        : 0;
+      startZone > 0 ? ZONE_THRESHOLDS[Math.min(startZone, ZONE_THRESHOLDS.length - 1)] || 0 : 0;
     const elapsed = Math.max(0, s.platformsPassed - startPlat);
     const directZone = Math.min(6, startZone + Math.floor(elapsed / qzt));
     const changed = directZone !== s.zoneState.currentZone;
@@ -341,11 +324,7 @@ export function tickGameWorld(
   }
 
   // High score check
-  if (
-    !s.highScoreBeatShown &&
-    s.highScore > 0 &&
-    s.scoreState.points > s.highScore
-  ) {
+  if (!s.highScoreBeatShown && s.highScore > 0 && s.scoreState.points > s.highScore) {
     s = { ...s, highScoreBeatShown: true };
     events.push({ type: "highScoreBeat" });
   }

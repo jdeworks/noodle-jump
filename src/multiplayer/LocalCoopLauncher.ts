@@ -4,7 +4,7 @@
  * Uses a single PixiJS Application with a wider canvas (800x700).
  */
 
-import { Application, Graphics, Text, TextStyle } from "pixi.js";
+import { Application, Graphics } from "pixi.js";
 import { GameScene } from "../scenes/GameScene";
 import { GAME_WIDTH, GAME_HEIGHT } from "../config/constants";
 import { playMusic, stopMusic, killBossMusic } from "../systems/Audio";
@@ -17,7 +17,6 @@ import { resetRNG, getRNGFunction, setRNGFunction } from "../systems/RNG";
 import { seededRandom } from "../systems/DailyChallenge";
 import { resetRendererState } from "../scenes/EntityRenderer";
 import { createDefaultRunConfig, type RunConfig } from "../systems/CustomRunConfig";
-import { DEBUG_MODE } from "../config/constants";
 import { setDebugConfig, createDebugConfig } from "../config/debug";
 import { LocalInput } from "./LocalInput";
 import { showTitleScreen } from "../ui/TitleScreenView";
@@ -25,9 +24,9 @@ import { launchGame } from "../scenes/GameLauncher";
 import { showLocalCoopResults } from "./ResultsScreen";
 import { CountdownAnim } from "./CountdownAnim";
 import { setSelectedCharacter } from "../systems/CharacterSettings";
+import { createCoopHUD, createTimerText } from "./LocalCoopUI";
 
 const SPLIT_WIDTH = GAME_WIDTH * 2;
-const DIVIDER_WIDTH = 2;
 
 export type LocalCoopMode = "best-height" | "first-to-die" | "timed-2min";
 
@@ -39,7 +38,6 @@ export async function launchLocalCoop(
   p2Char = "chef",
   runConfig?: RunConfig,
 ): Promise<void> {
-  // Resize canvas for split-screen and override CSS constraints
   app.renderer.resize(SPLIT_WIDTH, GAME_HEIGHT);
   const canvas = app.canvas;
   canvas.style.maxWidth = "1000px";
@@ -48,29 +46,26 @@ export async function launchLocalCoop(
   const input = new LocalInput();
   input.init();
 
-  const config: RunConfig = runConfig ? { ...runConfig, seed } : { ...createDefaultRunConfig(), seed };
+  const config: RunConfig = runConfig
+    ? { ...runConfig, seed }
+    : { ...createDefaultRunConfig(), seed };
 
-  // Only reset debug config if no custom run was requested
   if (!runConfig) setDebugConfig(createDebugConfig());
 
   const scene1 = new GameScene(config);
   const scene2 = new GameScene(config);
 
-  // Best-height: ghost mode is enabled on the FIRST player to die (not both upfront),
-  // so the surviving player continues normally and their death ends the game.
-  // Timed: practice mode (instant respawn, scoring continues, + height penalty on death)
-  if (mode === "timed-2min") { scene1.enableTimedRespawn(); scene2.enableTimedRespawn(); }
+  if (mode === "timed-2min") {
+    scene1.enableTimedRespawn();
+    scene2.enableTimedRespawn();
+  }
 
-  // Create separate RNG streams for each player's ongoing gameplay.
-  // Without this, both scenes share the global RNG and their worlds diverge.
   let p1Rng = seededRandom(seed);
   let p2Rng = seededRandom(seed);
 
-  // Position scenes side by side
   scene1.container.x = 0;
   scene2.container.x = GAME_WIDTH;
 
-  // Create masks so each scene only renders in its half
   const mask1 = new Graphics();
   mask1.rect(0, 0, GAME_WIDTH, GAME_HEIGHT);
   mask1.fill(0xffffff);
@@ -84,91 +79,41 @@ export async function launchLocalCoop(
   app.stage.addChild(mask1, mask2);
   app.stage.addChild(scene1.container, scene2.container);
 
-  // Divider line
-  const divider = new Graphics();
-  divider.rect(GAME_WIDTH - DIVIDER_WIDTH / 2, 0, DIVIDER_WIDTH, GAME_HEIGHT);
-  divider.fill({ color: 0x000000, alpha: 0.6 });
-  app.stage.addChild(divider);
-
-  // Player labels
-  const labelStyle = new TextStyle({ fontFamily: "monospace", fontSize: 12,
-    fill: "#ffffff", fontWeight: "bold", stroke: { color: "#000000", width: 2 } });
-  const p1Label = new Text({ text: "P1 (WASD)", style: labelStyle });
-  p1Label.x = 8; p1Label.y = 4; app.stage.addChild(p1Label);
-  const p2Label = new Text({ text: "P2 (Arrows)", style: labelStyle });
-  p2Label.x = GAME_WIDTH + 8; p2Label.y = 4; app.stage.addChild(p2Label);
-
-  // Height displays
-  const heightStyle = new TextStyle({ fontFamily: "monospace", fontSize: 14,
-    fill: "#ffdd44", fontWeight: "bold", stroke: { color: "#000000", width: 2 } });
-  const p1Height = new Text({ text: "H: 0", style: heightStyle });
-  p1Height.x = GAME_WIDTH - 8; p1Height.y = 4; p1Height.anchor.set(1, 0);
-  app.stage.addChild(p1Height);
-  const p2Height = new Text({ text: "H: 0", style: heightStyle });
-  p2Height.x = SPLIT_WIDTH - 8; p2Height.y = 4; p2Height.anchor.set(1, 0);
-  app.stage.addChild(p2Height);
-
-  // Death toast
-  const deathToast = new Text({ text: "", style: new TextStyle({ fontFamily: "monospace",
-    fontSize: 16, fill: "#ff6666", fontWeight: "bold", stroke: { color: "#000000", width: 3 } }) });
-  deathToast.x = SPLIT_WIDTH / 2; deathToast.y = GAME_HEIGHT * 0.15;
-  deathToast.anchor.set(0.5, 0.5); deathToast.visible = false;
-  app.stage.addChild(deathToast);
-  let toastTimer = 0;
-
-  // Spectate overlay (shown on the dead player's side)
-  const spectateOverlay = new Graphics();
-  spectateOverlay.rect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-  spectateOverlay.fill({ color: 0x000000, alpha: 0.5 });
-  spectateOverlay.visible = false; app.stage.addChild(spectateOverlay);
-  const spectateLabel = new Text({ text: "", style: new TextStyle({ fontFamily: "monospace",
-    fontSize: 18, fill: "#ffdd44", fontWeight: "bold", align: "center",
-    stroke: { color: "#000000", width: 3 } }) });
-  spectateLabel.x = GAME_WIDTH / 2; spectateLabel.y = GAME_HEIGHT * 0.4;
-  spectateLabel.anchor.set(0.5, 0.5); app.stage.addChild(spectateLabel);
-
-  // FPS counter (debug only)
-  let fpsText: Text | null = null, fpsFrames = 0, fpsLast = performance.now();
-  if (DEBUG_MODE) {
-    fpsText = new Text({ text: "FPS: --", style: new TextStyle({ fontFamily: "monospace",
-      fontSize: 11, fill: "#00ff00", stroke: { color: "#000000", width: 2 } }) });
-    fpsText.x = SPLIT_WIDTH / 2; fpsText.y = GAME_HEIGHT - 16; fpsText.anchor.set(0.5, 0);
-    app.stage.addChild(fpsText);
-  }
+  // Create all HUD elements
+  const hud = createCoopHUD(app, SPLIT_WIDTH, GAME_WIDTH);
+  if (mode === "timed-2min") hud.timerText = createTimerText(app, SPLIT_WIDTH);
 
   const countdownAnim = new CountdownAnim();
 
-  // Countdown overlay with dim background
-  const countdownDim = new Graphics();
-  countdownDim.rect(0, 0, SPLIT_WIDTH, GAME_HEIGHT);
-  countdownDim.fill({ color: 0x000000, alpha: 0.4 });
-  app.stage.addChild(countdownDim);
-  const countdownText = new Text({ text: "", style: new TextStyle({ fontFamily: "monospace",
-    fontSize: 48, fill: "#ffffff", fontWeight: "bold", stroke: { color: "#000000", width: 4 } }) });
-  countdownText.x = SPLIT_WIDTH / 2; countdownText.y = GAME_HEIGHT * 0.4;
-  countdownText.anchor.set(0.5, 0.5); app.stage.addChild(countdownText);
-
   scene1.startCountdown();
   scene2.startCountdown();
-
   playMusic(0);
 
   // Escape to pause/unpause
   const { PauseOverlay } = await import("./PauseOverlay");
   const pauseOvl = new PauseOverlay(app, SPLIT_WIDTH, GAME_HEIGHT, () => {
-    gameEnded = true; scene1.forceStop(); scene2.forceStop(); app.ticker.remove(gameLoop);
+    gameEnded = true;
+    scene1.forceStop();
+    scene2.forceStop();
+    app.ticker.remove(gameLoop);
     window.removeEventListener("keydown", midGameEscape);
-    setTimeout(() => { cleanupLocalCoop(app, scene1, scene2, input, gameLoop);
-      app.renderer.resize(GAME_WIDTH, GAME_HEIGHT); app.canvas.style.maxWidth = "500px";
+    setTimeout(() => {
+      cleanupLocalCoop(app, scene1, scene2, input, gameLoop);
+      app.renderer.resize(GAME_WIDTH, GAME_HEIGHT);
+      app.canvas.style.maxWidth = "500px";
       app.canvas.style.aspectRatio = "400 / 700";
-      showTitleScreen(app, (runConfig) => launchGame(app, runConfig)); }, 0);
+      showTitleScreen(app, (rc) => launchGame(app, rc));
+    }, 0);
   });
-  const doPause = () => { if (!gameEnded) pauseOvl.toggle(); };
+  const doPause = () => {
+    if (!gameEnded) pauseOvl.toggle();
+  };
   pauseOvl.onPauseTap(doPause);
-  const midGameEscape = (e: KeyboardEvent) => { if (e.key === "Escape") doPause(); };
+  const midGameEscape = (e: KeyboardEvent) => {
+    if (e.key === "Escape") doPause();
+  };
   window.addEventListener("keydown", midGameEscape);
 
-  // Pause both scenes when tab/app is hidden (prevent desync)
   let paused = false;
   const visHandler = () => {
     if (document.hidden && !paused && !gameEnded) {
@@ -181,18 +126,8 @@ export async function launchLocalCoop(
   };
   document.addEventListener("visibilitychange", visHandler);
 
-  // Timer for timed mode (2 min = 7200 ticks at 60fps)
-  let timerCleanup: (() => void) | null = null;
-  let timerText: Text | null = null;
   const timerDurationMs = mode === "timed-2min" ? 120_000 : -1;
   const timerStartTime = performance.now();
-  if (mode === "timed-2min") {
-    timerText = new Text({ text: "2:00", style: new TextStyle({ fontFamily: "monospace",
-      fontSize: 20, fill: "#ffffff", fontWeight: "bold", stroke: { color: "#000000", width: 3 } }) });
-    timerText.x = SPLIT_WIDTH / 2; timerText.y = 22; timerText.anchor.set(0.5, 0.5);
-    app.stage.addChild(timerText);
-    timerCleanup = () => { if (timerText) { timerText.visible = false; } };
-  }
 
   let gameEnded = false;
   let p1Dead = false;
@@ -201,8 +136,8 @@ export async function launchLocalCoop(
   let p2DeathHeight = 0;
   let p1LastHeight = 0;
   let p2LastHeight = 0;
+  let toastTimer = 0;
 
-  // Game loop
   const endGame = () => {
     if (gameEnded) return;
     gameEnded = true;
@@ -212,7 +147,7 @@ export async function launchLocalCoop(
     window.removeEventListener("keydown", midGameEscape);
     stopMusic();
     killBossMusic();
-    if (timerCleanup) timerCleanup();
+    if (hud.timerText) hud.timerText.visible = false;
     showResults();
   };
 
@@ -220,7 +155,6 @@ export async function launchLocalCoop(
     if (gameEnded || pauseOvl.paused) return;
     input.update();
 
-    // Tick scenes with split keyboard input, separate RNG streams and characters
     if (!scene1.isGameOver()) {
       setSelectedCharacter(p1Char);
       setRNGFunction(p1Rng);
@@ -236,41 +170,38 @@ export async function launchLocalCoop(
       p2Rng = getRNGFunction();
     }
 
-    // Update height displays
-    p1Height.text = `H: ${scene1.getMaxHeight()}`;
-    p2Height.text = `H: ${scene2.getMaxHeight()}`;
+    hud.p1Height.text = `H: ${scene1.getMaxHeight()}`;
+    hud.p2Height.text = `H: ${scene2.getMaxHeight()}`;
 
-    // Timed mode countdown (wall-clock based)
     if (timerDurationMs > 0) {
       const elapsedMs = performance.now() - timerStartTime;
       const remainMs = Math.max(0, timerDurationMs - elapsedMs);
       const secs = Math.ceil(remainMs / 1000);
-      const m = Math.floor(secs / 60), s = secs % 60;
-      if (timerText) timerText.text = `${m}:${s.toString().padStart(2, "0")}`;
+      const m = Math.floor(secs / 60),
+        s = secs % 60;
+      if (hud.timerText) hud.timerText.text = `${m}:${s.toString().padStart(2, "0")}`;
       if (remainMs <= 0 && !gameEnded) {
-        p1DeathHeight = scene1.getHeight(); p2DeathHeight = scene2.getHeight();
-        endGame(); return;
+        p1DeathHeight = scene1.getHeight();
+        p2DeathHeight = scene2.getHeight();
+        endGame();
+        return;
       }
     }
 
-    // Track deaths (timed mode: deaths are just penalties, no tracking)
     if (mode !== "timed-2min") {
       if (!p1Dead && scene1.getState().isDying) {
         p1Dead = true;
         p1DeathHeight = scene1.getHeight();
         showToast(`P1 died at ${p1DeathHeight}m!`);
-        // Best-height: first to die becomes ghost, second player continues normally
         if (mode === "best-height" && !p2Dead) scene1.enableGhostMode();
       }
       if (!p2Dead && scene2.getState().isDying) {
         p2Dead = true;
         p2DeathHeight = scene2.getHeight();
         showToast(`P2 died at ${p2DeathHeight}m!`);
-        // Best-height: first to die becomes ghost, second player continues normally
         if (mode === "best-height" && !p1Dead) scene2.enableGhostMode();
       }
     } else {
-      // Timed mode: detect death by height penalty (practice mode rescue is instant, isDying is never set)
       const h1Now = scene1.getMaxHeight();
       const h2Now = scene2.getMaxHeight();
       if (h1Now < p1LastHeight) showToast(`P1 died! Height: ${h1Now}m (-10%)`);
@@ -278,65 +209,73 @@ export async function launchLocalCoop(
       p1LastHeight = h1Now;
       p2LastHeight = h2Now;
     }
-    // Show ghost indicator on dead player's side (not for timed mode)
-    // Best-height: ghost player keeps playing, so only show a small label (no dark overlay)
-    // First-to-die: game ends immediately, no spectate needed
+
     if (mode === "best-height" && p1Dead && !p2Dead) {
-      spectateOverlay.visible = false;
-      spectateLabel.visible = true;
-      spectateLabel.x = GAME_WIDTH / 2;
-      spectateLabel.y = 22;
-      spectateLabel.text = `GHOST · ${p1DeathHeight}m`;
+      hud.spectateOverlay.visible = false;
+      hud.spectateLabel.visible = true;
+      hud.spectateLabel.x = GAME_WIDTH / 2;
+      hud.spectateLabel.y = 22;
+      hud.spectateLabel.text = `GHOST · ${p1DeathHeight}m`;
     } else if (mode === "best-height" && p2Dead && !p1Dead) {
-      spectateOverlay.visible = false;
-      spectateLabel.visible = true;
-      spectateLabel.x = GAME_WIDTH + GAME_WIDTH / 2;
-      spectateLabel.y = 22;
-      spectateLabel.text = `GHOST · ${p2DeathHeight}m`;
-    } else { spectateOverlay.visible = false; spectateLabel.visible = false; }
+      hud.spectateOverlay.visible = false;
+      hud.spectateLabel.visible = true;
+      hud.spectateLabel.x = GAME_WIDTH + GAME_WIDTH / 2;
+      hud.spectateLabel.y = 22;
+      hud.spectateLabel.text = `GHOST · ${p2DeathHeight}m`;
+    } else {
+      hud.spectateOverlay.visible = false;
+      hud.spectateLabel.visible = false;
+    }
 
-    // Countdown display with animated "GO!"
-    countdownAnim.update(scene1.getCountdownSeconds(), countdownText, countdownDim);
+    countdownAnim.update(scene1.getCountdownSeconds(), hud.countdownText, hud.countdownDim);
 
-    // FPS counter (debug only)
-    if (fpsText) {
-      fpsFrames++;
+    if (hud.fpsText) {
+      hud.fpsFrames++;
       const now = performance.now();
-      if (now - fpsLast >= 500) {
-        fpsText.text = `FPS: ${Math.round(fpsFrames / ((now - fpsLast) / 1000))}`;
-        fpsFrames = 0; fpsLast = now;
+      if (now - hud.fpsLast >= 500) {
+        hud.fpsText.text = `FPS: ${Math.round(hud.fpsFrames / ((now - hud.fpsLast) / 1000))}`;
+        hud.fpsFrames = 0;
+        hud.fpsLast = now;
       }
     }
 
-    // Toast timer
     if (toastTimer > 0) {
       toastTimer--;
-      if (toastTimer === 0) deathToast.visible = false;
+      if (toastTimer === 0) hud.deathToast.visible = false;
     }
 
-    // End condition depends on mode (timed mode ends ONLY from timer, not deaths)
     let shouldEnd = false;
-    if (mode === "first-to-die") shouldEnd = (p1Dead || p2Dead);
-    else if (mode === "best-height") shouldEnd = (p1Dead && p2Dead);
-    // timed-2min: shouldEnd stays false — timer handles it above
+    if (mode === "first-to-die") shouldEnd = p1Dead || p2Dead;
+    else if (mode === "best-height") shouldEnd = p1Dead && p2Dead;
     if (shouldEnd) endGame();
   };
 
   function showToast(msg: string): void {
-    deathToast.text = msg;
-    deathToast.visible = true;
-    toastTimer = 180; // 3 seconds
+    hud.deathToast.text = msg;
+    hud.deathToast.visible = true;
+    toastTimer = 180;
   }
 
   function showResults(): void {
     document.removeEventListener("visibilitychange", visHandler);
-    if (paused) { paused = false; app.ticker.start(); }
-    spectateOverlay.visible = false; spectateLabel.visible = false;
-    countdownText.visible = false; countdownDim.visible = false;
-    deathToast.visible = false;
+    if (paused) {
+      paused = false;
+      app.ticker.start();
+    }
+    hud.spectateOverlay.visible = false;
+    hud.spectateLabel.visible = false;
+    hud.countdownText.visible = false;
+    hud.countdownDim.visible = false;
+    hud.deathToast.visible = false;
     showLocalCoopResults({
-      app, scene1, scene2,
-      p1DeathHeight, p2DeathHeight, mode, p1Dead, p2Dead,
+      app,
+      scene1,
+      scene2,
+      p1DeathHeight,
+      p2DeathHeight,
+      mode,
+      p1Dead,
+      p2Dead,
       cleanupAndReset: () => {
         cleanupLocalCoop(app, scene1, scene2, input, gameLoop);
         const newSeed = Math.floor(Math.random() * 0xffffffff);
@@ -347,7 +286,7 @@ export async function launchLocalCoop(
         app.renderer.resize(GAME_WIDTH, GAME_HEIGHT);
         app.canvas.style.maxWidth = "500px";
         app.canvas.style.aspectRatio = "400 / 700";
-        showTitleScreen(app, (runConfig) => launchGame(app, runConfig));
+        showTitleScreen(app, (rc) => launchGame(app, rc));
       },
     });
   }
@@ -365,13 +304,11 @@ function cleanupLocalCoop(
   app.ticker.remove(gameLoop);
   input.destroy();
 
-  // Remove scene containers from stage before destroying them
   if (scene1.container.parent) scene1.container.parent.removeChild(scene1.container);
   if (scene2.container.parent) scene2.container.parent.removeChild(scene2.container);
   scene1.destroy();
   scene2.destroy();
 
-  // Clear remaining stage children (overlays, masks, labels, results)
   while (app.stage.children.length > 0) {
     const child = app.stage.children[0];
     app.stage.removeChild(child);

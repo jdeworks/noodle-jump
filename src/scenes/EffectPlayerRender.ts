@@ -19,8 +19,12 @@ import type { GameWorldState } from "./GameState";
 import type { ParticleManager } from "./ParticleManager";
 
 // In multiplayer, setSelectedCharacter swaps per-scene, so always read current value
-function getChar(): string { return getSelectedCharacter(); }
-export function clearCharCache(): void { /* no-op — kept for API compat */ }
+function getChar(): string {
+  return getSelectedCharacter();
+}
+export function clearCharCache(): void {
+  /* no-op — kept for API compat */
+}
 
 /**
  * Render the player sprite based on the active effect type.
@@ -52,9 +56,7 @@ export function renderPlayerForEffect(
     playerGfx.rotation = 0;
     playerGfx.x = player.x + player.width / 2;
     playerGfx.y = worldToScreen(player.y, camY);
-    particles.updateRocketParticles(
-      player.x, player.y, player.width, player.height, camY,
-    );
+    particles.updateRocketParticles(player.x, player.y, player.width, player.height, camY);
     particles.clearTornadoParticles();
   } else if (activeType === "fusilli_tornado") {
     drawTornadoSprite(playerGfx, player.width, player.height, animTick);
@@ -63,7 +65,12 @@ export function renderPlayerForEffect(
     playerGfx.y = worldToScreen(player.y, camY) + player.height / 2;
     playerGfx.rotation = animTick * 0.15;
     particles.updateTornadoParticles(
-      player.x, player.y, player.width, player.height, camY, animTick,
+      player.x,
+      player.y,
+      player.width,
+      player.height,
+      camY,
+      animTick,
     );
     particles.clearRocketParticles();
   } else if (activeType === "pepper_sneeze") {
@@ -74,9 +81,7 @@ export function renderPlayerForEffect(
     const shakeY = (Math.random() - 0.5) * 4;
     playerGfx.x = player.x + player.width / 2 + shakeX;
     playerGfx.y = worldToScreen(player.y, camY) + shakeY;
-    particles.updateSneezeParticles(
-      player.x, player.y, player.width, player.height, camY,
-    );
+    particles.updateSneezeParticles(player.x, player.y, player.width, player.height, camY);
     particles.clearTornadoParticles();
     particles.clearRocketParticles();
     particles.clearLasagnaParticles();
@@ -89,17 +94,20 @@ export function renderPlayerForEffect(
     const floatPulse = 1.0 + Math.sin(animTick * 0.08) * 0.08;
     playerGfx.scale.set(floatPulse);
     particles.updateLasagnaParticles(
-      player.x, player.y, player.width, player.height, camY, animTick,
+      player.x,
+      player.y,
+      player.width,
+      player.height,
+      camY,
+      animTick,
     );
     particles.clearTornadoParticles();
     particles.clearRocketParticles();
   } else if (activeType === "chili_pepper") {
     drawChiliSprite(playerGfx, player.width, player.height, animTick);
     playerGfx.pivot.set(player.width / 2, 0);
-    playerGfx.x =
-      player.x + player.width / 2 + Math.sin(animTick * 0.5) * 3;
-    playerGfx.y =
-      worldToScreen(player.y, camY) + Math.cos(animTick * 0.7) * 2;
+    playerGfx.x = player.x + player.width / 2 + Math.sin(animTick * 0.5) * 3;
+    playerGfx.y = worldToScreen(player.y, camY) + Math.cos(animTick * 0.7) * 2;
     playerGfx.rotation = Math.sin(animTick * 0.4) * 0.1;
     playerGfx.scale.set(1);
     ensureEffectEmitter(particles, "chili_pepper", player.x, player.y, player.width, player.height);
@@ -128,13 +136,18 @@ export function renderPlayerForEffect(
   } else if (activeType === "garlic_breath") {
     drawGarlicSprite(playerGfx, player.width, player.height, animTick);
     playerGfx.pivot.set(player.width / 2, 0);
-    playerGfx.x =
-      player.x + player.width / 2 + Math.sin(animTick * 0.08) * 4;
-    playerGfx.y =
-      worldToScreen(player.y, camY) + Math.cos(animTick * 0.06) * 2;
+    playerGfx.x = player.x + player.width / 2 + Math.sin(animTick * 0.08) * 4;
+    playerGfx.y = worldToScreen(player.y, camY) + Math.cos(animTick * 0.06) * 2;
     playerGfx.rotation = Math.sin(animTick * 0.05) * 0.08;
     playerGfx.scale.set(1);
-    ensureEffectEmitter(particles, "garlic_breath", player.x, player.y, player.width, player.height);
+    ensureEffectEmitter(
+      particles,
+      "garlic_breath",
+      player.x,
+      player.y,
+      player.width,
+      player.height,
+    );
     particles.updateEffectEmitter(player.x, player.y, player.width, player.height, camY);
     particles.clearTornadoParticles();
     particles.clearRocketParticles();
@@ -144,10 +157,8 @@ export function renderPlayerForEffect(
   } else if (activeType === "burnt_toast") {
     drawBurntToastSprite(playerGfx, player.width, player.height, animTick);
     playerGfx.pivot.set(player.width / 2, 0);
-    playerGfx.x =
-      player.x + player.width / 2 + (Math.random() - 0.5) * 2;
-    playerGfx.y =
-      worldToScreen(player.y, camY) + (Math.random() - 0.5) * 1.5;
+    playerGfx.x = player.x + player.width / 2 + (Math.random() - 0.5) * 2;
+    playerGfx.y = worldToScreen(player.y, camY) + (Math.random() - 0.5) * 1.5;
     playerGfx.rotation = (Math.random() - 0.5) * 0.05;
     playerGfx.scale.set(0.9 + Math.random() * 0.1);
     ensureEffectEmitter(particles, "burnt_toast", player.x, player.y, player.width, player.height);
@@ -165,7 +176,14 @@ export function renderPlayerForEffect(
     playerGfx.y = worldToScreen(player.y, camY);
     const magnetPulse = 1.0 + Math.sin(animTick * 0.12) * 0.08;
     playerGfx.scale.set(magnetPulse);
-    ensureEffectEmitter(particles, "meatball_magnet", player.x, player.y, player.width, player.height);
+    ensureEffectEmitter(
+      particles,
+      "meatball_magnet",
+      player.x,
+      player.y,
+      player.width,
+      player.height,
+    );
     particles.updateEffectEmitter(player.x, player.y, player.width, player.height, camY);
     particles.clearTornadoParticles();
     particles.clearRocketParticles();
@@ -175,7 +193,8 @@ export function renderPlayerForEffect(
   } else if (activeType === "pasta_shield") {
     drawCharacter(playerGfx, player.width, player.height, getChar());
     // Draw shield bubble around character
-    const cx = player.width / 2, cy = player.height / 2;
+    const cx = player.width / 2,
+      cy = player.height / 2;
     const shieldR = Math.max(player.width, player.height) * 0.7;
     const pulse = 1 + Math.sin(animTick * 0.1) * 0.08;
     playerGfx.circle(cx, cy, shieldR * pulse);
@@ -204,7 +223,14 @@ export function renderPlayerForEffect(
     const bouncePulse = 1.0 + Math.sin(animTick * 0.15) * 0.1;
     playerGfx.scale.set(bouncePulse);
     playerGfx.tint = 0xffeedd;
-    ensureEffectEmitter(particles, "gnocchi_bounce", player.x, player.y, player.width, player.height);
+    ensureEffectEmitter(
+      particles,
+      "gnocchi_bounce",
+      player.x,
+      player.y,
+      player.width,
+      player.height,
+    );
     particles.updateEffectEmitter(player.x, player.y, player.width, player.height, camY);
     particles.clearTornadoParticles();
     particles.clearRocketParticles();
@@ -219,7 +245,14 @@ export function renderPlayerForEffect(
     playerGfx.y = worldToScreen(player.y, camY);
     playerGfx.scale.set(1);
     playerGfx.tint = 0xffaa88;
-    ensureEffectEmitter(particles, "minestrone_soup", player.x, player.y, player.width, player.height);
+    ensureEffectEmitter(
+      particles,
+      "minestrone_soup",
+      player.x,
+      player.y,
+      player.width,
+      player.height,
+    );
     particles.updateEffectEmitter(player.x, player.y, player.width, player.height, camY);
     particles.clearTornadoParticles();
     particles.clearRocketParticles();
@@ -252,7 +285,12 @@ export function renderPlayerForEffect(
       playerGfx.scale.set(1, stretch);
       playerGfx.tint = 0xf0c050;
       particles.updateSpringParticles(
-        player.x, player.y, player.width, player.height, camY, animTick,
+        player.x,
+        player.y,
+        player.width,
+        player.height,
+        camY,
+        animTick,
       );
     } else {
       playerGfx.tint = cosmeticTint;

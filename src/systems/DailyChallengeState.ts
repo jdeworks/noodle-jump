@@ -33,7 +33,13 @@ export interface DailyModifiers {
 
 const STORAGE_KEY = "noodle-jump-daily-challenge";
 
-const BASE_THRESHOLDS = { bronze: 5000, silver: 15000, gold: 30000, platinum: 50000, diamond: 80000 };
+const BASE_THRESHOLDS = {
+  bronze: 5000,
+  silver: 15000,
+  gold: 30000,
+  platinum: 50000,
+  diamond: 80000,
+};
 const ZONES = [0, 0, 1, 1, 2, 2, 3, 3, 4, 5];
 const DIFFICULTIES = [0.8, 1.0, 1.0, 1.2, 1.5, 2.0];
 const PLATFORM_TYPES = [null, null, null, null, null, "moving", "ice", "conveyor", "breaking"];
@@ -42,7 +48,13 @@ const ENEMY_SPAWN_RATES = [1.0, 1.0, 1.0, 2.0, 3.0];
 const BOSS_ATTACK_RATES = [1.0, 1.0, 1.0, 1.5, 2.0];
 const QUICK_ZONE_OPTS = [0, 0, 0, 0, 0, 20, 15];
 
-const NEGATIVE_POWER_UPS = ["chili_pepper", "soggy_noodle", "garlic_breath", "burnt_toast", "minestrone_soup"];
+const NEGATIVE_POWER_UPS = [
+  "chili_pepper",
+  "soggy_noodle",
+  "garlic_breath",
+  "burnt_toast",
+  "minestrone_soup",
+];
 
 /** Get today's date key (UTC YYYY-MM-DD). */
 export function getTodayDateKey(): string {
@@ -89,8 +101,13 @@ export function generateDailyConfig(seed?: number): RunConfig {
   }
 
   return {
-    seed: s, enemiesEnabled, enabledPowerUps: enabled, startingZone: zone,
-    difficultyMultiplier: difficulty, practiceMode: false, isDailyChallenge: true,
+    seed: s,
+    enemiesEnabled,
+    enabledPowerUps: enabled,
+    startingZone: zone,
+    difficultyMultiplier: difficulty,
+    practiceMode: false,
+    isDailyChallenge: true,
   };
 }
 
@@ -111,7 +128,11 @@ export function generateDailyDebugConfig(seed?: number): Partial<DebugConfig> {
 
 /** Get medal score thresholds — flat values, same every day. */
 export function getMedalThresholds(_config?: RunConfig): {
-  bronze: number; silver: number; gold: number; platinum: number; diamond: number;
+  bronze: number;
+  silver: number;
+  gold: number;
+  platinum: number;
+  diamond: number;
 } {
   return { ...BASE_THRESHOLDS };
 }
@@ -119,7 +140,13 @@ export function getMedalThresholds(_config?: RunConfig): {
 /** Determine medal earned for a score. */
 export function getMedal(
   score: number,
-  thresholds: { bronze: number; silver: number; gold: number; platinum: number; diamond: number },
+  thresholds: {
+    bronze: number;
+    silver: number;
+    gold: number;
+    platinum: number;
+    diamond: number;
+  },
 ): Medal | null {
   if (score >= thresholds.diamond) return "diamond";
   if (score >= thresholds.platinum) return "platinum";
@@ -139,27 +166,46 @@ export function loadDailyData(): DailyChallengeData {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) return { ...createDailyData(), ...JSON.parse(stored) };
-  } catch { /* use default */ }
+  } catch {
+    /* use default */
+  }
   return createDailyData();
 }
 
 /** Save daily challenge data. */
 export function saveDailyData(data: DailyChallengeData): void {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
-  catch { /* storage unavailable */ }
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch {
+    /* storage unavailable */
+  }
 }
 
 /** Record a daily challenge result. Returns updated data. */
 export function recordDailyResult(
-  data: DailyChallengeData, date: string, score: number, height: number,
-  thresholds: { bronze: number; silver: number; gold: number; platinum: number; diamond: number },
+  data: DailyChallengeData,
+  date: string,
+  score: number,
+  height: number,
+  thresholds: {
+    bronze: number;
+    silver: number;
+    gold: number;
+    platinum: number;
+    diamond: number;
+  },
 ): DailyChallengeData {
   const medal = getMedal(score, thresholds);
   const existing = data.results[date];
   const best = existing && existing.score >= score ? existing : { date, score, height, medal };
   const results = { ...data.results, [date]: best };
   const streak = calculateStreak(results, date);
-  return { results, currentStreak: streak, bestStreak: Math.max(data.bestStreak, streak), lastPlayedDate: date };
+  return {
+    results,
+    currentStreak: streak,
+    bestStreak: Math.max(data.bestStreak, streak),
+    lastPlayedDate: date,
+  };
 }
 
 /** Calculate consecutive-day streak ending at the given date. */
@@ -186,9 +232,22 @@ function formatDateKey(d: Date): string {
 export function getDailyConfigSummary(config: RunConfig, seed?: number): string {
   const s = seed ?? config.seed;
   const mods = generateDailyModifiers(s);
-  const zoneNames = ["Kitchen", "Boiling Pot", "Space", "Freezer", "Volcano", "Candy World", "Final Kitchen"];
+  const zoneNames = [
+    "Kitchen",
+    "Boiling Pot",
+    "Space",
+    "Freezer",
+    "Volcano",
+    "Candy World",
+    "Final Kitchen",
+  ];
   const zone = zoneNames[config.startingZone] ?? `Zone ${config.startingZone}`;
-  const diff = config.difficultyMultiplier < 1 ? "Easy" : config.difficultyMultiplier > 1.1 ? "Hard" : "Normal";
+  const diff =
+    config.difficultyMultiplier < 1
+      ? "Easy"
+      : config.difficultyMultiplier > 1.1
+        ? "Hard"
+        : "Normal";
   const parts = [zone, `${diff} (${config.difficultyMultiplier}x)`];
   if (config.enemiesEnabled) parts.push("Enemies ON");
   if (mods.onlyNegativePowerUps) parts.push("Only Negative Power-ups!");
@@ -202,7 +261,9 @@ export function getDailyConfigSummary(config: RunConfig, seed?: number): string 
 
 /** Count distinct medal types earned in a date range. */
 export function getMedalsInRange(
-  results: Record<string, DailyResult>, startDate: string, days: number,
+  results: Record<string, DailyResult>,
+  startDate: string,
+  days: number,
 ): Set<Medal> {
   const medals = new Set<Medal>();
   const d = new Date(startDate + "T00:00:00Z");

@@ -42,17 +42,17 @@ make help       # list all targets
 
 Read these when the situation calls for it. Do not load all of them upfront.
 
-| Doc | Read when |
-|-----|-----------|
-| `.kit/code-health.md` | Starting a new feature, adding files, or a file is getting large/complex |
-| `.kit/testing.md` | Writing or reviewing tests; starting a new feature |
-| `.kit/llm-testing.md` | Adding or modifying any code that calls an LLM |
-| `.kit/changelog-protocol.md` | End of session, before compressing context, or after removing symbols |
-| `.kit/context-management.md` | Context is filling up or you're about to compact |
-| `.kit/research-planning.md` | Starting a non-trivial feature; unsure about architecture |
-| `.kit/modules/full.md` | Switching to full mode mid-session |
-| `.kit/modules/lean.md` | Switching to lean mode mid-session |
-| `.kit/git-and-github.md` | Commit hygiene, branching, pre-commit hooks, PR best practices |
+| Doc                          | Read when                                                                |
+| ---------------------------- | ------------------------------------------------------------------------ |
+| `.kit/code-health.md`        | Starting a new feature, adding files, or a file is getting large/complex |
+| `.kit/testing.md`            | Writing or reviewing tests; starting a new feature                       |
+| `.kit/llm-testing.md`        | Adding or modifying any code that calls an LLM                           |
+| `.kit/changelog-protocol.md` | End of session, before compressing context, or after removing symbols    |
+| `.kit/context-management.md` | Context is filling up or you're about to compact                         |
+| `.kit/research-planning.md`  | Starting a non-trivial feature; unsure about architecture                |
+| `.kit/modules/full.md`       | Switching to full mode mid-session                                       |
+| `.kit/modules/lean.md`       | Switching to lean mode mid-session                                       |
+| `.kit/git-and-github.md`     | Commit hygiene, branching, pre-commit hooks, PR best practices           |
 
 ---
 
@@ -63,6 +63,7 @@ Read these when the situation calls for it. Do not load all of them upfront.
 3. **CHANGES.md — track progress as you go, not just at start/end.**
 
    **a) START:** Before writing any code, append a started entry:
+
    ```
    ## [YYYY-MM-DDTHH:MM] session-<id> | status: started | mode: full|lean | type: add|fix|refactor|chore
    intent: One line describing what this session will do
@@ -70,14 +71,17 @@ Read these when the situation calls for it. Do not load all of them upfront.
 
    **b) PROGRESS:** After completing each logical unit of work (a bug fix, a feature, a refactor
    step), append a progress line under the current session **before moving to the next task**:
+
    ```
    - progress: <what was done> | <files touched>
    ```
+
    This is lightweight — one line per chunk, not a full entry. If you removed or renamed symbols,
    note them: `- progress: Replaced OldThing with NewThing | src/foo.ts (removed: OldThing)`.
    **Do not batch progress lines at the end.** Log each chunk as you finish it.
 
    **c) END:** When work is complete, append a completed entry:
+
    ```
    ## [YYYY-MM-DDTHH:MM] session-<id> | status: completed | mode: full|lean | type: add|fix|refactor|chore
    files_touched: <files you changed>
@@ -113,13 +117,15 @@ Read these when the situation calls for it. Do not load all of them upfront.
    - **Dead code** — symbols noted as `(removed: ...)` in progress lines or `symbols_removed` that
      still appear in source. Clean them up before starting new work.
    - **Fix hotspots** — areas with repeated fixes need better test coverage.
-   See `.kit/testing.md` § Regression tests.
+     See `.kit/testing.md` § Regression tests.
 
 ---
 
 ## Hooks (Claude Code — supplementary)
+
 Hooks run automatically via `.claude/settings.json` but are **helpers, not the enforcement**.
 The rules above apply to all agents whether hooks exist or not.
+
 - After every file edit: health check warning + auto-format
 - Before context compact: changelog analysis + session summary written
 - On session start: session summary + abandoned session detection

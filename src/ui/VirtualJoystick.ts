@@ -52,8 +52,12 @@ export class VirtualJoystick {
 
   /** Initialize touch listeners on the canvas. */
   init(canvas: HTMLCanvasElement): void {
-    canvas.addEventListener("touchstart", (e) => this.onTouchStart(e, canvas), { passive: true });
-    canvas.addEventListener("touchmove", (e) => this.onTouchMove(e, canvas), { passive: true });
+    canvas.addEventListener("touchstart", (e) => this.onTouchStart(e, canvas), {
+      passive: true,
+    });
+    canvas.addEventListener("touchmove", (e) => this.onTouchMove(e, canvas), {
+      passive: true,
+    });
     canvas.addEventListener("touchend", () => this.onTouchEnd());
     canvas.addEventListener("touchcancel", () => this.onTouchEnd());
   }

@@ -6,9 +6,7 @@ import { registerServiceWorker, listenForInstallPrompt } from "./services/PWA";
 import { initErrorTracking } from "./services/ErrorTracking";
 
 // Lock to portrait via Screen Orientation API
-const orient = screen.orientation as
-  | { lock?: (o: string) => Promise<void> }
-  | undefined;
+const orient = screen.orientation as { lock?: (o: string) => Promise<void> } | undefined;
 orient?.lock?.("portrait").catch(() => {});
 
 async function main() {

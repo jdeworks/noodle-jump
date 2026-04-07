@@ -20,6 +20,7 @@ Optional body explaining why, not what. The diff shows what.
 Types: `feat`, `fix`, `refactor`, `test`, `docs`, `chore`, `ci`
 
 **Good:**
+
 ```
 feat: add user email verification flow
 fix: prevent duplicate webhook processing
@@ -27,6 +28,7 @@ refactor: extract billing logic from route handler
 ```
 
 **Bad:**
+
 ```
 update stuff
 wip
@@ -63,6 +65,7 @@ git config core.hooksPath .githooks
 ```
 
 `.githooks/pre-commit`:
+
 ```bash
 #!/usr/bin/env bash
 set -euo pipefail
@@ -86,11 +89,13 @@ npx husky init
 ```
 
 `.husky/pre-commit`:
+
 ```bash
 npx lint-staged
 ```
 
 `package.json`:
+
 ```json
 {
   "lint-staged": {
@@ -107,6 +112,7 @@ pip install pre-commit
 ```
 
 `.pre-commit-config.yaml`:
+
 ```yaml
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
@@ -118,14 +124,14 @@ repos:
 
 ### What to run in pre-commit hooks
 
-| Check | Time | Include? |
-|-------|------|----------|
-| Format (Prettier, gofmt) | <1s | Yes |
-| Lint (ESLint, ruff) | 1-3s | Yes |
-| Type check (tsc --noEmit) | 2-5s | Yes, if fast enough |
-| Unit tests | 1-10s | Only fast tests |
-| Full test suite | 10s+ | No — run in CI |
-| Build | 10s+ | No — run in CI |
+| Check                     | Time  | Include?            |
+| ------------------------- | ----- | ------------------- |
+| Format (Prettier, gofmt)  | <1s   | Yes                 |
+| Lint (ESLint, ruff)       | 1-3s  | Yes                 |
+| Type check (tsc --noEmit) | 2-5s  | Yes, if fast enough |
+| Unit tests                | 1-10s | Only fast tests     |
+| Full test suite           | 10s+  | No — run in CI      |
+| Build                     | 10s+  | No — run in CI      |
 
 **Rule:** if a hook takes more than 5 seconds, move it to CI instead.
 
@@ -156,12 +162,15 @@ go test $(git diff --cached --name-only | xargs -I{} dirname {} | sort -u | sed 
 
 ```markdown
 ## What
+
 One-sentence summary of the change.
 
 ## Why
+
 Context: what problem does this solve?
 
 ## How to test
+
 1. Step-by-step instructions
 2. Expected result
 
@@ -171,6 +180,7 @@ Context: what problem does this solve?
 ## Branch protection (recommended)
 
 Enable on `main`:
+
 - [x] Require pull request reviews (at least 1)
 - [x] Require status checks to pass (CI)
 - [x] Require branches to be up to date before merging
@@ -179,6 +189,7 @@ Enable on `main`:
 ## .gitignore essentials
 
 Every project should ignore:
+
 ```
 node_modules/     # Dependencies (reinstall with npm install)
 dist/ build/      # Build output (regenerated)
@@ -199,6 +210,7 @@ coverage/         # Test coverage reports
 ## GitHub Actions
 
 See the variant-specific `.kit/cicd.md` for CI/CD setup. General rules:
+
 - CI should run on every PR and push to main
 - Keep CI under 5 minutes for PRs
 - Use caching (`actions/cache` or `setup-node/cache: npm`) to speed up installs

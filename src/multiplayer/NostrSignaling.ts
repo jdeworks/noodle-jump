@@ -16,7 +16,8 @@ const APP_ID = "noodle-jump-mp";
 const _origError = console.error;
 let _suppressed = false;
 function suppressTrysteroPeerErrors(): void {
-  if (_suppressed) return; _suppressed = true;
+  if (_suppressed) return;
+  _suppressed = true;
   console.error = (...args: unknown[]) => {
     if (typeof args[0] === "string" && args[0].includes("Trystero peer error")) return;
     _origError.apply(console, args);
@@ -60,10 +61,7 @@ export class NostrSignaling implements SignalingStrategy {
     const code = generateRoomCode();
     this.callbacks?.onStateChange("waiting");
 
-    this.room = joinRoom(
-      { appId: APP_ID, rtcConfig: RTC_CONFIG, relayUrls: RELAY_URLS },
-      code,
-    );
+    this.room = joinRoom({ appId: APP_ID, rtcConfig: RTC_CONFIG, relayUrls: RELAY_URLS }, code);
 
     this.setupRoomHandlers();
     return code;

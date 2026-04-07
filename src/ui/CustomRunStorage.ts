@@ -21,15 +21,20 @@ export const STORAGE_DEBUG_CONFIG = "noodle_debug_config";
 
 export function saveRunConfigToStorage(cfg: RunConfig): void {
   try {
-    localStorage.setItem(STORAGE_RUN_CONFIG, JSON.stringify({
-      seed: cfg.seed,
-      enemiesEnabled: cfg.enemiesEnabled,
-      enabledPowerUps: [...cfg.enabledPowerUps],
-      startingZone: cfg.startingZone,
-      difficultyMultiplier: cfg.difficultyMultiplier,
-      practiceMode: cfg.practiceMode,
-    }));
-  } catch { /* quota exceeded */ }
+    localStorage.setItem(
+      STORAGE_RUN_CONFIG,
+      JSON.stringify({
+        seed: cfg.seed,
+        enemiesEnabled: cfg.enemiesEnabled,
+        enabledPowerUps: [...cfg.enabledPowerUps],
+        startingZone: cfg.startingZone,
+        difficultyMultiplier: cfg.difficultyMultiplier,
+        practiceMode: cfg.practiceMode,
+      }),
+    );
+  } catch {
+    /* quota exceeded */
+  }
 }
 
 export function loadRunConfigFromStorage(): RunConfig {
@@ -46,13 +51,17 @@ export function loadRunConfigFromStorage(): RunConfig {
       practiceMode: d.practiceMode ?? false,
       isDailyChallenge: false,
     };
-  } catch { return createDefaultRunConfig(); }
+  } catch {
+    return createDefaultRunConfig();
+  }
 }
 
 export function saveDebugConfigToStorage(cfg: DebugConfig): void {
   try {
     localStorage.setItem(STORAGE_DEBUG_CONFIG, JSON.stringify(cfg));
-  } catch { /* quota exceeded */ }
+  } catch {
+    /* quota exceeded */
+  }
 }
 
 export function loadDebugConfigFromStorage(): DebugConfig {
@@ -60,7 +69,9 @@ export function loadDebugConfigFromStorage(): DebugConfig {
     const raw = localStorage.getItem(STORAGE_DEBUG_CONFIG);
     if (!raw) return createDebugConfig();
     return { ...createDebugConfig(), ...JSON.parse(raw) };
-  } catch { return createDebugConfig(); }
+  } catch {
+    return createDebugConfig();
+  }
 }
 
 // ── Styles ──────────────────────────────────────────────────────────────
@@ -73,26 +84,42 @@ export const TAP_THRESHOLD = 8; // px — less movement than this counts as a ta
 
 import { getUITheme } from "./ThemeUI";
 export const labelStyle = new TextStyle({
-  fontFamily: "monospace", fontSize: LABEL_FONT,
-  fill: "#ffffff", fontWeight: "bold",
+  fontFamily: "monospace",
+  fontSize: LABEL_FONT,
+  fill: "#ffffff",
+  fontWeight: "bold",
 });
-export const sectionStyle = (color: string) => new TextStyle({
-  fontFamily: "monospace", fontSize: 13,
-  fill: color, fontWeight: "bold",
-});
+export const sectionStyle = (color: string) =>
+  new TextStyle({
+    fontFamily: "monospace",
+    fontSize: 13,
+    fill: color,
+    fontWeight: "bold",
+  });
 export const valStyle = (on: boolean) => {
   const t = getUITheme();
-  return new TextStyle({ fontFamily: "monospace", fontSize: BTN_FONT,
-    fill: on ? "#44ff44" : t.textDim, fontWeight: "bold" });
+  return new TextStyle({
+    fontFamily: "monospace",
+    fontSize: BTN_FONT,
+    fill: on ? "#44ff44" : t.textDim,
+    fontWeight: "bold",
+  });
 };
 export function btnTextStyleFn() {
-  return new TextStyle({ fontFamily: "monospace", fontSize: BTN_FONT,
-    fill: getUITheme().accent, fontWeight: "bold" });
+  return new TextStyle({
+    fontFamily: "monospace",
+    fontSize: BTN_FONT,
+    fill: getUITheme().accent,
+    fontWeight: "bold",
+  });
 }
 
 // ── Tap region: a rectangle + callback ──────────────────────────────────
 export interface TapRegion {
-  x: number; y: number; w: number; h: number;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
   action: () => void;
 }
 
@@ -100,8 +127,11 @@ export interface TapRegion {
 
 /** Add a centered section header and return the new Y position. */
 export function addSectionHeader(
-  scrollContent: Container, gameWidth: number,
-  text: string, color: string, y: number,
+  scrollContent: Container,
+  gameWidth: number,
+  text: string,
+  color: string,
+  y: number,
 ): number {
   const header = new Text({ text, style: sectionStyle(color) });
   header.x = gameWidth / 2;
@@ -113,8 +143,13 @@ export function addSectionHeader(
 
 /** Add a label + action button row and return the new Y position. */
 export function addRow(
-  scrollContent: Container, tapRegions: TapRegion[], gameWidth: number,
-  label: string, action: string, y: number, onClick: () => void,
+  scrollContent: Container,
+  tapRegions: TapRegion[],
+  gameWidth: number,
+  label: string,
+  action: string,
+  y: number,
+  onClick: () => void,
 ): number {
   const lbl = new Text({ text: label, style: labelStyle });
   lbl.x = 20;
@@ -133,8 +168,13 @@ export function addRow(
 
 /** Add a label + ON/OFF toggle row and return the new Y position. */
 export function addToggleRow(
-  scrollContent: Container, tapRegions: TapRegion[], gameWidth: number,
-  label: string, value: boolean, y: number, onClick: () => void,
+  scrollContent: Container,
+  tapRegions: TapRegion[],
+  gameWidth: number,
+  label: string,
+  value: boolean,
+  y: number,
+  onClick: () => void,
 ): number {
   const lbl = new Text({ text: `${label}:`, style: labelStyle });
   lbl.x = 20;
@@ -153,9 +193,12 @@ export function addToggleRow(
 
 /** Render a row of preset buttons and return the new Y position. */
 export function addPresetRow(
-  scrollContent: Container, tapRegions: TapRegion[], gameWidth: number,
+  scrollContent: Container,
+  tapRegions: TapRegion[],
+  gameWidth: number,
   presets: { label: string; apply: () => void }[],
-  y: number, onRender: () => void,
+  y: number,
+  onRender: () => void,
 ): number {
   const totalW = gameWidth - 40;
   const btnW = Math.floor(totalW / presets.length) - 4;
@@ -173,8 +216,10 @@ export function addPresetRow(
     const ptxt = new Text({
       text: preset.label,
       style: new TextStyle({
-        fontFamily: "monospace", fontSize: 11,
-        fill: getUITheme().accent, fontWeight: "bold",
+        fontFamily: "monospace",
+        fontSize: 11,
+        fill: getUITheme().accent,
+        fontWeight: "bold",
       }),
     });
     ptxt.x = bx + btnW / 2;
@@ -183,8 +228,14 @@ export function addPresetRow(
     scrollContent.addChild(ptxt);
 
     tapRegions.push({
-      x: bx, y, w: btnW, h: 24,
-      action: () => { preset.apply(); onRender(); },
+      x: bx,
+      y,
+      w: btnW,
+      h: 24,
+      action: () => {
+        preset.apply();
+        onRender();
+      },
     });
   }
   return y + 32;
@@ -221,10 +272,12 @@ export function buildPresets(
         cfg.practiceMode = true;
         cfg.enabledPowerUps = new Set(ALL_POWER_UP_TYPES);
         setConfig(cfg);
-        setDebug(applyPreset(createDebugConfig(), {
-          invincible: true,
-          quickZoneTransitions: 25,
-        }));
+        setDebug(
+          applyPreset(createDebugConfig(), {
+            invincible: true,
+            quickZoneTransitions: 25,
+          }),
+        );
       },
     },
     {
@@ -233,12 +286,14 @@ export function buildPresets(
         const cfg = createDefaultRunConfig();
         cfg.practiceMode = true;
         setConfig(cfg);
-        setDebug(applyPreset(createDebugConfig(), {
-          showFPS: true,
-          showHitboxes: true,
-          quickZoneTransitions: 15,
-          infiniteKnives: true,
-        }));
+        setDebug(
+          applyPreset(createDebugConfig(), {
+            showFPS: true,
+            showHitboxes: true,
+            quickZoneTransitions: 15,
+            infiniteKnives: true,
+          }),
+        );
       },
     },
     {
@@ -254,9 +309,13 @@ export function buildPresets(
 
 /** Render the power-up toggle grid and return the new Y position. */
 export function addPowerUpGrid(
-  scrollContent: Container, tapRegions: TapRegion[], gameWidth: number,
-  enabled: Set<string>, allTypes: readonly string[],
-  y: number, onRender: () => void,
+  scrollContent: Container,
+  tapRegions: TapRegion[],
+  gameWidth: number,
+  enabled: Set<string>,
+  allTypes: readonly string[],
+  y: number,
+  onRender: () => void,
 ): number {
   for (let i = 0; i < allTypes.length; i++) {
     const type = allTypes[i];
@@ -271,7 +330,8 @@ export function addPowerUpGrid(
     const puText = new Text({
       text: `${isOn ? "+" : "-"} ${name}`,
       style: new TextStyle({
-        fontFamily: "monospace", fontSize: PU_FONT,
+        fontFamily: "monospace",
+        fontSize: PU_FONT,
         fill: isOn ? "#eeddcc" : "#666655",
       }),
     });
@@ -280,7 +340,10 @@ export function addPowerUpGrid(
     scrollContent.addChild(puText);
 
     tapRegions.push({
-      x: px, y: py, w: colW, h: 20,
+      x: px,
+      y: py,
+      w: colW,
+      h: 20,
       action: () => {
         if (enabled.has(type)) enabled.delete(type);
         else enabled.add(type);
@@ -290,4 +353,3 @@ export function addPowerUpGrid(
   }
   return y + Math.ceil(allTypes.length / 2) * 22 + 8;
 }
-

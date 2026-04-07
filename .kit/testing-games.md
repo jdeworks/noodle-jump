@@ -19,37 +19,37 @@ Testing game logic without needing a canvas.
 ## Example tests
 
 ```typescript
-import { Player } from '../src/entities/Player'
-import { Scoring } from '../src/systems/Scoring'
+import { Player } from "../src/entities/Player";
+import { Scoring } from "../src/systems/Scoring";
 
-describe('Player', () => {
-  test('takes damage correctly', () => {
-    const player = new Player()
-    player.takeDamage(30)
-    expect(player.health).toBe(70)
-  })
+describe("Player", () => {
+  test("takes damage correctly", () => {
+    const player = new Player();
+    player.takeDamage(30);
+    expect(player.health).toBe(70);
+  });
 
-  test('cannot go below 0 health', () => {
-    const player = new Player()
-    player.takeDamage(999)
-    expect(player.health).toBe(0)
-  })
+  test("cannot go below 0 health", () => {
+    const player = new Player();
+    player.takeDamage(999);
+    expect(player.health).toBe(0);
+  });
 
-  test('reports death when health reaches 0', () => {
-    const player = new Player()
-    const isDead = player.takeDamage(100)
-    expect(isDead).toBe(true)
-  })
-})
+  test("reports death when health reaches 0", () => {
+    const player = new Player();
+    const isDead = player.takeDamage(100);
+    expect(isDead).toBe(true);
+  });
+});
 
-describe('Scoring', () => {
-  test('awards combo bonus', () => {
-    const scoring = new Scoring()
-    scoring.addKill()
-    scoring.addKill()  // within combo window
-    expect(scoring.score).toBeGreaterThan(200)  // base 100 * 2 + combo
-  })
-})
+describe("Scoring", () => {
+  test("awards combo bonus", () => {
+    const scoring = new Scoring();
+    scoring.addKill();
+    scoring.addKill(); // within combo window
+    expect(scoring.score).toBeGreaterThan(200); // base 100 * 2 + combo
+  });
+});
 ```
 
 ## Separation pattern
@@ -59,14 +59,14 @@ The key to testable games is separating logic from the engine:
 ```typescript
 // Testable (no engine dependency)
 export function calculateDamage(base: number, armor: number): number {
-  return Math.max(1, base - armor)
+  return Math.max(1, base - armor);
 }
 
 // Engine-dependent (not unit-tested)
-scene.events.on('hit', (target, projectile) => {
-  const damage = calculateDamage(projectile.power, target.armor)
-  target.entity.takeDamage(damage)
-})
+scene.events.on("hit", (target, projectile) => {
+  const damage = calculateDamage(projectile.power, target.armor);
+  target.entity.takeDamage(damage);
+});
 ```
 
 Test `calculateDamage` directly. The event wiring is tested via play testing.

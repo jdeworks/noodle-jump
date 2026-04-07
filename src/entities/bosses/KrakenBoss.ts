@@ -49,10 +49,7 @@ export const krakenBehavior: BossBehavior = {
 
     // Drift toward player horizontally
     const targetX = player.x - boss.width / 2;
-    x +=
-      Math.sign(targetX - x) *
-      Math.min(Math.abs(targetX - x), 0.6) *
-      speedScale;
+    x += Math.sign(targetX - x) * Math.min(Math.abs(targetX - x), 0.6) * speedScale;
     // Stay near player vertically — slow upward (stompable), normal downward
     const targetY = player.y - 200;
     const diff = targetY - y;
@@ -96,9 +93,7 @@ export const krakenBehavior: BossBehavior = {
       if (target) {
         const side = random() > 0.5 ? "left" : "right";
         const attackX =
-          side === "left"
-            ? target.x + target.width * 0.15
-            : target.x + target.width * 0.85;
+          side === "left" ? target.x + target.width * 0.15 : target.x + target.width * 0.85;
         attacks.push({
           type: "tentacle",
           x: attackX,
@@ -126,15 +121,11 @@ export const krakenBehavior: BossBehavior = {
     if (!boss.alive) return false;
     // Player hitting from below = damage to player
     const pad = 4;
-    const overlapX =
-      player.x + player.width - pad > boss.x &&
-      player.x + pad < boss.x + boss.width;
+    const overlapX = player.x + player.width - pad > boss.x && player.x + pad < boss.x + boss.width;
     const playerBottom = player.y + player.height;
     // Only kill player if they hit from below (moving upward into the kraken)
     const hitsFromBelow =
-      overlapX &&
-      playerBottom > boss.y + pad &&
-      player.y < boss.y + boss.height * 0.5;
+      overlapX && playerBottom > boss.y + pad && player.y < boss.y + boss.height * 0.5;
     return hitsFromBelow;
   },
 };

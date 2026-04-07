@@ -3,11 +3,7 @@
 import { random } from "../systems/RNG";
 import type { GameWorldState } from "./GameState";
 import type { GameEvent } from "./GameLoopTypes";
-import {
-  createPlatform,
-  generatePlatforms,
-  pruneBelow,
-} from "../entities/Platform";
+import { createPlatform, generatePlatforms, pruneBelow } from "../entities/Platform";
 import { spawnMeatballs, pruneMeatballs } from "../entities/Collectible";
 import { spawnPowerUps, prunePowerUps } from "../entities/PowerUp";
 import { getDifficulty } from "../systems/Difficulty";
@@ -20,10 +16,7 @@ import {
 
 /** Spawn a lasagna platform near the player. */
 export function spawnLasagnaPlatform(state: GameWorldState): GameWorldState {
-  const x = Math.max(
-    20,
-    Math.min(GAME_WIDTH - 120, state.player.x - 30 + (random() - 0.5) * 80),
-  );
+  const x = Math.max(20, Math.min(GAME_WIDTH - 120, state.player.x - 30 + (random() - 0.5) * 80));
   const y = state.player.y - 60 - random() * 50;
   const platform = createPlatform(x, y, "lasagna");
   platform.spawnTimeMs = state.elapsedMs;
@@ -34,10 +27,7 @@ export function spawnLasagnaPlatform(state: GameWorldState): GameWorldState {
 }
 
 /** Expire lasagna platforms that have exceeded their TTL. */
-export function expireLasagnaPlatforms(
-  state: GameWorldState,
-  events: GameEvent[],
-): GameWorldState {
+export function expireLasagnaPlatforms(state: GameWorldState, events: GameEvent[]): GameWorldState {
   let changed = false;
   const platforms = state.platforms.map((p) => {
     if (
@@ -60,10 +50,7 @@ export function maybeGeneratePlatforms(state: GameWorldState): GameWorldState {
   if (state.inBossFight) return state; // freeze platform generation during boss fights
   const cameraTop = state.camera.y;
   if (state.highestPlatformY > cameraTop - GAME_HEIGHT) {
-    const difficulty = getDifficulty(
-      state.platformsPassed,
-      state.runConfig.difficultyMultiplier,
-    );
+    const difficulty = getDifficulty(state.platformsPassed, state.runConfig.difficultyMultiplier);
     const generated = generatePlatforms(
       state.highestPlatformY,
       PLATFORM_COUNT_BUFFER,
@@ -95,8 +82,7 @@ export function maybeGeneratePlatforms(state: GameWorldState): GameWorldState {
       powerUps: [...state.powerUps, ...newPowerUps],
       meatballs: [...state.meatballs, ...newMeatballs],
       highestPlatformY: generated[generated.length - 1].y,
-      lastPlatformWasBrittle:
-        generated[generated.length - 1].type === "brittle",
+      lastPlatformWasBrittle: generated[generated.length - 1].type === "brittle",
       platformCount: state.platformCount + generated.length,
     };
   }
@@ -110,9 +96,7 @@ export function prune(state: GameWorldState): GameWorldState {
   const activeIds = new Set(platforms.map((p) => p.id));
   const meatballs = pruneMeatballs(state.meatballs, activeIds);
   const powerUps = prunePowerUps(state.powerUps, activeIds);
-  const closeCallPlatformIds = state.closeCallPlatformIds.filter((id) =>
-    activeIds.has(id),
-  );
+  const closeCallPlatformIds = state.closeCallPlatformIds.filter((id) => activeIds.has(id));
 
   return { ...state, platforms, meatballs, powerUps, closeCallPlatformIds };
 }
@@ -154,10 +138,7 @@ export function rescuePlayer(s: GameWorldState): GameWorldState {
     ? {
         ...s.scoreState,
         height: Math.max(0, Math.floor(s.scoreState.height * 0.9)),
-        highestHeight: Math.max(
-          0,
-          Math.floor(s.scoreState.highestHeight * 0.9),
-        ),
+        highestHeight: Math.max(0, Math.floor(s.scoreState.highestHeight * 0.9)),
       }
     : s.scoreState;
   return {
@@ -175,10 +156,7 @@ export function rescuePlayer(s: GameWorldState): GameWorldState {
 }
 
 /** End-of-tick housekeeping: generate platforms, prune, decrement visual timers. */
-export function tickEndOfFrame(
-  s: GameWorldState,
-  events: GameEvent[],
-): GameWorldState {
+export function tickEndOfFrame(s: GameWorldState, events: GameEvent[]): GameWorldState {
   s = maybeGeneratePlatforms(s);
   s = expireLasagnaPlatforms(s, events);
   s = prune(s);

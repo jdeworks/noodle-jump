@@ -85,15 +85,22 @@ export async function copyToClipboard(text: string): Promise<boolean> {
       document.execCommand("copy");
       document.body.removeChild(ta);
       return true;
-    } catch { return false; }
+    } catch {
+      return false;
+    }
   }
 }
 
 function safeParseArray(key: string): string[] {
   try {
     const raw = localStorage.getItem(key);
-    if (raw) { const arr = JSON.parse(raw); if (Array.isArray(arr)) return arr; }
-  } catch { /* ignore */ }
+    if (raw) {
+      const arr = JSON.parse(raw);
+      if (Array.isArray(arr)) return arr;
+    }
+  } catch {
+    /* ignore */
+  }
   return [];
 }
 
@@ -101,6 +108,8 @@ function safeParseObject<T>(key: string, fallback: T): T {
   try {
     const raw = localStorage.getItem(key);
     if (raw) return JSON.parse(raw);
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
   return fallback;
 }

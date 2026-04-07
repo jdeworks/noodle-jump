@@ -21,8 +21,12 @@ export function drawMeatball(gfx: Graphics, size: number): void {
 
   // Bumpy texture — small darker circles for rough meatball surface
   const bumps = [
-    [0.3, -0.2, 0.12], [-0.25, 0.15, 0.1], [0.15, 0.3, 0.09],
-    [-0.1, -0.3, 0.08], [0.35, 0.1, 0.07], [-0.3, -0.05, 0.1],
+    [0.3, -0.2, 0.12],
+    [-0.25, 0.15, 0.1],
+    [0.15, 0.3, 0.09],
+    [-0.1, -0.3, 0.08],
+    [0.35, 0.1, 0.07],
+    [-0.3, -0.05, 0.1],
   ];
   for (const [bx, by, bs] of bumps) {
     gfx.circle(r + bx * r, r + by * r, bs * r);
@@ -54,11 +58,7 @@ const VARIANT_COLORS: Record<string, { main: number; rim: number }> = {
 };
 
 /** Draw a meatball with zone-specific variant styling. */
-export function drawMeatballVariant(
-  gfx: Graphics,
-  size: number,
-  variant: string,
-): void {
+export function drawMeatballVariant(gfx: Graphics, size: number, variant: string): void {
   gfx.clear();
   const r = size / 2;
   const colors = VARIANT_COLORS[variant] ?? VARIANT_COLORS.meatball;
@@ -70,8 +70,12 @@ export function drawMeatballVariant(
 
   // Bumpy texture
   const bumps = [
-    [0.3, -0.2, 0.12], [-0.25, 0.15, 0.1], [0.15, 0.3, 0.09],
-    [-0.1, -0.3, 0.08], [0.35, 0.1, 0.07], [-0.3, -0.05, 0.1],
+    [0.3, -0.2, 0.12],
+    [-0.25, 0.15, 0.1],
+    [0.15, 0.3, 0.09],
+    [-0.1, -0.3, 0.08],
+    [0.35, 0.1, 0.07],
+    [-0.3, -0.05, 0.1],
   ];
   for (const [bx, by, bs] of bumps) {
     gfx.circle(r + bx * r, r + by * r, bs * r);
@@ -87,19 +91,9 @@ export function drawMeatballVariant(
 }
 
 /** Draw a power-up diamond with type-specific inner icon and glow. */
-const NEGATIVE_TYPES = [
-  "chili_pepper",
-  "soggy_noodle",
-  "garlic_breath",
-  "burnt_toast",
-];
+const NEGATIVE_TYPES = ["chili_pepper", "soggy_noodle", "garlic_breath", "burnt_toast"];
 
-export function drawPowerUp(
-  gfx: Graphics,
-  size: number,
-  color: number,
-  type: string,
-): void {
+export function drawPowerUp(gfx: Graphics, size: number, color: number, type: string): void {
   gfx.clear();
   const s = size / 2;
   const isNegative = NEGATIVE_TYPES.includes(type);

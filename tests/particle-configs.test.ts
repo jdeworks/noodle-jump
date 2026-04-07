@@ -17,10 +17,7 @@ const ALL_POWER_UP_TYPES = [
 describe("POWER_UP_PARTICLE_CONFIGS", () => {
   test("has config for every power-up type", () => {
     for (const type of ALL_POWER_UP_TYPES) {
-      expect(
-        POWER_UP_PARTICLE_CONFIGS[type],
-        `Missing particle config for ${type}`,
-      ).toBeDefined();
+      expect(POWER_UP_PARTICLE_CONFIGS[type], `Missing particle config for ${type}`).toBeDefined();
     }
   });
 
@@ -38,10 +35,7 @@ describe("POWER_UP_PARTICLE_CONFIGS", () => {
 
   test("all configs have at least one color", () => {
     for (const [type, config] of Object.entries(POWER_UP_PARTICLE_CONFIGS)) {
-      expect(
-        config.colors.length,
-        `${type} should have colors`,
-      ).toBeGreaterThan(0);
+      expect(config.colors.length, `${type} should have colors`).toBeGreaterThan(0);
     }
   });
 
@@ -55,9 +49,7 @@ describe("POWER_UP_PARTICLE_CONFIGS", () => {
   test("all configs have valid size range", () => {
     for (const [type, config] of Object.entries(POWER_UP_PARTICLE_CONFIGS)) {
       expect(config.size[0], `${type} size min`).toBeGreaterThan(0);
-      expect(config.size[1], `${type} size max`).toBeGreaterThanOrEqual(
-        config.size[0],
-      );
+      expect(config.size[1], `${type} size max`).toBeGreaterThanOrEqual(config.size[0]);
     }
   });
 
@@ -71,10 +63,7 @@ describe("POWER_UP_PARTICLE_CONFIGS", () => {
   test("burst configs have non-zero spawnRate", () => {
     for (const [type, config] of Object.entries(POWER_UP_PARTICLE_CONFIGS)) {
       if (!config.burst) {
-        expect(
-          config.spawnRate,
-          `${type} spawnRate`,
-        ).toBeGreaterThan(0);
+        expect(config.spawnRate, `${type} spawnRate`).toBeGreaterThan(0);
       }
     }
   });

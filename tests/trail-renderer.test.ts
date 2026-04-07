@@ -21,7 +21,9 @@ vi.mock("pixi.js", () => {
   }
   class MockContainer {
     children: unknown[] = [];
-    addChild(child: unknown) { this.children.push(child); }
+    addChild(child: unknown) {
+      this.children.push(child);
+    }
     removeChild(child: unknown) {
       const idx = this.children.indexOf(child);
       if (idx >= 0) this.children.splice(idx, 1);
@@ -73,8 +75,9 @@ describe("TrailRenderer", () => {
     expect(countBefore).toBeGreaterThan(0);
     trail.clear();
     // Pooled graphics are hidden, not removed — verify no visible points
-    const visible = (trail.container.children as Array<{ visible: boolean }>)
-      .filter((c) => c.visible);
+    const visible = (trail.container.children as Array<{ visible: boolean }>).filter(
+      (c) => c.visible,
+    );
     expect(visible.length).toBe(0);
   });
 

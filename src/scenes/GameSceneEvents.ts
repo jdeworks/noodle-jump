@@ -50,11 +50,7 @@ export function handleEvents(events: GameEvent[], deps: EventHandlerDeps): void 
     switch (event.type) {
       case "landed":
         playSfxLanding(event.platformType);
-        particles.spawnDustPuff(
-          event.x,
-          event.y,
-          state.camera.y,
-        );
+        particles.spawnDustPuff(event.x, event.y, state.camera.y);
         if (event.edgeLanding) {
           playSfxCloseCall();
           deps.spawnFloatingText("CLOSE CALL!", 0xffdd44);
@@ -72,10 +68,7 @@ export function handleEvents(events: GameEvent[], deps: EventHandlerDeps): void 
 
       case "comboActive":
         playSfxComboEscalation(event.multiplier);
-        deps.spawnFloatingText(
-          `${event.multiplier}x COMBO!`,
-          0xff8800,
-        );
+        deps.spawnFloatingText(`${event.multiplier}x COMBO!`, 0xff8800);
         break;
 
       case "powerUpCollected": {
@@ -147,10 +140,7 @@ export function handleEvents(events: GameEvent[], deps: EventHandlerDeps): void 
 
       case "platformCrumbled":
         playSfxPlatformCrumble();
-        particles.spawnCrumbleParticles(
-          event.platform,
-          state.camera.y,
-        );
+        particles.spawnCrumbleParticles(event.platform, state.camera.y);
         break;
 
       case "stagnantWarning":
@@ -168,10 +158,7 @@ export function handleEvents(events: GameEvent[], deps: EventHandlerDeps): void 
         break;
 
       case "lasagnaSpawned":
-        gfxSync.syncPlatforms(
-          state.platforms,
-          gameContainer,
-        );
+        gfxSync.syncPlatforms(state.platforms, gameContainer);
         break;
 
       case "gameOver":

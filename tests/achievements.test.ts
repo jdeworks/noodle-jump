@@ -76,9 +76,16 @@ describe("Achievements", () => {
   test("per-game achievement checks gameStats", () => {
     const stats = makeStats();
     const gameStats = {
-      score: 100, height: 60, meatballs: 5, combo: 1,
-      zone: 0, powerUps: 0, platforms: 20, seconds: 30,
-      streak: 15, enemiesKilled: 0,
+      score: 100,
+      height: 60,
+      meatballs: 5,
+      combo: 1,
+      zone: 0,
+      powerUps: 0,
+      platforms: 20,
+      seconds: 30,
+      streak: 15,
+      enemiesKilled: 0,
     };
     const result = checkAchievements(emptyState(), stats, gameStats);
     expect(result.newlyUnlocked).toContain("perfect_start");

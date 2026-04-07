@@ -5,10 +5,7 @@
  */
 
 import { compressDescription, decompressDescription } from "./SDPCompressor";
-import type {
-  SignalingCallbacks,
-  SignalingStrategy,
-} from "./SignalingStrategy";
+import type { SignalingCallbacks, SignalingStrategy } from "./SignalingStrategy";
 
 export class ManualSignaling implements SignalingStrategy {
   private pc: RTCPeerConnection | null = null;
@@ -122,11 +119,7 @@ export class ManualSignaling implements SignalingStrategy {
       if (!this.pc) return reject(new Error("No peer connection"));
 
       if (this.pc.iceGatheringState === "complete") {
-        resolve(
-          compressDescription(
-            this.pc.localDescription as RTCSessionDescription,
-          ),
-        );
+        resolve(compressDescription(this.pc.localDescription as RTCSessionDescription));
         return;
       }
 
@@ -135,9 +128,7 @@ export class ManualSignaling implements SignalingStrategy {
       this.pc.onicegatheringstatechange = () => {
         if (this.pc?.iceGatheringState === "complete" && this.pendingResolve) {
           this.pendingResolve(
-            compressDescription(
-              this.pc.localDescription as RTCSessionDescription,
-            ),
+            compressDescription(this.pc.localDescription as RTCSessionDescription),
           );
           this.pendingResolve = null;
         }
@@ -148,9 +139,7 @@ export class ManualSignaling implements SignalingStrategy {
         if (this.pendingResolve && this.pc?.localDescription) {
           // Use what we have even if gathering isn't fully complete
           this.pendingResolve(
-            compressDescription(
-              this.pc.localDescription as RTCSessionDescription,
-            ),
+            compressDescription(this.pc.localDescription as RTCSessionDescription),
           );
           this.pendingResolve = null;
         } else if (this.pendingResolve) {

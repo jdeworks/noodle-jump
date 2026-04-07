@@ -68,10 +68,7 @@ export function updatePlayer(player: PlayerState, inputX: number, speedScale = 1
 }
 
 /** Trigger a jump — sets vertical velocity upward. */
-export function playerJump(
-  player: PlayerState,
-  velocity?: number,
-): PlayerState {
+export function playerJump(player: PlayerState, velocity?: number): PlayerState {
   return {
     ...player,
     vy: velocity ?? PLAYER_JUMP_VELOCITY,

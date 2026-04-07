@@ -29,7 +29,10 @@ export function getShadowKey(mode: ShadowMode, qualifier?: string): string {
   return `${PREFIX}normal`;
 }
 
-export function getShadowSlot(config?: RunConfig): { mode: ShadowMode; qualifier: string } {
+export function getShadowSlot(config?: RunConfig): {
+  mode: ShadowMode;
+  qualifier: string;
+} {
   if (!config) return { mode: "normal", qualifier: "" };
   if (config.isDailyChallenge) return { mode: "daily", qualifier: "" };
   if (config.seed !== 0 || config.startingZone !== 0 || config.difficultyMultiplier !== 1.0) {
@@ -40,8 +43,11 @@ export function getShadowSlot(config?: RunConfig): { mode: ShadowMode; qualifier
 
 function hashConfig(config: RunConfig): string {
   const parts = [
-    config.seed, config.startingZone, config.difficultyMultiplier,
-    config.enemiesEnabled ? 1 : 0, config.practiceMode ? 1 : 0,
+    config.seed,
+    config.startingZone,
+    config.difficultyMultiplier,
+    config.enemiesEnabled ? 1 : 0,
+    config.practiceMode ? 1 : 0,
     [...config.enabledPowerUps].sort().join(","),
   ];
   let h = 5381;
@@ -75,13 +81,16 @@ export function getSampleCount(recording: ShadowRecording): number {
 }
 
 export function getFrame(
-  recording: ShadowRecording, index: number,
+  recording: ShadowRecording,
+  index: number,
 ): { x: number; y: number; vy: number; playerState: number } | null {
   const offset = index * VALUES_PER_FRAME;
   if (offset + VALUES_PER_FRAME > recording.frames.length) return null;
   return {
-    x: recording.frames[offset], y: recording.frames[offset + 1],
-    vy: recording.frames[offset + 2], playerState: recording.frames[offset + 3],
+    x: recording.frames[offset],
+    y: recording.frames[offset + 1],
+    vy: recording.frames[offset + 2],
+    playerState: recording.frames[offset + 3],
   };
 }
 
@@ -92,7 +101,9 @@ export function saveShadow(mode: ShadowMode, qualifier: string, recording: Shado
   try {
     localStorage.setItem(key, JSON.stringify(recording));
     if (mode === "daily") pruneOldDailyShadows(qualifier);
-  } catch { /* storage full */ }
+  } catch {
+    /* storage full */
+  }
 }
 
 export function loadShadow(mode: ShadowMode, qualifier?: string): ShadowRecording | null {
@@ -106,7 +117,9 @@ export function loadShadowRecording(key: string): ShadowRecording | null {
     const data = JSON.parse(stored);
     if (!data.frames || !Array.isArray(data.frames)) return null;
     return data as ShadowRecording;
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 function pruneOldDailyShadows(currentDate: string): void {

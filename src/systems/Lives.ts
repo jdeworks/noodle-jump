@@ -11,7 +11,10 @@ export function createLivesState(enabled = false, maxLives = 3): LivesState {
 }
 
 /** Lose a life. Returns updated state and whether game is over. */
-export function loseLife(state: LivesState): { state: LivesState; gameOver: boolean } {
+export function loseLife(state: LivesState): {
+  state: LivesState;
+  gameOver: boolean;
+} {
   if (!state.enabled) return { state, gameOver: true }; // no lives mode = instant death
   const lives = state.lives - 1;
   return {

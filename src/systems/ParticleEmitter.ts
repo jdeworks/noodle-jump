@@ -108,9 +108,7 @@ export function tickEmitter(state: EmitterState): EmitterState {
     spawnAccum += config.spawnRate;
     while (spawnAccum >= 1) {
       if (particles.length < config.count * 3) {
-        particles.push(
-          spawnParticle(config, state.originX, state.originY),
-        );
+        particles.push(spawnParticle(config, state.originX, state.originY));
       }
       spawnAccum -= 1;
     }
@@ -129,11 +127,7 @@ export function tickEmitter(state: EmitterState): EmitterState {
 }
 
 /** Update emitter origin (follow a moving source like the player). */
-export function moveEmitter(
-  state: EmitterState,
-  x: number,
-  y: number,
-): EmitterState {
+export function moveEmitter(state: EmitterState, x: number, y: number): EmitterState {
   return { ...state, originX: x, originY: y };
 }
 
@@ -149,22 +143,12 @@ export function isEmitterDone(state: EmitterState): boolean {
 
 // ── Internal helpers ─────────────────────────────────────────────────────
 
-function spawnParticle(
-  config: ParticleConfig,
-  originX: number,
-  originY: number,
-): Particle {
-  const angle =
-    config.angle + (Math.random() - 0.5) * 2 * config.angleSpread;
-  const speed =
-    config.speed + (Math.random() - 0.5) * 2 * config.speedVariance;
-  const life =
-    config.lifetime +
-    Math.floor((Math.random() - 0.5) * 2 * config.lifetimeVariance);
-  const size =
-    config.size[0] + Math.random() * (config.size[1] - config.size[0]);
-  const alpha =
-    config.alpha + (Math.random() - 0.5) * 2 * config.alphaVariance;
+function spawnParticle(config: ParticleConfig, originX: number, originY: number): Particle {
+  const angle = config.angle + (Math.random() - 0.5) * 2 * config.angleSpread;
+  const speed = config.speed + (Math.random() - 0.5) * 2 * config.speedVariance;
+  const life = config.lifetime + Math.floor((Math.random() - 0.5) * 2 * config.lifetimeVariance);
+  const size = config.size[0] + Math.random() * (config.size[1] - config.size[0]);
+  const alpha = config.alpha + (Math.random() - 0.5) * 2 * config.alphaVariance;
 
   return {
     x: originX,

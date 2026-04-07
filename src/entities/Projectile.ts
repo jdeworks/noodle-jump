@@ -1,10 +1,6 @@
 /** Projectile entity (thrown knife) — pure logic, no PixiJS. */
 
-import {
-  PROJECTILE_SPEED,
-  PROJECTILE_SIZE,
-  PROJECTILE_LIFETIME,
-} from "../config/constants";
+import { PROJECTILE_SPEED, PROJECTILE_SIZE, PROJECTILE_LIFETIME } from "../config/constants";
 import type { EnemyState } from "./Enemy";
 
 export interface ProjectileState {
@@ -91,11 +87,9 @@ export function checkProjectileEnemyCollisions(
       if (consumedProjectileIds.has(proj.id)) break;
 
       const overlapX =
-        proj.x + proj.size / 2 > enemy.x &&
-        proj.x - proj.size / 2 < enemy.x + enemy.width;
+        proj.x + proj.size / 2 > enemy.x && proj.x - proj.size / 2 < enemy.x + enemy.width;
       const overlapY =
-        proj.y + proj.size / 2 > enemy.y &&
-        proj.y - proj.size / 2 < enemy.y + enemy.height;
+        proj.y + proj.size / 2 > enemy.y && proj.y - proj.size / 2 < enemy.y + enemy.height;
 
       if (overlapX && overlapY) {
         hitEnemyIds.push(enemy.id);

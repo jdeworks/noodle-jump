@@ -8,11 +8,7 @@ import {
   GAME_WIDTH,
   ENEMY_SIZE,
 } from "../config/constants";
-import {
-  createEnemy,
-  getEnemyTypesForZone,
-  type EnemyState,
-} from "../entities/Enemy";
+import { createEnemy, getEnemyTypesForZone, type EnemyState } from "../entities/Enemy";
 
 export interface SpawnerState {
   ticksSinceLastSpawn: number;
@@ -41,10 +37,7 @@ export function trySpawnEnemy(
   }
 
   // spawnMultiplier > 1 = faster spawns (2x = half interval, 3x = third)
-  const adjustedInterval = Math.max(
-    1,
-    Math.ceil(ENEMY_SPAWN_INTERVAL / spawnMultiplier),
-  );
+  const adjustedInterval = Math.max(1, Math.ceil(ENEMY_SPAWN_INTERVAL / spawnMultiplier));
   if (ticks < adjustedInterval) {
     return { spawner: { ticksSinceLastSpawn: ticks }, enemy: null };
   }

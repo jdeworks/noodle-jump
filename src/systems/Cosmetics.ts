@@ -47,39 +47,201 @@ export const TINT_COLORS: Record<string, number> = {
 
 export const COSMETICS: Cosmetic[] = [
   // Trails
-  { id: "trail_none", type: "trail", name: "No Trail", description: "Clean movement", unlockAchievement: null, unlockPhrase: null },
-  { id: "trail_sparkle", type: "trail", name: "Sparkle", description: "Glittering sparkles", unlockAchievement: "meatball_100", unlockPhrase: null },
-  { id: "trail_fire", type: "trail", name: "Fire", description: "Blazing flames", unlockAchievement: "height_1000", unlockPhrase: null },
-  { id: "trail_rainbow", type: "trail", name: "Rainbow", description: "Colorful rainbow streak", unlockAchievement: "score_100k", unlockPhrase: null },
-  { id: "trail_stars", type: "trail", name: "Stars", description: "Twinkling stars", unlockAchievement: "zone_5", unlockPhrase: null },
-  { id: "trail_hearts", type: "trail", name: "Hearts", description: "Floating hearts", unlockAchievement: "games_50", unlockPhrase: null },
-  { id: "trail_snow", type: "trail", name: "Snow", description: "Snowflake particles", unlockAchievement: "zone_4", unlockPhrase: null },
-  { id: "trail_neon", type: "trail", name: "Neon", description: "Cyan & magenta glow", unlockAchievement: "combo_5x", unlockPhrase: null },
+  {
+    id: "trail_none",
+    type: "trail",
+    name: "No Trail",
+    description: "Clean movement",
+    unlockAchievement: null,
+    unlockPhrase: null,
+  },
+  {
+    id: "trail_sparkle",
+    type: "trail",
+    name: "Sparkle",
+    description: "Glittering sparkles",
+    unlockAchievement: "meatball_100",
+    unlockPhrase: null,
+  },
+  {
+    id: "trail_fire",
+    type: "trail",
+    name: "Fire",
+    description: "Blazing flames",
+    unlockAchievement: "height_1000",
+    unlockPhrase: null,
+  },
+  {
+    id: "trail_rainbow",
+    type: "trail",
+    name: "Rainbow",
+    description: "Colorful rainbow streak",
+    unlockAchievement: "score_100k",
+    unlockPhrase: null,
+  },
+  {
+    id: "trail_stars",
+    type: "trail",
+    name: "Stars",
+    description: "Twinkling stars",
+    unlockAchievement: "zone_5",
+    unlockPhrase: null,
+  },
+  {
+    id: "trail_hearts",
+    type: "trail",
+    name: "Hearts",
+    description: "Floating hearts",
+    unlockAchievement: "games_50",
+    unlockPhrase: null,
+  },
+  {
+    id: "trail_snow",
+    type: "trail",
+    name: "Snow",
+    description: "Snowflake particles",
+    unlockAchievement: "zone_4",
+    unlockPhrase: null,
+  },
+  {
+    id: "trail_neon",
+    type: "trail",
+    name: "Neon",
+    description: "Cyan & magenta glow",
+    unlockAchievement: "combo_5x",
+    unlockPhrase: null,
+  },
 
   // Tints
-  { id: "tint_none", type: "tint", name: "None", description: "No color overlay", unlockAchievement: null, unlockPhrase: null },
-  { id: "tint_gold", type: "tint", name: "Gold", description: "Golden glow", unlockAchievement: "score_50k", unlockPhrase: null },
-  { id: "tint_ice", type: "tint", name: "Ice", description: "Icy blue", unlockAchievement: "zone_4", unlockPhrase: null },
-  { id: "tint_fire", type: "tint", name: "Fire", description: "Warm red", unlockAchievement: "zone_5", unlockPhrase: null },
-  { id: "tint_neon", type: "tint", name: "Neon", description: "Electric green", unlockAchievement: "height_500", unlockPhrase: null },
-  { id: "tint_shadow", type: "tint", name: "Shadow", description: "Dark purple", unlockAchievement: "enemy_slayer", unlockPhrase: null },
-  { id: "tint_rose", type: "tint", name: "Rose", description: "Soft pink", unlockAchievement: "meatball_1000", unlockPhrase: null },
-  { id: "tint_sunset", type: "tint", name: "Sunset", description: "Warm orange", unlockAchievement: "zone_6", unlockPhrase: null },
+  {
+    id: "tint_none",
+    type: "tint",
+    name: "None",
+    description: "No color overlay",
+    unlockAchievement: null,
+    unlockPhrase: null,
+  },
+  {
+    id: "tint_gold",
+    type: "tint",
+    name: "Gold",
+    description: "Golden glow",
+    unlockAchievement: "score_50k",
+    unlockPhrase: null,
+  },
+  {
+    id: "tint_ice",
+    type: "tint",
+    name: "Ice",
+    description: "Icy blue",
+    unlockAchievement: "zone_4",
+    unlockPhrase: null,
+  },
+  {
+    id: "tint_fire",
+    type: "tint",
+    name: "Fire",
+    description: "Warm red",
+    unlockAchievement: "zone_5",
+    unlockPhrase: null,
+  },
+  {
+    id: "tint_neon",
+    type: "tint",
+    name: "Neon",
+    description: "Electric green",
+    unlockAchievement: "height_500",
+    unlockPhrase: null,
+  },
+  {
+    id: "tint_shadow",
+    type: "tint",
+    name: "Shadow",
+    description: "Dark purple",
+    unlockAchievement: "enemy_slayer",
+    unlockPhrase: null,
+  },
+  {
+    id: "tint_rose",
+    type: "tint",
+    name: "Rose",
+    description: "Soft pink",
+    unlockAchievement: "meatball_1000",
+    unlockPhrase: null,
+  },
+  {
+    id: "tint_sunset",
+    type: "tint",
+    name: "Sunset",
+    description: "Warm orange",
+    unlockAchievement: "zone_6",
+    unlockPhrase: null,
+  },
 
   // Themes (full visual reskin — enemies, bosses, platforms)
-  { id: "theme_default", type: "theme", name: "Classic", description: "Normal zone-based visuals", unlockAchievement: null, unlockPhrase: null },
-  { id: "theme_neon", type: "theme", name: "Neon", description: "Glowing neon outlines on everything", unlockAchievement: "score_100k", unlockPhrase: "neon dreams" },
-  { id: "theme_pixel", type: "theme", name: "Pixel", description: "Retro 8-bit pixel art style", unlockAchievement: "games_100", unlockPhrase: "8 bit world" },
-  { id: "theme_candy", type: "theme", name: "Candy", description: "Everything is candy-themed", unlockAchievement: "zone_6", unlockPhrase: "sugar rush" },
-  { id: "theme_dark", type: "theme", name: "Dark", description: "Shadowy dark versions", unlockAchievement: "boss_defeated_3", unlockPhrase: "embrace darkness" },
+  {
+    id: "theme_default",
+    type: "theme",
+    name: "Classic",
+    description: "Normal zone-based visuals",
+    unlockAchievement: null,
+    unlockPhrase: null,
+  },
+  {
+    id: "theme_neon",
+    type: "theme",
+    name: "Neon",
+    description: "Glowing neon outlines on everything",
+    unlockAchievement: "score_100k",
+    unlockPhrase: "neon dreams",
+  },
+  {
+    id: "theme_pixel",
+    type: "theme",
+    name: "Pixel",
+    description: "Retro 8-bit pixel art style",
+    unlockAchievement: "games_100",
+    unlockPhrase: "8 bit world",
+  },
+  {
+    id: "theme_candy",
+    type: "theme",
+    name: "Candy",
+    description: "Everything is candy-themed",
+    unlockAchievement: "zone_6",
+    unlockPhrase: "sugar rush",
+  },
+  {
+    id: "theme_dark",
+    type: "theme",
+    name: "Dark",
+    description: "Shadowy dark versions",
+    unlockAchievement: "boss_defeated_3",
+    unlockPhrase: "embrace darkness",
+  },
 ];
 
 // ── Unlockable characters ─────────────────────────────────────────────
 
 export const UNLOCKABLE_CHARACTERS: UnlockableCharacter[] = [
-  { id: "neon_chef", name: "Neon Chef", unlockAchievement: "score_200k", unlockPhrase: "neon chef" },
-  { id: "nyan_cat", name: "Nyan Cat", unlockAchievement: "height_2000", unlockPhrase: "nyan nyan nyan" },
-  { id: "skeleton", name: "Skeleton", unlockAchievement: "boss_defeated_3", unlockPhrase: "no skin no problem" },
+  {
+    id: "neon_chef",
+    name: "Neon Chef",
+    unlockAchievement: "score_200k",
+    unlockPhrase: "neon chef",
+  },
+  {
+    id: "nyan_cat",
+    name: "Nyan Cat",
+    unlockAchievement: "height_2000",
+    unlockPhrase: "nyan nyan nyan",
+  },
+  {
+    id: "skeleton",
+    name: "Skeleton",
+    unlockAchievement: "boss_defeated_3",
+    unlockPhrase: "no skin no problem",
+  },
 ];
 
 // ── Default state ─────────────────────────────────────────────────────
@@ -104,19 +266,29 @@ export function loadCosmetics(): CosmeticState {
           if (data.equipped[key]) equipped[key] = data.equipped[key];
         }
       }
-      return { unlocked: new Set([...FREE_IDS, ...(data.unlocked ?? [])]), equipped };
+      return {
+        unlocked: new Set([...FREE_IDS, ...(data.unlocked ?? [])]),
+        equipped,
+      };
     }
-  } catch { /* use defaults */ }
+  } catch {
+    /* use defaults */
+  }
   return { unlocked: new Set(FREE_IDS), equipped: defaultEquipped() };
 }
 
 export function saveCosmetics(state: CosmeticState): void {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({
-      unlocked: [...state.unlocked],
-      equipped: state.equipped,
-    }));
-  } catch { /* localStorage unavailable */ }
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        unlocked: [...state.unlocked],
+        equipped: state.equipped,
+      }),
+    );
+  } catch {
+    /* localStorage unavailable */
+  }
 }
 
 // ── Unlock / Equip ────────────────────────────────────────────────────
@@ -129,7 +301,8 @@ export function unlockCosmetic(state: CosmeticState, cosmeticId: string): Cosmet
 }
 
 export function syncCosmeticsWithAchievements(
-  state: CosmeticState, unlockedAchievements: Set<string>,
+  state: CosmeticState,
+  unlockedAchievements: Set<string>,
 ): CosmeticState {
   let updated = state;
   for (const cosmetic of COSMETICS) {
@@ -146,7 +319,10 @@ export function equipCosmetic(state: CosmeticState, cosmeticId: string): Cosmeti
   if (!state.unlocked.has(cosmeticId)) return state;
   const cosmetic = COSMETICS.find((c) => c.id === cosmeticId);
   if (!cosmetic) return state;
-  return { ...state, equipped: { ...state.equipped, [cosmetic.type]: cosmeticId } };
+  return {
+    ...state,
+    equipped: { ...state.equipped, [cosmetic.type]: cosmeticId },
+  };
 }
 
 export function getCosmeticsByType(type: CosmeticType): Cosmetic[] {

@@ -43,16 +43,16 @@ mobile and 24 for desktop.
 
 ### Current 2-Player Assumptions (must change)
 
-| File | Assumption | Change needed |
-|------|-----------|--------------|
-| `OnlineSession.ts` | Single `remoteRenderer`, `interpolation`, `remoteDead`, `remoteDeathHeight` | `Map<peerId, RemotePeerState>` |
-| `GameSync.ts` | `lastRemoteSeq` is single value, callbacks don't pass peerId | Per-peer seq tracking, route peerId through callbacks |
-| `NostrSignaling.ts` | `this.peerId` tracks single peer, `onPeerLeave` checks single ID | Track `Set<string>` of peer IDs |
-| `ConnectionManager.ts` | Single `pc` (RTCPeerConnection) | Trystero manages connections; just track connected peer count |
-| `LobbyScreen.ts` | Hardcoded "P1 (Host)" / "P2 (Guest)", binary ready state | Dynamic player list with per-peer ready state |
-| `ResultsScreen.ts` | Binary h1 vs h2 comparison | Sorted leaderboard of all players |
-| `RemotePlayerRenderer.ts` | Single instance per session | One instance per remote peer (pooled) |
-| `InterpolationBuffer.ts` | Single target state | One instance per remote peer |
+| File                      | Assumption                                                                  | Change needed                                                 |
+| ------------------------- | --------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| `OnlineSession.ts`        | Single `remoteRenderer`, `interpolation`, `remoteDead`, `remoteDeathHeight` | `Map<peerId, RemotePeerState>`                                |
+| `GameSync.ts`             | `lastRemoteSeq` is single value, callbacks don't pass peerId                | Per-peer seq tracking, route peerId through callbacks         |
+| `NostrSignaling.ts`       | `this.peerId` tracks single peer, `onPeerLeave` checks single ID            | Track `Set<string>` of peer IDs                               |
+| `ConnectionManager.ts`    | Single `pc` (RTCPeerConnection)                                             | Trystero manages connections; just track connected peer count |
+| `LobbyScreen.ts`          | Hardcoded "P1 (Host)" / "P2 (Guest)", binary ready state                    | Dynamic player list with per-peer ready state                 |
+| `ResultsScreen.ts`        | Binary h1 vs h2 comparison                                                  | Sorted leaderboard of all players                             |
+| `RemotePlayerRenderer.ts` | Single instance per session                                                 | One instance per remote peer (pooled)                         |
+| `InterpolationBuffer.ts`  | Single target state                                                         | One instance per remote peer                                  |
 
 ### Implementation Plan (5 stages)
 
@@ -61,16 +61,19 @@ mobile and 24 for desktop.
 **Goal:** GameSync routes data per-peer instead of treating all remotes as one.
 
 1. **GameSync.ts** — Add peerId to callbacks:
+
    ```ts
    // Change callback signature
    onRemotePosition: (state: PlayerSyncState, peerId: string) => void;
    onRemoteEvent: (event: GameSyncEvent, peerId: string) => void;
    ```
+
    - `initWithRoom()`: Trystero's `onPos((data, peerId) => {...})` already provides peerId
    - Track `lastRemoteSeq: Map<string, number>` instead of single value
    - `sendPos`/`sendEventAction` broadcast to all peers (Trystero default) — no change needed
 
 2. **OnlineSession.ts** — Multi-peer state container:
+
    ```ts
    interface RemotePeerState {
      renderer: RemotePlayerRenderer;
@@ -82,6 +85,7 @@ mobile and 24 for desktop.
    }
    private peers = new Map<string, RemotePeerState>();
    ```
+
    - `onRemotePosition(state, peerId)`: route to `peers.get(peerId).interpolation`
    - Game loop: iterate all peers for rendering
    - Death check: game ends when all peers are dead (not just `localDead && remoteDead`)
@@ -129,9 +133,11 @@ mobile and 24 for desktop.
    - Each renderer gets a unique tint (cycle through 8 preset colors)
 
 2. **Color assignment:**
+
    ```ts
-   const PEER_COLORS = [0xff8833, 0x33cc55, 0x3388ff, 0xff33aa,
-                         0xffcc44, 0x33cccc, 0xcc33ff, 0xff5555];
+   const PEER_COLORS = [
+     0xff8833, 0x33cc55, 0x3388ff, 0xff33aa, 0xffcc44, 0x33cccc, 0xcc33ff, 0xff5555,
+   ];
    // Assign by index: peers.size % PEER_COLORS.length
    ```
 
@@ -175,13 +181,14 @@ mobile and 24 for desktop.
 ### Performance Budget
 
 | Peers | Connections | Bandwidth (out) | Memory (est) | Target FPS |
-|-------|------------|-----------------|-------------|------------|
-| 2     | 1          | 380 B/s         | ~20 MB      | 60         |
-| 8     | 7          | 2.7 KB/s        | ~70 MB      | 60         |
-| 12    | 11         | 4.2 KB/s        | ~110 MB     | 60         |
-| 24    | 23         | 8.7 KB/s        | ~230 MB     | 45+        |
+| ----- | ----------- | --------------- | ------------ | ---------- |
+| 2     | 1           | 380 B/s         | ~20 MB       | 60         |
+| 8     | 7           | 2.7 KB/s        | ~70 MB       | 60         |
+| 12    | 11          | 4.2 KB/s        | ~110 MB      | 60         |
+| 24    | 23          | 8.7 KB/s        | ~230 MB      | 45+        |
 
 **Adaptive quality:** If FPS drops below 45 with many peers:
+
 1. Disable remote player trails (biggest savings)
 2. Reduce remote render to simple colored circles (skip character sprites)
 3. Cap position sync to 10Hz for peers ranked far from local player

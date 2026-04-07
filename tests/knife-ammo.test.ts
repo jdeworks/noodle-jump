@@ -44,7 +44,12 @@ describe("Knife ammo system", () => {
 
   test("throwProjectile fails when neither enemies nor boss active", () => {
     let state = createInitialState();
-    state = { ...state, enemiesEnabled: false, inBossFight: false, countdownTicks: 0 };
+    state = {
+      ...state,
+      enemiesEnabled: false,
+      inBossFight: false,
+      countdownTicks: 0,
+    };
     const after = throwProjectile(state, 200, -100);
     expect(after.projectiles.length).toBe(0);
     expect(after.knifeAmmo).toBe(3); // unchanged

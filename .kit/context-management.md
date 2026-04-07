@@ -46,8 +46,8 @@ This is designed to be read in full at session start. Keep it under 100 lines.
 
 If you need to compress mid-session without triggering the hook:
 
-1. Ask the agent: *"Summarise what we've done this session, what decisions we've made,
-   what's currently broken, and what we're doing next. Write this to SESSION_SUMMARY.md."*
+1. Ask the agent: _"Summarise what we've done this session, what decisions we've made,
+   what's currently broken, and what we're doing next. Write this to SESSION_SUMMARY.md."_
 2. Start a new session — SESSION_SUMMARY.md will be picked up by the SessionStart hook
 
 ---
@@ -58,8 +58,8 @@ For features that will take many sessions:
 
 1. Write a spec before starting (see `.kit/research-planning.md`)
 2. The spec lives in `.kit/features/<feature-name>.md` — not in context
-3. At the start of each session, tell the agent: *"Read .kit/features/<feature-name>.md
-   and SESSION_SUMMARY.md before we continue."*
+3. At the start of each session, tell the agent: _"Read .kit/features/<feature-name>.md
+   and SESSION_SUMMARY.md before we continue."_
 4. The agent doesn't need to re-derive the full context — it just needs the delta
 
 ---
@@ -69,6 +69,7 @@ For features that will take many sessions:
 AGENTS.md loads into every session. If it's too long, the agent's instruction adherence drops.
 
 **Don't put in AGENTS.md:**
+
 - Feature-specific instructions ("when working on the auth system, remember that...")
 - Temporary notes or reminders
 - Code snippets or examples

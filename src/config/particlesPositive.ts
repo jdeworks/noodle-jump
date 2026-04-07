@@ -167,7 +167,6 @@ export const SHIELD_PARTICLES: ParticleConfig = {
   drag: 0.99,
 };
 
-
 /** Gnocchi Bounce — soft white/beige puff on each bounce. */
 export const GNOCCHI_PARTICLES: ParticleConfig = {
   count: 6,

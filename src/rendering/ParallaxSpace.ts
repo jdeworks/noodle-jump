@@ -2,11 +2,7 @@
 
 import type { Graphics } from "pixi.js";
 
-export function drawVoidPortal(
-  gfx: Graphics,
-  size: number,
-  animTick: number,
-): void {
+export function drawVoidPortal(gfx: Graphics, size: number, animTick: number): void {
   gfx.clear();
   const cx = size / 2;
   const cy = size / 2;

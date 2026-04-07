@@ -1,8 +1,5 @@
 import { describe, test, expect } from "vitest";
-import {
-  createSpawnerState,
-  trySpawnEnemy,
-} from "../src/systems/EnemySpawner";
+import { createSpawnerState, trySpawnEnemy } from "../src/systems/EnemySpawner";
 import { ENEMY_SPAWN_INTERVAL, ENEMY_SPAWN_MIN_PLATFORMS } from "../src/config/constants";
 
 describe("EnemySpawner", () => {

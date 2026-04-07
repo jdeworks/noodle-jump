@@ -8,14 +8,18 @@ let ambientNoise: AudioBufferSourceNode | null = null;
 let enabled = true;
 
 /** Zone ambient configs: [type, freq, volume] */
-const ZONE_AMBIENTS: { type: OscillatorType | "noise"; freq: number; vol: number }[] = [
-  { type: "sine", freq: 80, vol: 0.02 },       // Kitchen: low hum
-  { type: "sine", freq: 60, vol: 0.025 },       // Ocean: deep rumble
-  { type: "sine", freq: 200, vol: 0.015 },      // Space: high hum
-  { type: "noise", freq: 0, vol: 0.02 },        // Freezer: wind noise
-  { type: "sawtooth", freq: 50, vol: 0.02 },    // Volcano: rumble
-  { type: "sine", freq: 400, vol: 0.01 },       // Candy: light chime
-  { type: "triangle", freq: 100, vol: 0.018 },  // Final Kitchen: warm tone
+const ZONE_AMBIENTS: {
+  type: OscillatorType | "noise";
+  freq: number;
+  vol: number;
+}[] = [
+  { type: "sine", freq: 80, vol: 0.02 }, // Kitchen: low hum
+  { type: "sine", freq: 60, vol: 0.025 }, // Ocean: deep rumble
+  { type: "sine", freq: 200, vol: 0.015 }, // Space: high hum
+  { type: "noise", freq: 0, vol: 0.02 }, // Freezer: wind noise
+  { type: "sawtooth", freq: 50, vol: 0.02 }, // Volcano: rumble
+  { type: "sine", freq: 400, vol: 0.01 }, // Candy: light chime
+  { type: "triangle", freq: 100, vol: 0.018 }, // Final Kitchen: warm tone
 ];
 
 /** Initialize with shared audio context. */
@@ -85,7 +89,11 @@ export function setAmbientEnabled(v: boolean): void {
 }
 
 /** Get the zone ambient config for testing. */
-export function getAmbientConfig(zone: number): { type: string; freq: number; vol: number } {
+export function getAmbientConfig(zone: number): {
+  type: string;
+  freq: number;
+  vol: number;
+} {
   return ZONE_AMBIENTS[Math.min(zone, ZONE_AMBIENTS.length - 1)];
 }
 

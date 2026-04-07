@@ -1,15 +1,6 @@
 import { describe, test, expect } from "vitest";
-import {
-  createCamera,
-  updateCamera,
-  isPlayerDead,
-  worldToScreen,
-} from "../src/systems/Camera";
-import {
-  GAME_HEIGHT,
-  CAMERA_GRACE_PLATFORMS,
-  PLATFORM_GAP_MAX,
-} from "../src/config/constants";
+import { createCamera, updateCamera, isPlayerDead, worldToScreen } from "../src/systems/Camera";
+import { GAME_HEIGHT, CAMERA_GRACE_PLATFORMS, PLATFORM_GAP_MAX } from "../src/config/constants";
 
 describe("Camera", () => {
   test("creates camera at y=0", () => {

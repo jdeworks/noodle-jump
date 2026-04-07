@@ -10,9 +10,7 @@ export interface PauseMenu {
   onHome: () => void;
 }
 
-export function createPauseMenu(
-  onResume: () => void, onHome: () => void,
-): Container {
+export function createPauseMenu(onResume: () => void, onHome: () => void): Container {
   const uiT = getUITheme();
   const overlay = new Container();
   overlay.visible = false;
@@ -22,11 +20,19 @@ export function createPauseMenu(
   dim.fill({ color: uiT.bg, alpha: 0.7 });
   overlay.addChild(dim);
 
-  const title = new Text({ text: "PAUSED", style: new TextStyle({
-    fontFamily: "monospace", fontSize: 28, fill: "#ffffff",
-    fontWeight: "bold", stroke: { color: "#000000", width: 3 },
-  }) });
-  title.x = GAME_WIDTH / 2; title.y = GAME_HEIGHT * 0.3; title.anchor.set(0.5, 0.5);
+  const title = new Text({
+    text: "PAUSED",
+    style: new TextStyle({
+      fontFamily: "monospace",
+      fontSize: 28,
+      fill: "#ffffff",
+      fontWeight: "bold",
+      stroke: { color: "#000000", width: 3 },
+    }),
+  });
+  title.x = GAME_WIDTH / 2;
+  title.y = GAME_HEIGHT * 0.3;
+  title.anchor.set(0.5, 0.5);
   overlay.addChild(title);
 
   // Resume button
@@ -35,14 +41,22 @@ export function createPauseMenu(
   resumeBg.fill({ color: uiT.buttonBg, alpha: 0.8 });
   resumeBg.roundRect(GAME_WIDTH / 2 - 100, GAME_HEIGHT * 0.42 - 18, 200, 36, 8);
   resumeBg.stroke({ width: 1, color: uiT.buttonBorder, alpha: 0.5 });
-  resumeBg.eventMode = "static"; resumeBg.cursor = "pointer";
+  resumeBg.eventMode = "static";
+  resumeBg.cursor = "pointer";
   overlay.addChild(resumeBg);
 
-  const resumeText = new Text({ text: "Resume", style: new TextStyle({
-    fontFamily: "monospace", fontSize: 18, fill: uiT.text,
-    fontWeight: "bold", stroke: { color: "#000000", width: 2 },
-  }) });
-  resumeText.x = GAME_WIDTH / 2; resumeText.y = GAME_HEIGHT * 0.42;
+  const resumeText = new Text({
+    text: "Resume",
+    style: new TextStyle({
+      fontFamily: "monospace",
+      fontSize: 18,
+      fill: uiT.text,
+      fontWeight: "bold",
+      stroke: { color: "#000000", width: 2 },
+    }),
+  });
+  resumeText.x = GAME_WIDTH / 2;
+  resumeText.y = GAME_HEIGHT * 0.42;
   resumeText.anchor.set(0.5, 0.5);
   overlay.addChild(resumeText);
 
@@ -50,21 +64,31 @@ export function createPauseMenu(
   const homeBg = new Graphics();
   homeBg.roundRect(GAME_WIDTH / 2 - 100, GAME_HEIGHT * 0.52 - 18, 200, 36, 8);
   homeBg.fill({ color: 0x222244, alpha: 0.8 });
-  homeBg.eventMode = "static"; homeBg.cursor = "pointer";
+  homeBg.eventMode = "static";
+  homeBg.cursor = "pointer";
   overlay.addChild(homeBg);
 
-  const homeText = new Text({ text: "Home", style: new TextStyle({
-    fontFamily: "monospace", fontSize: 16, fill: "#aaccff",
-    fontWeight: "bold", stroke: { color: "#000000", width: 2 },
-  }) });
-  homeText.x = GAME_WIDTH / 2; homeText.y = GAME_HEIGHT * 0.52;
+  const homeText = new Text({
+    text: "Home",
+    style: new TextStyle({
+      fontFamily: "monospace",
+      fontSize: 16,
+      fill: "#aaccff",
+      fontWeight: "bold",
+      stroke: { color: "#000000", width: 2 },
+    }),
+  });
+  homeText.x = GAME_WIDTH / 2;
+  homeText.y = GAME_HEIGHT * 0.52;
   homeText.anchor.set(0.5, 0.5);
   overlay.addChild(homeText);
 
   resumeBg.on("pointertap", onResume);
-  resumeText.eventMode = "static"; resumeText.on("pointertap", onResume);
+  resumeText.eventMode = "static";
+  resumeText.on("pointertap", onResume);
   homeBg.on("pointertap", onHome);
-  homeText.eventMode = "static"; homeText.on("pointertap", onHome);
+  homeText.eventMode = "static";
+  homeText.on("pointertap", onHome);
 
   return overlay;
 }

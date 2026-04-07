@@ -1,11 +1,7 @@
 /** Environmental hazards — pure logic, no PixiJS. */
 
 import { random } from "./RNG";
-import {
-  WIND_GUST_FORCE,
-  LAVA_RISE_SPEED,
-  GAME_HEIGHT,
-} from "../config/constants";
+import { WIND_GUST_FORCE, LAVA_RISE_SPEED, GAME_HEIGHT } from "../config/constants";
 import type { PlayerState } from "../entities/Player";
 
 // ── Wind Zones (persistent spatial areas) ───────────────────────────────
@@ -107,11 +103,7 @@ export function tickLava(lava: LavaState): LavaState {
 }
 
 /** Check if the player is in the lava. */
-export function isPlayerInLava(
-  playerY: number,
-  playerHeight: number,
-  lava: LavaState,
-): boolean {
+export function isPlayerInLava(playerY: number, playerHeight: number, lava: LavaState): boolean {
   if (!lava.active) return false;
   return playerY + playerHeight > lava.y;
 }

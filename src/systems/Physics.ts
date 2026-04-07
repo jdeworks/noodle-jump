@@ -93,8 +93,7 @@ export function checkPlatformCollisions(
   const playerRight = player.x + player.width;
   const leftMargin = player.x - platform.x;
   const rightMargin = platformRight - playerRight;
-  const edgeLanding =
-    leftMargin < CLOSE_CALL_THRESHOLD || rightMargin < CLOSE_CALL_THRESHOLD;
+  const edgeLanding = leftMargin < CLOSE_CALL_THRESHOLD || rightMargin < CLOSE_CALL_THRESHOLD;
 
   // Brittle: mark broken on contact, no bounce
   if (platform.type === "brittle") {

@@ -1,8 +1,4 @@
-export type {
-  SignalingStrategy,
-  SignalingCallbacks,
-  SignalingState,
-} from "./SignalingStrategy";
+export type { SignalingStrategy, SignalingCallbacks, SignalingState } from "./SignalingStrategy";
 export { ManualSignaling } from "./ManualSignaling";
 export { NostrSignaling } from "./NostrSignaling";
 export {
@@ -38,10 +34,7 @@ export {
   type MultiplayerResult,
 } from "./MultiplayerSession";
 export { launchLocalCoop } from "./LocalCoopLauncher";
-export {
-  InterpolationBuffer,
-  type InterpolatedState,
-} from "./InterpolationBuffer";
+export { InterpolationBuffer, type InterpolatedState } from "./InterpolationBuffer";
 export { RemotePlayerRenderer } from "./RemotePlayerRenderer";
 export { OnlineSession, type OnlineRole, type OnlineSessionConfig } from "./OnlineSession";
 export {
@@ -52,5 +45,9 @@ export {
   type LobbyCallbacks,
 } from "./LobbyScreen";
 export { MultiplayerMenu } from "./MultiplayerMenu";
-export { showOnlineResults, getPeerColor, type PlayerResult as OnlinePlayerResult } from "./OnlineResults";
+export {
+  showOnlineResults,
+  getPeerColor,
+  type PlayerResult as OnlinePlayerResult,
+} from "./OnlineResults";
 export { LiveLeaderboard } from "./LiveLeaderboard";

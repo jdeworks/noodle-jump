@@ -15,11 +15,7 @@ import {
   getAchievement,
   type GameStats,
 } from "../systems/Achievements";
-import {
-  loadCosmetics,
-  syncCosmeticsWithAchievements,
-  saveCosmetics,
-} from "../systems/Cosmetics";
+import { loadCosmetics, syncCosmeticsWithAchievements, saveCosmetics } from "../systems/Cosmetics";
 import { getShadowContext } from "./GameLauncher";
 import { saveShadow } from "../systems/ShadowRecorder";
 import {
@@ -65,8 +61,12 @@ export function createGameLoopTicker(
       const ghostState = shadow.playback.tick();
       if (ghostState) {
         shadow.renderer.update(ghostState, scene.getState().camera.y, scene.getState().player.y);
-      } else { shadow.renderer.hide(); }
-    } else if (shadow.renderer && counting) { shadow.renderer.hide(); }
+      } else {
+        shadow.renderer.hide();
+      }
+    } else if (shadow.renderer && counting) {
+      shadow.renderer.hide();
+    }
 
     // Countdown display
     const cd = scene.getCountdownSeconds();
@@ -98,8 +98,10 @@ export function createGameLoopTicker(
       inGameHighScoreLabel = new Text({
         text: "NEW HIGH SCORE!",
         style: new TextStyle({
-          fontFamily: "monospace", fontSize: 18,
-          fill: "#ffdd44", fontWeight: "bold",
+          fontFamily: "monospace",
+          fontSize: 18,
+          fill: "#ffdd44",
+          fontWeight: "bold",
           stroke: { color: "#000000", width: 3 },
           align: "center",
         }),
@@ -182,7 +184,9 @@ export function createGameLoopTicker(
         bossStomps: scene.getBossStomps(),
         powerUpsCollected: scene.getPowerUpsCollected(),
         isDailyChallenge: isDaily,
-        dailyMedal, dailyStreak, dailyWeekHasAllMedals,
+        dailyMedal,
+        dailyStreak,
+        dailyWeekHasAllMedals,
       };
       const achState = loadAchievements();
       const achResult = checkAchievements(achState, stats, gameStats);
@@ -209,26 +213,55 @@ export function createGameLoopTicker(
         const thresholds = getMedalThresholds(config);
         const dateKey = getTodayDateKey();
         let dailyData = loadDailyData();
-        dailyData = recordDailyResult(dailyData, dateKey, gameResult.score, gameResult.height, thresholds);
+        dailyData = recordDailyResult(
+          dailyData,
+          dateKey,
+          gameResult.score,
+          gameResult.height,
+          thresholds,
+        );
         saveDailyData(dailyData);
         const best = dailyData.results[dateKey];
-        showDailyGameOver(app, {
-          score: gameResult.score, height: gameResult.height,
-          bestScore: best?.score ?? gameResult.score,
-          seconds: scene.getElapsedSeconds(), meatballs: gameResult.meatballs,
-          powerUps: scene.getPowerUpsCollected(), bestCombo: gameResult.combo,
-          bestStreak: scene.getBestStreak(), platforms: scene.getPlatformsPassed(),
-          medal: best?.medal ?? null, thresholds, streak: dailyData.currentStreak,
-          isNewBest: best?.score === gameResult.score,
-        }, onRestart, onHome, achNames);
+        showDailyGameOver(
+          app,
+          {
+            score: gameResult.score,
+            height: gameResult.height,
+            bestScore: best?.score ?? gameResult.score,
+            seconds: scene.getElapsedSeconds(),
+            meatballs: gameResult.meatballs,
+            powerUps: scene.getPowerUpsCollected(),
+            bestCombo: gameResult.combo,
+            bestStreak: scene.getBestStreak(),
+            platforms: scene.getPlatformsPassed(),
+            medal: best?.medal ?? null,
+            thresholds,
+            streak: dailyData.currentStreak,
+            isNewBest: best?.score === gameResult.score,
+          },
+          onRestart,
+          onHome,
+          achNames,
+        );
       } else {
-        showGameOver(app, {
-          score: gameResult.score, height: gameResult.height,
-          seconds: scene.getElapsedSeconds(), highScore: scene.getHighScore(),
-          meatballs: gameResult.meatballs, powerUps: scene.getPowerUpsCollected(),
-          bestCombo: gameResult.combo, bestStreak: scene.getBestStreak(),
-          platforms: scene.getPlatformsPassed(), isCustomRun: isCustom,
-        }, onRestart, onHome, achNames);
+        showGameOver(
+          app,
+          {
+            score: gameResult.score,
+            height: gameResult.height,
+            seconds: scene.getElapsedSeconds(),
+            highScore: scene.getHighScore(),
+            meatballs: gameResult.meatballs,
+            powerUps: scene.getPowerUpsCollected(),
+            bestCombo: gameResult.combo,
+            bestStreak: scene.getBestStreak(),
+            platforms: scene.getPlatformsPassed(),
+            isCustomRun: isCustom,
+          },
+          onRestart,
+          onHome,
+          achNames,
+        );
       }
     }
   };

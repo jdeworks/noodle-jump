@@ -12,11 +12,7 @@ import { getTentacleChunkSize } from "../entities/bosses/KrakenBoss";
  * Render tentacle grab animations from the kraken boss to platforms.
  * Driven by `state.pendingTentacles`.
  */
-export function renderTentacles(
-  gfx: Graphics,
-  state: GameWorldState,
-  camY: number,
-): void {
+export function renderTentacles(gfx: Graphics, state: GameWorldState, camY: number): void {
   gfx.clear();
   if (!state.activeBoss || state.pendingTentacles.length === 0) return;
 
@@ -31,9 +27,7 @@ export function renderTentacles(
     if (!plat || plat.broken) continue;
 
     // Compute the live target position on the platform edge
-    const targetX = tent.side === "left"
-      ? plat.x + plat.width * 0.15
-      : plat.x + plat.width * 0.85;
+    const targetX = tent.side === "left" ? plat.x + plat.width * 0.15 : plat.x + plat.width * 0.85;
     const targetY = plat.y;
 
     const elapsed = tent.totalTicks - tent.ticksLeft;
@@ -106,7 +100,11 @@ export function renderKnifeAmmo(
     // Rebuild icons when max changes or character changes
     // Icons stored in a sub-container so regen bar doesn't interfere with indexing
     const cacheKey = `${max}:${charId}`;
-    type IconsExt = { _cacheKey?: string; _iconContainer?: Container; _regenBar?: Graphics };
+    type IconsExt = {
+      _cacheKey?: string;
+      _iconContainer?: Container;
+      _regenBar?: Graphics;
+    };
     const ext = icons as unknown as IconsExt;
     if (ext._cacheKey !== cacheKey) {
       ext._cacheKey = cacheKey;
@@ -134,9 +132,8 @@ export function renderKnifeAmmo(
 
     // Regen progress
     const regenMax = 90; // KNIFE_REGEN_TICKS
-    const regenProgress = knives < max && state.knifeRegenTimer > 0
-      ? 1 - state.knifeRegenTimer / regenMax
-      : 0;
+    const regenProgress =
+      knives < max && state.knifeRegenTimer > 0 ? 1 - state.knifeRegenTimer / regenMax : 0;
 
     // Update each icon's opacity
     for (let i = 0; i < max; i++) {
@@ -181,20 +178,13 @@ export function renderKnifeAmmo(
  * Render debug hitbox overlays for all game entities.
  * Only draws when `state.debugConfig.showHitboxes` is true.
  */
-export function renderDebugHitboxes(
-  gfx: Graphics,
-  state: GameWorldState,
-  camY: number,
-): void {
+export function renderDebugHitboxes(gfx: Graphics, state: GameWorldState, camY: number): void {
   gfx.clear();
   if (!state.debugConfig.showHitboxes) return;
 
   const s = state;
   // Player hitbox
-  gfx.rect(
-    s.player.x, worldToScreen(s.player.y, camY),
-    s.player.width, s.player.height,
-  );
+  gfx.rect(s.player.x, worldToScreen(s.player.y, camY), s.player.width, s.player.height);
   gfx.stroke({ width: 1, color: 0x00ff00, alpha: 0.8 });
   // Platform hitboxes (account for burnt toast shrink)
   const isBurnt = s.activeEffect?.type === "burnt_toast";

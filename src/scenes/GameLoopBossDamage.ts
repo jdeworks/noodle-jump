@@ -25,21 +25,37 @@ export function checkSkillKill(
       let skillKilled = false;
       if (targetPlat.broken) {
         const dmgResult = damageBoss({ ...bossResult.boss, health: 1 });
-        s = { ...s, activeBoss: { ...dmgResult.boss, deathTicks: BOSS_DEATH_TICKS, jumpArc: undefined } };
+        s = {
+          ...s,
+          activeBoss: { ...dmgResult.boss, deathTicks: BOSS_DEATH_TICKS, jumpArc: undefined },
+        };
         skillKilled = true;
       } else {
         const pBot = s.player.y + s.player.height;
-        const onPlatX = s.player.x + s.player.width > targetPlat.x && s.player.x < targetPlat.x + targetPlat.width;
+        const onPlatX =
+          s.player.x + s.player.width > targetPlat.x &&
+          s.player.x < targetPlat.x + targetPlat.width;
         const onPlatY = pBot >= targetPlat.y && pBot <= targetPlat.y + 12;
         if (onPlatX && onPlatY) {
-          s = { ...s, platforms: s.platforms.map((p) => p.id === bossTargetPlatId ? { ...p, broken: true } : p) };
+          s = {
+            ...s,
+            platforms: s.platforms.map((p) =>
+              p.id === bossTargetPlatId ? { ...p, broken: true } : p,
+            ),
+          };
           const dmgResult = damageBoss({ ...bossResult.boss, health: 1 });
-          s = { ...s, activeBoss: { ...dmgResult.boss, deathTicks: BOSS_DEATH_TICKS, jumpArc: undefined } };
+          s = {
+            ...s,
+            activeBoss: { ...dmgResult.boss, deathTicks: BOSS_DEATH_TICKS, jumpArc: undefined },
+          };
           skillKilled = true;
         }
       }
       if (skillKilled) {
-        s = { ...s, scoreState: { ...s.scoreState, points: s.scoreState.points + SKILL_KILL_POINTS } };
+        s = {
+          ...s,
+          scoreState: { ...s.scoreState, points: s.scoreState.points + SKILL_KILL_POINTS },
+        };
         events.push({ type: "skillKill" });
       }
     }
@@ -72,7 +88,10 @@ export function checkStompKill(
       const dmgResult = damageBoss({ ...s.activeBoss, health: 1 });
       s = { ...s, activeBoss: { ...dmgResult.boss, deathTicks: BOSS_DEATH_TICKS } };
       s = { ...s, player: { ...s.player, vy: -12 }, bossStomps: s.bossStomps + 1 };
-      s = { ...s, scoreState: { ...s.scoreState, points: s.scoreState.points + SKILL_KILL_POINTS } };
+      s = {
+        ...s,
+        scoreState: { ...s.scoreState, points: s.scoreState.points + SKILL_KILL_POINTS },
+      };
       events.push({ type: "skillKill" });
     }
   }

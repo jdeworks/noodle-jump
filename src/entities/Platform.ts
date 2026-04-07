@@ -79,16 +79,10 @@ export interface PlatformState {
 let nextPlatformId = 0;
 
 function randomWidth(): number {
-  return (
-    PLATFORM_WIDTH_MIN + random() * (PLATFORM_WIDTH_MAX - PLATFORM_WIDTH_MIN)
-  );
+  return PLATFORM_WIDTH_MIN + random() * (PLATFORM_WIDTH_MAX - PLATFORM_WIDTH_MIN);
 }
 
-export function createPlatform(
-  x: number,
-  y: number,
-  type: PlatformType = "static",
-): PlatformState {
+export function createPlatform(x: number, y: number, type: PlatformType = "static"): PlatformState {
   return {
     x,
     y,
@@ -118,10 +112,7 @@ export function createGroundPlatform(gameHeight: number): PlatformState {
 }
 
 /** Update moving platforms. Call each tick. speedMultiplier scales with difficulty. */
-export function updatePlatforms(
-  platforms: PlatformState[],
-  speedMultiplier = 1,
-): PlatformState[] {
+export function updatePlatforms(platforms: PlatformState[], speedMultiplier = 1): PlatformState[] {
   return platforms.map((p) => {
     if (p.type !== "moving") return p;
 
@@ -223,19 +214,15 @@ export function generatePlatforms(
     const maxX = GAME_WIDTH - width - PLATFORM_HORIZONTAL_MARGIN;
     const x = PLATFORM_HORIZONTAL_MARGIN + random() * Math.max(0, maxX);
 
-    let type = forcePlatformType
-      ? (forcePlatformType as PlatformType)
-      : rollType(difficulty);
+    let type = forcePlatformType ? (forcePlatformType as PlatformType) : rollType(difficulty);
 
     // Never two consecutive unreliable platforms (brittle, crumbling, breaking)
-    const isUnreliable =
-      type === "brittle" || type === "crumbling" || type === "breaking";
+    const isUnreliable = type === "brittle" || type === "crumbling" || type === "breaking";
     if (lastWasUnlandable && isUnreliable && !forcePlatformType) {
       type = "static";
     }
 
-    lastWasUnlandable =
-      type === "brittle" || type === "crumbling" || type === "breaking";
+    lastWasUnlandable = type === "brittle" || type === "crumbling" || type === "breaking";
 
     platforms.push(makePlatform(x, y, width, type));
   }
@@ -244,12 +231,7 @@ export function generatePlatforms(
 }
 
 /** Create a platform with type-specific extra fields. */
-function makePlatform(
-  x: number,
-  y: number,
-  width: number,
-  type: PlatformType,
-): PlatformState {
+function makePlatform(x: number, y: number, width: number, type: PlatformType): PlatformState {
   const base: PlatformState = {
     x,
     y,
@@ -277,10 +259,7 @@ export function breakPlatform(platform: PlatformState): PlatformState {
 }
 
 /** Remove platforms that are far below the camera. */
-export function pruneBelow(
-  platforms: PlatformState[],
-  threshold: number,
-): PlatformState[] {
+export function pruneBelow(platforms: PlatformState[], threshold: number): PlatformState[] {
   return platforms.filter((p) => p.y < threshold);
 }
 

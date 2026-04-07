@@ -29,8 +29,7 @@ export function tickDayNight(state: DayNightState): DayNightState {
   // Sinusoidal brightness: max at noon, min at midnight
   const brightness =
     MIN_BRIGHTNESS +
-    (MAX_BRIGHTNESS - MIN_BRIGHTNESS) *
-      (0.5 + 0.5 * Math.cos(phase * Math.PI * 2));
+    (MAX_BRIGHTNESS - MIN_BRIGHTNESS) * (0.5 + 0.5 * Math.cos(phase * Math.PI * 2));
 
   // Subtle blue tint at low brightness (night)
   const nightness = 1 - (brightness - MIN_BRIGHTNESS) / (MAX_BRIGHTNESS - MIN_BRIGHTNESS);

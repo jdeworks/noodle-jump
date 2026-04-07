@@ -7,10 +7,7 @@ import {
   resetCollectibleIds,
 } from "../src/entities/Collectible";
 import { createPlatform, resetPlatformIds } from "../src/entities/Platform";
-import {
-  MEATBALL_FLOAT_HEIGHT,
-  MEATBALL_MAGNET_RADIUS,
-} from "../src/config/constants";
+import { MEATBALL_FLOAT_HEIGHT, MEATBALL_MAGNET_RADIUS } from "../src/config/constants";
 
 beforeEach(() => {
   resetCollectibleIds();
@@ -31,9 +28,7 @@ describe("Collectibles", () => {
     const meatball = createMeatball(platform);
 
     // Player overlapping the meatball
-    const result = collectMeatballs(meatball.x - 5, meatball.y - 5, 32, 40, [
-      meatball,
-    ]);
+    const result = collectMeatballs(meatball.x - 5, meatball.y - 5, 32, 40, [meatball]);
 
     expect(result.collected).toBe(1);
     expect(result.meatballs[0].collected).toBe(true);
@@ -100,9 +95,7 @@ describe("Collectibles", () => {
   test("attractMeatballs ignores collected meatballs", () => {
     const platform = createPlatform(100, 300);
     const meatball = { ...createMeatball(platform), collected: true };
-    const result = attractMeatballs(meatball.x + 10, meatball.y, 32, [
-      meatball,
-    ]);
+    const result = attractMeatballs(meatball.x + 10, meatball.y, 32, [meatball]);
     expect(result[0].x).toBe(meatball.x);
   });
 });

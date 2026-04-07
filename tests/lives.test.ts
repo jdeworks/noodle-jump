@@ -1,11 +1,5 @@
 import { describe, test, expect } from "vitest";
-import {
-  createLivesState,
-  loseLife,
-  gainLife,
-  hasLives,
-  resetLives,
-} from "../src/systems/Lives";
+import { createLivesState, loseLife, gainLife, hasLives, resetLives } from "../src/systems/Lives";
 
 describe("Lives system", () => {
   test("createLivesState with lives enabled", () => {

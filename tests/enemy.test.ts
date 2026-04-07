@@ -46,10 +46,7 @@ describe("Enemy entity", () => {
   });
 
   test("pruneEnemies removes below threshold", () => {
-    const enemies = [
-      createEnemy(100, 500, "rat", true),
-      createEnemy(100, 100, "fish", true),
-    ];
+    const enemies = [createEnemy(100, 500, "rat", true), createEnemy(100, 100, "fish", true)];
     const pruned = pruneEnemies(enemies, 300);
     expect(pruned).toHaveLength(1);
     expect(pruned[0].y).toBe(100);

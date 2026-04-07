@@ -102,12 +102,7 @@ describe("Platform", () => {
       // Generate batch 1, check if last is brittle, pass to batch 2
       const batch1 = generatePlatforms(10000, 20);
       const lastBrittle = batch1[batch1.length - 1].type === "brittle";
-      const batch2 = generatePlatforms(
-        batch1[batch1.length - 1].y,
-        20,
-        undefined,
-        lastBrittle,
-      );
+      const batch2 = generatePlatforms(batch1[batch1.length - 1].y, 20, undefined, lastBrittle);
       if (lastBrittle) {
         expect(batch2[0].type).not.toBe("brittle");
       }
@@ -151,11 +146,7 @@ describe("Platform", () => {
   });
 
   test("prunes platforms below threshold", () => {
-    const platforms = [
-      createPlatform(0, 100),
-      createPlatform(0, 500),
-      createPlatform(0, 900),
-    ];
+    const platforms = [createPlatform(0, 100), createPlatform(0, 500), createPlatform(0, 900)];
     const pruned = pruneBelow(platforms, 600);
     expect(pruned).toHaveLength(2);
   });

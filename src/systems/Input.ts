@@ -200,7 +200,9 @@ export class InputManager {
     // iOS and Android report opposite signs for accel.x. iOS: tilt right → negative x.
     // Android: tilt right → positive x. Auto-detect via requestPermission (iOS-only API).
     // Users can override via "Invert Tilt" setting.
-    const isIOS = typeof (DeviceMotionEvent as unknown as { requestPermission?: unknown }).requestPermission === "function";
+    const isIOS =
+      typeof (DeviceMotionEvent as unknown as { requestPermission?: unknown }).requestPermission ===
+      "function";
     const defaultSign = isIOS ? 1 : -1;
     const invertSign = isTiltInverted() ? -defaultSign : defaultSign;
     const tiltValue = invertSign * accel.x;
@@ -209,8 +211,7 @@ export class InputManager {
       this.calibrationReadings.push(tiltValue);
       if (this.calibrationReadings.length >= CALIBRATION_SAMPLES) {
         this.tiltOffset =
-          this.calibrationReadings.reduce((a, b) => a + b, 0) /
-          this.calibrationReadings.length;
+          this.calibrationReadings.reduce((a, b) => a + b, 0) / this.calibrationReadings.length;
         this.calibrated = true;
       }
       this._inputX = 0;
@@ -222,10 +223,7 @@ export class InputManager {
     this._rawTilt = adjusted;
 
     // Reject spikes
-    if (
-      this.lastTiltAngle !== null &&
-      Math.abs(tiltValue - this.lastTiltAngle) > 8
-    ) {
+    if (this.lastTiltAngle !== null && Math.abs(tiltValue - this.lastTiltAngle) > 8) {
       this._activeMethod = "tilt";
       return;
     }

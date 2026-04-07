@@ -16,8 +16,12 @@ export function resetRendererState(): void {
 
 /** Blend two colors: result = a * (1-t) + b * t */
 function blendColor(a: number, b: number, t: number): number {
-  const rA = (a >> 16) & 0xff, gA = (a >> 8) & 0xff, bA = a & 0xff;
-  const rB = (b >> 16) & 0xff, gB = (b >> 8) & 0xff, bB = b & 0xff;
+  const rA = (a >> 16) & 0xff,
+    gA = (a >> 8) & 0xff,
+    bA = a & 0xff;
+  const rB = (b >> 16) & 0xff,
+    gB = (b >> 8) & 0xff,
+    bB = b & 0xff;
   const r = Math.round(rA * (1 - t) + rB * t);
   const g = Math.round(gA * (1 - t) + gB * t);
   const bl = Math.round(bA * (1 - t) + bB * t);
@@ -55,27 +59,54 @@ export function renderPlatforms(
 
     // Distinctive base color per type, blended 30% with zone theme
     // so specials are recognizable but don't look totally alien
-    const style: PlatformStyle = platform.type === "lasagna" ? "lasagna"
-      : (platform.type as PlatformStyle) ?? "normal";
+    const style: PlatformStyle =
+      platform.type === "lasagna" ? "lasagna" : ((platform.type as PlatformStyle) ?? "normal");
     let color = theme.platform;
     const zoneBase = theme.platform;
     switch (platform.type) {
-      case "breaking":  color = blendColor(0x886622, zoneBase, 0.3); break;
-      case "brittle":   color = blendColor(0xcc8866, zoneBase, 0.3); break;
-      case "moving":    color = blendColor(0x6699cc, zoneBase, 0.3); break;
-      case "lasagna":   color = blendColor(0xff8c00, zoneBase, 0.2); break;
-      case "conveyor":  color = blendColor(0x888888, zoneBase, 0.3); break;
-      case "spring":    color = blendColor(0x33bb33, zoneBase, 0.25); break;
-      case "ice":       color = blendColor(0x88ccff, zoneBase, 0.25); break;
-      case "crumbling": color = blendColor(0xcc6633, zoneBase, 0.3); break;
-      case "teleport":  color = blendColor(0x9955ff, zoneBase, 0.2); break;
-      case "weighted":  color = blendColor(0x997744, zoneBase, 0.3); break;
+      case "breaking":
+        color = blendColor(0x886622, zoneBase, 0.3);
+        break;
+      case "brittle":
+        color = blendColor(0xcc8866, zoneBase, 0.3);
+        break;
+      case "moving":
+        color = blendColor(0x6699cc, zoneBase, 0.3);
+        break;
+      case "lasagna":
+        color = blendColor(0xff8c00, zoneBase, 0.2);
+        break;
+      case "conveyor":
+        color = blendColor(0x888888, zoneBase, 0.3);
+        break;
+      case "spring":
+        color = blendColor(0x33bb33, zoneBase, 0.25);
+        break;
+      case "ice":
+        color = blendColor(0x88ccff, zoneBase, 0.25);
+        break;
+      case "crumbling":
+        color = blendColor(0xcc6633, zoneBase, 0.3);
+        break;
+      case "teleport":
+        color = blendColor(0x9955ff, zoneBase, 0.2);
+        break;
+      case "weighted":
+        color = blendColor(0x997744, zoneBase, 0.3);
+        break;
     }
 
     // Only redraw platform when color/shrink changes (gfx.clear() every frame leaks GPU buffers)
     const cacheKey = `${color}_${shrink}`;
     if ((gfx as any)._cacheKey !== cacheKey) {
-      drawThemedPlatform(gfx, platform.width * shrink, platform.height, color, style, cosmeticTheme);
+      drawThemedPlatform(
+        gfx,
+        platform.width * shrink,
+        platform.height,
+        color,
+        style,
+        cosmeticTheme,
+      );
       (gfx as any)._cacheKey = cacheKey;
     }
     gfx.x = platform.x + (platform.width * (1 - shrink)) / 2;
@@ -109,17 +140,16 @@ export function renderPlatforms(
     }
     // Neon sign flicker — subtle random pulse per platform
     if (cosmeticTheme === "theme_neon") {
-      gfx.alpha *= 0.85 + Math.sin(t * 0.18 + platform.id * 7) * 0.1 + Math.sin(t * 0.43 + platform.id * 3) * 0.05;
+      gfx.alpha *=
+        0.85 +
+        Math.sin(t * 0.18 + platform.id * 7) * 0.1 +
+        Math.sin(t * 0.43 + platform.id * 3) * 0.05;
     }
   }
 }
 
 /** Render meatballs — each has unique rotation + bob. */
-export function renderMeatballs(
-  state: GameWorldState,
-  gfxSync: GraphicsSync,
-  camY: number,
-): void {
+export function renderMeatballs(state: GameWorldState, gfxSync: GraphicsSync, camY: number): void {
   const t = state.animTick;
 
   for (const meatball of state.meatballs) {
@@ -141,7 +171,7 @@ export function renderMeatballs(
     gfx.y = worldToScreen(meatball.y + meatball.size / 2, camY) + bob;
 
     // Each meatball has a fixed base rotation (from ID) + slow wobble
-    const baseRotation = (meatball.id * 137.5 % 360) * Math.PI / 180;
+    const baseRotation = (((meatball.id * 137.5) % 360) * Math.PI) / 180;
     gfx.rotation = baseRotation + Math.sin(t * 0.015 + phase) * 0.3;
 
     // Slight scale variation so they feel organic
@@ -153,11 +183,7 @@ export function renderMeatballs(
 }
 
 /** Render power-ups with per-item unique animations. */
-export function renderPowerUps(
-  state: GameWorldState,
-  gfxSync: GraphicsSync,
-  camY: number,
-): void {
+export function renderPowerUps(state: GameWorldState, gfxSync: GraphicsSync, camY: number): void {
   const t = state.animTick;
 
   for (const pu of state.powerUps) {
@@ -221,7 +247,10 @@ export function renderEnemies(
     gfx.y = worldToScreen(enemy.y, camY) + bob;
     gfx.pivot.set(enemy.width / 2, enemy.height / 2);
     // Neon flicker for themed enemies
-    gfx.alpha = cosmeticTheme === "theme_neon" ? 0.8 + Math.sin(state.animTick * 0.2 + enemy.id * 3) * 0.2 : 1;
+    gfx.alpha =
+      cosmeticTheme === "theme_neon"
+        ? 0.8 + Math.sin(state.animTick * 0.2 + enemy.id * 3) * 0.2
+        : 1;
     const facing = enemy.vx >= 0 ? 1 : -1;
     gfx.scale.x = facing;
     // Wobble rotation for liveliness
@@ -254,8 +283,8 @@ export function renderProjectiles(
       gfx.rotation = t * 0.25 + proj.id * 3;
     } else {
       // Point in travel direction + subtle wobble
-      gfx.rotation = Math.atan2(proj.vy, proj.vx) + Math.PI / 2
-        + Math.sin(t * 0.3 + proj.id * 5) * 0.06;
+      gfx.rotation =
+        Math.atan2(proj.vy, proj.vx) + Math.PI / 2 + Math.sin(t * 0.3 + proj.id * 5) * 0.06;
     }
     gfx.visible = gfx.y > -30 && gfx.y < GAME_HEIGHT + 30;
   }

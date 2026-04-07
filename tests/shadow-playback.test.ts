@@ -2,12 +2,14 @@ import { describe, test, expect } from "vitest";
 import { createShadowPlayback } from "../src/systems/ShadowPlayback";
 import type { ShadowRecording } from "../src/systems/ShadowRecorder";
 
-function makeRecording(
-  frames: number[],
-  interval = 3,
-  score = 1000,
-): ShadowRecording {
-  return { frames, score, height: 100, sampleInterval: interval, timestamp: Date.now() };
+function makeRecording(frames: number[], interval = 3, score = 1000): ShadowRecording {
+  return {
+    frames,
+    score,
+    height: 100,
+    sampleInterval: interval,
+    timestamp: Date.now(),
+  };
 }
 
 describe("ShadowPlayback", () => {

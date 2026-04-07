@@ -47,7 +47,9 @@ export function createCodeInput(
   setTimeout(() => input.focus(), 100);
 
   // Prevent all keyboard events from reaching the game
-  const stopProp = (e: Event) => { e.stopPropagation(); };
+  const stopProp = (e: Event) => {
+    e.stopPropagation();
+  };
   input.addEventListener("keydown", stopProp);
   input.addEventListener("keyup", stopProp);
   input.addEventListener("keypress", stopProp);

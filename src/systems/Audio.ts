@@ -11,25 +11,38 @@ interface AudioSettings {
 
 let ctx: AudioContext | null = null;
 let settings: AudioSettings = {
-  sfxEnabled: true, musicEnabled: true, sfxVolume: 70, musicVolume: 50,
+  sfxEnabled: true,
+  musicEnabled: true,
+  sfxVolume: 70,
+  musicVolume: 50,
 };
 
 function loadSettings(): void {
   try {
     const stored = localStorage.getItem(SETTINGS_KEY);
     if (stored) settings = { ...settings, ...JSON.parse(stored) };
-  } catch { /* defaults */ }
+  } catch {
+    /* defaults */
+  }
   // Ensure enabled flags match volume (fix stale saved state)
   settings.sfxEnabled = settings.sfxVolume > 0;
   settings.musicEnabled = settings.musicVolume > 0;
 }
 
 function saveSettings(): void {
-  try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch { /* ignore */ }
+  try {
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+  } catch {
+    /* ignore */
+  }
 }
 
-export function sfxVol(): number { return settings.sfxVolume / 100; }
-export function musicVol(): number { return settings.musicVolume / 100; }
+export function sfxVol(): number {
+  return settings.sfxVolume / 100;
+}
+export function musicVol(): number {
+  return settings.musicVolume / 100;
+}
 
 loadSettings();
 
@@ -45,21 +58,32 @@ export function ensureContext(): AudioContext | null {
   return ctx;
 }
 
-export function isSfxEnabled(): boolean { return settings.sfxVolume > 0; }
-export function isMusicEnabled(): boolean { return settings.musicVolume > 0; }
-export function setSfxEnabled(v: boolean): void { settings.sfxEnabled = v; saveSettings(); }
+export function isSfxEnabled(): boolean {
+  return settings.sfxVolume > 0;
+}
+export function isMusicEnabled(): boolean {
+  return settings.musicVolume > 0;
+}
+export function setSfxEnabled(v: boolean): void {
+  settings.sfxEnabled = v;
+  saveSettings();
+}
 export function setMusicEnabled(v: boolean): void {
   settings.musicEnabled = v;
   if (!v) import("./MusicPlayer").then((m) => m.stopMusic());
   saveSettings();
 }
-export function getSfxVolume(): number { return settings.sfxVolume; }
+export function getSfxVolume(): number {
+  return settings.sfxVolume;
+}
 export function setSfxVolume(v: number): void {
   settings.sfxVolume = Math.max(0, Math.min(100, v));
   settings.sfxEnabled = v > 0;
   saveSettings();
 }
-export function getMusicVolume(): number { return settings.musicVolume; }
+export function getMusicVolume(): number {
+  return settings.musicVolume;
+}
 export function setMusicVolume(v: number): void {
   settings.musicVolume = Math.max(0, Math.min(100, v));
   settings.musicEnabled = v > 0;
@@ -70,8 +94,11 @@ export function setMusicVolume(v: number): void {
 export const BASE_MUSIC_VOLUME = 0.3;
 
 export function playTone(
-  freq: number, duration: number, type: OscillatorType = "square",
-  volume = 0.1, freqEnd?: number,
+  freq: number,
+  duration: number,
+  type: OscillatorType = "square",
+  volume = 0.1,
+  freqEnd?: number,
 ): void {
   const c = ensureContext();
   if (!c || !settings.sfxEnabled) return;
@@ -84,8 +111,10 @@ export function playTone(
   if (freqEnd != null) osc.frequency.linearRampToValueAtTime(freqEnd, c.currentTime + duration);
   gain.gain.setValueAtTime(vol, c.currentTime);
   gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + duration);
-  osc.connect(gain); gain.connect(c.destination);
-  osc.start(c.currentTime); osc.stop(c.currentTime + duration);
+  osc.connect(gain);
+  gain.connect(c.destination);
+  osc.start(c.currentTime);
+  osc.stop(c.currentTime + duration);
 }
 
 export function playNoise(duration: number, volume = 0.08): void {
@@ -97,27 +126,51 @@ export function playNoise(duration: number, volume = 0.08): void {
   const buf = c.createBuffer(1, sz, c.sampleRate);
   const d = buf.getChannelData(0);
   for (let i = 0; i < sz; i++) d[i] = Math.random() * 2 - 1;
-  const src = c.createBufferSource(); src.buffer = buf;
-  const flt = c.createBiquadFilter(); flt.type = "lowpass";
+  const src = c.createBufferSource();
+  src.buffer = buf;
+  const flt = c.createBiquadFilter();
+  flt.type = "lowpass";
   flt.frequency.setValueAtTime(2000, c.currentTime);
   flt.frequency.linearRampToValueAtTime(200, c.currentTime + duration);
   const g = c.createGain();
   g.gain.setValueAtTime(vol, c.currentTime);
   g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + duration);
-  src.connect(flt); flt.connect(g); g.connect(c.destination); src.start(c.currentTime);
+  src.connect(flt);
+  flt.connect(g);
+  g.connect(c.destination);
+  src.start(c.currentTime);
 }
 
 // Re-exports so all consumers can import from "../systems/Audio"
 export {
-  playSfxJump, playSfxMeatball, playSfxDeath, playSfxPlatformCrumble,
-  playSfxCloseCall, playSfxLandingStreak, playSfxHighScore,
-  playSfxPositivePowerUp, playSfxNegativePowerUp, playSfxCombo,
-  playSfxPowerUp, playSfxLanding, playSfxComboEscalation,
-  playSfxEnemyKill, playSfxShieldAbsorb, playSfxThrow,
-  playSfxWindGust, playSfxWhoosh, playSfxCrumbleWarning,
+  playSfxJump,
+  playSfxMeatball,
+  playSfxDeath,
+  playSfxPlatformCrumble,
+  playSfxCloseCall,
+  playSfxLandingStreak,
+  playSfxHighScore,
+  playSfxPositivePowerUp,
+  playSfxNegativePowerUp,
+  playSfxCombo,
+  playSfxPowerUp,
+  playSfxLanding,
+  playSfxComboEscalation,
+  playSfxEnemyKill,
+  playSfxShieldAbsorb,
+  playSfxThrow,
+  playSfxWindGust,
+  playSfxWhoosh,
+  playSfxCrumbleWarning,
 } from "./AudioSfx";
 
 export {
-  playMusic, playTitleMusic, stopMusic, crossfadeToZone,
-  playBossMusic, stopBossMusic, killBossMusic, applyMusicVolume,
+  playMusic,
+  playTitleMusic,
+  stopMusic,
+  crossfadeToZone,
+  playBossMusic,
+  stopBossMusic,
+  killBossMusic,
+  applyMusicVolume,
 } from "./MusicPlayer";

@@ -18,7 +18,10 @@ vi.mock("pixi.js", () => {
   }
   class MockContainer {
     children: unknown[] = [];
-    addChild(child: unknown) { this.children.push(child); (child as MockText).parent = this; }
+    addChild(child: unknown) {
+      this.children.push(child);
+      (child as MockText).parent = this;
+    }
     removeChild(child: unknown) {
       const idx = this.children.indexOf(child);
       if (idx >= 0) this.children.splice(idx, 1);

@@ -34,29 +34,20 @@ function lerp(a: number, b: number, t: number): number {
 }
 
 /** Get difficulty parameters based on how many platforms the player has passed. */
-export function getDifficulty(platformsPassed: number, difficultyMultiplier = 1.0): DifficultyParams {
+export function getDifficulty(
+  platformsPassed: number,
+  difficultyMultiplier = 1.0,
+): DifficultyParams {
   const t = Math.min(1, (platformsPassed * difficultyMultiplier) / DIFFICULTY_RAMP_PLATFORMS);
 
   return {
-    platformWidthMin: lerp(
-      PLATFORM_WIDTH_MIN,
-      DIFFICULTY_PLATFORM_WIDTH_MIN_HARD,
-      t,
-    ),
-    platformWidthMax: lerp(
-      PLATFORM_WIDTH_MAX,
-      DIFFICULTY_PLATFORM_WIDTH_MAX_HARD,
-      t,
-    ),
+    platformWidthMin: lerp(PLATFORM_WIDTH_MIN, DIFFICULTY_PLATFORM_WIDTH_MIN_HARD, t),
+    platformWidthMax: lerp(PLATFORM_WIDTH_MAX, DIFFICULTY_PLATFORM_WIDTH_MAX_HARD, t),
     gapMin: PLATFORM_GAP_MIN,
     gapMax: lerp(PLATFORM_GAP_MAX, DIFFICULTY_GAP_MAX_HARD, t),
     negativeSpawnChance: lerp(0.3, DIFFICULTY_NEGATIVE_CHANCE_HARD, t),
     breakChance: lerp(PLATFORM_BREAK_CHANCE, DIFFICULTY_BREAK_CHANCE_HARD, t),
-    brittleChance: lerp(
-      PLATFORM_BRITTLE_CHANCE,
-      DIFFICULTY_BRITTLE_CHANCE_HARD,
-      t,
-    ),
+    brittleChance: lerp(PLATFORM_BRITTLE_CHANCE, DIFFICULTY_BRITTLE_CHANCE_HARD, t),
     movingSpeedMultiplier: lerp(1, 2.5, t),
     difficultyT: t,
   };

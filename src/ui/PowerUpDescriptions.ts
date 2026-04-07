@@ -104,10 +104,7 @@ export function markPowerUpCollected(type: string): void {
   const collected = getCollectedPowerUps();
   collected.add(type);
   try {
-    localStorage.setItem(
-      "noodle-jump-collected-powerups",
-      JSON.stringify([...collected]),
-    );
+    localStorage.setItem("noodle-jump-collected-powerups", JSON.stringify([...collected]));
   } catch {
     // localStorage may be unavailable
   }

@@ -46,10 +46,7 @@ export interface CollectibleState {
 
 let nextCollectibleId = 0;
 
-export function createMeatball(
-  platform: PlatformState,
-  zone = 0,
-): CollectibleState {
+export function createMeatball(platform: PlatformState, zone = 0): CollectibleState {
   return {
     x: platform.x + platform.width / 2 - MEATBALL_SIZE / 2,
     y: platform.y - MEATBALL_FLOAT_HEIGHT,

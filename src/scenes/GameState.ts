@@ -9,10 +9,7 @@ import type { ScoreState } from "../systems/Score";
 import type { ShakeState } from "../systems/ScreenShake";
 
 import { createPlayer } from "../entities/Player";
-import {
-  createGroundPlatform,
-  generatePlatforms,
-} from "../entities/Platform";
+import { createGroundPlatform, generatePlatforms } from "../entities/Platform";
 import { spawnMeatballs } from "../entities/Collectible";
 import { spawnPowerUps } from "../entities/PowerUp";
 import { createCamera } from "../systems/Camera";
@@ -113,9 +110,22 @@ export interface GameWorldState {
   /** Active boss (null when no boss encounter). */
   activeBoss: BossState | null;
   /** Boss attack projectiles (separate from player knives). */
-  bossAttacks: { x: number; y: number; vx: number; vy: number; alive: boolean }[];
+  bossAttacks: {
+    x: number;
+    y: number;
+    vx: number;
+    vy: number;
+    alive: boolean;
+  }[];
   /** Pending kraken tentacle grabs (animate then apply damage). */
-  pendingTentacles: { platformId: number; x: number; targetY: number; ticksLeft: number; totalTicks: number; side: "left" | "right" }[];
+  pendingTentacles: {
+    platformId: number;
+    x: number;
+    targetY: number;
+    ticksLeft: number;
+    totalTicks: number;
+    side: "left" | "right";
+  }[];
   /** Whether boss fight is active (disables stagnant timer). */
   inBossFight: boolean;
   /** Deferred boss spawn — waits for zone transition to finish. */
@@ -146,8 +156,13 @@ export function createInitialState(runConfig?: RunConfig): GameWorldState {
 
   // Starting zone: use config or debug override, compute initial platformsPassed
   const startZone = config.startingZone || 0;
-  const startPlatforms = debugCfg.startingPlatforms || (startZone > 0 ? ZONE_THRESHOLDS[Math.min(startZone, ZONE_THRESHOLDS.length - 1)] : 0);
-  const zoneState: ZoneState = { currentZone: startZone, platformsPassed: startPlatforms };
+  const startPlatforms =
+    debugCfg.startingPlatforms ||
+    (startZone > 0 ? ZONE_THRESHOLDS[Math.min(startZone, ZONE_THRESHOLDS.length - 1)] : 0);
+  const zoneState: ZoneState = {
+    currentZone: startZone,
+    platformsPassed: startPlatforms,
+  };
 
   // Ground floor
   const ground = createGroundPlatform(GAME_HEIGHT);
@@ -164,8 +179,7 @@ export function createInitialState(runConfig?: RunConfig): GameWorldState {
   );
   platforms.push(...generated);
   highestPlatformY = generated[generated.length - 1].y;
-  const lastPlatformWasBrittle =
-    generated[generated.length - 1].type === "brittle";
+  const lastPlatformWasBrittle = generated[generated.length - 1].type === "brittle";
 
   // Spawn power-ups first, then meatballs (excluding power-up platforms)
   const powerUps = spawnPowerUps(generated);

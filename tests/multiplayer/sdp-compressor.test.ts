@@ -102,9 +102,7 @@ describe("description compression", () => {
   it("round-trips an offer description", () => {
     const sdp = "v=0\r\no=- 1 2 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\n";
     const desc = { type: "offer" as RTCSdpType, sdp };
-    const compressed = compressDescription(
-      desc as RTCSessionDescription,
-    );
+    const compressed = compressDescription(desc as RTCSessionDescription);
 
     expect(compressed.startsWith("O")).toBe(true);
 
@@ -116,9 +114,7 @@ describe("description compression", () => {
   it("round-trips an answer description", () => {
     const sdp = "v=0\r\no=- 1 2 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\n";
     const desc = { type: "answer" as RTCSdpType, sdp };
-    const compressed = compressDescription(
-      desc as RTCSessionDescription,
-    );
+    const compressed = compressDescription(desc as RTCSessionDescription);
 
     expect(compressed.startsWith("A")).toBe(true);
 

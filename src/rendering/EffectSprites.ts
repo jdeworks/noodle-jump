@@ -3,12 +3,7 @@
 import { Graphics } from "pixi.js";
 
 /** Horseshoe magnet with field-line arcs. */
-export function drawMagnetSprite(
-  gfx: Graphics,
-  w: number,
-  h: number,
-  animTick: number,
-): void {
+export function drawMagnetSprite(gfx: Graphics, w: number, h: number, animTick: number): void {
   gfx.clear();
   // Magnet body (U-shape)
   const mx = w * 0.15,
@@ -41,12 +36,7 @@ export function drawMagnetSprite(
 }
 
 /** Spinning fusilli tornado. */
-export function drawTornadoSprite(
-  gfx: Graphics,
-  w: number,
-  h: number,
-  animTick: number,
-): void {
+export function drawTornadoSprite(gfx: Graphics, w: number, h: number, animTick: number): void {
   gfx.clear();
   // Funnel shape — wide at top, narrow at bottom, spinning
   const layers = 8;
@@ -72,12 +62,7 @@ export function drawTornadoSprite(
 }
 
 /** Floating lasagna stack with cheese drips. */
-export function drawLasagnaSprite(
-  gfx: Graphics,
-  w: number,
-  h: number,
-  animTick: number,
-): void {
+export function drawLasagnaSprite(gfx: Graphics, w: number, h: number, animTick: number): void {
   gfx.clear();
   const colors = [0xcc6600, 0xffcc44, 0xcc3333, 0xffcc44, 0xcc6600, 0xff8c00];
   const layerH = h * 0.1;
@@ -92,7 +77,12 @@ export function drawLasagnaSprite(
   for (const dx of drips) {
     const dripLen = 4 + Math.sin(animTick * 0.05 + dx * 10) * 3;
     gfx.moveTo(w * dx, top + 6 * layerH);
-    gfx.quadraticCurveTo(w * dx + 1, top + 6 * layerH + dripLen, w * dx + 2, top + 6 * layerH + dripLen + 2);
+    gfx.quadraticCurveTo(
+      w * dx + 1,
+      top + 6 * layerH + dripLen,
+      w * dx + 2,
+      top + 6 * layerH + dripLen + 2,
+    );
     gfx.stroke({ width: 2, color: 0xffcc44 });
   }
   // Golden glow
@@ -101,15 +91,11 @@ export function drawLasagnaSprite(
 }
 
 /** Red pepper with sneeze explosion. */
-export function drawPepperSprite(
-  gfx: Graphics,
-  w: number,
-  h: number,
-  animTick: number,
-): void {
+export function drawPepperSprite(gfx: Graphics, w: number, h: number, animTick: number): void {
   gfx.clear();
   // Pepper body
-  const cx = w / 2, cy = h * 0.45;
+  const cx = w / 2,
+    cy = h * 0.45;
   gfx.moveTo(cx - 2, h * 0.15);
   gfx.quadraticCurveTo(cx + w * 0.35, h * 0.2, cx + w * 0.25, cy + h * 0.15);
   gfx.quadraticCurveTo(cx + w * 0.1, h * 0.85, cx - w * 0.05, h * 0.8);
@@ -133,12 +119,7 @@ export function drawPepperSprite(
 }
 
 /** Bright red chili with animated flames. */
-export function drawChiliSprite(
-  gfx: Graphics,
-  w: number,
-  h: number,
-  animTick: number,
-): void {
+export function drawChiliSprite(gfx: Graphics, w: number, h: number, animTick: number): void {
   gfx.clear();
   // Chili body
   const cx = w / 2;
@@ -181,12 +162,7 @@ export function drawChiliSprite(
 }
 
 /** Blue water droplet — soggy noodle. */
-export function drawSoggySprite(
-  gfx: Graphics,
-  w: number,
-  h: number,
-  animTick: number,
-): void {
+export function drawSoggySprite(gfx: Graphics, w: number, h: number, animTick: number): void {
   gfx.clear();
   const cx = w / 2;
   // Main droplet
@@ -215,12 +191,7 @@ export function drawSoggySprite(
 }
 
 /** Green garlic bulb with stink clouds. */
-export function drawGarlicSprite(
-  gfx: Graphics,
-  w: number,
-  h: number,
-  animTick: number,
-): void {
+export function drawGarlicSprite(gfx: Graphics, w: number, h: number, animTick: number): void {
   gfx.clear();
   const cx = w / 2;
   // Bulb body — three clove bumps
@@ -247,17 +218,15 @@ export function drawGarlicSprite(
     const py = h * 0.4 + Math.sin(angle) * dist * 0.5;
     const sz = 3 + Math.sin(animTick * 0.08 + i * 2) * 1.5;
     gfx.circle(px, py, sz);
-    gfx.fill({ color: 0x88ee44, alpha: 0.35 + Math.sin(animTick * 0.1 + i) * 0.15 });
+    gfx.fill({
+      color: 0x88ee44,
+      alpha: 0.35 + Math.sin(animTick * 0.1 + i) * 0.15,
+    });
   }
 }
 
 /** Charred toast with smoke wisps. */
-export function drawBurntToastSprite(
-  gfx: Graphics,
-  w: number,
-  h: number,
-  animTick: number,
-): void {
+export function drawBurntToastSprite(gfx: Graphics, w: number, h: number, animTick: number): void {
   gfx.clear();
   // Toast body
   gfx.roundRect(w * 0.15, h * 0.2, w * 0.7, h * 0.65, 4);

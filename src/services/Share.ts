@@ -10,7 +10,15 @@ export interface ShareData {
 
 /** Format a share message. */
 export function formatShareMessage(data: ShareData): string {
-  const zoneNames = ["Kitchen", "Boiling Pot", "Space", "Freezer", "Volcano", "Candy", "Final Kitchen"];
+  const zoneNames = [
+    "Kitchen",
+    "Boiling Pot",
+    "Space",
+    "Freezer",
+    "Volcano",
+    "Candy",
+    "Final Kitchen",
+  ];
   const zoneName = zoneNames[data.zone] ?? `Zone ${data.zone + 1}`;
   return (
     `I scored ${data.score.toLocaleString()} on Noodle Jump!\n` +

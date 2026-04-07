@@ -134,7 +134,14 @@ export class ParticleManager {
   // ── Crumble ────────────────────────────────────────────────────────────
 
   spawnCrumbleParticles(platform: PlatformState, camY: number): void {
-    legacySpawnCrumble(platform.x, platform.y, platform.width, camY, this.crumbleContainer, this.crumbleParticles);
+    legacySpawnCrumble(
+      platform.x,
+      platform.y,
+      platform.width,
+      camY,
+      this.crumbleContainer,
+      this.crumbleParticles,
+    );
   }
 
   updateCrumbleParticles(): void {
@@ -144,10 +151,23 @@ export class ParticleManager {
   // ── Tornado ────────────────────────────────────────────────────────────
 
   updateTornadoParticles(
-    playerX: number, playerY: number, playerW: number, playerH: number,
-    camY: number, animTick: number,
+    playerX: number,
+    playerY: number,
+    playerW: number,
+    playerH: number,
+    camY: number,
+    animTick: number,
   ): void {
-    legacyUpdateTornado(playerX, playerY, playerW, playerH, camY, animTick, this.tornadoContainer, this.tornadoParticles);
+    legacyUpdateTornado(
+      playerX,
+      playerY,
+      playerW,
+      playerH,
+      camY,
+      animTick,
+      this.tornadoContainer,
+      this.tornadoParticles,
+    );
   }
 
   clearTornadoParticles(): void {
@@ -157,10 +177,21 @@ export class ParticleManager {
   // ── Rocket ─────────────────────────────────────────────────────────────
 
   updateRocketParticles(
-    playerX: number, playerY: number, playerW: number, playerH: number,
+    playerX: number,
+    playerY: number,
+    playerW: number,
+    playerH: number,
     camY: number,
   ): void {
-    legacyUpdateRocket(playerX, playerY, playerW, playerH, camY, this.rocketContainer, this.rocketParticles);
+    legacyUpdateRocket(
+      playerX,
+      playerY,
+      playerW,
+      playerH,
+      camY,
+      this.rocketContainer,
+      this.rocketParticles,
+    );
   }
 
   clearRocketParticles(): void {
@@ -170,10 +201,21 @@ export class ParticleManager {
   // ── Sneeze ─────────────────────────────────────────────────────────────
 
   updateSneezeParticles(
-    playerX: number, playerY: number, playerW: number, playerH: number,
+    playerX: number,
+    playerY: number,
+    playerW: number,
+    playerH: number,
     camY: number,
   ): void {
-    legacyUpdateSneeze(playerX, playerY, playerW, playerH, camY, this.sneezeContainer, this.sneezeParticles);
+    legacyUpdateSneeze(
+      playerX,
+      playerY,
+      playerW,
+      playerH,
+      camY,
+      this.sneezeContainer,
+      this.sneezeParticles,
+    );
   }
 
   clearSneezeParticles(): void {
@@ -183,10 +225,23 @@ export class ParticleManager {
   // ── Spring ─────────────────────────────────────────────────────────────
 
   updateSpringParticles(
-    playerX: number, playerY: number, playerW: number, playerH: number,
-    camY: number, animTick: number,
+    playerX: number,
+    playerY: number,
+    playerW: number,
+    playerH: number,
+    camY: number,
+    animTick: number,
   ): void {
-    legacyUpdateSpring(playerX, playerY, playerW, playerH, camY, animTick, this.springContainer, this.springParticles);
+    legacyUpdateSpring(
+      playerX,
+      playerY,
+      playerW,
+      playerH,
+      camY,
+      animTick,
+      this.springContainer,
+      this.springParticles,
+    );
   }
 
   clearSpringParticles(): void {
@@ -196,10 +251,23 @@ export class ParticleManager {
   // ── Lasagna ────────────────────────────────────────────────────────────
 
   updateLasagnaParticles(
-    playerX: number, playerY: number, playerW: number, playerH: number,
-    camY: number, animTick: number,
+    playerX: number,
+    playerY: number,
+    playerW: number,
+    playerH: number,
+    camY: number,
+    animTick: number,
   ): void {
-    legacyUpdateLasagna(playerX, playerY, playerW, playerH, camY, animTick, this.lasagnaContainer, this.lasagnaParticles);
+    legacyUpdateLasagna(
+      playerX,
+      playerY,
+      playerW,
+      playerH,
+      camY,
+      animTick,
+      this.lasagnaContainer,
+      this.lasagnaParticles,
+    );
   }
 
   clearLasagnaParticles(): void {

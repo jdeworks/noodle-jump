@@ -10,6 +10,7 @@ forces you. The file size limits below are a safety net — they should rarely t
 with the right structure.
 
 When creating a new feature, begin with separate files for separate concerns:
+
 - One file per entity, system, or service — not one file per "phase of development"
 - Config and constants in their own file from the start
 - Types/interfaces in a dedicated file once there are more than a handful
@@ -38,7 +39,7 @@ creation for "later" — later never comes, and untested files accumulate silent
 
 The health check warns when source files have no corresponding test. Not every file needs
 deep tests (thin rendering wrappers may just need a smoke test), but every file should have
-*something* that breaks if the file's contract changes.
+_something_ that breaks if the file's contract changes.
 
 ## Commit size
 
@@ -51,11 +52,11 @@ This also makes `CHANGES.md` entries more meaningful.
 
 ## File size limits
 
-| Type | Soft limit | Hard limit |
-|------|-----------|------------|
-| Source file | 250 LOC | 350 LOC |
-| Test file | 400 LOC | 500 LOC |
-| Config file | 100 LOC | 150 LOC |
+| Type        | Soft limit | Hard limit |
+| ----------- | ---------- | ---------- |
+| Source file | 250 LOC    | 350 LOC    |
+| Test file   | 400 LOC    | 500 LOC    |
+| Config file | 100 LOC    | 150 LOC    |
 
 When a file approaches the soft limit: split it. When it hits the hard limit: split it now, before
 adding more code. The health-check script warns at soft, fails at hard.
@@ -65,10 +66,10 @@ A 200-line file doing three unrelated things needs splitting even if it's under 
 
 ## Function size limits
 
-| Type | Soft limit | Hard limit |
-|------|-----------|------------|
-| Regular function | 60 LOC | 80 LOC |
-| Complex handler / reducer | 100 LOC | 150 LOC |
+| Type                      | Soft limit | Hard limit |
+| ------------------------- | ---------- | ---------- |
+| Regular function          | 60 LOC     | 80 LOC     |
+| Complex handler / reducer | 100 LOC    | 150 LOC    |
 
 Functions over the soft limit are a smell. Functions over the hard limit are a bug in the architecture.
 
@@ -81,6 +82,7 @@ Functions over the soft limit are a smell. Functions over the hard limit are a b
 ## Total LOC budget
 
 Each variant sets its own budget in `scripts/health-check.sh`. The base default is:
+
 - **5,000 LOC** for a lean project
 - **15,000 LOC** for a full project
 

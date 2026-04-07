@@ -1,9 +1,6 @@
 /** Unlock code system — per-item phrases and master code. */
 
-import {
-  COSMETICS, UNLOCKABLE_CHARACTERS,
-  type CosmeticState, unlockCosmetic,
-} from "./Cosmetics";
+import { COSMETICS, UNLOCKABLE_CHARACTERS, type CosmeticState, unlockCosmetic } from "./Cosmetics";
 
 const STORAGE_KEY = "noodle-jump-unlock-codes";
 const MASTER_CODE = "i love jdeworks";
@@ -40,7 +37,8 @@ const CODE_MAP = buildCodeMap();
 
 /** Try an unlock code. Returns updated cosmetic state + unlocked character IDs, or null if invalid. */
 export function tryCode(
-  code: string, cosmeticState: CosmeticState,
+  code: string,
+  cosmeticState: CosmeticState,
 ): { cosmetics: CosmeticState; unlockedCharacters: string[] } | null {
   const normalized = code.toLowerCase().trim();
   if (!normalized) return null;
@@ -73,14 +71,18 @@ export function loadUnlockCodeState(): UnlockCodeState {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) return { usedCodes: new Set(JSON.parse(stored)) };
-  } catch { /* defaults */ }
+  } catch {
+    /* defaults */
+  }
   return { usedCodes: new Set() };
 }
 
 export function saveUnlockCodeState(state: UnlockCodeState): void {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify([...state.usedCodes]));
-  } catch { /* localStorage unavailable */ }
+  } catch {
+    /* localStorage unavailable */
+  }
 }
 
 /** Record that a code was used. */

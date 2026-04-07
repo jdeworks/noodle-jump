@@ -5,8 +5,7 @@
 
 import { deflate, inflate } from "pako";
 
-const BASE62_CHARS =
-  "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+const BASE62_CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 
 /** Strip unnecessary SDP fields to reduce size before compression. */
 function stripSDP(sdp: string): string {
@@ -37,8 +36,7 @@ function restoreSDP(sdp: string): string {
 export function toBase62(bytes: Uint8Array): string {
   // Encode the byte length as 2 base62 chars (max 3844 bytes)
   const len = bytes.length;
-  const lenPrefix =
-    BASE62_CHARS[Math.floor(len / 62)] + BASE62_CHARS[len % 62];
+  const lenPrefix = BASE62_CHARS[Math.floor(len / 62)] + BASE62_CHARS[len % 62];
 
   let num = 0n;
   for (const byte of bytes) {
@@ -64,8 +62,7 @@ export function fromBase62(str: string): Uint8Array {
   if (str.length < 2) throw new Error("Invalid base62 string: too short");
 
   // Decode length prefix
-  const len =
-    BASE62_CHARS.indexOf(str[0]) * 62 + BASE62_CHARS.indexOf(str[1]);
+  const len = BASE62_CHARS.indexOf(str[0]) * 62 + BASE62_CHARS.indexOf(str[1]);
 
   const valueStr = str.slice(2);
   let num = 0n;

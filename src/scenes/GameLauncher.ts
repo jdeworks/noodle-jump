@@ -23,13 +23,13 @@ import { resetDebugConfig, setDebugConfig, getDebugConfig } from "../config/debu
 import { createPauseMenu } from "./PauseMenu";
 import { generateDailyDebugConfig } from "../systems/DailyChallengeState";
 import {
-  createShadowRecorder, loadShadow, getShadowSlot,
-  type ShadowRecorder as ShadowRecorderType, type ShadowMode,
+  createShadowRecorder,
+  loadShadow,
+  getShadowSlot,
+  type ShadowRecorder as ShadowRecorderType,
+  type ShadowMode,
 } from "../systems/ShadowRecorder";
-import {
-  createShadowPlayback,
-  type ShadowPlayback,
-} from "../systems/ShadowPlayback";
+import { createShadowPlayback, type ShadowPlayback } from "../systems/ShadowPlayback";
 import { RemotePlayerRenderer } from "../multiplayer/RemotePlayerRenderer";
 import { getTodayDateKey } from "../systems/DailyChallengeState";
 
@@ -134,15 +134,15 @@ export function cleanupAndGoHome(app: Application): void {
 /** Get the active shadow context (for GameLoopTicker). */
 export function getShadowContext() {
   return {
-    recorder: activeShadowRecorder, playback: activeShadowPlayback,
-    renderer: activeShadowRenderer, mode: activeShadowMode, qualifier: activeShadowQualifier,
+    recorder: activeShadowRecorder,
+    playback: activeShadowPlayback,
+    renderer: activeShadowRenderer,
+    mode: activeShadowMode,
+    qualifier: activeShadowQualifier,
   };
 }
 
-export async function launchGame(
-  app: Application,
-  runConfig?: RunConfig,
-): Promise<void> {
+export async function launchGame(app: Application, runConfig?: RunConfig): Promise<void> {
   activeRunConfig = runConfig; // remember for restart
   // Reset debug config for normal play so custom run presets don't leak
   if (!runConfig) resetDebugConfig();
@@ -165,10 +165,15 @@ export async function launchGame(
   const shadowRec = loadShadow(activeShadowMode, activeShadowQualifier);
   if (shadowRec) {
     activeShadowPlayback = createShadowPlayback(shadowRec);
-    activeShadowRenderer = new RemotePlayerRenderer("chef", { tint: "tint_none" });
+    activeShadowRenderer = new RemotePlayerRenderer("chef", {
+      tint: "tint_none",
+    });
     activeShadowRenderer.container.alpha = 0.35;
     scene.container.addChild(activeShadowRenderer.container);
-  } else { activeShadowPlayback = null; activeShadowRenderer = null; }
+  } else {
+    activeShadowPlayback = null;
+    activeShadowRenderer = null;
+  }
 
   // ── HUD ──────────────────────────────────────────────────────────────────
   const hud = new HUD();
@@ -201,18 +206,13 @@ export async function launchGame(
     } else {
       return;
     }
-    scene.handleThrow(
-      (clientX - rect.left) * scaleX,
-      (clientY - rect.top) * scaleY,
-    );
+    scene.handleThrow((clientX - rect.left) * scaleX, (clientY - rect.top) * scaleY);
   };
   app.canvas.addEventListener("click", handleThrow);
   app.canvas.addEventListener("touchstart", handleThrow);
 
   // ── Orientation pause ─────────────────────────────────────────────────────
-  const orientationQuery = window.matchMedia(
-    "(orientation: landscape) and (max-height: 500px)",
-  );
+  const orientationQuery = window.matchMedia("(orientation: landscape) and (max-height: 500px)");
   let pausedByOrientation = false;
   const checkOrientation = () => {
     if (orientationQuery.matches && !pausedByOrientation) {

@@ -1,8 +1,18 @@
 /** Graphics lifecycle — sync entity arrays with PixiJS Graphics maps. */
 
 import { Container, Graphics } from "pixi.js";
-import { drawMeatball, drawMeatballVariant, drawPowerUp, drawProjectile } from "../rendering/sprites";
-import { drawThemedEnemy, drawThemedPlatform, drawThemedMeatball, hasThemedMeatball } from "../rendering/ThemeSprites";
+import {
+  drawMeatball,
+  drawMeatballVariant,
+  drawPowerUp,
+  drawProjectile,
+} from "../rendering/sprites";
+import {
+  drawThemedEnemy,
+  drawThemedPlatform,
+  drawThemedMeatball,
+  hasThemedMeatball,
+} from "../rendering/ThemeSprites";
 import { COLORS } from "../config/constants";
 import type { PlatformState } from "../entities/Platform";
 import type { CollectibleState } from "../entities/Collectible";
@@ -12,7 +22,9 @@ import type { ProjectileState } from "../entities/Projectile";
 
 export class GraphicsSync {
   private theme = "theme_default";
-  setTheme(theme: string): void { this.theme = theme; }
+  setTheme(theme: string): void {
+    this.theme = theme;
+  }
   readonly platformGfxMap = new Map<number, Graphics>();
   readonly meatballGfxMap = new Map<number, Graphics>();
   readonly powerUpGfxMap = new Map<number, Graphics>();
@@ -23,7 +35,14 @@ export class GraphicsSync {
     for (const platform of platforms) {
       if (this.platformGfxMap.has(platform.id)) continue;
       const gfx = new Graphics();
-      drawThemedPlatform(gfx, platform.width, platform.height, COLORS.platform[0], "normal", this.theme);
+      drawThemedPlatform(
+        gfx,
+        platform.width,
+        platform.height,
+        COLORS.platform[0],
+        "normal",
+        this.theme,
+      );
       parent.addChild(gfx);
       this.platformGfxMap.set(platform.id, gfx);
     }
@@ -102,14 +121,29 @@ export class GraphicsSync {
     enemies?: EnemyState[],
     projectiles?: ProjectileState[],
   ): void {
-    cleanupMap(this.platformGfxMap, platforms.map((p) => p.id));
-    cleanupMap(this.meatballGfxMap, meatballs.map((m) => m.id));
-    cleanupMap(this.powerUpGfxMap, powerUps.map((pu) => pu.id));
+    cleanupMap(
+      this.platformGfxMap,
+      platforms.map((p) => p.id),
+    );
+    cleanupMap(
+      this.meatballGfxMap,
+      meatballs.map((m) => m.id),
+    );
+    cleanupMap(
+      this.powerUpGfxMap,
+      powerUps.map((pu) => pu.id),
+    );
     if (enemies) {
-      cleanupMap(this.enemyGfxMap, enemies.filter((e) => e.alive).map((e) => e.id));
+      cleanupMap(
+        this.enemyGfxMap,
+        enemies.filter((e) => e.alive).map((e) => e.id),
+      );
     }
     if (projectiles) {
-      cleanupMap(this.projectileGfxMap, projectiles.filter((p) => p.alive).map((p) => p.id));
+      cleanupMap(
+        this.projectileGfxMap,
+        projectiles.filter((p) => p.alive).map((p) => p.id),
+      );
     }
   }
 

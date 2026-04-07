@@ -1,11 +1,7 @@
 /** Complex power-up effect logic — pure functions. */
 
 import type { ActiveEffect } from "../entities/PowerUp";
-import {
-  GNOCCHI_BOUNCE_MULTIPLIER,
-  MINESTRONE_RISE_SPEED,
-  GAME_HEIGHT,
-} from "../config/constants";
+import { GNOCCHI_BOUNCE_MULTIPLIER, MINESTRONE_RISE_SPEED, GAME_HEIGHT } from "../config/constants";
 
 // ── Pasta Shield ─────────────────────────────────────────────────────────
 
@@ -62,10 +58,7 @@ export function createMinestroneFlood(playerY: number): MinestroneState {
 }
 
 /** Tick the minestrone flood — rises toward the player. */
-export function tickMinestroneFlood(
-  state: MinestroneState,
-  speedScale = 1,
-): MinestroneState {
+export function tickMinestroneFlood(state: MinestroneState, speedScale = 1): MinestroneState {
   if (!state.active) return state;
   return {
     ...state,

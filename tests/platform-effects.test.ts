@@ -11,7 +11,11 @@ import {
 } from "../src/systems/PlatformEffects";
 import { createPlayer } from "../src/entities/Player";
 import type { PlatformState } from "../src/entities/Platform";
-import { PLATFORM_CRUMBLE_TIMER_TICKS, PLAYER_JUMP_VELOCITY, PLATFORM_SPRING_VELOCITY_MULTIPLIER } from "../src/config/constants";
+import {
+  PLATFORM_CRUMBLE_TIMER_TICKS,
+  PLAYER_JUMP_VELOCITY,
+  PLATFORM_SPRING_VELOCITY_MULTIPLIER,
+} from "../src/config/constants";
 
 function makePlatform(overrides: Partial<PlatformState> = {}): PlatformState {
   return {
@@ -104,14 +108,22 @@ describe("crumble timer", () => {
 
 describe("applyWeightedTilt", () => {
   test("tilts toward player position", () => {
-    const platform = makePlatform({ type: "weighted", tiltAngle: 0, width: 100 });
+    const platform = makePlatform({
+      type: "weighted",
+      tiltAngle: 0,
+      width: 100,
+    });
     // Player on the right side
     const result = applyWeightedTilt(platform, 170, 32);
     expect(result.tiltAngle!).toBeGreaterThan(0); // tilts right
   });
 
   test("tilts left when player is on left side", () => {
-    const platform = makePlatform({ type: "weighted", tiltAngle: 0, width: 100 });
+    const platform = makePlatform({
+      type: "weighted",
+      tiltAngle: 0,
+      width: 100,
+    });
     const result = applyWeightedTilt(platform, 80, 32);
     expect(result.tiltAngle!).toBeLessThan(0); // tilts left
   });

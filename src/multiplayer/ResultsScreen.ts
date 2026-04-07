@@ -21,16 +21,7 @@ interface ResultsParams {
 }
 
 export function showLocalCoopResults(params: ResultsParams): void {
-  const {
-    app,
-    scene1,
-    scene2,
-    mode,
-    p1Dead,
-    p2Dead,
-    cleanupAndReset,
-    cleanupAndGoHome,
-  } = params;
+  const { app, scene1, scene2, mode, p1Dead, p2Dead, cleanupAndReset, cleanupAndGoHome } = params;
 
   const uiT = getUITheme();
   const overlay = new Graphics();
@@ -44,18 +35,9 @@ export function showLocalCoopResults(params: ResultsParams): void {
   let winner: string;
   if (mode === "first-to-die") {
     winner =
-      p1Dead && !p2Dead
-        ? "Player 2 Wins!"
-        : !p1Dead && p2Dead
-          ? "Player 1 Wins!"
-          : "It's a Tie!";
+      p1Dead && !p2Dead ? "Player 2 Wins!" : !p1Dead && p2Dead ? "Player 1 Wins!" : "It's a Tie!";
   } else {
-    winner =
-      cmpH1 > cmpH2
-        ? "Player 1 Wins!"
-        : cmpH2 > cmpH1
-          ? "Player 2 Wins!"
-          : "It's a Tie!";
+    winner = cmpH1 > cmpH2 ? "Player 1 Wins!" : cmpH2 > cmpH1 ? "Player 2 Wins!" : "It's a Tie!";
   }
   if (mode === "timed-2min") winner = "Time's Up! " + winner;
   const winnerText = new Text({
@@ -99,23 +81,60 @@ export function showLocalCoopResults(params: ResultsParams): void {
   rematchBg.fill({ color: uiT.buttonBg, alpha: 0.9 });
   rematchBg.roundRect(SPLIT_WIDTH / 2 - 100, btnY - 18, 200, 36, 10);
   rematchBg.stroke({ width: 1.5, color: uiT.buttonBorder, alpha: 0.5 });
-  rematchBg.eventMode = "static"; rematchBg.cursor = "pointer";
+  rematchBg.eventMode = "static";
+  rematchBg.cursor = "pointer";
   app.stage.addChild(rematchBg);
-  const rematchText = new Text({ text: "Rematch", style: new TextStyle({ fontFamily: "monospace", fontSize: 18, fill: "#ffffff", fontWeight: "bold", stroke: { color: "#000000", width: 2 } }) });
-  rematchText.x = SPLIT_WIDTH / 2; rematchText.y = btnY; rematchText.anchor.set(0.5, 0.5);
-  rematchText.eventMode = "static"; rematchText.cursor = "pointer"; app.stage.addChild(rematchText);
-  const doRematch = () => { window.removeEventListener("keydown", keyHandler); setTimeout(() => cleanupAndReset(), 0); };
-  rematchBg.on("pointertap", doRematch); rematchText.on("pointertap", doRematch);
+  const rematchText = new Text({
+    text: "Rematch",
+    style: new TextStyle({
+      fontFamily: "monospace",
+      fontSize: 18,
+      fill: "#ffffff",
+      fontWeight: "bold",
+      stroke: { color: "#000000", width: 2 },
+    }),
+  });
+  rematchText.x = SPLIT_WIDTH / 2;
+  rematchText.y = btnY;
+  rematchText.anchor.set(0.5, 0.5);
+  rematchText.eventMode = "static";
+  rematchText.cursor = "pointer";
+  app.stage.addChild(rematchText);
+  const doRematch = () => {
+    window.removeEventListener("keydown", keyHandler);
+    setTimeout(() => cleanupAndReset(), 0);
+  };
+  rematchBg.on("pointertap", doRematch);
+  rematchText.on("pointertap", doRematch);
 
   const quitBg = new Graphics();
   quitBg.roundRect(SPLIT_WIDTH / 2 - 80, btnY + 30, 160, 30, 8);
   quitBg.fill({ color: 0x222244, alpha: 0.8 });
-  quitBg.eventMode = "static"; quitBg.cursor = "pointer"; app.stage.addChild(quitBg);
-  const quitText = new Text({ text: "Leave", style: new TextStyle({ fontFamily: "monospace", fontSize: 15, fill: "#aaccff", fontWeight: "bold", stroke: { color: "#000000", width: 2 } }) });
-  quitText.x = SPLIT_WIDTH / 2; quitText.y = btnY + 45; quitText.anchor.set(0.5, 0.5);
-  quitText.eventMode = "static"; quitText.cursor = "pointer"; app.stage.addChild(quitText);
-  const doQuit = () => { window.removeEventListener("keydown", keyHandler); setTimeout(() => cleanupAndGoHome(), 0); };
-  quitBg.on("pointertap", doQuit); quitText.on("pointertap", doQuit);
+  quitBg.eventMode = "static";
+  quitBg.cursor = "pointer";
+  app.stage.addChild(quitBg);
+  const quitText = new Text({
+    text: "Leave",
+    style: new TextStyle({
+      fontFamily: "monospace",
+      fontSize: 15,
+      fill: "#aaccff",
+      fontWeight: "bold",
+      stroke: { color: "#000000", width: 2 },
+    }),
+  });
+  quitText.x = SPLIT_WIDTH / 2;
+  quitText.y = btnY + 45;
+  quitText.anchor.set(0.5, 0.5);
+  quitText.eventMode = "static";
+  quitText.cursor = "pointer";
+  app.stage.addChild(quitText);
+  const doQuit = () => {
+    window.removeEventListener("keydown", keyHandler);
+    setTimeout(() => cleanupAndGoHome(), 0);
+  };
+  quitBg.on("pointertap", doQuit);
+  quitText.on("pointertap", doQuit);
 
   const keyHandler = (e: KeyboardEvent) => {
     if (e.key === "Enter") doRematch();

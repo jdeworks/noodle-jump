@@ -4,11 +4,20 @@ import { describe, test, expect, beforeEach } from "vitest";
 const store: Record<string, string> = {};
 const localStorageMock = {
   getItem: (key: string) => store[key] ?? null,
-  setItem: (key: string, val: string) => { store[key] = val; },
-  removeItem: (key: string) => { delete store[key]; },
-  clear: () => { for (const k of Object.keys(store)) delete store[k]; },
+  setItem: (key: string, val: string) => {
+    store[key] = val;
+  },
+  removeItem: (key: string) => {
+    delete store[key];
+  },
+  clear: () => {
+    for (const k of Object.keys(store)) delete store[k];
+  },
 };
-Object.defineProperty(globalThis, "localStorage", { value: localStorageMock, writable: true });
+Object.defineProperty(globalThis, "localStorage", {
+  value: localStorageMock,
+  writable: true,
+});
 
 import { exportProgress, importProgress } from "../src/systems/ProgressBackup";
 
@@ -46,7 +55,14 @@ describe("ProgressBackup", () => {
   });
 
   test("round-trip preserves cosmetics", () => {
-    const cosmetics = { unlocked: ["trail_fire", "tint_gold"], equipped: { trail: "trail_fire", tint: "tint_gold", theme: "theme_default" } };
+    const cosmetics = {
+      unlocked: ["trail_fire", "tint_gold"],
+      equipped: {
+        trail: "trail_fire",
+        tint: "tint_gold",
+        theme: "theme_default",
+      },
+    };
     localStorage.setItem("noodle-jump-cosmetics", JSON.stringify(cosmetics));
 
     const encoded = exportProgress();

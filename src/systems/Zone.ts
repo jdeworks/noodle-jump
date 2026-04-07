@@ -223,26 +223,10 @@ export function getInterpolatedTheme(platformCount: number): ZoneTheme {
       return {
         background: lerpColor(themeA.background, themeB.background, t),
         platform: lerpColor(themeA.platform, themeB.platform, t),
-        platformBreaking: lerpColor(
-          themeA.platformBreaking,
-          themeB.platformBreaking,
-          t,
-        ),
-        platformBrittle: lerpColor(
-          themeA.platformBrittle,
-          themeB.platformBrittle,
-          t,
-        ),
-        platformMoving: lerpColor(
-          themeA.platformMoving,
-          themeB.platformMoving,
-          t,
-        ),
-        platformLasagna: lerpColor(
-          themeA.platformLasagna,
-          themeB.platformLasagna,
-          t,
-        ),
+        platformBreaking: lerpColor(themeA.platformBreaking, themeB.platformBreaking, t),
+        platformBrittle: lerpColor(themeA.platformBrittle, themeB.platformBrittle, t),
+        platformMoving: lerpColor(themeA.platformMoving, themeB.platformMoving, t),
+        platformLasagna: lerpColor(themeA.platformLasagna, themeB.platformLasagna, t),
         platformConveyor: lerpColor(themeA.platformConveyor, themeB.platformConveyor, t),
         platformSpring: lerpColor(themeA.platformSpring, themeB.platformSpring, t),
         platformIce: lerpColor(themeA.platformIce, themeB.platformIce, t),

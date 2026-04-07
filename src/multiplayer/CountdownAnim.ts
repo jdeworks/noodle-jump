@@ -8,11 +8,7 @@ export class CountdownAnim {
   private goTicks = 0;
 
   /** Update countdown text/dim each frame. Returns true while active. */
-  update(
-    cd: number | undefined,
-    text: Text,
-    dim: Graphics,
-  ): void {
+  update(cd: number | undefined, text: Text, dim: Graphics): void {
     if (this.goTicks === -1) return; // finished
 
     if (this.goTicks > 0) {
@@ -20,9 +16,9 @@ export class CountdownAnim {
       const scale = t < 0.3 ? 1 + (t / 0.3) * 1.2 : 2.2 - t * 0.7;
       text.scale.set(scale);
       const hue = (t * 360) % 360;
-      const r = Math.round(255 * (0.5 + 0.5 * Math.cos(hue * Math.PI / 180)));
-      const g = Math.round(255 * (0.5 + 0.5 * Math.cos((hue - 120) * Math.PI / 180)));
-      const b = Math.round(200 * (0.5 + 0.5 * Math.cos((hue - 240) * Math.PI / 180)));
+      const r = Math.round(255 * (0.5 + 0.5 * Math.cos((hue * Math.PI) / 180)));
+      const g = Math.round(255 * (0.5 + 0.5 * Math.cos(((hue - 120) * Math.PI) / 180)));
+      const b = Math.round(200 * (0.5 + 0.5 * Math.cos(((hue - 240) * Math.PI) / 180)));
       text.style.fill = `rgb(${r},${g},${b})`;
       text.rotation = (Math.random() - 0.5) * 0.08 * (1 - t);
       text.alpha = t > 0.6 ? 1 - (t - 0.6) / 0.4 : 1;

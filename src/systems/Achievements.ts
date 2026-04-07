@@ -247,8 +247,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     id: "speed_demon",
     name: "Speed Demon",
     description: "Reach height 100 in under 30 seconds",
-    condition: (_, g) =>
-      (g?.height ?? 0) >= 100 && (g?.seconds ?? Infinity) <= 30,
+    condition: (_, g) => (g?.height ?? 0) >= 100 && (g?.seconds ?? Infinity) <= 30,
   },
   {
     id: "no_miss_50",
@@ -287,16 +286,13 @@ export const ACHIEVEMENTS: Achievement[] = [
     name: "Golden Chef",
     description: "Earn gold on a daily challenge",
     condition: (_, g) =>
-      g?.dailyMedal === "gold" ||
-      g?.dailyMedal === "platinum" ||
-      g?.dailyMedal === "diamond",
+      g?.dailyMedal === "gold" || g?.dailyMedal === "platinum" || g?.dailyMedal === "diamond",
   },
   {
     id: "daily_platinum",
     name: "Platinum Chef",
     description: "Earn platinum on a daily challenge",
-    condition: (_, g) =>
-      g?.dailyMedal === "platinum" || g?.dailyMedal === "diamond",
+    condition: (_, g) => g?.dailyMedal === "platinum" || g?.dailyMedal === "diamond",
   },
   {
     id: "daily_diamond",

@@ -1,21 +1,17 @@
 /** Enemy entity — pure logic, no PixiJS. */
 
-import {
-  ENEMY_SIZE,
-  ENEMY_SPEED,
-  GAME_WIDTH,
-} from "../config/constants";
+import { ENEMY_SIZE, ENEMY_SPEED, GAME_WIDTH } from "../config/constants";
 
 export type EnemyType = "rat" | "fish" | "alien";
 
 /** Zone-to-enemy mapping. */
 const ZONE_ENEMIES: EnemyType[][] = [
-  ["rat"],          // Zone 1: Kitchen
-  ["fish"],         // Zone 2: Ocean
-  ["alien"],        // Zone 3: Space
-  ["rat"],          // Zone 4: Freezer (ice rats)
-  ["rat", "fish"],  // Zone 5: Volcano (fire creatures)
-  ["fish"],         // Zone 6: Candy (candy fish)
+  ["rat"], // Zone 1: Kitchen
+  ["fish"], // Zone 2: Ocean
+  ["alien"], // Zone 3: Space
+  ["rat"], // Zone 4: Freezer (ice rats)
+  ["rat", "fish"], // Zone 5: Volcano (fire creatures)
+  ["fish"], // Zone 6: Candy (candy fish)
   ["rat", "fish", "alien"], // Zone 7: Final Kitchen (all)
 ];
 
@@ -80,10 +76,7 @@ export function updateEnemies(enemies: EnemyState[], speedScale = 1): EnemyState
 }
 
 /** Remove enemies far below the camera. */
-export function pruneEnemies(
-  enemies: EnemyState[],
-  threshold: number,
-): EnemyState[] {
+export function pruneEnemies(enemies: EnemyState[], threshold: number): EnemyState[] {
   return enemies.filter((e) => e.y < threshold);
 }
 
@@ -101,23 +94,16 @@ export function checkEnemyPlayerCollision(
   for (const e of enemies) {
     if (!e.alive) continue;
     const ey = e.y + yShift;
-    const overlapX =
-      playerX + playerW - padX > e.x && playerX + padX < e.x + e.width;
-    const overlapY =
-      playerY + playerH - padY > ey && playerY + padY < ey + e.height;
+    const overlapX = playerX + playerW - padX > e.x && playerX + padX < e.x + e.width;
+    const overlapY = playerY + playerH - padY > ey && playerY + padY < ey + e.height;
     if (overlapX && overlapY) return e;
   }
   return null;
 }
 
 /** Mark an enemy as dead. */
-export function killEnemy(
-  enemies: EnemyState[],
-  enemyId: number,
-): EnemyState[] {
-  return enemies.map((e) =>
-    e.id === enemyId ? { ...e, alive: false } : e,
-  );
+export function killEnemy(enemies: EnemyState[], enemyId: number): EnemyState[] {
+  return enemies.map((e) => (e.id === enemyId ? { ...e, alive: false } : e));
 }
 
 export function resetEnemyIds(): void {

@@ -112,7 +112,10 @@ export function spawnPowerUps(
   for (let i = 0; i < platforms.length; i++) {
     const platform = platforms[i];
     if (i < POWERUP_SKIP_FIRST) continue;
-    if (cooldown > 0) { cooldown--; continue; }
+    if (cooldown > 0) {
+      cooldown--;
+      continue;
+    }
     if (platform.type !== "static" && platform.type !== "moving") continue;
     if (platform.width > 200) continue;
 
@@ -145,11 +148,9 @@ export function collectPowerUps(
 
   // Swept bounding box
   const sweepLeft = Math.min(px, player.x) - pad;
-  const sweepRight =
-    Math.max(px + player.width, player.x + player.width) + pad;
+  const sweepRight = Math.max(px + player.width, player.x + player.width) + pad;
   const sweepTop = Math.min(py, player.y) - pad;
-  const sweepBottom =
-    Math.max(py + player.height, player.y + player.height) + pad;
+  const sweepBottom = Math.max(py + player.height, player.y + player.height) + pad;
 
   for (let i = 0; i < powerUps.length; i++) {
     const pu = powerUps[i];

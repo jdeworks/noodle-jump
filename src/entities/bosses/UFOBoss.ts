@@ -68,10 +68,7 @@ export const ufoBehavior: BossBehavior = {
     const speed = PROJECTILE_SPEED + boss.phase * 0.3;
 
     // Fire aimed projectiles (attackMultiplier: 2x = twice as fast)
-    const baseInterval = Math.max(
-      MIN_ATTACK_INTERVAL,
-      BASE_ATTACK_INTERVAL - boss.phase * 15,
-    );
+    const baseInterval = Math.max(MIN_ATTACK_INTERVAL, BASE_ATTACK_INTERVAL - boss.phase * 15);
     const interval = Math.max(15, Math.ceil(baseInterval / attackMultiplier));
     if (Math.floor(patternTick / interval) > Math.floor(prevTick / interval)) {
       // Add slight random spread so it's not perfectly aimed
@@ -88,8 +85,7 @@ export const ufoBehavior: BossBehavior = {
     // Spread shot at phase 2+ — fan of 3 aimed projectiles
     if (
       boss.phase >= 2 &&
-      Math.floor(patternTick / (interval * 3)) >
-        Math.floor(prevTick / (interval * 3))
+      Math.floor(patternTick / (interval * 3)) > Math.floor(prevTick / (interval * 3))
     ) {
       for (const angleOffset of [-0.3, 0, 0.3]) {
         const cos = Math.cos(angleOffset);
@@ -116,14 +112,8 @@ export const ufoBehavior: BossBehavior = {
     if (!boss.alive) return false;
     // Player hitting from below = damage
     const pad = 4;
-    const overlapX =
-      player.x + player.width - pad > boss.x &&
-      player.x + pad < boss.x + boss.width;
+    const overlapX = player.x + player.width - pad > boss.x && player.x + pad < boss.x + boss.width;
     const playerBottom = player.y + player.height;
-    return (
-      overlapX &&
-      playerBottom > boss.y + pad &&
-      player.y < boss.y + boss.height * 0.5
-    );
+    return overlapX && playerBottom > boss.y + pad && player.y < boss.y + boss.height * 0.5;
   },
 };

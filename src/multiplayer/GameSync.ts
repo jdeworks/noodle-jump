@@ -127,8 +127,7 @@ export class GameSync {
 
     onPos((data: ArrayBuffer, peerId: string) => {
       const buf = toArrayBuffer(data);
-      if (buf && buf.byteLength === POSITION_BUFFER_SIZE)
-        this.handleRemotePosition(buf, peerId);
+      if (buf && buf.byteLength === POSITION_BUFFER_SIZE) this.handleRemotePosition(buf, peerId);
     });
 
     onEvent((data: string, peerId: string) => {

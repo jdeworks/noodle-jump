@@ -40,25 +40,33 @@ describe("StatsPanel", () => {
       score: 3000, // lower
       height: 300, // higher
       meatballs: 5,
-      combo: 2,    // lower
-      zone: 3,     // higher
+      combo: 2, // lower
+      zone: 3, // higher
       seconds: 30,
     });
     expect(result.bestScore).toBe(5000); // kept old
     expect(result.bestHeight).toBe(300); // updated
-    expect(result.bestCombo).toBe(4);    // kept old
-    expect(result.maxZone).toBe(3);      // updated
+    expect(result.bestCombo).toBe(4); // kept old
+    expect(result.maxZone).toBe(3); // updated
   });
 });
 
 describe("PowerUpDescriptions", () => {
   test("all power-up types have descriptions", () => {
     const expected = [
-      "spaghetti_spring", "fusilli_tornado", "ravioli_rocket",
-      "lasagna_layers", "pepper_sneeze", "meatball_magnet",
+      "spaghetti_spring",
+      "fusilli_tornado",
+      "ravioli_rocket",
+      "lasagna_layers",
+      "pepper_sneeze",
+      "meatball_magnet",
       "pasta_shield",
-      "gnocchi_bounce", "minestrone_soup",
-      "chili_pepper", "soggy_noodle", "garlic_breath", "burnt_toast",
+      "gnocchi_bounce",
+      "minestrone_soup",
+      "chili_pepper",
+      "soggy_noodle",
+      "garlic_breath",
+      "burnt_toast",
     ];
     for (const type of expected) {
       const info = POWER_UP_INFO[type];

@@ -73,7 +73,12 @@ export class PauseOverlay {
     // Pause button for touch/mobile (always visible, top-right)
     this.pauseBtn = new Text({
       text: "⏸",
-      style: new TextStyle({ fontFamily: "monospace", fontSize: 22, fill: "#ffffff", stroke: { color: "#000000", width: 2 } }),
+      style: new TextStyle({
+        fontFamily: "monospace",
+        fontSize: 22,
+        fill: "#ffffff",
+        stroke: { color: "#000000", width: 2 },
+      }),
     });
     this.pauseBtn.x = width - 40;
     this.pauseBtn.y = 14;

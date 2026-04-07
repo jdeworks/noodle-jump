@@ -1,11 +1,7 @@
 /** Shadow playback — replays a recording as InterpolatedState. Pure logic. */
 
 import type { InterpolatedState } from "../multiplayer/InterpolationBuffer";
-import {
-  type ShadowRecording,
-  getSampleCount,
-  getFrame,
-} from "./ShadowRecorder";
+import { type ShadowRecording, getSampleCount, getFrame } from "./ShadowRecorder";
 
 export interface ShadowPlayback {
   /** Advance one game tick. Returns interpolated state, or null if finished. */
@@ -19,9 +15,7 @@ export interface ShadowPlayback {
 }
 
 /** Create a shadow playback from a recording. */
-export function createShadowPlayback(
-  recording: ShadowRecording,
-): ShadowPlayback {
+export function createShadowPlayback(recording: ShadowRecording): ShadowPlayback {
   const totalSamples = getSampleCount(recording);
   const interval = recording.sampleInterval || 3;
   let tickCount = 0;

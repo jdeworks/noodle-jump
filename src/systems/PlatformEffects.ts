@@ -88,8 +88,7 @@ export function applyWeightedTilt(
 
   let tiltAngle = platform.tiltAngle ?? 0;
   const targetTilt = normalizedOffset * PLATFORM_WEIGHTED_MAX_TILT;
-  tiltAngle +=
-    (targetTilt - tiltAngle) * PLATFORM_WEIGHTED_TILT_RATE * 3 * speedScale;
+  tiltAngle += (targetTilt - tiltAngle) * PLATFORM_WEIGHTED_TILT_RATE * 3 * speedScale;
   tiltAngle = Math.max(
     -PLATFORM_WEIGHTED_MAX_TILT,
     Math.min(PLATFORM_WEIGHTED_MAX_TILT, tiltAngle),
@@ -105,8 +104,7 @@ export function applyWeightedSlide(
   speedScale = 1,
 ): PlayerState {
   const tilt = platform.tiltAngle ?? 0;
-  const slideForce =
-    Math.sin(tilt) * PLATFORM_WEIGHTED_SLIDE_SPEED * speedScale;
+  const slideForce = Math.sin(tilt) * PLATFORM_WEIGHTED_SLIDE_SPEED * speedScale;
   return { ...player, x: player.x + slideForce };
 }
 
@@ -133,9 +131,7 @@ export function resolveTeleport(
   const target =
     above.length > 0
       ? above.reduce((best, p) =>
-          Math.abs(p.y - landedPlatform.y) < Math.abs(best.y - landedPlatform.y)
-            ? p
-            : best,
+          Math.abs(p.y - landedPlatform.y) < Math.abs(best.y - landedPlatform.y) ? p : best,
         )
       : candidates[0]; // fallback to any
 

@@ -8,8 +8,13 @@ import { getUITheme } from "./ThemeUI";
 import type { GameWorldState } from "../scenes/GameState";
 
 const ZONE_NAMES = [
-  "Kitchen", "Boiling Pot", "Space", "Freezer",
-  "Volcano", "Candy", "Final Kitchen",
+  "Kitchen",
+  "Boiling Pot",
+  "Space",
+  "Freezer",
+  "Volcano",
+  "Candy",
+  "Final Kitchen",
 ];
 const ZONE_THRESHOLDS = [0, 80, 280, 500, 750, 1000, 1300];
 
@@ -81,8 +86,10 @@ export class HUD {
     const fsBtn = new Text({
       text: "[ ]",
       style: new TextStyle({
-        fontFamily: "monospace", fontSize: 14,
-        fill: "#aaaaaa", fontWeight: "bold",
+        fontFamily: "monospace",
+        fontSize: 14,
+        fill: "#aaaaaa",
+        fontWeight: "bold",
       }),
     });
     fsBtn.x = GAME_WIDTH - 60;
@@ -101,8 +108,10 @@ export class HUD {
     this.pauseBtn = new Text({
       text: "||",
       style: new TextStyle({
-        fontFamily: "monospace", fontSize: 20,
-        fill: "#dddddd", fontWeight: "bold",
+        fontFamily: "monospace",
+        fontSize: 20,
+        fill: "#dddddd",
+        fontWeight: "bold",
         letterSpacing: 3,
       }),
     });
@@ -176,8 +185,10 @@ export class HUD {
     this.fpsText = new Text({
       text: "",
       style: new TextStyle({
-        fontFamily: "monospace", fontSize: 11,
-        fill: "#00ff00", fontWeight: "bold",
+        fontFamily: "monospace",
+        fontSize: 11,
+        fill: "#00ff00",
+        fontWeight: "bold",
         stroke: { color: "#000000", width: 2 },
       }),
     });
@@ -188,10 +199,14 @@ export class HUD {
   }
 
   /** Set pause callback. */
-  set onPause(fn: () => void) { this._onPause = fn; }
+  set onPause(fn: () => void) {
+    this._onPause = fn;
+  }
 
   /** Get FPS text element so it can be reparented to top of stage. */
-  getFpsContainer(): Text { return this.fpsText; }
+  getFpsContainer(): Text {
+    return this.fpsText;
+  }
 
   /** Update all HUD elements from game state. */
   update(state: GameWorldState, elapsedSeconds: number): void {

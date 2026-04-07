@@ -36,7 +36,15 @@ export class LiveLeaderboard {
   }
 
   addPlayer(peerId: string, label: string, colorIndex: number, isLocal: boolean): void {
-    this.entries.set(peerId, { peerId, label, height: 0, dead: false, disconnected: false, isLocal, colorIndex });
+    this.entries.set(peerId, {
+      peerId,
+      label,
+      height: 0,
+      dead: false,
+      disconnected: false,
+      isLocal,
+      colorIndex,
+    });
   }
 
   removePlayer(peerId: string): void {
@@ -55,7 +63,10 @@ export class LiveLeaderboard {
 
   setDisconnected(peerId: string): void {
     const e = this.entries.get(peerId);
-    if (e) { e.disconnected = true; e.dead = true; }
+    if (e) {
+      e.disconnected = true;
+      e.dead = true;
+    }
   }
 
   /** Call each frame; internally throttles to UPDATE_MS. */
@@ -76,7 +87,9 @@ export class LiveLeaderboard {
       const t = new Text({
         text: "",
         style: new TextStyle({
-          fontFamily: "monospace", fontSize: 10, fill: "#ffffff",
+          fontFamily: "monospace",
+          fontSize: 10,
+          fill: "#ffffff",
           stroke: { color: "#000000", width: 1 },
         }),
       });

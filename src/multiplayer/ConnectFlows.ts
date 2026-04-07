@@ -128,30 +128,33 @@ export async function doQuickCreate(ctx: MenuContext): Promise<void> {
     view.addChild(waitText);
 
     const copyBtnY = 270;
-    ctx.addButton(view, "Copy Code", copyBtnY, 180, 36,
-      (GAME_WIDTH - 180) / 2, getUITheme().buttonBg, async () => {
+    ctx.addButton(
+      view,
+      "Copy Code",
+      copyBtnY,
+      180,
+      36,
+      (GAME_WIDTH - 180) / 2,
+      getUITheme().buttonBg,
+      async () => {
         const ok = await copyToClipboard(code);
         if (ok) showHtmlToast("Copied!");
-      });
+      },
+    );
 
-    ctx.addButton(view, "Cancel", 330, 160, 36,
-      (GAME_WIDTH - 160) / 2, 0x993333, () => {
-        ctx.getConnection()?.disconnect();
-        ctx.showQuickConnect();
-      });
+    ctx.addButton(view, "Cancel", 330, 160, 36, (GAME_WIDTH - 160) / 2, 0x993333, () => {
+      ctx.getConnection()?.disconnect();
+      ctx.showQuickConnect();
+    });
   } catch {
     statusText.text = "Failed to create room.";
-    ctx.addButton(view, "Back", 200, 160, 36,
-      (GAME_WIDTH - 160) / 2, getUITheme().buttonBg, () => {
-        ctx.showQuickConnect();
-      });
+    ctx.addButton(view, "Back", 200, 160, 36, (GAME_WIDTH - 160) / 2, getUITheme().buttonBg, () => {
+      ctx.showQuickConnect();
+    });
   }
 }
 
-export async function doQuickJoin(
-  ctx: MenuContext,
-  code: string,
-): Promise<void> {
+export async function doQuickJoin(ctx: MenuContext, code: string): Promise<void> {
   ctx.clearView();
   const view = new Container();
   ctx.setCurrentView(view);
@@ -173,10 +176,18 @@ export async function doQuickJoin(
     await connection.joinRoom(signaling, "nostr", code);
   } catch {
     statusText.text = "Failed to connect.";
-    ctx.addButton(view, "Back", GAME_HEIGHT * 0.55, 160, 36,
-      (GAME_WIDTH - 160) / 2, getUITheme().buttonBg, () => {
+    ctx.addButton(
+      view,
+      "Back",
+      GAME_HEIGHT * 0.55,
+      160,
+      36,
+      (GAME_WIDTH - 160) / 2,
+      getUITheme().buttonBg,
+      () => {
         ctx.showQuickConnect();
-      });
+      },
+    );
   }
 }
 
@@ -220,11 +231,19 @@ export async function doPrivateCreate(ctx: MenuContext): Promise<void> {
 
     let btnY = Math.min(codeText.y + codeText.height + 15, 280);
 
-    ctx.addButton(view, "Copy Code", btnY, 180, 34,
-      (GAME_WIDTH - 180) / 2, getUITheme().buttonBg, async () => {
+    ctx.addButton(
+      view,
+      "Copy Code",
+      btnY,
+      180,
+      34,
+      (GAME_WIDTH - 180) / 2,
+      getUITheme().buttonBg,
+      async () => {
         const ok = await copyToClipboard(offerCode);
         if (ok) showHtmlToast("Copied!");
-      });
+      },
+    );
     btnY += 50;
 
     const step2Text = new Text({
@@ -241,7 +260,8 @@ export async function doPrivateCreate(ctx: MenuContext): Promise<void> {
     const { element: respInput, cleanup: cleanupInput } = createCodeInput(
       "Paste response code here...",
       async (val) => {
-        cleanupInput(); cleanupBtn();
+        cleanupInput();
+        cleanupBtn();
         if (val.startsWith("A")) {
           await ctx.getConnection()?.acceptResponse(val);
         } else {
@@ -251,38 +271,39 @@ export async function doPrivateCreate(ctx: MenuContext): Promise<void> {
       },
       70,
     );
-    const { cleanup: cleanupBtn } = createSubmitButton("Connect", async () => {
-      const val = respInput.value.trim();
-      if (!val) return;
-      cleanupInput(); cleanupBtn();
-      if (val.startsWith("A")) {
-        await ctx.getConnection()?.acceptResponse(val);
-      } else {
-        step2Text.text = "Invalid code. Must start with 'A'.";
-        step2Text.style.fill = "#ff6666";
-      }
-    }, 70);
+    const { cleanup: cleanupBtn } = createSubmitButton(
+      "Connect",
+      async () => {
+        const val = respInput.value.trim();
+        if (!val) return;
+        cleanupInput();
+        cleanupBtn();
+        if (val.startsWith("A")) {
+          await ctx.getConnection()?.acceptResponse(val);
+        } else {
+          step2Text.text = "Invalid code. Must start with 'A'.";
+          step2Text.style.fill = "#ff6666";
+        }
+      },
+      70,
+    );
     btnY += 100;
 
-    ctx.addButton(view, "Cancel", btnY, 160, 34,
-      (GAME_WIDTH - 160) / 2, 0x993333, () => {
-        cleanupInput(); cleanupBtn();
-        ctx.getConnection()?.disconnect();
-        ctx.showPrivateConnect();
-      });
+    ctx.addButton(view, "Cancel", btnY, 160, 34, (GAME_WIDTH - 160) / 2, 0x993333, () => {
+      cleanupInput();
+      cleanupBtn();
+      ctx.getConnection()?.disconnect();
+      ctx.showPrivateConnect();
+    });
   } catch {
     statusText.text = "Failed to generate offer.";
-    ctx.addButton(view, "Back", 200, 160, 36,
-      (GAME_WIDTH - 160) / 2, getUITheme().buttonBg, () => {
-        ctx.showPrivateConnect();
-      });
+    ctx.addButton(view, "Back", 200, 160, 36, (GAME_WIDTH - 160) / 2, getUITheme().buttonBg, () => {
+      ctx.showPrivateConnect();
+    });
   }
 }
 
-export async function doPrivateJoin(
-  ctx: MenuContext,
-  hostCode: string,
-): Promise<void> {
+export async function doPrivateJoin(ctx: MenuContext, hostCode: string): Promise<void> {
   ctx.clearView();
   const view = new Container();
   ctx.setCurrentView(view);
@@ -324,11 +345,19 @@ export async function doPrivateJoin(
 
     let btnY = Math.min(codeText.y + codeText.height + 15, 280);
 
-    ctx.addButton(view, "Copy Code", btnY, 180, 34,
-      (GAME_WIDTH - 180) / 2, getUITheme().buttonBg, async () => {
+    ctx.addButton(
+      view,
+      "Copy Code",
+      btnY,
+      180,
+      34,
+      (GAME_WIDTH - 180) / 2,
+      getUITheme().buttonBg,
+      async () => {
         const ok = await copyToClipboard(answerCode as string);
         if (ok) showHtmlToast("Copied!");
-      });
+      },
+    );
     btnY += 50;
 
     const waitText = new Text({
@@ -341,16 +370,14 @@ export async function doPrivateJoin(
     view.addChild(waitText);
     btnY += 40;
 
-    ctx.addButton(view, "Cancel", btnY, 160, 34,
-      (GAME_WIDTH - 160) / 2, 0x993333, () => {
-        ctx.getConnection()?.disconnect();
-        ctx.showPrivateConnect();
-      });
+    ctx.addButton(view, "Cancel", btnY, 160, 34, (GAME_WIDTH - 160) / 2, 0x993333, () => {
+      ctx.getConnection()?.disconnect();
+      ctx.showPrivateConnect();
+    });
   } catch {
     statusText.text = "Invalid host code or connection failed.";
-    ctx.addButton(view, "Back", 200, 160, 36,
-      (GAME_WIDTH - 160) / 2, getUITheme().buttonBg, () => {
-        ctx.showPrivateConnect();
-      });
+    ctx.addButton(view, "Back", 200, 160, 36, (GAME_WIDTH - 160) / 2, getUITheme().buttonBg, () => {
+      ctx.showPrivateConnect();
+    });
   }
 }

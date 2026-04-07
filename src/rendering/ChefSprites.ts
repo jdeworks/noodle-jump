@@ -19,22 +19,10 @@ export function drawChefOnRocket(
   const ox = (w - rocketW) / 2; // center offset
 
   // ── Rocket body (ravioli shaped — rounded pillow) ──
-  gfx.roundRect(
-    ox + rocketW * 0.15,
-    rocketH * 0.05,
-    rocketW * 0.7,
-    rocketH * 0.55,
-    10,
-  );
+  gfx.roundRect(ox + rocketW * 0.15, rocketH * 0.05, rocketW * 0.7, rocketH * 0.55, 10);
   gfx.fill(0xc0392b); // tomato red
   // Highlight
-  gfx.roundRect(
-    ox + rocketW * 0.25,
-    rocketH * 0.08,
-    rocketW * 0.3,
-    rocketH * 0.15,
-    6,
-  );
+  gfx.roundRect(ox + rocketW * 0.25, rocketH * 0.08, rocketW * 0.3, rocketH * 0.15, 6);
   gfx.fill({ color: 0xffffff, alpha: 0.25 });
 
   // Ravioli crimp edges
@@ -47,12 +35,7 @@ export function drawChefOnRocket(
 
   // ── Nose cone ──
   gfx.moveTo(ox + rocketW * 0.3, rocketH * 0.05);
-  gfx.quadraticCurveTo(
-    ox + rocketW * 0.5,
-    -rocketH * 0.1,
-    ox + rocketW * 0.7,
-    rocketH * 0.05,
-  );
+  gfx.quadraticCurveTo(ox + rocketW * 0.5, -rocketH * 0.1, ox + rocketW * 0.7, rocketH * 0.05);
   gfx.fill(0xe74c3c);
 
   // Window (porthole)
@@ -137,7 +120,10 @@ export function drawChef(
     const charId = getSelectedCharacter();
     if (charId !== "chef") {
       drawCharacter(gfx, w, h, charId);
-      if (tint != null) { gfx.roundRect(0, 0, w, h, 4); gfx.fill({ color: tint, alpha: 0.2 }); }
+      if (tint != null) {
+        gfx.roundRect(0, 0, w, h, 4);
+        gfx.fill({ color: tint, alpha: 0.2 });
+      }
       return;
     }
   }
@@ -234,31 +220,41 @@ export function drawChef(
 
   // Eyes — expression changes per effect
   if (effectType === "chili_pepper") {
-    gfx.moveTo(w * 0.3, h * 0.3); gfx.lineTo(w * 0.4, h * 0.36);
-    gfx.moveTo(w * 0.4, h * 0.3); gfx.lineTo(w * 0.3, h * 0.36);
-    gfx.moveTo(w * 0.6, h * 0.3); gfx.lineTo(w * 0.7, h * 0.36);
-    gfx.moveTo(w * 0.7, h * 0.3); gfx.lineTo(w * 0.6, h * 0.36);
+    gfx.moveTo(w * 0.3, h * 0.3);
+    gfx.lineTo(w * 0.4, h * 0.36);
+    gfx.moveTo(w * 0.4, h * 0.3);
+    gfx.lineTo(w * 0.3, h * 0.36);
+    gfx.moveTo(w * 0.6, h * 0.3);
+    gfx.lineTo(w * 0.7, h * 0.36);
+    gfx.moveTo(w * 0.7, h * 0.3);
+    gfx.lineTo(w * 0.6, h * 0.36);
     gfx.stroke({ width: 1.5, color: 0xff0000 });
   } else if (effectType === "soggy_noodle") {
     gfx.circle(w * 0.35, h * 0.34, 2);
-    gfx.circle(w * 0.65, h * 0.34, 2); gfx.fill(0x222222);
+    gfx.circle(w * 0.65, h * 0.34, 2);
+    gfx.fill(0x222222);
     gfx.circle(w * 0.35, h * 0.39, 1.2);
-    gfx.circle(w * 0.65, h * 0.39, 1.2); gfx.fill(0x4499ee);
+    gfx.circle(w * 0.65, h * 0.39, 1.2);
+    gfx.fill(0x4499ee);
   } else if (effectType === "garlic_breath") {
     gfx.circle(w * 0.35, h * 0.33, 2.5);
     gfx.circle(w * 0.65, h * 0.33, 2.5);
     gfx.stroke({ width: 1, color: 0x228822 });
   } else if (effectType === "burnt_toast") {
     gfx.circle(w * 0.35, h * 0.33, 1.5);
-    gfx.circle(w * 0.65, h * 0.33, 1.5); gfx.fill(0x444444);
+    gfx.circle(w * 0.65, h * 0.33, 1.5);
+    gfx.fill(0x444444);
   } else {
-    gfx.circle(w * 0.35, h * 0.33, 2); gfx.fill(0x222222);
-    gfx.circle(w * 0.65, h * 0.33, 2); gfx.fill(0x222222);
+    gfx.circle(w * 0.35, h * 0.33, 2);
+    gfx.fill(0x222222);
+    gfx.circle(w * 0.65, h * 0.33, 2);
+    gfx.fill(0x222222);
   }
 
   // Mouth
   if (effectType === "chili_pepper") {
-    gfx.circle(w * 0.5, h * 0.41, 3); gfx.fill(0x220000);
+    gfx.circle(w * 0.5, h * 0.41, 3);
+    gfx.fill(0x220000);
   } else if (effectType === "soggy_noodle" || effectType === "garlic_breath") {
     gfx.moveTo(w * 0.35, h * 0.42);
     gfx.quadraticCurveTo(w * 0.5, h * 0.38, w * 0.65, h * 0.42);
@@ -285,17 +281,15 @@ export function drawChef(
 
   // Apron
   const apronColor =
-    effectType === "soggy_noodle"
-      ? 0x88bbdd
-      : effectType === "burnt_toast"
-        ? 0x554433
-        : 0xe8e8e8;
+    effectType === "soggy_noodle" ? 0x88bbdd : effectType === "burnt_toast" ? 0x554433 : 0xe8e8e8;
   gfx.roundRect(w * 0.25, h * 0.5, w * 0.5, h * 0.3, 2);
   gfx.fill(apronColor);
 
   // Feet
-  gfx.roundRect(w * 0.15, h * 0.88, w * 0.25, h * 0.12, 3); gfx.fill(0x333333);
-  gfx.roundRect(w * 0.6, h * 0.88, w * 0.25, h * 0.12, 3); gfx.fill(0x333333);
+  gfx.roundRect(w * 0.15, h * 0.88, w * 0.25, h * 0.12, 3);
+  gfx.fill(0x333333);
+  gfx.roundRect(w * 0.6, h * 0.88, w * 0.25, h * 0.12, 3);
+  gfx.fill(0x333333);
 
   // Power-up tint overlay
   if (tint != null) {
@@ -303,4 +297,3 @@ export function drawChef(
     gfx.fill({ color: tint, alpha: 0.2 });
   }
 }
-

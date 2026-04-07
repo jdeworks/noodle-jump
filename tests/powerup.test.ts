@@ -129,23 +129,16 @@ describe("PowerUp", () => {
     );
     expect(tornado.player.vy).toBe(FUSILLI_TORNADO_VELOCITY);
 
-    const rocket = tickEffect(
-      { ...player, vy: 5 },
-      { type: "ravioli_rocket", ticksRemaining: 10 },
-    );
+    const rocket = tickEffect({ ...player, vy: 5 }, { type: "ravioli_rocket", ticksRemaining: 10 });
     expect(rocket.player.vy).toBe(RAVIOLI_ROCKET_VELOCITY);
   });
 
   test("spawnPowerUps respects cooldown", () => {
-    const platforms = Array.from({ length: 50 }, (_, i) =>
-      createPlatform(100, 300 - i * 80),
-    );
+    const platforms = Array.from({ length: 50 }, (_, i) => createPlatform(100, 300 - i * 80));
     for (let run = 0; run < 5; run++) {
       const pus = spawnPowerUps(platforms);
       for (let i = 1; i < pus.length; i++) {
-        const prevIdx = platforms.findIndex(
-          (p) => p.id === pus[i - 1].platformId,
-        );
+        const prevIdx = platforms.findIndex((p) => p.id === pus[i - 1].platformId);
         const currIdx = platforms.findIndex((p) => p.id === pus[i].platformId);
         expect(currIdx - prevIdx).toBeGreaterThan(1);
       }

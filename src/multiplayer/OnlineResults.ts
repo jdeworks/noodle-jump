@@ -13,16 +13,20 @@ export function showOnlineResults(
   onLeave: () => void,
 ): void {
   const cx = GAME_WIDTH / 2;
-  let sorted: PlayerResult[]; let winner: string;
+  let sorted: PlayerResult[];
+  let winner: string;
   if (mode === "first-to-die") {
     // In first-to-die: survivors win, dead players lose. Sort: alive first, then by height.
-    sorted = [...results].sort((a, b) => (a.dead === b.dead ? b.height - a.height : a.dead ? 1 : -1));
+    sorted = [...results].sort((a, b) =>
+      a.dead === b.dead ? b.height - a.height : a.dead ? 1 : -1,
+    );
     const localR = results.find((r) => r.isLocal);
     winner = localR?.dead ? "You Died First!" : "You Survived!";
   } else {
     sorted = [...results].sort((a, b) => b.height - a.height);
     const localIdx = sorted.findIndex((r) => r.isLocal);
-    const localH = sorted[localIdx]?.height ?? 0; const topH = sorted[0]?.height ?? 0;
+    const localH = sorted[localIdx]?.height ?? 0;
+    const topH = sorted[0]?.height ?? 0;
     const tiedForFirst = localH === topH && sorted.filter((r) => r.height === topH).length > 1;
     winner = tiedForFirst ? "It's a Tie!" : localIdx === 0 ? "You Win!" : `#${localIdx + 1}`;
     if (mode === "timed-2min") winner = `Time's Up! ${winner}`;
@@ -36,16 +40,27 @@ export function showOnlineResults(
   const wt = new Text({
     text: mode === "timed-2min" ? `Time's Up! ${winner}` : winner,
     style: new TextStyle({
-      fontFamily: "monospace", fontSize: 26, fontWeight: "bold",
-      fill: winner.includes("Win") || winner.includes("Survived") ? "#44ff44" : winner.includes("Tie") ? "#ffdd44" : "#ff8866",
+      fontFamily: "monospace",
+      fontSize: 26,
+      fontWeight: "bold",
+      fill:
+        winner.includes("Win") || winner.includes("Survived")
+          ? "#44ff44"
+          : winner.includes("Tie")
+            ? "#ffdd44"
+            : "#ff8866",
       stroke: { color: "#000000", width: 4 },
     }),
   });
-  wt.x = cx; wt.y = 60; wt.anchor.set(0.5, 0.5);
+  wt.x = cx;
+  wt.y = 60;
+  wt.anchor.set(0.5, 0.5);
   app.stage.addChild(wt);
 
   const rowStyle = new TextStyle({
-    fontFamily: "monospace", fontSize: 13, fill: "#ffffff",
+    fontFamily: "monospace",
+    fontSize: 13,
+    fill: "#ffffff",
     stroke: { color: "#000000", width: 2 },
   });
 
@@ -65,11 +80,14 @@ export function showOnlineResults(
     const txt = new Text({
       text: `${i + 1}. ${r.label}  ${r.height}m`,
       style: new TextStyle({
-        ...rowStyle, fill: isMe ? "#ffdd44" : "#ffffff",
+        ...rowStyle,
+        fill: isMe ? "#ffdd44" : "#ffffff",
         fontWeight: isMe ? "bold" : "normal",
       }),
     });
-    txt.x = cx - 125; txt.y = y; txt.anchor.set(0, 0.5);
+    txt.x = cx - 125;
+    txt.y = y;
+    txt.anchor.set(0, 0.5);
     app.stage.addChild(txt);
   }
 
@@ -78,7 +96,8 @@ export function showOnlineResults(
       text: `+${sorted.length - maxRows} more`,
       style: new TextStyle({ fontFamily: "monospace", fontSize: 11, fill: "#888888" }),
     });
-    more.x = cx; more.y = 100 + maxRows * 24;
+    more.x = cx;
+    more.y = 100 + maxRows * 24;
     more.anchor.set(0.5, 0.5);
     app.stage.addChild(more);
   }
@@ -95,12 +114,24 @@ export function showOnlineResults(
   leaveTx.on("pointertap", () => setTimeout(onLeave, 0));
 }
 
-function makeBtn(app: Application, x: number, y: number, w: number, h: number, color: number, stroke: boolean): Graphics {
+function makeBtn(
+  app: Application,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  color: number,
+  stroke: boolean,
+): Graphics {
   const g = new Graphics();
   g.roundRect(x - w / 2, y - h / 2, w, h, 10);
   g.fill({ color, alpha: 0.9 });
-  if (stroke) { g.roundRect(x - w / 2, y - h / 2, w, h, 10); g.stroke({ width: 1.5, color: 0x6688bb, alpha: 0.5 }); }
-  g.eventMode = "static"; g.cursor = "pointer";
+  if (stroke) {
+    g.roundRect(x - w / 2, y - h / 2, w, h, 10);
+    g.stroke({ width: 1.5, color: 0x6688bb, alpha: 0.5 });
+  }
+  g.eventMode = "static";
+  g.cursor = "pointer";
   app.stage.addChild(g);
   return g;
 }
@@ -109,12 +140,18 @@ function makeLbl(app: Application, text: string, x: number, y: number, size: num
   const t = new Text({
     text,
     style: new TextStyle({
-      fontFamily: "monospace", fontSize: size, fill: "#ffffff",
-      fontWeight: "bold", stroke: { color: "#000000", width: 2 },
+      fontFamily: "monospace",
+      fontSize: size,
+      fill: "#ffffff",
+      fontWeight: "bold",
+      stroke: { color: "#000000", width: 2 },
     }),
   });
-  t.x = x; t.y = y; t.anchor.set(0.5, 0.5);
-  t.eventMode = "static"; t.cursor = "pointer";
+  t.x = x;
+  t.y = y;
+  t.anchor.set(0.5, 0.5);
+  t.eventMode = "static";
+  t.cursor = "pointer";
   app.stage.addChild(t);
   return t;
 }

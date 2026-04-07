@@ -1,10 +1,6 @@
 import { describe, test, expect, beforeEach } from "vitest";
 import { createInitialState } from "../src/scenes/GameState";
-import {
-  tickGameWorld,
-  startCountdown,
-  togglePause,
-} from "../src/scenes/GameLoop";
+import { tickGameWorld, startCountdown, togglePause } from "../src/scenes/GameLoop";
 import { resetPlatformIds } from "../src/entities/Platform";
 import { resetPowerUpIds } from "../src/entities/PowerUp";
 import { resetCollectibleIds } from "../src/entities/Collectible";

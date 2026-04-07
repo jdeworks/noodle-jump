@@ -40,10 +40,7 @@ export function createScoreState(): ScoreState {
 }
 
 /** Update height-based score from player Y position. */
-export function updateHeightScore(
-  state: ScoreState,
-  playerY: number,
-): ScoreState {
+export function updateHeightScore(state: ScoreState, playerY: number): ScoreState {
   const currentHeight = Math.max(0, Math.floor((GAME_HEIGHT - playerY) / 10));
   if (currentHeight <= state.highestHeight) return state;
 
@@ -59,10 +56,7 @@ export function updateHeightScore(
 /** Add points for collecting a meatball with combo multiplier. */
 export function addMeatballScore(state: ScoreState, count: number): ScoreState {
   const newCombo = state.comboCount + count;
-  const newMultiplier = Math.min(
-    COMBO_MAX_MULTIPLIER,
-    1 + Math.floor(newCombo / 2),
-  );
+  const newMultiplier = Math.min(COMBO_MAX_MULTIPLIER, 1 + Math.floor(newCombo / 2));
   const points = count * MEATBALL_POINTS * state.comboMultiplier;
   return {
     ...state,
@@ -92,8 +86,7 @@ export function addCloseCallBonus(state: ScoreState): ScoreState {
 /** Record a platform landing and award streak bonus every N landings. */
 export function addLandingStreak(state: ScoreState): ScoreState {
   const streak = state.landingStreak + 1;
-  const bonus =
-    streak % LANDING_STREAK_INTERVAL === 0 ? LANDING_STREAK_BONUS : 0;
+  const bonus = streak % LANDING_STREAK_INTERVAL === 0 ? LANDING_STREAK_BONUS : 0;
   return { ...state, landingStreak: streak, points: state.points + bonus };
 }
 

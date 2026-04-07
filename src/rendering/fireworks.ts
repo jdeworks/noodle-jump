@@ -4,8 +4,8 @@ import { Container, Graphics } from "pixi.js";
 import { GAME_WIDTH, GAME_HEIGHT } from "../config/constants";
 
 const FIREWORK_COLORS = [
-  0xff4444, 0x44ff44, 0x4444ff, 0xffff44, 0xff44ff, 0x44ffff, 0xff8800,
-  0xf0c050, 0xff6688, 0x88ff66, 0x6688ff, 0xffaa44,
+  0xff4444, 0x44ff44, 0x4444ff, 0xffff44, 0xff44ff, 0x44ffff, 0xff8800, 0xf0c050, 0xff6688,
+  0x88ff66, 0x6688ff, 0xffaa44,
 ];
 
 interface Particle {
@@ -37,8 +37,7 @@ export class FireworkDisplay {
       const delay = i * 18 + Math.floor(Math.random() * 10);
       const cx = GAME_WIDTH * (0.1 + Math.random() * 0.8);
       const cy = GAME_HEIGHT * (0.1 + Math.random() * 0.6);
-      const color =
-        FIREWORK_COLORS[Math.floor(Math.random() * FIREWORK_COLORS.length)];
+      const color = FIREWORK_COLORS[Math.floor(Math.random() * FIREWORK_COLORS.length)];
       const particleCount = 30 + Math.floor(Math.random() * 15);
 
       const particles: Particle[] = [];
@@ -50,10 +49,8 @@ export class FireworkDisplay {
         } else {
           gfx.circle(0, 0, size * 0.4);
         }
-        const r =
-          ((color >> 16) & 0xff) + Math.floor((Math.random() - 0.5) * 40);
-        const g =
-          ((color >> 8) & 0xff) + Math.floor((Math.random() - 0.5) * 40);
+        const r = ((color >> 16) & 0xff) + Math.floor((Math.random() - 0.5) * 40);
+        const g = ((color >> 8) & 0xff) + Math.floor((Math.random() - 0.5) * 40);
         const b = (color & 0xff) + Math.floor((Math.random() - 0.5) * 40);
         const variedColor =
           (Math.max(0, Math.min(255, r)) << 16) |
@@ -65,8 +62,7 @@ export class FireworkDisplay {
         gfx.visible = false;
         this.container.addChild(gfx);
 
-        const angle =
-          (p / particleCount) * Math.PI * 2 + (Math.random() - 0.5) * 0.5;
+        const angle = (p / particleCount) * Math.PI * 2 + (Math.random() - 0.5) * 0.5;
         const speed = 4 + Math.random() * 7;
         const life = 50 + Math.floor(Math.random() * 30);
 

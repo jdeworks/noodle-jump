@@ -3,12 +3,7 @@
 import { Graphics } from "pixi.js";
 
 /** Draw the inner icon for a power-up based on its type. */
-export function drawPowerUpIcon(
-  gfx: Graphics,
-  s: number,
-  type: string,
-  _color: number,
-): void {
+export function drawPowerUpIcon(gfx: Graphics, s: number, type: string, _color: number): void {
   switch (type) {
     // ── Positive power-ups ─────────────────────────────────────────
     case "spaghetti_spring": {

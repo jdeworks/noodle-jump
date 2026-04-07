@@ -35,9 +35,12 @@ export interface BossState {
   deathTicks?: number;
   /** Jump arc: start position, target position, progress (0-1). */
   jumpArc?: {
-    startX: number; startY: number;
-    targetX: number; targetY: number;
-    progress: number; duration: number;
+    startX: number;
+    startY: number;
+    targetX: number;
+    targetY: number;
+    progress: number;
+    duration: number;
     targetPlatformId?: number;
   };
 }
@@ -73,7 +76,10 @@ export interface BossBehavior {
 }
 
 /** Damage a boss. Returns updated state + killed flag. */
-export function damageBoss(boss: BossState): { boss: BossState; killed: boolean } {
+export function damageBoss(boss: BossState): {
+  boss: BossState;
+  killed: boolean;
+} {
   const health = boss.health - 1;
   const phase = Math.floor((1 - health / boss.maxHealth) * 3);
   if (health <= 0) {

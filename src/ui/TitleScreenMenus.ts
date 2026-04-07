@@ -11,7 +11,10 @@ import { MultiplayerMenu } from "../multiplayer/MultiplayerMenu";
 import { showTitleScreen } from "./TitleScreenView";
 import type { ParallaxBackground } from "../systems/Parallax";
 
-type EvTarget = { eventMode?: string; on: (e: string, fn: (e: Event) => void) => void };
+type EvTarget = {
+  eventMode?: string;
+  on: (e: string, fn: (e: Event) => void) => void;
+};
 
 export interface TitleMenuContext {
   app: Application;
@@ -35,11 +38,16 @@ export interface TitleMenuResult {
 export function setupTitleMenus(
   ctx: TitleMenuContext,
   buttons: {
-    howBg: Graphics; howText: EvTarget;
-    customBg: Graphics; customText: EvTarget;
-    custBg: Graphics; custText: EvTarget;
-    dailyBg: Graphics; dailyText: EvTarget;
-    mpBg: Graphics; mpText: EvTarget;
+    howBg: Graphics;
+    howText: EvTarget;
+    customBg: Graphics;
+    customText: EvTarget;
+    custBg: Graphics;
+    custText: EvTarget;
+    dailyBg: Graphics;
+    dailyText: EvTarget;
+    mpBg: Graphics;
+    mpText: EvTarget;
   },
 ): TitleMenuResult {
   const { app, titleContainer, contentGroup, parallax, onStartGame } = ctx;
@@ -47,10 +55,12 @@ export function setupTitleMenus(
   const cleanupAndLaunch = (config?: RunConfig) => {
     const hk = ctx.getHandleKey();
     if (hk) window.removeEventListener("keydown", hk);
-    initAudio(); playMusic(0);
+    initAudio();
+    playMusic(0);
     const tt = ctx.getTitleTicker();
     if (tt) app.ticker.remove(tt);
-    ctx.setTitleDestroyed(); parallax.destroy();
+    ctx.setTitleDestroyed();
+    parallax.destroy();
     app.stage.removeChild(titleContainer);
     titleContainer.destroy({ children: true });
     onStartGame(config);
@@ -58,7 +68,11 @@ export function setupTitleMenus(
 
   // Explanation
   const explanationScreen = new ExplanationScreen();
-  const showHelp = (e: Event) => { e.stopPropagation(); contentGroup.visible = false; explanationScreen.show(); };
+  const showHelp = (e: Event) => {
+    e.stopPropagation();
+    contentGroup.visible = false;
+    explanationScreen.show();
+  };
   buttons.howBg.on("pointertap", showHelp);
   buttons.howText.eventMode = "static";
   buttons.howText.on("pointertap", showHelp);
@@ -66,7 +80,8 @@ export function setupTitleMenus(
   // Custom Run
   const customRunScreen = new CustomRunScreen();
   const showCustom = (e: Event) => {
-    e.stopPropagation(); contentGroup.visible = false;
+    e.stopPropagation();
+    contentGroup.visible = false;
     customRunScreen.show((config: RunConfig) => cleanupAndLaunch(config));
   };
   buttons.customBg.on("pointertap", showCustom);
@@ -75,7 +90,11 @@ export function setupTitleMenus(
 
   // Customize
   const customizeScreen = new CustomizeScreen();
-  const showCust = (e: Event) => { e.stopPropagation(); contentGroup.visible = false; customizeScreen.show(); };
+  const showCust = (e: Event) => {
+    e.stopPropagation();
+    contentGroup.visible = false;
+    customizeScreen.show();
+  };
   buttons.custBg.on("pointertap", showCust);
   buttons.custText.eventMode = "static";
   buttons.custText.on("pointertap", showCust);
@@ -83,7 +102,8 @@ export function setupTitleMenus(
   // Daily Challenge
   const dailyChallengeScreen = new DailyChallengeScreen();
   const showDaily = (e: Event) => {
-    e.stopPropagation(); contentGroup.visible = false;
+    e.stopPropagation();
+    contentGroup.visible = false;
     dailyChallengeScreen.show((config: RunConfig) => cleanupAndLaunch(config));
   };
   buttons.dailyBg.on("pointertap", showDaily);
@@ -97,16 +117,25 @@ export function setupTitleMenus(
     if (tt) app.ticker.remove(tt);
     const hk = ctx.getHandleKey();
     if (hk) window.removeEventListener("keydown", hk);
-    ctx.setTitleDestroyed(); parallax.destroy();
+    ctx.setTitleDestroyed();
+    parallax.destroy();
     app.stage.removeChild(titleContainer);
     titleContainer.destroy({ children: true });
   };
   const showMp = (e: Event) => {
-    e.stopPropagation(); contentGroup.visible = false;
-    mpMenu = new MultiplayerMenu(app, () => {
-      contentGroup.visible = true;
-      if (mpMenu) { app.stage.removeChild(mpMenu.container); mpMenu = null; }
-    }, cleanupTitle);
+    e.stopPropagation();
+    contentGroup.visible = false;
+    mpMenu = new MultiplayerMenu(
+      app,
+      () => {
+        contentGroup.visible = true;
+        if (mpMenu) {
+          app.stage.removeChild(mpMenu.container);
+          mpMenu = null;
+        }
+      },
+      cleanupTitle,
+    );
     app.stage.addChild(mpMenu.container);
   };
   buttons.mpBg.on("pointertap", showMp);
@@ -114,13 +143,20 @@ export function setupTitleMenus(
   buttons.mpText.on("pointertap", showMp);
 
   // Close handlers
-  explanationScreen.onClose = () => { contentGroup.visible = true; };
-  customRunScreen.onClose = () => { contentGroup.visible = true; };
-  dailyChallengeScreen.onClose = () => { contentGroup.visible = true; };
+  explanationScreen.onClose = () => {
+    contentGroup.visible = true;
+  };
+  customRunScreen.onClose = () => {
+    contentGroup.visible = true;
+  };
+  dailyChallengeScreen.onClose = () => {
+    contentGroup.visible = true;
+  };
   customizeScreen.onClose = () => {
     const tt = ctx.getTitleTicker();
     if (tt) app.ticker.remove(tt);
-    ctx.setTitleDestroyed(); parallax.destroy();
+    ctx.setTitleDestroyed();
+    parallax.destroy();
     app.stage.removeChild(titleContainer);
     titleContainer.destroy({ children: true });
     showTitleScreen(app, onStartGame);
@@ -132,5 +168,10 @@ export function setupTitleMenus(
   titleContainer.addChild(customizeScreen.container);
   titleContainer.addChild(dailyChallengeScreen.container);
 
-  return { explanationScreen, customRunScreen, customizeScreen, dailyChallengeScreen };
+  return {
+    explanationScreen,
+    customRunScreen,
+    customizeScreen,
+    dailyChallengeScreen,
+  };
 }

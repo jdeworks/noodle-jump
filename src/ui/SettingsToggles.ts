@@ -4,7 +4,13 @@ import { Container, Graphics, Text, TextStyle } from "pixi.js";
 import { GAME_WIDTH } from "../config/constants";
 import { getSfxVolume, setSfxVolume, getMusicVolume, setMusicVolume } from "../systems/Audio";
 import { isEnemiesEnabled, setEnemiesEnabled } from "../systems/EnemySettings";
-import { isTiltInverted, setTiltInverted, getControlMode, cycleControlMode, isMobileDevice } from "../systems/TiltSettings";
+import {
+  isTiltInverted,
+  setTiltInverted,
+  getControlMode,
+  cycleControlMode,
+  isMobileDevice,
+} from "../systems/TiltSettings";
 import { getUITheme } from "./ThemeUI";
 
 export function createSettingsToggles(): Container {
@@ -78,7 +84,12 @@ export function createSettingsToggles(): Container {
 
     const valText = new Text({
       text: `${getVal()}%`,
-      style: new TextStyle({ fontFamily: "monospace", fontSize: 14, fill: "#ffffff", fontWeight: "bold" }),
+      style: new TextStyle({
+        fontFamily: "monospace",
+        fontSize: 14,
+        fill: "#ffffff",
+        fontWeight: "bold",
+      }),
     });
     valText.x = rightX - 80;
     valText.y = y;
@@ -148,7 +159,8 @@ export function createSettingsToggles(): Container {
 
   // Controls mode cycler
   const controlsLabel = new Text({ text: "Controls", style: labelStyle });
-  controlsLabel.x = leftX; controlsLabel.y = 96;
+  controlsLabel.x = leftX;
+  controlsLabel.y = 96;
   container.addChild(controlsLabel);
 
   const modeStyle = new TextStyle({
@@ -158,23 +170,29 @@ export function createSettingsToggles(): Container {
     fontWeight: "bold",
   });
   const controlsValue = new Text({ text: getControlMode(), style: modeStyle });
-  controlsValue.x = rightX - 40; controlsValue.y = 96; controlsValue.anchor.set(0.5, 0);
+  controlsValue.x = rightX - 40;
+  controlsValue.y = 96;
+  controlsValue.anchor.set(0.5, 0);
   container.addChild(controlsValue);
 
   // Invert Tilt toggle — only visible on mobile when motion is selected
   const tiltLabel = new Text({ text: "Invert Tilt", style: labelStyle });
-  tiltLabel.x = leftX; tiltLabel.y = 122;
+  tiltLabel.x = leftX;
+  tiltLabel.y = 122;
   container.addChild(tiltLabel);
   const tiltValue = new Text({
     text: isTiltInverted() ? "ON" : "OFF",
     style: valueStyle(isTiltInverted()),
   });
-  tiltValue.x = rightX - 40; tiltValue.y = 122; tiltValue.anchor.set(0.5, 0);
+  tiltValue.x = rightX - 40;
+  tiltValue.y = 122;
+  tiltValue.anchor.set(0.5, 0);
   container.addChild(tiltValue);
   const tiltHit = new Graphics();
   tiltHit.rect(panelX, 118, panelW, 26);
   tiltHit.fill({ color: 0x000000, alpha: 0.001 });
-  tiltHit.eventMode = "static"; tiltHit.cursor = "pointer";
+  tiltHit.eventMode = "static";
+  tiltHit.cursor = "pointer";
   tiltHit.on("pointertap", (e: Event) => {
     e.stopPropagation();
     setTiltInverted(!isTiltInverted());
@@ -216,7 +234,8 @@ export function createSettingsToggles(): Container {
   const controlsHit = new Graphics();
   controlsHit.rect(panelX, 92, panelW, 26);
   controlsHit.fill({ color: 0x000000, alpha: 0.001 });
-  controlsHit.eventMode = "static"; controlsHit.cursor = "pointer";
+  controlsHit.eventMode = "static";
+  controlsHit.cursor = "pointer";
   controlsHit.on("pointertap", (e: Event) => {
     e.stopPropagation();
     const next = cycleControlMode();

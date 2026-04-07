@@ -2,7 +2,6 @@ import { describe, test, expect } from "vitest";
 import {
   tryShieldAbsorb,
   hasShield,
-
   applyGnocchiBounce,
   hasGnocchiBounce,
   createMinestroneFlood,
@@ -13,10 +12,7 @@ import {
 import { createPlayer } from "../src/entities/Player";
 import type { ActiveEffect } from "../src/entities/PowerUp";
 import type { PlatformState } from "../src/entities/Platform";
-import {
-  GNOCCHI_BOUNCE_MULTIPLIER,
-  PLAYER_JUMP_VELOCITY,
-} from "../src/config/constants";
+import { GNOCCHI_BOUNCE_MULTIPLIER, PLAYER_JUMP_VELOCITY } from "../src/config/constants";
 
 function makeEffect(type: string, ticks = 100): ActiveEffect {
   return { type: type as ActiveEffect["type"], ticksRemaining: ticks };

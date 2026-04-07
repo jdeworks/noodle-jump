@@ -109,10 +109,7 @@ export function isDebugMode(): boolean {
 }
 
 /** Merge a preset into the debug config. */
-export function applyPreset(
-  config: DebugConfig,
-  preset: Partial<DebugConfig>,
-): DebugConfig {
+export function applyPreset(config: DebugConfig, preset: Partial<DebugConfig>): DebugConfig {
   return { ...config, ...preset };
 }
 

@@ -18,13 +18,13 @@ const BOSS_REGISTRY: Record<string, BossBehavior> = {
 
 /** Zone-to-boss mapping. null = no boss at that transition. */
 const ZONE_BOSSES: (string | null)[] = [
-  null,          // Zone 1 -> 2
-  null,          // Zone 2 -> 3
-  "chef_rival",  // Zone 3 -> 4
-  null,          // Zone 4 -> 5
-  "kraken",      // Zone 5 -> 6
-  null,          // Zone 6 -> 7
-  "ufo",         // Zone 7 end
+  null, // Zone 1 -> 2
+  null, // Zone 2 -> 3
+  "chef_rival", // Zone 3 -> 4
+  null, // Zone 4 -> 5
+  "kraken", // Zone 5 -> 6
+  null, // Zone 6 -> 7
+  "ufo", // Zone 7 end
 ];
 
 /** Get the boss type for a zone transition. */
