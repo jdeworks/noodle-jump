@@ -39,7 +39,6 @@ This variant uses Phaser 3 as its primary example.
 ## Native engines (out of scope but noted)
 
 For non-browser games, this variant's patterns still partially apply:
-
 - **Godot** — open source, GDScript/C#, excellent for 2D and 3D
 - **Unity** — C#, largest ecosystem, best for complex 3D games
 - **Unreal** — C++/Blueprints, AAA quality, steep learning curve
@@ -48,10 +47,10 @@ PRs adding sub-docs for these engines are welcome.
 
 ## Mapping kit patterns to your engine
 
-| Kit concept      | Phaser           | PixiJS            | Three.js            | Babylon.js             |
-| ---------------- | ---------------- | ----------------- | ------------------- | ---------------------- |
-| Scene management | Built-in Scenes  | Manual            | Manual              | Built-in Scenes        |
-| Physics          | Arcade/Matter.js | Add Rapier/Cannon | Add Rapier/Cannon   | Built-in               |
-| Asset loading    | Built-in Loader  | Built-in Assets   | Three.js Loader     | Built-in AssetsManager |
-| Input            | Built-in Input   | Manual events     | Manual events       | Built-in ActionManager |
-| Audio            | Built-in Sound   | Howler.js         | Howler.js/Web Audio | Built-in Sound         |
+| Kit concept | Phaser | PixiJS | Three.js | Babylon.js |
+|-------------|--------|--------|----------|------------|
+| Scene management | Built-in Scenes | Manual | Manual | Built-in Scenes |
+| Physics | Arcade/Matter.js | Add Rapier/Cannon | Add Rapier/Cannon | Built-in |
+| Asset loading | Built-in Loader | Built-in Assets | Three.js Loader | Built-in AssetsManager |
+| Input | Built-in Input | Manual events | Manual events | Built-in ActionManager |
+| Audio | Built-in Sound | Howler.js | Howler.js/Web Audio | Built-in Sound |
