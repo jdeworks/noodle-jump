@@ -1,0 +1,32 @@
+{
+  "siteName": "Noodle Jump",
+  "baseUrl": "https://jdeworks.github.io/noodle-jump/",
+  "publishDir": "docs",
+  "sitemap": "sitemap.xml",
+  "pages": [
+    {
+      "file": "index.html",
+      "route": "",
+      "title": "Noodle Jump – Free Pasta-Themed Browser Jumping Game",
+      "description": "Play Noodle Jump free in your browser: a pasta-themed endless jumper with seven zones, boss battles, daily challenges, and online multiplayer. No install, no signup.",
+      "schema": {
+        "@context": "https://schema.org",
+        "@type": "VideoGame",
+        "name": "Noodle Jump",
+        "url": "https://jdeworks.github.io/noodle-jump/",
+        "description": "Play Noodle Jump free in your browser: a pasta-themed endless jumper with seven zones, boss battles, daily challenges, and online multiplayer. No install, no signup.",
+        "genre": "Platformer",
+        "gamePlatform": "Web browser",
+        "playMode": ["SinglePlayer", "MultiPlayer"],
+        "applicationCategory": "GameApplication",
+        "operatingSystem": "Any operating system with a modern web browser",
+        "isAccessibleForFree": true,
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        }
+      }
+    }
+  ]
+}
